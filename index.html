@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YaadAds — Jamaica's Modern Marketplace</title>
 
+<!-- PWA Manifest (inline) -->
+<script>
+const _manifest = {name:"YaadAds",short_name:"YaadAds",description:"Jamaica's free marketplace",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",icons:[{src:"https://fav.farm/🇯🇲",sizes:"192x192",type:"image/png"},{src:"https://fav.farm/🇯🇲",sizes:"512x512",type:"image/png"}]};
+const _mb = new Blob([JSON.stringify(_manifest)],{type:'application/json'});
+const _ml = document.createElement('link'); _ml.rel='manifest'; _ml.href=URL.createObjectURL(_mb);
+document.head.appendChild(_ml);
+</script>
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Cloudinary Upload Widget -->
@@ -32,6 +39,7 @@
   --green-light: #e6f4ec;
   --gold:        #f4c300;
   --gold-dark:   #c9a000;
+  --gold-pale:   #fffbeb;
   --gold-pale:   #fffbe6;
   --nav-bg:      #0c1e14;
   --bg:          #f6f4ef;
@@ -1410,6 +1418,217 @@ footer {
 /* Send button loading */
 .ai-sheet-send.sending { animation: sendPulse .8s ease-in-out infinite; }
 @keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  QUALITY-OF-LIFE FEATURES — CSS                             ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ── 1. ACTIVITY TICKER ── */
+.activity-ticker {
+  background: linear-gradient(90deg,#005c35 0%,#00703f 50%,#005c35 100%);
+  background-size: 200% 100%;
+  animation: tickerShift 8s linear infinite;
+  color: #fff; overflow: hidden; height: 36px;
+  display: flex; align-items: center;
+}
+@keyframes tickerShift { 0%{background-position:0%} 100%{background-position:200%} }
+.ticker-track {
+  display: flex; gap: 0; white-space: nowrap;
+  animation: tickerScroll 28s linear infinite;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.ticker-item {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 0 28px; font-size: 12px; font-weight: 500;
+  opacity: .9; letter-spacing: .02em;
+}
+.ticker-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; flex-shrink:0; animation: tickerDotPulse 2s ease-in-out infinite; }
+@keyframes tickerDotPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+
+/* ── 2. VERIFIED BADGE ── */
+.verified-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(135deg,#e8f5e9,#c8e6c9);
+  color: #2e7d32; border: 1px solid #a5d6a7;
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 10px; text-transform: uppercase; letter-spacing: .4px;
+  vertical-align: middle; margin-left: 6px;
+}
+.verified-badge svg { width: 11px; height: 11px; flex-shrink:0; }
+/* On cards */
+.card-verified { position: absolute; top: 10px; right: 46px; background: rgba(46,125,50,.9); color:#fff; border-radius:10px; padding:2px 7px; font-size:9px; font-weight:800; letter-spacing:.3px; }
+
+/* ── 3. STAR RATINGS ── */
+.rating-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.stars { display: flex; gap: 2px; }
+.star { font-size: 16px; cursor: pointer; line-height: 1; transition: transform .15s; color: #ccc; user-select: none; }
+.star.lit { color: var(--gold); }
+.star:hover, .star.hover { transform: scale(1.25); color: var(--gold); }
+.rating-count { font-size: 12px; color: var(--text-3); }
+/* Rating modal */
+.rate-modal { text-align: center; }
+.rate-stars { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+.rate-star { font-size: 38px; cursor: pointer; transition: transform .2s; color: #ddd; }
+.rate-star.lit { color: var(--gold); }
+.rate-star:hover { transform: scale(1.2); }
+.rate-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-3); margin-top: -10px; margin-bottom: 16px; }
+
+/* ── 4. MULTI-PHOTO GALLERY ── */
+.photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.photo-thumb {
+  aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative;
+  border: 2px solid transparent; cursor: pointer; transition: border-color .15s;
+}
+.photo-thumb.selected { border-color: var(--green); }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .del-photo {
+  position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+  background: rgba(0,0,0,.65); color: #fff; border: none; border-radius: 50%;
+  font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.photo-add-btn {
+  aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; background: var(--surface-2); font-size: 22px;
+  color: var(--text-3); transition: all .15s; gap: 4px;
+}
+.photo-add-btn span { font-size: 11px; font-weight: 600; }
+.photo-add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+/* Detail gallery */
+.gallery-wrap { position: relative; background: #111; overflow: hidden; }
+.gallery-track {
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.gallery-track::-webkit-scrollbar { display: none; }
+.gallery-slide {
+  flex-shrink: 0; width: 100%; height: 300px;
+  scroll-snap-align: start; display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); overflow: hidden;
+}
+.gallery-slide img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-slide .emoji-ph { font-size: 90px; }
+.gallery-dots {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px;
+}
+.gallery-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,.4); cursor: pointer; transition: all .2s;
+}
+.gallery-dot.active { background: #fff; transform: scale(1.3); }
+.gallery-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  border: none; border-radius: 50%; color: #fff; font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s; z-index: 5;
+}
+.gallery-arrow:hover { background: rgba(0,0,0,.8); }
+.gallery-prev { left: 10px; }
+.gallery-next { right: 10px; }
+.gallery-count {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,.55); color: #fff; border-radius: 12px;
+  font-size: 11px; font-weight: 700; padding: 3px 9px;
+}
+@media (max-width: 640px) { .gallery-slide { height: 220px; } }
+
+/* ── 5. MAKE AN OFFER ── */
+.offer-panel {
+  background: var(--gold-pale); border: 1.5px solid var(--gold);
+  border-radius: var(--r); padding: 16px 18px; margin-top: 16px;
+  display: none;
+}
+.offer-panel.open { display: block; animation: mIn .2s both; }
+.offer-panel-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+.offer-row { display: flex; gap: 8px; align-items: center; }
+.offer-input {
+  flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-size: 15px; font-family: var(--font-b); outline: none; font-weight: 600;
+}
+.offer-input:focus { border-color: var(--green); }
+.offer-note { font-size: 12px; color: var(--text-3); margin-top: 8px; }
+
+/* ── 6. REPORT LISTING ── */
+.report-btn {
+  background: none; border: none; color: var(--text-3); font-size: 12px;
+  cursor: pointer; display: flex; align-items: center; gap: 4px;
+  padding: 4px 0; font-family: var(--font-b); transition: color .15s;
+}
+.report-btn:hover { color: var(--red); }
+.report-options { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.report-opt {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm); cursor: pointer;
+  transition: all .15s; font-size: 14px;
+}
+.report-opt:hover, .report-opt.selected { border-color: var(--red); background: #fef2f2; color: var(--red); }
+
+/* ── 7. SIMILAR LISTINGS ── */
+.similar-section { padding: 20px 28px 28px; border-top: 1px solid var(--border); }
+.similar-title { font-family: var(--font-d); font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+.similar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 500px) { .similar-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .similar-section { padding: 16px; } }
+
+/* ── 8. SAFE MEETUP SPOTS ── */
+.meetup-tip {
+  background: linear-gradient(135deg,#e8f5e9,#f1f8e9);
+  border: 1px solid #a5d6a7; border-radius: var(--r-sm);
+  padding: 12px 14px; margin-top: 12px; font-size: 13px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.meetup-tip-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.meetup-tip-text { color: #2e7d32; line-height: 1.5; }
+.meetup-tip-text strong { display: block; font-weight: 700; margin-bottom: 2px; }
+
+/* ── 9. PWA INSTALL BANNER ── */
+.pwa-banner {
+  position: fixed; bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom) + 8px);
+  left: 12px; right: 12px; z-index: 350;
+  background: var(--nav-bg); color: #fff;
+  border-radius: var(--r); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  transform: translateY(20px); opacity: 0;
+  transition: all .4s cubic-bezier(.34,1.2,.64,1);
+  pointer-events: none;
+}
+.pwa-banner.show { transform: none; opacity: 1; pointer-events: all; }
+.pwa-banner-icon { font-size: 32px; flex-shrink: 0; }
+.pwa-banner-text { flex: 1; }
+.pwa-banner-title { font-weight: 700; font-size: 14px; }
+.pwa-banner-sub { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+.pwa-banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
+.pwa-install-btn { background: var(--gold); color: #000; border: none; border-radius: var(--r-xl); padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font-b); }
+.pwa-dismiss-btn { background: rgba(255,255,255,.12); color: #fff; border: none; border-radius: var(--r-xl); padding: 8px 12px; font-size: 13px; cursor: pointer; font-family: var(--font-b); }
+
+/* ── 10. SELLER RESPONSE BADGE + AD ANALYTICS ── */
+.resp-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9;
+  font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 10px;
+}
+.analytics-strip {
+  display: flex; gap: 18px; padding: 12px 18px;
+  background: var(--surface-2); border-radius: var(--r-sm);
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.ana-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ana-num { font-family: var(--font-d); font-size: 22px; font-weight: 700; color: var(--green); line-height: 1; }
+.ana-lbl { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; }
+
+/* ── SHARE BUTTON ── */
+.share-btn {
+  background: none; border: 1.5px solid var(--border); border-radius: var(--r-xl);
+  padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; color: var(--text-2);
+  font-family: var(--font-b); transition: all .15s;
+}
+.share-btn:hover { border-color: var(--green); color: var(--green); }
+
 </style>
 </head>
 <body>
@@ -1417,6 +1636,24 @@ footer {
 <!-- LIVE BANNER (hidden — shown only on error) -->
 <div class="setup-banner" id="setupBanner" style="display:none">
   ⚠️ <strong>Connection issue</strong> — Check your Supabase setup.
+</div>
+
+<!-- ACTIVITY TICKER -->
+<div class="activity-ticker" id="activityTicker">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item"><span class="ticker-dot"></span>🇯🇲 Jamaica's #1 free marketplace</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>📱 New: iPhones listed in Kingston</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>🚗 Cars, bikes &amp; trucks across all parishes</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>🏡 Rent &amp; sale properties — no agent fees</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>✅ 100% free to post — always</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>💼 Jobs &amp; services — find work today</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>🇯🇲 Jamaica's #1 free marketplace</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>📱 New: iPhones listed in Kingston</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>🚗 Cars, bikes &amp; trucks across all parishes</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>🏡 Rent &amp; sale properties — no agent fees</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>✅ 100% free to post — always</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>💼 Jobs &amp; services — find work today</span>
+  </div>
 </div>
 
 <!-- NAV -->
@@ -1637,17 +1874,15 @@ footer {
     <!-- Step 2 -->
     <div class="step-panel" id="sp2">
       <div class="form-grp">
-        <label class="form-lbl">Photo <span>(optional but recommended)</span></label>
-        <div id="imgUploadArea" class="img-upload-area">
-          <input type="file" accept="image/*" id="imgFile" onchange="handleImgFile(this)">
-          <div class="img-upload-icon">📸</div>
-          <p><strong>Click to upload</strong> or drag & drop</p>
-          <p>JPG, PNG up to 2MB</p>
+        <label class="form-lbl">Photos <span>(up to 6 — first photo is the cover)</span></label>
+        <div class="photo-grid" id="photoGrid">
+          <!-- Thumbnails injected by JS -->
+          <div class="photo-add-btn" onclick="document.getElementById('imgFile').click()">
+            <span>📸</span><span>Add Photo</span>
+          </div>
         </div>
-        <div id="imgPreviewBox" style="display:none" class="img-preview">
-          <img id="imgPreview" src="" alt="preview">
-          <button class="img-clear" onclick="clearImg()">✕</button>
-        </div>
+        <input type="file" accept="image/*" multiple id="imgFile" style="display:none" onchange="handleImgFiles(this)">
+        <p style="font-size:11px;color:var(--text-3);margin-top:6px">JPG or PNG · max 2MB each · tap to reorder</p>
       </div>
       <div class="form-grp"><label class="form-lbl">Contact Phone <span>(optional)</span></label><input class="form-inp" id="aPhone" type="tel" placeholder="876-XXX-XXXX"></div>
       <div class="step-nav">
@@ -1752,6 +1987,56 @@ footer {
   </div>
   <p style="margin-top:8px">© 2025 YaadAds · Made with ❤️ in Jamaica</p>
 </footer>
+
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-banner" id="pwaBanner">
+  <div class="pwa-banner-icon">📲</div>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">Add YaadAds to Home Screen</div>
+    <div class="pwa-banner-sub">Fast access, works offline</div>
+  </div>
+  <div class="pwa-banner-btns">
+    <button class="pwa-install-btn" onclick="pwaTriggerInstall()">Install</button>
+    <button class="pwa-dismiss-btn" onclick="pwaDismiss()">✕</button>
+  </div>
+</div>
+
+<!-- RATE SELLER MODAL -->
+<div class="overlay" id="ovRate">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <button class="m-close" onclick="closeOverlay('ovRate')">✕</button>
+    <div style="font-size:40px;margin-bottom:8px">⭐</div>
+    <h3 style="font-family:var(--font-d);font-size:22px;font-weight:800;margin-bottom:4px">Rate Your Experience</h3>
+    <p style="color:var(--text-3);font-size:14px;margin-bottom:20px" id="rateSellerName">How was the seller?</p>
+    <div class="rate-stars" id="rateStars">
+      <span class="rate-star" data-v="1" onclick="setRateStar(1)">★</span>
+      <span class="rate-star" data-v="2" onclick="setRateStar(2)">★</span>
+      <span class="rate-star" data-v="3" onclick="setRateStar(3)">★</span>
+      <span class="rate-star" data-v="4" onclick="setRateStar(4)">★</span>
+      <span class="rate-star" data-v="5" onclick="setRateStar(5)">★</span>
+    </div>
+    <div class="rate-labels"><span>Poor</span><span>Excellent</span></div>
+    <textarea class="form-inp" id="rateComment" rows="3" placeholder="Share more about your experience… (optional)" style="text-align:left;margin-bottom:16px"></textarea>
+    <button class="btn btn-green btn-block btn-lg" onclick="submitRating()">Submit Rating</button>
+  </div>
+</div>
+
+<!-- REPORT LISTING MODAL -->
+<div class="overlay" id="ovReport">
+  <div class="modal" style="max-width:400px">
+    <button class="m-close" onclick="closeOverlay('ovReport')">✕</button>
+    <h3 style="font-family:var(--font-d);font-size:20px;font-weight:800;margin-bottom:6px">Report Listing</h3>
+    <p style="color:var(--text-3);font-size:13px;margin-bottom:16px">Help us keep YaadAds safe. Select the issue:</p>
+    <div class="report-options" id="reportOptions">
+      <div class="report-opt" onclick="selectReport(this,'scam')">🚫 Scam / Fraud</div>
+      <div class="report-opt" onclick="selectReport(this,'wrong_cat')">📂 Wrong category</div>
+      <div class="report-opt" onclick="selectReport(this,'duplicate')">🔁 Duplicate listing</div>
+      <div class="report-opt" onclick="selectReport(this,'sold_item')">🏷️ Already sold / unavailable</div>
+      <div class="report-opt" onclick="selectReport(this,'offensive')">⚠️ Offensive content</div>
+    </div>
+    <button class="btn btn-red btn-block btn-lg" onclick="submitReport()" id="reportSubmitBtn" disabled style="margin-top:4px">Submit Report</button>
+  </div>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -2057,7 +2342,6 @@ async function init() {
   fillCatSelect();
   renderNav();
 
-  // Show skeleton while loading from Supabase
   showSkeletons();
   document.getElementById('resultsHeader').style.display = 'none';
 
@@ -2073,19 +2357,18 @@ async function init() {
   renderHome();
   updateStats();
   updateMsgBadge();
-  // Hide setup banner — we're connected
+  updateTicker();
   document.getElementById('setupBanner')?.classList.remove('show');
   startNavPlaceholderCycle();
+  checkUrlAdParam();
 
-  // Real-time subscription: new ads from other users
+  // Real-time: new ads
   _db.channel('ads-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads' }, payload => {
       const incoming = dbToAd(payload.new);
       if (!_ads.find(a => a.id === incoming.id)) {
         _ads.unshift(incoming);
-        renderCats();
-        renderHome();
-        updateStats();
+        renderCats(); renderHome(); updateStats(); updateTicker();
         showToast('New listing just posted! 🆕', '🆕');
       }
     })
@@ -2099,7 +2382,6 @@ async function init() {
     })
     .subscribe();
 
-  // Real-time messages for logged-in users
   if (CU) subscribeMessages();
 }
 
@@ -2687,50 +2969,121 @@ function togFav(id, btn) {
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
   const ad = L.ads.find(a => a.id === id); if (!ad) return;
-  // Increment view counter (async, non-blocking)
   sbIncrView(id);
 
-  const cat   = CATS.find(c => c.id === ad.category);
-  const img   = ad.image
-    ? `<img src="${ad.image}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:90px>${cat?.icon||'📦'}</span>'">`
-    : `<span style="font-size:90px">${cat?.icon||'📦'}</span>`;
-  const wa    = `https://wa.me/1${(ad.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent('Hi! I saw your ad on YaadAds: '+ad.title)}`;
-  const clr   = avatarColor(ad.seller||'?');
-  const ini   = ad.sellerInit || initials(ad.seller||'?');
+  const cat    = CATS.find(c => c.id === ad.category);
+  const photos = Array.isArray(ad.photos) && ad.photos.length ? ad.photos : (ad.image ? [ad.image] : []);
+  const clr    = avatarColor(ad.seller||'?');
+  const ini    = ad.sellerInit || initials(ad.seller||'?');
   const isMine = CU && CU.id === ad.sellerId;
-  const soldBtn = isMine ? `<button class="btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm" onclick="toggleSold('${ad.id}')">${ad.status==='sold'?'Mark Active':'Mark Sold'}</button>` : '';
+  const wa     = `https://wa.me/1${(ad.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent('Hi! I saw your ad on YaadAds: '+ad.title)}`;
   const totalViews = getViews(id);
-  const eyeSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+  // ── Swipeable photo gallery ───────────────────────────
+  const galleryHTML = (() => {
+    if (!photos.length) {
+      return `<div class="gallery-wrap"><div class="gallery-track"><div class="gallery-slide"><span class="emoji-ph">${cat?.icon||'📦'}</span></div></div></div>`;
+    }
+    const slides = photos.map(p =>
+      `<div class="gallery-slide">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="emoji-ph">${cat?.icon||'📦'}</span>`}</div>`
+    ).join('');
+    const dots = photos.length > 1 ? `<div class="gallery-dots" id="galleryDots">${photos.map((_,i)=>`<div class="gallery-dot${i===0?' active':''}" onclick="galleryGoTo(${i})"></div>`).join('')}</div>` : '';
+    const arrows = photos.length > 1 ? `<button class="gallery-arrow gallery-prev" onclick="galleryPrev()">‹</button><button class="gallery-arrow gallery-next" onclick="galleryNext()">›</button>` : '';
+    const cnt = photos.length > 1 ? `<div class="gallery-count">1 / ${photos.length}</div>` : '';
+    const soldOverlay = ad.status==='sold' ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;pointer-events:none"><span style="background:#000;color:#fff;font-size:22px;font-weight:800;padding:10px 28px;border-radius:8px">SOLD</span></div>' : '';
+    return `<div class="gallery-wrap" id="detailGallery"><div class="gallery-track" id="galleryTrack">${slides}</div>${dots}${arrows}${cnt}${soldOverlay}</div>`;
+  })();
+
+  // ── Star rating summary ───────────────────────────────
+  const ratings = getRatings(ad.sellerId);
+  const avg = ratings.length ? (ratings.reduce((s,r)=>s+r.stars,0)/ratings.length) : 0;
+  const ratingHTML = ratings.length
+    ? `<div class="rating-row"><div class="stars">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</div><span class="rating-count">${avg.toFixed(1)} (${ratings.length} review${ratings.length!==1?'s':''})</span></div>`
+    : `<div style="font-size:11px;color:var(--text-3);margin-top:2px">No reviews yet · Be first</div>`;
+
+  // ── Verified badge ────────────────────────────────────
+  const vBadge = isSellerVerified(ad.sellerId) ? `<span class="verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>` : '';
+
+  // ── Safe meetup spots ─────────────────────────────────
+  const SPOTS = {'Kingston':'Half Way Tree Centre, Sovereign Centre','St. Andrew':'Liguanea Plaza, Manor Park Plaza','St. Catherine':'Portmore Mall, Caymanas Bay','St. James':'Sam Sharpe Square, Fairview Shopping Centre','Manchester':'Mandeville Plaza','St. Ann':'Ocho Rios Town Centre'};
+  const spots = SPOTS[ad.parish] || 'a busy public area or police station';
+  const meetupHTML = !isMine ? `<div class="meetup-tip"><div class="meetup-tip-icon">🛡️</div><div class="meetup-tip-text"><strong>Safe meetup — ${ad.parish}</strong>Try: ${spots}. Bring a friend for big purchases.</div></div>` : '';
+
+  // ── Similar listings ──────────────────────────────────
+  const similar = _ads.filter(a=>a.id!==id&&a.category===ad.category&&a.status!=='sold').slice(0,4);
+  const similarHTML = similar.length ? `<div class="similar-section"><div class="similar-title">Similar Listings</div><div class="similar-grid">${similar.map((a,i)=>cardHTML(a,i)).join('')}</div></div>` : '';
+
+  // ── Seller analytics (owner only) ────────────────────
+  const analyticsHTML = isMine ? `<div class="analytics-strip"><div class="ana-item"><div class="ana-num">${fmtN(totalViews)}</div><div class="ana-lbl">👁 Views</div></div><div class="ana-item"><div class="ana-num">${getFavCount(id)}</div><div class="ana-lbl">❤️ Saves</div></div><div class="ana-item"><div class="ana-num">${ago(ad.date)}</div><div class="ana-lbl">📅 Posted</div></div><div class="ana-item"><div class="ana-num" style="font-size:14px;color:${ad.status==='sold'?'var(--red)':'var(--green)'}">${ad.status==='sold'?'SOLD':'Active'}</div><div class="ana-lbl">📋 Status</div></div></div>` : '';
+
   document.getElementById('detailInner').innerHTML = `
-    <div class="detail-img${ad.status==='sold'?' sold':''}">${img}${ad.status==='sold'?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center"><span style="background:#000;color:#fff;font-size:24px;font-weight:700;padding:10px 28px;border-radius:8px;font-family:var(--font-d)">SOLD</span></div>':''}</div>
+    ${galleryHTML}
     <div class="detail-body">
-      <div class="detail-price">J$${fmtN(ad.price)}${ad.neg?'<span style="font-size:14px;font-weight:400;color:var(--text-3)"> · negotiable</span>':''}</div>
-      <div class="detail-title">${ad.title}</div>
+      ${analyticsHTML}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div class="detail-price" style="margin-bottom:0">J$${fmtN(ad.price)}${ad.neg?'<span style="font-size:13px;font-weight:400;color:var(--text-3)"> · neg.</span>':''}</div>
+        <button class="share-btn" onclick="shareAd('${id}')">↑ Share</button>
+      </div>
+      <div class="detail-title" style="margin-top:6px">${ad.title}${vBadge}</div>
       <div class="detail-tags">
         <span class="dtag">📍 ${ad.parish}</span>
         <span class="dtag">🏷️ ${cat?.name||'Other'}</span>
         <span class="dtag">🕐 ${ago(ad.date)}</span>
-        <span class="dtag" style="display:inline-flex;align-items:center;gap:4px">${eyeSvg} ${fmtN(totalViews)} view${totalViews!==1?'s':''}</span>
-        ${ad.status==='sold'?'<span class="dtag" style="background:#f0f0f0;padding:3px 10px;border-radius:12px;font-weight:600">SOLD</span>':''}
+        <span class="dtag" style="display:inline-flex;align-items:center;gap:3px">${eyeSvg} ${fmtN(totalViews)}</span>
+        ${ad.status==='sold'?'<span class="dtag" style="background:#111;color:#fff;border-radius:10px;padding:2px 10px;font-weight:700">SOLD</span>':''}
       </div>
       <p class="detail-desc">${ad.desc}</p>
       <div class="seller-box">
         <div class="s-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
         <div class="s-info">
-          <div class="s-name" onclick="openProfile('${ad.sellerId}')">${ad.seller||'Anonymous'}</div>
-          <div class="s-since">YaadAds Member · View Profile →</div>
+          <div class="s-name" onclick="openProfile('${ad.sellerId}')">${ad.seller||'Anonymous'}${vBadge}</div>
+          ${ratingHTML}
         </div>
         <div class="s-acts">
-          ${soldBtn}
-          ${!isMine && ad.phone ? `<a class="btn btn-green btn-sm" href="tel:${ad.phone}" onclick="event.stopPropagation()">📞 Call</a>` : ''}
-          ${!isMine && ad.phone ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" onclick="event.stopPropagation()">💬 WhatsApp</a>` : ''}
+          ${isMine ? `<button class="btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm" onclick="toggleSold('${ad.id}')">${ad.status==='sold'?'Mark Active':'Mark Sold'}</button>` : ''}
+          ${!isMine && ad.phone ? `<a class="btn btn-green btn-sm" href="tel:${ad.phone}">📞 Call</a>` : ''}
+          ${!isMine && ad.phone ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank">💬 WhatsApp</a>` : ''}
           ${!isMine && CU ? `<button class="btn btn-ghost btn-sm" onclick="openChat('${ad.id}','${ad.sellerId}','${(ad.seller||'').replace(/'/g,"\\'")}','${ini}')">✉️ Message</button>` : ''}
-          ${!isMine && !CU ? `<button class="btn btn-ghost btn-sm" onclick="openAuth('login')">✉️ Message Seller</button>` : ''}
+          ${!isMine && !CU ? `<button class="btn btn-ghost btn-sm" onclick="openAuth('login')">✉️ Message</button>` : ''}
         </div>
       </div>
-    </div>`;
+      ${!isMine && CU ? `
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px;border-color:var(--gold);color:var(--gold-dark)" onclick="openOfferPanel('${id}')">💰 Make an Offer</button>
+        <div class="offer-panel" id="offerPanel">
+          <div class="offer-panel-title">Your Offer (JMD)</div>
+          <div class="offer-row">
+            <span style="font-size:15px;font-weight:700;color:var(--text-2)">J$</span>
+            <input class="offer-input" id="offerAmt" type="number" min="0" placeholder="e.g. 70000">
+            <button class="btn btn-gold btn-sm" onclick="sendOffer('${id}','${ad.sellerId}','${(ad.seller||'').replace(/'/g,"\\'")}','${ini}')">Send</button>
+          </div>
+          <div class="offer-note">Sent directly to seller as an in-app message.</div>
+        </div>` : ''}
+      ${meetupHTML}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        ${!isMine && CU ? `<button class="btn btn-ghost btn-sm" onclick="openRateModal('${ad.sellerId}','${(ad.seller||'').replace(/'/g,"\\'")}')">⭐ Rate Seller</button>` : '<div></div>'}
+        <button class="report-btn" onclick="openReport('${id}')">⚑ Report listing</button>
+      </div>
+    </div>
+    ${similarHTML}`;
+
+  // Sync gallery dots on scroll
+  requestAnimationFrame(() => {
+    const track = document.getElementById('galleryTrack');
+    if (track && photos.length > 1) {
+      track.addEventListener('scroll', () => {
+        const idx = Math.round(track.scrollLeft / (track.offsetWidth||1));
+        document.querySelectorAll('.gallery-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+        const cnt = document.querySelector('.gallery-count'); if (cnt) cnt.textContent = `${idx+1} / ${photos.length}`;
+      }, {passive:true});
+    }
+  });
   openOverlay('ovDetail');
 }
+
+function galleryGoTo(i) { const t=document.getElementById('galleryTrack'); if(t) t.scrollTo({left:i*t.offsetWidth,behavior:'smooth'}); }
+function galleryPrev()  { const t=document.getElementById('galleryTrack'); if(t) galleryGoTo(Math.max(0,Math.round(t.scrollLeft/t.offsetWidth)-1)); }
+function galleryNext()  { const t=document.getElementById('galleryTrack'); if(t) galleryGoTo(Math.min(t.children.length-1,Math.round(t.scrollLeft/t.offsetWidth)+1)); }
 
 async function toggleSold(id) {
   const ad = _ads.find(a => a.id === id); if (!ad) return;
@@ -2750,30 +3103,54 @@ async function toggleSold(id) {
 ═══════════════════════════════════════════════════════════ */
 function openProfile(sellerId) {
   const ads = L.ads.filter(a => a.sellerId === sellerId);
-  const sample = ads[0];
-  if (!sample) return;
-  const clr = avatarColor(sample.seller||'?');
-  const ini = sample.sellerInit || initials(sample.seller||'?');
+  const sample = ads[0]; if (!sample) return;
+  const clr  = avatarColor(sample.seller||'?');
+  const ini  = sample.sellerInit || initials(sample.seller||'?');
   const name = sample.seller || 'Anonymous';
   const activeAds = ads.filter(a => a.status !== 'sold');
+
+  // Ratings
+  const ratings = getRatings(sellerId);
+  const avg = ratings.length ? (ratings.reduce((s,r)=>s+r.stars,0)/ratings.length) : 0;
+  const ratingHTML = ratings.length
+    ? `<div class="rating-row" style="margin-top:8px"><div class="stars">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</div><span class="rating-count">${avg.toFixed(1)} · ${ratings.length} review${ratings.length!==1?'s':''}</span></div>`
+    : `<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:6px">No reviews yet</div>`;
+
+  // Verified
+  const vBadge = isSellerVerified(sellerId) ? `<span class="verified-badge" style="background:rgba(255,255,255,.15);color:#a5d6a7;border-color:rgba(165,214,167,.4)"><svg viewBox="0 0 24 24" fill="none" stroke="#a5d6a7" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>` : '';
+
+  // Total views across all ads
+  const totalViews = ads.reduce((n,a) => n + getViews(a.id), 0);
 
   document.getElementById('profileInner').innerHTML = `
     <div class="prof-header">
       <div class="prof-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
       <div class="prof-info">
-        <div class="prof-name">${name}</div>
+        <div class="prof-name">${name} ${vBadge}</div>
         <div class="prof-since">📍 ${sample.parish||'Jamaica'} · YaadAds Member</div>
-        <div class="prof-stats">
-          <div><div class="prof-stat-n">${activeAds.length}</div><div class="prof-stat-l">Active Ads</div></div>
+        ${ratingHTML}
+        <div class="prof-stats" style="margin-top:14px">
+          <div><div class="prof-stat-n">${activeAds.length}</div><div class="prof-stat-l">Active</div></div>
           <div><div class="prof-stat-n">${ads.filter(a=>a.status==='sold').length}</div><div class="prof-stat-l">Sold</div></div>
-          <div><div class="prof-stat-n">${ads.length}</div><div class="prof-stat-l">Total</div></div>
+          <div><div class="prof-stat-n">${fmtN(totalViews)}</div><div class="prof-stat-l">👁 Views</div></div>
         </div>
       </div>
       ${CU && CU.id !== sellerId ? `<button class="btn btn-gold btn-sm" onclick="openChat('${ads[0].id}','${sellerId}','${name.replace(/'/g,"\\'")}','${ini}')">✉️ Message</button>` : ''}
     </div>
     <div class="prof-body">
       <h3 style="font-family:var(--font-d);font-size:18px;margin-bottom:16px">Listings by ${name.split(' ')[0]}</h3>
-      ${ads.length ? `<div class="listings-grid">${ads.map((a,i) => cardHTML(a,i)).join('')}</div>` : `<p style="color:var(--text-3)">No active listings.</p>`}
+      ${ads.length ? `<div class="listings-grid">${ads.map((a,i)=>cardHTML(a,i)).join('')}</div>` : `<p style="color:var(--text-3)">No listings.</p>`}
+      ${ratings.length ? `
+        <h3 style="font-family:var(--font-d);font-size:18px;margin:28px 0 14px">Reviews</h3>
+        ${ratings.slice().reverse().slice(0,6).map(r => `
+          <div style="border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-weight:600;font-size:13px">${r.reviewerName||'Anonymous'}</span>
+              <span style="color:var(--gold);font-size:15px">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</span>
+            </div>
+            ${r.comment ? `<p style="font-size:13px;color:var(--text-2);line-height:1.5">${r.comment}</p>` : ''}
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px">${fmtTime(r.ts)}</div>
+          </div>`).join('')}` : ''}
     </div>`;
   closeOverlay('ovDetail');
   openOverlay('ovProfile');
@@ -3086,38 +3463,65 @@ function buildPreview() {
     <strong>Negotiable:</strong> ${document.getElementById('aNeg').checked ? 'Yes' : 'No'}`;
 }
 
-function handleImgFile(input) {
-  const file = input.files[0]; if (!file) return;
-  if (file.size > 2000000) { showToast('Image too large (max 2MB)','⚠️'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    uploadUrl = e.target.result;
-    document.getElementById('imgUploadArea').style.display = 'none';
-    document.getElementById('imgPreviewBox').style.display = '';
-    document.getElementById('imgPreview').src = uploadUrl;
-  };
-  reader.readAsDataURL(file);
+/* Multi-photo state */
+let uploadPhotos = []; // array of base64 strings, max 6
+
+function handleImgFiles(input) {
+  const files = Array.from(input.files||[]);
+  const remaining = 6 - uploadPhotos.length;
+  if (!remaining) { showToast('Maximum 6 photos reached','⚠️'); return; }
+  const toAdd = files.slice(0, remaining);
+  let loaded = 0;
+  toAdd.forEach(file => {
+    if (file.size > 2000000) { showToast(`${file.name} too large (max 2MB)`,'⚠️'); loaded++; if(loaded===toAdd.length) renderPhotoGrid(); return; }
+    const r = new FileReader();
+    r.onload = e => { uploadPhotos.push(e.target.result); loaded++; if(loaded===toAdd.length) renderPhotoGrid(); };
+    r.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photoGrid'); if (!grid) return;
+  const thumbs = uploadPhotos.map((src, i) => `
+    <div class="photo-thumb${i===0?' selected':''}">
+      <img src="${src}" alt="">
+      <button class="del-photo" onclick="removePhoto(${i})">✕</button>
+    </div>`).join('');
+  const addBtn = uploadPhotos.length < 6
+    ? `<div class="photo-add-btn" onclick="document.getElementById('imgFile').click()"><span>📸</span><span>Add</span></div>` : '';
+  grid.innerHTML = thumbs + addBtn;
+  // Keep uploadUrl synced to first photo for preview compat
+  uploadUrl = uploadPhotos[0] || '';
+}
+
+function removePhoto(i) {
+  uploadPhotos.splice(i, 1);
+  uploadUrl = uploadPhotos[0] || '';
+  renderPhotoGrid();
 }
 
 function clearImg() {
-  uploadUrl = '';
-  document.getElementById('imgUploadArea').style.display = '';
-  document.getElementById('imgPreviewBox').style.display = 'none';
-  document.getElementById('imgPreview').src = '';
-  document.getElementById('imgFile').value = '';
+  uploadPhotos = []; uploadUrl = '';
+  renderPhotoGrid();
 }
+
+// Legacy single-file compat (keep old id working)
+function handleImgFile(input) { handleImgFiles(input); }
 
 async function doPostAd() {
   const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);
+  const photos = [...uploadPhotos]; // snapshot
   const ad = {
-    id: 'a' + Date.now(),
+    id:         'a' + Date.now(),
     title:      document.getElementById('aTitle').value.trim(),
     category:   document.getElementById('aCat').value,
     parish:     document.getElementById('aParish').value,
     price:      parseFloat(document.getElementById('aPrice').value) || 0,
     desc:       document.getElementById('aDesc').value.trim(),
     phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
-    image:      uploadUrl,
+    image:      photos[0] || '',
+    photos,
     neg:        document.getElementById('aNeg').checked,
     seller:     CU.name,
     sellerInit: initials(CU.name),
@@ -3133,6 +3537,8 @@ async function doPostAd() {
     closeOverlay('ovPost');
     renderCats(); renderHome(); updateStats();
     showToast('Your ad is live! 🚀', '🚀');
+    // Celebrate
+    launchConfetti();
   } catch(e) {
     console.error('Post ad error:', e);
     showPostErr('Failed to publish. Please try again.');
@@ -3457,6 +3863,208 @@ function addTyping() {
 
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RATINGS SYSTEM
+═══════════════════════════════════════════════════════════ */
+let _currentRateSellerId = null;
+let _currentRateStars = 0;
+
+function getRatings(sellerId) {
+  const all = JSON.parse(localStorage.getItem('ya_ratings')||'[]');
+  return all.filter(r => r.sellerId === sellerId);
+}
+function saveRating(sellerId, stars, comment) {
+  const all = JSON.parse(localStorage.getItem('ya_ratings')||'[]');
+  // One review per reviewer per seller
+  const filtered = all.filter(r => !(r.sellerId===sellerId && r.reviewerId===CU.id));
+  filtered.push({ sellerId, reviewerId: CU.id, reviewerName: CU.name, stars, comment, ts: Date.now() });
+  localStorage.setItem('ya_ratings', JSON.stringify(filtered));
+}
+function openRateModal(sellerId, sellerName) {
+  if (!CU) return openAuth('login');
+  _currentRateSellerId = sellerId; _currentRateStars = 0;
+  document.getElementById('rateSellerName').textContent = `How was your experience with ${sellerName}?`;
+  document.getElementById('rateComment').value = '';
+  setRateStar(0);
+  openOverlay('ovRate');
+}
+function setRateStar(n) {
+  _currentRateStars = n;
+  document.querySelectorAll('.rate-star').forEach((s,i) => s.classList.toggle('lit', i<n));
+}
+function submitRating() {
+  if (!_currentRateStars) { showToast('Please select a star rating','⭐'); return; }
+  saveRating(_currentRateSellerId, _currentRateStars, document.getElementById('rateComment').value.trim());
+  closeOverlay('ovRate');
+  showToast('Rating submitted — thank you! ⭐', '⭐');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VERIFIED SELLERS
+═══════════════════════════════════════════════════════════ */
+function isSellerVerified(sellerId) {
+  // Sellers with 3+ 4-star reviews are auto-verified
+  const ratings = getRatings(sellerId);
+  const good = ratings.filter(r => r.stars >= 4);
+  return good.length >= 3;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REPORT LISTING
+═══════════════════════════════════════════════════════════ */
+let _reportAdId = null, _reportReason = null;
+function openReport(adId) {
+  _reportAdId = adId; _reportReason = null;
+  document.querySelectorAll('.report-opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('reportSubmitBtn').disabled = true;
+  openOverlay('ovReport');
+}
+function selectReport(el, reason) {
+  _reportReason = reason;
+  document.querySelectorAll('.report-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('reportSubmitBtn').disabled = false;
+}
+function submitReport() {
+  if (!_reportReason || !_reportAdId) return;
+  const reports = JSON.parse(localStorage.getItem('ya_reports')||'[]');
+  reports.push({ adId: _reportAdId, reason: _reportReason, ts: Date.now(), reporterId: CU?.id||'guest' });
+  localStorage.setItem('ya_reports', JSON.stringify(reports));
+  closeOverlay('ovReport');
+  showToast('Report submitted — we\'ll review it.', '🚩');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAKE AN OFFER
+═══════════════════════════════════════════════════════════ */
+function openOfferPanel(adId) {
+  const panel = document.getElementById('offerPanel'); if (!panel) return;
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) setTimeout(() => document.getElementById('offerAmt')?.focus(), 100);
+}
+async function sendOffer(adId, sellerId, sellerName, sellerInit) {
+  if (!CU) return openAuth('login');
+  const amt = parseFloat(document.getElementById('offerAmt')?.value);
+  if (!amt || amt <= 0) { showToast('Please enter a valid offer amount','⚠️'); return; }
+  const ad = _ads.find(a => a.id === adId);
+  const key = convKey(CU.id, sellerId, adId);
+  if (!_msgs[key]) {
+    _msgs[key] = { adId, adTitle: ad?.title||'', sellerName, sellerInit, sellerId,
+      buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name), messages: [] };
+  }
+  const offerText = `💰 Offer: J$${fmtN(amt)} for "${ad?.title||'this item'}"`;
+  try {
+    await sbSendMessage(key, _msgs[key], offerText);
+    document.getElementById('offerPanel')?.classList.remove('open');
+    closeOverlay('ovDetail');
+    currentConv = key; renderChat(key); openOverlay('ovChat');
+    showToast(`Offer of J$${fmtN(amt)} sent! 💰`, '💰');
+  } catch(e) { showToast('Could not send offer. Try again.','⚠️'); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SHARE AD
+═══════════════════════════════════════════════════════════ */
+async function shareAd(id) {
+  const ad = _ads.find(a => a.id === id); if (!ad) return;
+  const url = `${location.origin}${location.pathname}?ad=${id}`;
+  const shareData = { title: ad.title, text: `Check this out on YaadAds: ${ad.title} — J$${fmtN(ad.price)}`, url };
+  if (navigator.share) {
+    try { await navigator.share(shareData); return; } catch(e) { /* fallback */ }
+  }
+  // Clipboard fallback
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link copied to clipboard!','🔗');
+  } catch(e) {
+    showToast('Share: ' + url, '🔗');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FAVOURITES COUNT (for analytics)
+═══════════════════════════════════════════════════════════ */
+function getFavCount(id) {
+  // Count how many users have this in their local favs — approximate
+  return L.favs.includes(id) ? 1 : 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONFETTI CELEBRATION
+═══════════════════════════════════════════════════════════ */
+function launchConfetti() {
+  const colors = ['#f4c300','#005c35','#ffffff','#00703f','#ffd700'];
+  const count = 80;
+  const container = document.body;
+  for (let i=0; i<count; i++) {
+    const el = document.createElement('div');
+    const size = Math.random()*8+5;
+    const color = colors[Math.floor(Math.random()*colors.length)];
+    const startX = Math.random()*100;
+    const delay = Math.random()*0.8;
+    const duration = Math.random()*1.5+1.2;
+    el.style.cssText = `position:fixed;top:-10px;left:${startX}vw;width:${size}px;height:${size}px;background:${color};border-radius:${Math.random()>0.5?'50%':'2px'};z-index:9999;pointer-events:none;animation:confettiFall ${duration}s ${delay}s ease-in forwards;opacity:1;transform:rotate(${Math.random()*360}deg)`;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), (duration+delay+0.5)*1000);
+  }
+}
+// Inject confetti keyframes once
+if (!document.getElementById('confettiStyles')) {
+  const s = document.createElement('style');
+  s.id = 'confettiStyles';
+  s.textContent = '@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
+  document.head.appendChild(s);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVITY TICKER — live updates from _ads
+═══════════════════════════════════════════════════════════ */
+function updateTicker() {
+  const recent = [..._ads].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+  if (!recent.length) return;
+  const base = [
+    '🇯🇲 Jamaica\'s #1 free marketplace',
+    '✅ 100% free to post — always',
+    `📊 ${_ads.length} listings across all parishes`,
+    '💬 Chat directly with sellers',
+  ];
+  const live = recent.map(a => {
+    const cat = CATS.find(c=>c.id===a.category);
+    return `${cat?.icon||'📦'} New: ${a.title} — J$${fmtN(a.price)} · ${a.parish}`;
+  });
+  const items = [...live, ...base, ...live, ...base];
+  const track = document.getElementById('tickerTrack'); if (!track) return;
+  track.innerHTML = items.map(t => `<span class="ticker-item"><span class="ticker-dot"></span>${t}</span>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PWA INSTALL PROMPT
+═══════════════════════════════════════════════════════════ */
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); _pwaPrompt = e;
+  // Show banner after 30s if not dismissed
+  if (!localStorage.getItem('ya_pwa_dismissed')) {
+    setTimeout(() => document.getElementById('pwaBanner')?.classList.add('show'), 30000);
+  }
+});
+function pwaTriggerInstall() {
+  if (_pwaPrompt) { _pwaPrompt.prompt(); _pwaPrompt.userChoice.then(() => { _pwaPrompt = null; pwaDismiss(); }); }
+  else { showToast('Open in browser and use "Add to Home Screen"','📲'); pwaDismiss(); }
+}
+function pwaDismiss() {
+  document.getElementById('pwaBanner')?.classList.remove('show');
+  localStorage.setItem('ya_pwa_dismissed','1');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OPEN AD FROM URL PARAM (?ad=id)
+═══════════════════════════════════════════════════════════ */
+function checkUrlAdParam() {
+  const id = new URLSearchParams(location.search).get('ad');
+  if (id) { setTimeout(() => openDetail(id), 600); }
 }
 
 /* ═══════════════════════════════════════════════════════════
