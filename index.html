@@ -9,6 +9,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Cloudinary Upload Widget -->
 <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+<!-- SEO -->
+<meta name="description" content="YaadAds — Jamaica's free AI-powered classifieds. Buy and sell cars, property, electronics, jobs and more across all 14 parishes.">
+<meta name="keywords" content="Jamaica classifieds, buy sell Jamaica, YaadAds, Kingston ads, free ads Jamaica">
+<meta property="og:title" content="YaadAds — Jamaica's Free Marketplace">
+<meta property="og:description" content="Buy and sell anything across Jamaica. Cars, property, electronics, jobs and more — powered by AI.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0c1e14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -618,7 +627,19 @@ nav {
 .ad-price { font-family: var(--font-d); font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
 .ad-price.negotiable::after { content: ' · neg.'; font-size: 13px; font-weight: 400; color: var(--text-3); }
 .ad-title { font-weight: 600; font-size: 14px; color: var(--text-1); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ad-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-3); }
+.ad-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-3); align-items: center; flex-wrap: wrap; }
+.ad-views { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; font-size: 11px; color: var(--text-3); }
+.ad-views svg { width: 12px; height: 12px; opacity: .55; }
+/* Trending badge — shown when views > 80 */
+.trending-badge {
+  position: absolute; bottom: 10px; left: 10px;
+  background: linear-gradient(135deg, #ff6b35, #f7c59f);
+  color: #fff; font-size: 9px; font-weight: 800;
+  padding: 3px 8px; border-radius: 10px;
+  text-transform: uppercase; letter-spacing: .6px;
+  animation: trendPulse 2s ease-in-out infinite;
+}
+@keyframes trendPulse { 0%,100%{opacity:1} 50%{opacity:.75} }
 
 /* ═══════════════════════════════════════════════════════════
    FILTERS BAR
@@ -1126,14 +1147,29 @@ footer {
 .ai-sheet-send:hover { background: var(--green-mid); transform: scale(1.08); }
 .ai-sheet-send:disabled { opacity: .5; pointer-events: none; }
 .ai-sheet-hint { text-align: center; font-size: 11px; color: rgba(255,255,255,.25); margin-top: 8px; }
+/* Recent searches */
+.ai-sheet-recent { padding: 10px 20px 4px; flex-shrink: 0; }
+.sheet-recent-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.3); margin-bottom: 8px; }
+.sheet-recent-list { display: flex; gap: 7px; flex-wrap: wrap; }
+.sheet-recent-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.65); padding: 5px 12px; border-radius: 16px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: var(--font-b); transition: all .15s;
+}
+.sheet-recent-chip:hover { background: rgba(255,255,255,.14); color: #fff; }
+.src-chip-icon { font-size: 11px; opacity: .7; }
+/* Send button loading */
+.ai-sheet-send.sending { animation: sendPulse .8s ease-in-out infinite; }
+@keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
 </style>
 </head>
 <body>
 
-<!-- SETUP BANNER -->
-<div class="setup-banner" id="setupBanner">
-  ⚡ <strong>Demo Mode</strong> — Listings only visible to you.
-  <a href="#" onclick="openSetupGuide();return false">Connect Supabase for a live shared marketplace →</a>
+<!-- LIVE BANNER (hidden — shown only on error) -->
+<div class="setup-banner" id="setupBanner" style="display:none">
+  ⚠️ <strong>Connection issue</strong> — Check your Supabase setup.
 </div>
 
 <!-- NAV -->
@@ -1163,7 +1199,8 @@ footer {
           <span class="ai-icon">🤖</span>
           <input class="ai-search-input" id="aiInput" type="text"
             placeholder="e.g. cheap phone under 80k in Kingston, or house under 15 million…"
-            onkeydown="if(event.key==='Enter')runAiSearch()"
+            onkeydown="if(event.key==='Enter'){clearTimeout(window._aiDebounce);runAiSearch();}"
+            oninput="clearTimeout(window._aiDebounce);if(this.value.length>4){window._aiDebounce=setTimeout(runAiSearch,700);}"
             onfocus="if(window.innerWidth<=640){this.blur();openAiSheet();}">
           <button class="ai-search-btn" id="aiBtn" onclick="runAiSearch()">
             <span id="aiBtnLabel">Ask AI</span>
@@ -1427,6 +1464,12 @@ footer {
     <button class="ai-sheet-close" onclick="closeAiSheet()">✕</button>
   </div>
 
+  <!-- Recent searches (populated by JS) -->
+  <div class="ai-sheet-recent" id="sheetRecentWrap" style="display:none">
+    <div class="sheet-recent-label">Recent searches</div>
+    <div class="sheet-recent-list" id="sheetRecentList"></div>
+  </div>
+
   <!-- Quick suggestions inside sheet -->
   <div class="ai-sheet-sugs" id="sheetSugs">
     <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
@@ -1465,16 +1508,49 @@ footer {
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   ⚙️  CONFIG — Fill in to enable shared data & image uploads
+   ⚙️  CONFIG — Production credentials
+   
+   SUPABASE SQL — run this once in the SQL Editor:
+   
+   create table if not exists users (
+     id text primary key, name text, email text unique,
+     phone text, parish text, password text, joined timestamptz default now()
+   );
+   create table if not exists ads (
+     id text primary key, title text, category text, parish text,
+     price numeric, description text, phone text, image_url text,
+     negotiable boolean default false, seller_name text, seller_init text,
+     seller_id text, status text default 'active', views integer default 0,
+     created_at timestamptz default now()
+   );
+   create table if not exists messages (
+     id text primary key, conversation_key text, from_user_id text,
+     text text, read boolean default false,
+     ad_id text, ad_title text, seller_id text, seller_name text, seller_init text,
+     buyer_id text, buyer_name text, buyer_init text,
+     created_at timestamptz default now()
+   );
+   alter table ads    enable row level security;
+   alter table users  enable row level security;
+   alter table messages enable row level security;
+   create policy "Public read ads"     on ads      for select using (true);
+   create policy "Public insert ads"   on ads      for insert with check (true);
+   create policy "Public update ads"   on ads      for update using (true);
+   create policy "Public delete ads"   on ads      for delete using (true);
+   create policy "Public read users"   on users    for select using (true);
+   create policy "Public insert users" on users    for insert with check (true);
+   create policy "Public read msgs"    on messages for select using (true);
+   create policy "Public insert msgs"  on messages for insert with check (true);
+   create policy "Public update msgs"  on messages for update using (true);
 ═══════════════════════════════════════════════════════════ */
 const CFG = {
   supabase: {
-    url:  '',   // e.g. 'https://xxxx.supabase.co'
-    key:  '',   // your anon/public key
+    url: 'https://cquwshpsfybvgqodbxsf.supabase.co',
+    key: 'sb_publishable_j9j7NG5GhMeXqiiFnEAO-w_jeMnyY1n',
   },
   cloudinary: {
-    cloud:  '',  // e.g. 'my-cloud-name'
-    preset: '',  // unsigned upload preset name
+    cloud:  '',   // optional: add Cloudinary cloud name for image hosting
+    preset: '',   // optional: unsigned upload preset
   },
 };
 
@@ -1499,91 +1575,325 @@ const CATS = [
 const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon','St. Catherine'];
 
 const DEMO = [
-  {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false},
-  {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true},
-  {id:'d3',title:'iPhone 14 Pro 256GB — Like New',category:'electronics',price:95000,parish:'St. James',desc:'Used 6 months only. Deep purple. Original box, charger & case included. No cracks. Battery 98%. Last price.',seller:'Kezia Brown',sellerInit:'KB',sellerId:'s3',phone:'876-654-3210',date:'2025-06-05',image:'',status:'active',neg:false},
-  {id:'d4',title:'Graphic Designer — Logos, Flyers & Social',category:'services',price:5000,parish:'St. Andrew',desc:'Professional designer, 5+ years experience. Logos, flyers, business cards, Instagram content. Fast turnaround. WhatsApp for portfolio.',seller:'Andre Thomas',sellerInit:'AT',sellerId:'s4',phone:'876-789-0123',date:'2025-06-06',image:'',status:'active',neg:true},
-  {id:'d5',title:'Fresh Ackee & Saltfish — Free Delivery',category:'food',price:1500,parish:'Clarendon',desc:'Fresh ackee from my own tree, cleaned and ready. Saltfish packages available. Free delivery within Clarendon.',seller:'Miss Gloria',sellerInit:'MG',sellerId:'s5',phone:'876-555-1234',date:'2025-06-07',image:'',status:'active',neg:false},
-  {id:'d6',title:'Yamaha Guitar + Amp Bundle',category:'music',price:35000,parish:'Kingston',desc:'Yamaha Pacifica 112V in sonic blue. 15W amp, cable, strap & picks included. Perfect for beginners.',seller:'Justin Lee',sellerInit:'JL',sellerId:'s6',phone:'876-234-5678',date:'2025-06-08',image:'',status:'active',neg:false},
-  {id:'d7',title:'Samsung 65" 4K Smart TV',category:'electronics',price:85000,parish:'St. Andrew',desc:'Samsung 65" 4K UHD Smart TV. Netflix, YouTube, Disney+ built-in. Bought 1 year ago, upgrading. Pickup only.',seller:'Troy Brown',sellerInit:'TB',sellerId:'s7',phone:'876-111-2222',date:'2025-06-09',image:'',status:'active',neg:true},
-  {id:'d8',title:'Vacant Lot for Sale — Portmore',category:'property',price:4500000,parish:'St. Catherine',desc:'800 sq ft residential lot in gated community. Survey done, title available. Owner moving abroad.',seller:'Pearl Watson',sellerInit:'PW',sellerId:'s8',phone:'876-777-8888',date:'2025-06-10',image:'',status:'active',neg:false},
+  {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
+  {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
+  {id:'d3',title:'iPhone 14 Pro 256GB — Like New',category:'electronics',price:95000,parish:'St. James',desc:'Used 6 months only. Deep purple. Original box, charger & case included. No cracks. Battery 98%. Last price.',seller:'Kezia Brown',sellerInit:'KB',sellerId:'s3',phone:'876-654-3210',date:'2025-06-05',image:'',status:'active',neg:false, views:124},
+  {id:'d4',title:'Graphic Designer — Logos, Flyers & Social',category:'services',price:5000,parish:'St. Andrew',desc:'Professional designer, 5+ years experience. Logos, flyers, business cards, Instagram content. Fast turnaround. WhatsApp for portfolio.',seller:'Andre Thomas',sellerInit:'AT',sellerId:'s4',phone:'876-789-0123',date:'2025-06-06',image:'',status:'active',neg:true, views:31},
+  {id:'d5',title:'Fresh Ackee & Saltfish — Free Delivery',category:'food',price:1500,parish:'Clarendon',desc:'Fresh ackee from my own tree, cleaned and ready. Saltfish packages available. Free delivery within Clarendon.',seller:'Miss Gloria',sellerInit:'MG',sellerId:'s5',phone:'876-555-1234',date:'2025-06-07',image:'',status:'active',neg:false, views:19},
+  {id:'d6',title:'Yamaha Guitar + Amp Bundle',category:'music',price:35000,parish:'Kingston',desc:'Yamaha Pacifica 112V in sonic blue. 15W amp, cable, strap & picks included. Perfect for beginners.',seller:'Justin Lee',sellerInit:'JL',sellerId:'s6',phone:'876-234-5678',date:'2025-06-08',image:'',status:'active',neg:false, views:66},
+  {id:'d7',title:'Samsung 65" 4K Smart TV',category:'electronics',price:85000,parish:'St. Andrew',desc:'Samsung 65" 4K UHD Smart TV. Netflix, YouTube, Disney+ built-in. Bought 1 year ago, upgrading. Pickup only.',seller:'Troy Brown',sellerInit:'TB',sellerId:'s7',phone:'876-111-2222',date:'2025-06-09',image:'',status:'active',neg:true, views:91},
+  {id:'d8',title:'Vacant Lot for Sale — Portmore',category:'property',price:4500000,parish:'St. Catherine',desc:'800 sq ft residential lot in gated community. Survey done, title available. Owner moving abroad.',seller:'Pearl Watson',sellerInit:'PW',sellerId:'s8',phone:'876-777-8888',date:'2025-06-10',image:'',status:'active',neg:false, views:38},
 ];
 
 /* ═══════════════════════════════════════════════════════════
-   STORAGE LAYER (swappable with Supabase)
+   SUPABASE CLIENT
 ═══════════════════════════════════════════════════════════ */
-let _db = null;
-if (CFG.supabase.url && CFG.supabase.key) {
-  _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
-}
+const _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
 
+/* ═══════════════════════════════════════════════════════════
+   IN-MEMORY CACHE (populated on init, kept in sync)
+═══════════════════════════════════════════════════════════ */
+let _ads  = [];        // live ads cache from Supabase
+let _msgs = {};        // messages cache (keyed by conversation)
+
+/* ═══════════════════════════════════════════════════════════
+   LOCAL-ONLY STORAGE (preferences, session, favourites)
+   These stay in localStorage — they're per-device by design
+═══════════════════════════════════════════════════════════ */
 const L = {
-  get users()    { return JSON.parse(localStorage.getItem('ya_users') || '[]'); },
-  set users(v)   { localStorage.setItem('ya_users', JSON.stringify(v)); },
-  get ads()      { return JSON.parse(localStorage.getItem('ya_ads')   || JSON.stringify(DEMO)); },
-  set ads(v)     { localStorage.setItem('ya_ads', JSON.stringify(v)); },
   get sess()     { return JSON.parse(localStorage.getItem('ya_sess')  || 'null'); },
   set sess(v)    { localStorage.setItem('ya_sess', JSON.stringify(v)); },
   get favs()     { return JSON.parse(localStorage.getItem('ya_favs')  || '[]'); },
   set favs(v)    { localStorage.setItem('ya_favs', JSON.stringify(v)); },
-  get msgs()     { return JSON.parse(localStorage.getItem('ya_msgs')  || '{}'); },
-  set msgs(v)    { localStorage.setItem('ya_msgs', JSON.stringify(v)); },
+  get searches() { return JSON.parse(localStorage.getItem('ya_searches') || '[]'); },
+  set searches(v){ localStorage.setItem('ya_searches', JSON.stringify(v.slice(0,8))); },
+  // ads now use the _ads cache — L.ads stays for compatibility
+  get ads()      { return _ads; },
 };
+
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE DATA FUNCTIONS
+═══════════════════════════════════════════════════════════ */
+
+// Load all active ads into cache
+async function loadAds() {
+  const { data, error } = await _db.from('ads')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
+  _ads = (data || []).map(dbToAd);
+  if (!_ads.length) _ads = DEMO; // fallback to demo if DB empty
+}
+
+// Map DB row → app ad object
+function dbToAd(row) {
+  return {
+    id:         row.id,
+    title:      row.title,
+    category:   row.category,
+    parish:     row.parish,
+    price:      row.price,
+    desc:       row.description,
+    phone:      row.phone,
+    image:      row.image_url || '',
+    neg:        row.negotiable,
+    seller:     row.seller_name,
+    sellerInit: row.seller_init,
+    sellerId:   row.seller_id,
+    date:       row.created_at,
+    status:     row.status || 'active',
+    views:      row.views || 0,
+  };
+}
+
+// Map app ad object → DB row
+function adToDb(ad) {
+  return {
+    id:          ad.id,
+    title:       ad.title,
+    category:    ad.category,
+    parish:      ad.parish,
+    price:       ad.price,
+    description: ad.desc,
+    phone:       ad.phone,
+    image_url:   ad.image || '',
+    negotiable:  ad.neg || false,
+    seller_name: ad.seller,
+    seller_init: ad.sellerInit,
+    seller_id:   ad.sellerId,
+    status:      ad.status || 'active',
+    views:       ad.views || 0,
+  };
+}
+
+// Insert a new ad
+async function sbInsertAd(ad) {
+  const { error } = await _db.from('ads').insert(adToDb(ad));
+  if (error) throw error;
+  _ads.unshift(ad);
+}
+
+// Update ad status (active/sold)
+async function sbUpdateAdStatus(id, status) {
+  const { error } = await _db.from('ads').update({ status }).eq('id', id);
+  if (error) throw error;
+  const ad = _ads.find(a => a.id === id);
+  if (ad) ad.status = status;
+}
+
+// Delete an ad
+async function sbDeleteAd(id) {
+  const { error } = await _db.from('ads').delete().eq('id', id);
+  if (error) throw error;
+  _ads = _ads.filter(a => a.id !== id);
+}
+
+// Increment views
+async function sbIncrView(id) {
+  const ad = _ads.find(a => a.id === id);
+  if (!ad) return;
+  ad.views = (ad.views || 0) + 1;
+  // Fire-and-forget — don't block UI
+  _db.from('ads').update({ views: ad.views }).eq('id', id).then(({error}) => {
+    if (error) console.warn('view update:', error);
+  });
+}
+
+// ── USER AUTH ──────────────────────────────────────────
+
+async function sbRegister(name, email, phone, parish, password) {
+  // Check duplicate email
+  const { data: existing } = await _db.from('users').select('id').eq('email', email).single();
+  if (existing) throw new Error('An account with that email already exists.');
+  const user = {
+    id: 'u' + Date.now(),
+    name, email, phone, parish,
+    password,          // NOTE: hash passwords server-side in a real app
+    joined: new Date().toISOString(),
+  };
+  const { error } = await _db.from('users').insert(user);
+  if (error) throw error;
+  return { id: user.id, name, email, phone, parish };
+}
+
+async function sbLogin(email, password) {
+  const { data, error } = await _db.from('users')
+    .select('id,name,email,phone,parish')
+    .eq('email', email).eq('password', password).single();
+  if (error || !data) throw new Error('Incorrect email or password.');
+  return data;
+}
+
+// ── MESSAGES ──────────────────────────────────────────
+
+async function loadMessages() {
+  if (!CU) return;
+  const { data, error } = await _db.from('messages')
+    .select('*')
+    .or(`seller_id.eq.${CU.id},buyer_id.eq.${CU.id}`)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('loadMessages:', error); return; }
+  // Rebuild _msgs cache keyed by conversation_key
+  _msgs = {};
+  for (const row of (data || [])) {
+    const key = row.conversation_key;
+    if (!_msgs[key]) {
+      _msgs[key] = {
+        adId: row.ad_id, adTitle: row.ad_title,
+        sellerId: row.seller_id, sellerName: row.seller_name, sellerInit: row.seller_init,
+        buyerId: row.buyer_id,   buyerName: row.buyer_name,   buyerInit: row.buyer_init,
+        messages: [],
+      };
+    }
+    _msgs[key].messages.push({
+      id: row.id, from: row.from_user_id, text: row.text,
+      ts: new Date(row.created_at).getTime(), read: row.read,
+    });
+  }
+}
+
+async function sbSendMessage(convKey, meta, text) {
+  const row = {
+    id: 'm' + Date.now(),
+    conversation_key: convKey,
+    from_user_id: CU.id,
+    text,
+    read: false,
+    ad_id:       meta.adId,
+    ad_title:    meta.adTitle,
+    seller_id:   meta.sellerId,
+    seller_name: meta.sellerName,
+    seller_init: meta.sellerInit,
+    buyer_id:    meta.buyerId,
+    buyer_name:  meta.buyerName,
+    buyer_init:  meta.buyerInit,
+  };
+  const { error } = await _db.from('messages').insert(row);
+  if (error) throw error;
+  // Update local cache
+  if (!_msgs[convKey]) _msgs[convKey] = { ...meta, messages: [] };
+  _msgs[convKey].messages.push({ id: row.id, from: CU.id, text, ts: Date.now(), read: false });
+}
+
+async function sbMarkRead(convKey) {
+  if (!CU || !_msgs[convKey]) return;
+  const unreadIds = _msgs[convKey].messages
+    .filter(m => m.from !== CU.id && !m.read).map(m => m.id);
+  if (!unreadIds.length) return;
+  _msgs[convKey].messages.forEach(m => { if (m.from !== CU.id) m.read = true; });
+  _db.from('messages').update({ read: true }).in('id', unreadIds); // fire-and-forget
+}
+
+// ── UNREAD COUNT ───────────────────────────────────────
+function unreadCount() {
+  if (!CU) return 0;
+  return Object.values(_msgs)
+    .filter(c => c.sellerId===CU.id || c.buyerId===CU.id)
+    .reduce((n,c) => n + c.messages.filter(m => m.from!==CU.id && !m.read).length, 0);
+}
 
 /* ═══════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════ */
-let CU = L.sess;       // current user
-let activeF = 'all';   // active category filter
-let searchQ = '';      // search query
-let uploadUrl = '';    // current upload image url
-let currentConv = null;// current open conversation
+let CU = L.sess;          // current user (from localStorage)
+let activeF = 'all';      // active category filter
+let searchQ = '';         // search query
+let uploadUrl = '';       // current upload image url
+let currentConv = null;   // current open conversation
 let currentPostStep = 1;
 
 /* ═══════════════════════════════════════════════════════════
-   INIT
+   INIT — async boot sequence
 ═══════════════════════════════════════════════════════════ */
-function init() {
-  if (!localStorage.getItem('ya_ads')) L.ads = DEMO;
+async function init() {
   fillParishSelects();
   fillCatSelect();
   renderNav();
+
+  // Show skeleton while loading from Supabase
+  showSkeletons();
+  document.getElementById('resultsHeader').style.display = 'none';
+
+  try {
+    await loadAds();
+    if (CU) await loadMessages();
+  } catch(e) {
+    console.error('Init load error:', e);
+    _ads = DEMO;
+  }
+
   renderCats();
   renderHome();
   updateStats();
   updateMsgBadge();
-  if (!CFG.supabase.url) document.getElementById('setupBanner').classList.add('show');
+  // Hide setup banner — we're connected
+  document.getElementById('setupBanner')?.classList.remove('show');
   startNavPlaceholderCycle();
+
+  // Real-time subscription: new ads from other users
+  _db.channel('ads-changes')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads' }, payload => {
+      const incoming = dbToAd(payload.new);
+      if (!_ads.find(a => a.id === incoming.id)) {
+        _ads.unshift(incoming);
+        renderCats();
+        renderHome();
+        updateStats();
+        showToast('New listing just posted! 🆕', '🆕');
+      }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ads' }, payload => {
+      const idx = _ads.findIndex(a => a.id === payload.new.id);
+      if (idx > -1) _ads[idx] = dbToAd(payload.new);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'ads' }, payload => {
+      _ads = _ads.filter(a => a.id !== payload.old.id);
+      renderCats(); renderHome(); updateStats();
+    })
+    .subscribe();
+
+  // Real-time messages for logged-in users
+  if (CU) subscribeMessages();
 }
 
-function startNavPlaceholderCycle() {
-  const phrases = [
-    'Ask AI or search listings…',
-    'Try: cheap car under 2 million',
-    'Try: phone under 80k in Kingston',
-    'Try: house for sale in St. Andrew',
-    'Ask: how do I post an ad?',
-    'Try: jobs available in MoBay',
-    'Ask: is YaadAds free?',
-    'Try: budget laptop under 100000',
-  ];
-  let idx = 0;
-  const el = document.getElementById('navAiPlaceholder');
-  if (!el) return;
-  setInterval(() => {
-    idx = (idx + 1) % phrases.length;
-    el.style.opacity = '0';
-    el.style.transition = 'opacity .3s';
-    setTimeout(() => {
-      el.textContent = phrases[idx];
-      el.style.opacity = '1';
-    }, 320);
-  }, 3800);
+function subscribeMessages() {
+  _db.channel('msg-changes')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
+      const row = payload.new;
+      // Only process messages relevant to current user
+      if (row.seller_id !== CU.id && row.buyer_id !== CU.id) return;
+      if (row.from_user_id === CU.id) return; // own messages
+      const key = row.conversation_key;
+      if (!_msgs[key]) {
+        _msgs[key] = {
+          adId: row.ad_id, adTitle: row.ad_title,
+          sellerId: row.seller_id, sellerName: row.seller_name, sellerInit: row.seller_init,
+          buyerId: row.buyer_id,   buyerName: row.buyer_name,   buyerInit: row.buyer_init,
+          messages: [],
+        };
+      }
+      _msgs[key].messages.push({
+        id: row.id, from: row.from_user_id, text: row.text,
+        ts: new Date(row.created_at).getTime(), read: false,
+      });
+      updateMsgBadge();
+      if (currentConv === key) renderChat(key);
+      showToast('New message received 💬', '💬');
+    })
+    .subscribe();
 }
+
+function startNavPlaceholderCycle() {} // nav search removed
 
 function updateStats() {
-  document.getElementById('sStat').textContent = L.ads.length;
-  document.getElementById('uStat').textContent = L.users.length + 1;
+  const el = document.getElementById('sStat');
+  if (el) el.textContent = _ads.length;
+  // Fetch user count from Supabase async (non-blocking)
+  _db.from('users').select('id', { count: 'exact', head: true })
+    .then(({ count }) => {
+      const el = document.getElementById('uStat');
+      if (el) el.textContent = (count || 1);
+    });
 }
 
 function fillParishSelects() {
@@ -1627,7 +1937,7 @@ function renderNav() {
 ═══════════════════════════════════════════════════════════ */
 function goHome() {
   activeF = 'all'; searchQ = '';
-  document.getElementById('navSearch').value = '';
+  // navSearch removed
   const inp = document.getElementById('aiInput');
   if (inp) inp.value = '';
   hideAiResponse();
@@ -1684,29 +1994,82 @@ function catFilter(id) {
 /* ═══════════════════════════════════════════════════════════
    LISTING RENDERING
 ═══════════════════════════════════════════════════════════ */
+function scoreAd(ad, terms) {
+  // Relevance scoring: title match > category name match > desc match
+  const title = (ad.title||'').toLowerCase();
+  const desc  = (ad.desc||'').toLowerCase();
+  const par   = (ad.parish||'').toLowerCase();
+  const cat   = (CATS.find(c=>c.id===ad.category)?.name||'').toLowerCase();
+  let score = 0;
+  for (const t of terms) {
+    if (title.startsWith(t))       score += 10;
+    else if (title.includes(t))    score += 6;
+    if (cat.includes(t))           score += 4;
+    if (par.includes(t))           score += 3;
+    if (desc.includes(t))          score += 2;
+  }
+  // Boost active listings and recently posted
+  if (ad.status === 'active') score += 2;
+  const ageDays = (Date.now() - new Date(ad.date||0)) / 86400000;
+  if (ageDays < 7)  score += 3;
+  if (ageDays < 30) score += 1;
+  return score;
+}
+
 function getFiltered(q, cat, sort) {
-  let ads = L.ads;
+  let ads = [...L.ads];
   if (cat && cat !== 'all') ads = ads.filter(a => a.category === cat);
-  if (q) { const lq = q.toLowerCase(); ads = ads.filter(a => a.title.toLowerCase().includes(lq) || a.desc.toLowerCase().includes(lq) || a.parish.toLowerCase().includes(lq)); }
-  if (sort === 'price-lo') return [...ads].sort((a,b) => a.price - b.price);
-  if (sort === 'price-hi') return [...ads].sort((a,b) => b.price - a.price);
-  return [...ads].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+
+  if (q && q.trim()) {
+    const terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 1);
+    // Include ad if ANY term matches title, desc, parish, or category name
+    ads = ads.filter(a => {
+      const hay = [a.title, a.desc, a.parish, CATS.find(c=>c.id===a.category)?.name||'']
+        .join(' ').toLowerCase();
+      return terms.some(t => hay.includes(t));
+    });
+    // Sort by relevance score when searching (unless user picked a sort)
+    if (!sort || sort === 'newest') {
+      return ads.sort((a,b) => scoreAd(b,terms) - scoreAd(a,terms));
+    }
+  }
+
+  if (sort === 'price-lo') return ads.sort((a,b) => a.price - b.price);
+  if (sort === 'price-hi') return ads.sort((a,b) => b.price - a.price);
+  return ads.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+}
+
+function getViews(id) {
+  const ad = _ads.find(a => a.id === id);
+  return ad ? (ad.views || 0) : 0;
 }
 
 function cardHTML(ad, idx) {
-  const cat = CATS.find(c => c.id === ad.category);
-  const img = ad.image ? `<img src="${ad.image}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:56px>${cat?.icon||'📦'}</span>'">` : `<span style="font-size:56px">${cat?.icon||'📦'}</span>`;
-  const fav = isFav(ad.id) ? '❤️' : '🤍';
-  const tag = ad.status === 'sold' ? `<span class="sold-tag">SOLD</span>` : `<span class="ad-cat-tag">${cat?.name||'Other'}</span>`;
-  const delay = idx !== undefined ? `animation-delay:${Math.min(idx * 0.06, 0.5)}s` : '';
+  const cat   = CATS.find(c => c.id === ad.category);
+  const img   = ad.image
+    ? `<img src="${ad.image}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:56px>${cat?.icon||'📦'}</span>'">`
+    : `<span style="font-size:56px">${cat?.icon||'📦'}</span>`;
+  const fav   = isFav(ad.id) ? '❤️' : '🤍';
+  const tag   = ad.status === 'sold'
+    ? `<span class="sold-tag">SOLD</span>`
+    : `<span class="ad-cat-tag">${cat?.name||'Other'}</span>`;
+  const views = getViews(ad.id);
+  const trending = views >= 80 && ad.status !== 'sold'
+    ? `<span class="trending-badge">🔥 Hot</span>` : '';
+  const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.06,0.5)}s` : '';
+  const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
-    <div class="ad-card-img">${img}${tag}
+    <div class="ad-card-img">${img}${tag}${trending}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
       <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
       <div class="ad-title">${ad.title}</div>
-      <div class="ad-meta"><span>📍 ${ad.parish}</span><span>🕐 ${ago(ad.date)}</span></div>
+      <div class="ad-meta">
+        <span>📍 ${ad.parish}</span>
+        <span>🕐 ${ago(ad.date)}</span>
+        <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
+      </div>
     </div>
   </div>`;
 }
@@ -1768,6 +2131,9 @@ async function runAiSearch() {
   const inp = document.getElementById('aiInput');
   const query = (inp?.value || '').trim();
   if (!query) return;
+
+  // Save to recent searches
+  saveRecentSearch(query);
 
   const btn = document.getElementById('aiBtn');
   const lbl = document.getElementById('aiBtnLabel');
@@ -1896,13 +2262,29 @@ RULES:
     let count;
     if (parsed.type === 'search' && parsed.filters) {
       const f = parsed.filters;
+      // Single category → use category filter; multiple or none → all
       if (f.categories && f.categories.length === 1) activeF = f.categories[0];
       else activeF = 'all';
-      searchQ = (f.keywords || []).join(' ');
+      // Keywords exclude price-like tokens and parish names
+      const kw = (f.keywords || []).filter(k => !/^\d+/.test(k) && k.length > 1);
+      searchQ = kw.join(' ');
       window._aiFilters = f;
       renderCats();
       count = renderHome();
       delete window._aiFilters;
+      // If 0 results, try broadening: drop category filter
+      if (count === 0 && activeF !== 'all') {
+        activeF = 'all';
+        window._aiFilters = f;
+        renderCats();
+        count = renderHome();
+        delete window._aiFilters;
+        if (count > 0) {
+          // Update AI message to note broadened search
+          showAiResponse('No exact matches — showing similar results from all categories.', count);
+          scrollToResults(); return;
+        }
+      }
     } else {
       activeF = 'all'; searchQ = '';
       renderCats();
@@ -2057,13 +2439,20 @@ function togFav(id, btn) {
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
   const ad = L.ads.find(a => a.id === id); if (!ad) return;
-  const cat = CATS.find(c => c.id === ad.category);
-  const img = ad.image ? `<img src="${ad.image}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:90px>${cat?.icon||'📦'}</span>'">` : `<span style="font-size:90px">${cat?.icon||'📦'}</span>`;
-  const wa  = `https://wa.me/1${(ad.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent('Hi! I saw your ad on YaadAds: '+ad.title)}`;
-  const clr = avatarColor(ad.seller||'?');
-  const ini = ad.sellerInit || initials(ad.seller||'?');
+  // Increment view counter (async, non-blocking)
+  sbIncrView(id);
+
+  const cat   = CATS.find(c => c.id === ad.category);
+  const img   = ad.image
+    ? `<img src="${ad.image}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:90px>${cat?.icon||'📦'}</span>'">`
+    : `<span style="font-size:90px">${cat?.icon||'📦'}</span>`;
+  const wa    = `https://wa.me/1${(ad.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent('Hi! I saw your ad on YaadAds: '+ad.title)}`;
+  const clr   = avatarColor(ad.seller||'?');
+  const ini   = ad.sellerInit || initials(ad.seller||'?');
   const isMine = CU && CU.id === ad.sellerId;
   const soldBtn = isMine ? `<button class="btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm" onclick="toggleSold('${ad.id}')">${ad.status==='sold'?'Mark Active':'Mark Sold'}</button>` : '';
+  const totalViews = getViews(id);
+  const eyeSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   document.getElementById('detailInner').innerHTML = `
     <div class="detail-img${ad.status==='sold'?' sold':''}">${img}${ad.status==='sold'?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center"><span style="background:#000;color:#fff;font-size:24px;font-weight:700;padding:10px 28px;border-radius:8px;font-family:var(--font-d)">SOLD</span></div>':''}</div>
     <div class="detail-body">
@@ -2073,6 +2462,7 @@ function openDetail(id) {
         <span class="dtag">📍 ${ad.parish}</span>
         <span class="dtag">🏷️ ${cat?.name||'Other'}</span>
         <span class="dtag">🕐 ${ago(ad.date)}</span>
+        <span class="dtag" style="display:inline-flex;align-items:center;gap:4px">${eyeSvg} ${fmtN(totalViews)} view${totalViews!==1?'s':''}</span>
         ${ad.status==='sold'?'<span class="dtag" style="background:#f0f0f0;padding:3px 10px;border-radius:12px;font-weight:600">SOLD</span>':''}
       </div>
       <p class="detail-desc">${ad.desc}</p>
@@ -2094,13 +2484,17 @@ function openDetail(id) {
   openOverlay('ovDetail');
 }
 
-function toggleSold(id) {
-  const ads = L.ads; const ad = ads.find(a => a.id === id); if (!ad) return;
-  ad.status = ad.status === 'sold' ? 'active' : 'sold';
-  L.ads = ads;
-  closeOverlay('ovDetail');
-  renderHome(); renderCats(); updateStats();
-  showToast(ad.status==='sold'?'Marked as sold ✓':'Marked as active ✓', ad.status==='sold'?'🏷️':'✅');
+async function toggleSold(id) {
+  const ad = _ads.find(a => a.id === id); if (!ad) return;
+  const newStatus = ad.status === 'sold' ? 'active' : 'sold';
+  try {
+    await sbUpdateAdStatus(id, newStatus);
+    closeOverlay('ovDetail');
+    renderHome(); renderCats(); updateStats();
+    showToast(newStatus==='sold'?'Marked as sold ✓':'Marked as active ✓', newStatus==='sold'?'🏷️':'✅');
+  } catch(e) {
+    showToast('Update failed. Try again.', '⚠️');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2144,17 +2538,21 @@ function convKey(uid1, uid2, adId) {
   return [uid1, uid2].sort().join('__') + '__' + adId;
 }
 
-function openChat(adId, sellerId, sellerName, sellerInit) {
+async function openChat(adId, sellerId, sellerName, sellerInit) {
   if (!CU) return openAuth('login');
   if (CU.id === sellerId) return showToast("That's your own listing.",'ℹ️');
 
-  const ad = L.ads.find(a => a.id === adId);
+  const ad = _ads.find(a => a.id === adId);
   const key = convKey(CU.id, sellerId, adId);
-  const msgs = L.msgs;
-  if (!msgs[key]) msgs[key] = { adId, adTitle: ad?.title||'', sellerName, sellerInit, sellerId, buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name), messages: [] };
-  // Mark as read
-  msgs[key].messages.forEach(m => { if (m.from !== CU.id) m.read = true; });
-  L.msgs = msgs;
+  if (!_msgs[key]) {
+    _msgs[key] = {
+      adId, adTitle: ad?.title||'',
+      sellerName, sellerInit, sellerId,
+      buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name),
+      messages: [],
+    };
+  }
+  await sbMarkRead(key);
   currentConv = key;
   renderChat(key);
   closeOverlay('ovDetail');
@@ -2163,7 +2561,7 @@ function openChat(adId, sellerId, sellerName, sellerInit) {
 }
 
 function renderChat(key) {
-  const msgs = L.msgs;
+  const msgs = _msgs;
   const conv = msgs[key];
   if (!conv) return;
   const isbuyer = CU.id === conv.buyerId;
@@ -2197,18 +2595,21 @@ function renderChat(key) {
   setTimeout(() => { const el = document.getElementById('chatMsgs'); if (el) el.scrollTop = el.scrollHeight; }, 50);
 }
 
-function sendMsg() {
+async function sendMsg() {
   const input = document.getElementById('chatInput');
   const text = input?.value.trim();
   if (!text || !currentConv) return;
-  const msgs = L.msgs;
-  const conv = msgs[currentConv];
+  const conv = _msgs[currentConv];
   if (!conv) return;
-  conv.messages.push({ from: CU.id, text, ts: Date.now(), read: false });
-  L.msgs = msgs;
   input.value = '';
-  renderChat(currentConv);
-  updateMsgBadge();
+  try {
+    await sbSendMessage(currentConv, conv, text);
+    renderChat(currentConv);
+    updateMsgBadge();
+  } catch(e) {
+    input.value = text;
+    showToast('Message failed to send. Try again.', '⚠️');
+  }
 }
 
 function renderInbox() {
@@ -2216,7 +2617,7 @@ function renderInbox() {
     document.getElementById('inboxList').innerHTML = `<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth('login')">Log In</button></div>`;
     return;
   }
-  const msgs = L.msgs;
+  const msgs = _msgs;
   const myConvs = Object.entries(msgs).filter(([k,c]) => c.sellerId===CU.id || c.buyerId===CU.id);
   if (!myConvs.length) {
     document.getElementById('inboxList').innerHTML = `<div class="empty"><div class="empty-icon">💬</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>`;
@@ -2247,10 +2648,9 @@ function renderInbox() {
   }).join('');
 }
 
-function openChatFromInbox(key) {
-  const msgs = L.msgs; const conv = msgs[key]; if (!conv) return;
-  conv.messages.forEach(m => { if (m.from !== CU.id) m.read = true; });
-  L.msgs = msgs;
+async function openChatFromInbox(key) {
+  const conv = _msgs[key]; if (!conv) return;
+  await sbMarkRead(key);
   currentConv = key;
   renderChat(key);
   openOverlay('ovChat');
@@ -2259,9 +2659,7 @@ function openChatFromInbox(key) {
 }
 
 function updateMsgBadge() {
-  if (!CU) return;
-  const count = Object.values(L.msgs).filter(c => c.sellerId===CU.id||c.buyerId===CU.id)
-    .reduce((n,c) => n + c.messages.filter(m=>m.from!==CU.id&&!m.read).length, 0);
+  const count = unreadCount();
   const badge = document.getElementById('mobMsgBadge');
   if (badge) { badge.textContent = count||''; badge.classList.toggle('show', count>0); }
 }
@@ -2294,10 +2692,15 @@ function renderMyAds() {
   }).join('');
 }
 
-function delAd(id) {
+async function delAd(id) {
   if (!confirm('Delete this listing? This cannot be undone.')) return;
-  L.ads = L.ads.filter(a => a.id !== id);
-  renderMyAds(); renderHome(); renderCats(); updateStats();
+  try {
+    await sbDeleteAd(id);
+    renderMyAds(); renderHome(); renderCats(); updateStats();
+    showToast('Listing deleted.', '🗑️');
+  } catch(e) {
+    showToast('Delete failed. Try again.', '⚠️');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2317,38 +2720,58 @@ function authTab(t) {
 }
 function authErr(m) { const e = document.getElementById('authAlert'); e.textContent=m; e.className='alert-box alert-err show'; }
 
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('lEmail').value.trim();
   const pass  = document.getElementById('lPass').value;
   if (!email||!pass) return authErr('Please fill in all fields.');
-  const user = L.users.find(u => u.email===email && u.password===pass);
-  if (!user) return authErr('Incorrect email or password.');
-  CU = {id:user.id, name:user.name, email:user.email, phone:user.phone||''};
-  L.sess = CU; closeOverlay('ovAuth');
-  renderNav(); updateStats(); updateMsgBadge();
-  showToast(`Welcome back, ${user.name.split(' ')[0]}! 👋`, '👋');
+  const btn = document.querySelector('#fLogin .btn-green');
+  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
+  try {
+    const user = await sbLogin(email, pass);
+    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
+    L.sess = CU;
+    await loadMessages();
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats(); updateMsgBadge();
+    showToast(`Welcome back, ${user.name.split(' ')[0]}! 👋`, '👋');
+  } catch(e) {
+    authErr(e.message || 'Login failed.');
+  } finally {
+    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+  }
 }
 
-function doRegister() {
+async function doRegister() {
   const name  = document.getElementById('rName').value.trim();
   const email = document.getElementById('rEmail').value.trim();
   const phone = document.getElementById('rPhone').value.trim();
   const pass  = document.getElementById('rPass').value;
   const parish= document.getElementById('rParish').value;
   if (!name||!email||!pass) return authErr('Please fill in all required fields.');
-  if (pass.length<6)        return authErr('Password must be at least 6 characters.');
-  const users = L.users;
-  if (users.find(u=>u.email===email)) return authErr('An account with that email already exists.');
-  const user = {id:'u'+Date.now(), name, email, phone, parish, password:pass, joined:new Date().toISOString()};
-  users.push(user); L.users = users;
-  CU = {id:user.id, name, email, phone, parish};
-  L.sess = CU; closeOverlay('ovAuth');
-  renderNav(); updateStats();
-  showToast(`Welcome to YaadAds, ${name.split(' ')[0]}! 🎉`, '🎉');
+  if (pass.length < 6)      return authErr('Password must be at least 6 characters.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Please enter a valid email address.');
+  const btn = document.querySelector('#fReg .btn-green');
+  if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
+  try {
+    const user = await sbRegister(name, email, phone, parish, pass);
+    CU = { id: user.id, name, email, phone, parish };
+    L.sess = CU;
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats();
+    showToast(`Welcome to YaadAds, ${name.split(' ')[0]}! 🎉`, '🎉');
+  } catch(e) {
+    authErr(e.message || 'Registration failed. Please try again.');
+  } finally {
+    if (btn) { btn.textContent = 'Create Free Account'; btn.disabled = false; }
+  }
 }
 
 function doLogout() {
-  CU = null; L.sess = null; renderNav(); goHome();
+  CU = null; L.sess = null;
+  _msgs = {};
+  renderNav(); goHome(); updateMsgBadge();
   showToast('Logged out successfully.', '👋');
 }
 
@@ -2436,29 +2859,38 @@ function clearImg() {
   document.getElementById('imgFile').value = '';
 }
 
-function doPostAd() {
+async function doPostAd() {
   const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);
   const ad = {
-    id: 'a'+Date.now(),
-    title:    document.getElementById('aTitle').value.trim(),
-    category: document.getElementById('aCat').value,
-    parish:   document.getElementById('aParish').value,
-    price:    parseFloat(document.getElementById('aPrice').value)||0,
-    desc:     document.getElementById('aDesc').value.trim(),
-    phone:    document.getElementById('aPhone').value.trim() || CU.phone || '',
-    image:    uploadUrl,
-    neg:      document.getElementById('aNeg').checked,
-    icon:     cat?.icon||'📦',
-    seller:   CU.name,
+    id: 'a' + Date.now(),
+    title:      document.getElementById('aTitle').value.trim(),
+    category:   document.getElementById('aCat').value,
+    parish:     document.getElementById('aParish').value,
+    price:      parseFloat(document.getElementById('aPrice').value) || 0,
+    desc:       document.getElementById('aDesc').value.trim(),
+    phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
+    image:      uploadUrl,
+    neg:        document.getElementById('aNeg').checked,
+    seller:     CU.name,
     sellerInit: initials(CU.name),
-    sellerId: CU.id,
-    date:     new Date().toISOString().split('T')[0],
-    status:   'active',
+    sellerId:   CU.id,
+    date:       new Date().toISOString(),
+    status:     'active',
+    views:      0,
   };
-  const ads = L.ads; ads.unshift(ad); L.ads = ads;
-  closeOverlay('ovPost');
-  renderCats(); renderHome(); updateStats();
-  showToast('Your ad is live! 🚀', '🚀');
+  const btn = document.querySelector('#sp3 .btn-gold');
+  if (btn) { btn.textContent = 'Publishing…'; btn.disabled = true; }
+  try {
+    await sbInsertAd(ad);
+    closeOverlay('ovPost');
+    renderCats(); renderHome(); updateStats();
+    showToast('Your ad is live! 🚀', '🚀');
+  } catch(e) {
+    console.error('Post ad error:', e);
+    showPostErr('Failed to publish. Please try again.');
+  } finally {
+    if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2528,15 +2960,34 @@ function fmtTime(ts) {
 let sheetOpen = false;
 let sheetHistory = []; // {role, text, results, filters}
 
+function saveRecentSearch(q) {
+  if (!q || q.length < 3) return;
+  const searches = L.searches.filter(s => s !== q);
+  L.searches = [q, ...searches];
+}
+
+function renderRecentSearches() {
+  const recent = L.searches;
+  const wrap = document.getElementById('sheetRecentWrap');
+  const list = document.getElementById('sheetRecentList');
+  if (!wrap || !list) return;
+  if (!recent.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = recent.slice(0, 6).map(s =>
+    `<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'")}')">
+      <span class="src-chip-icon">🕐</span>${s}
+    </button>`
+  ).join('');
+}
+
 function openAiSheet() {
   document.getElementById('aiSheet').classList.add('open');
   document.getElementById('aiSheetOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   sheetOpen = true;
-  // Update nav active state
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
-  // Focus input after animation
+  renderRecentSearches();
   setTimeout(() => document.getElementById('sheetInput')?.focus(), 380);
 }
 
@@ -2554,13 +3005,22 @@ function sheetSearch(query) {
 }
 
 async function sheetSubmit() {
-  const inp = document.getElementById('sheetInput');
-  const query = (inp?.value || '').trim();
+  const inp     = document.getElementById('sheetInput');
+  const sendBtn = document.getElementById('sheetSendBtn');
+  const query   = (inp?.value || '').trim();
   if (!query) return;
   inp.value = '';
 
+  // Save to recent searches
+  saveRecentSearch(query);
+
+  // Disable send button during request
+  sendBtn.disabled = true;
+  sendBtn.classList.add('sending');
+
   // Hide suggestions after first use
   document.getElementById('sheetSugs')?.classList.add('hidden');
+  document.getElementById('sheetRecentWrap')?.classList.add('hidden');
 
   // Add user message
   addSheetMsg('user', query);
@@ -2669,6 +3129,10 @@ NEVER output anything outside the JSON.`;
   } catch (err) {
     typingEl.remove();
     addSheetMsg('ai', "Couldn't connect right now. Try again in a moment.", null, null);
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.classList.remove('sending');
+    document.getElementById('sheetInput')?.focus();
   }
 }
 
