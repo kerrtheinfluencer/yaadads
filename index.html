@@ -4205,18 +4205,60 @@ const YaadBrain = (() => {
       const n = parseFloat(t.replace(/[^0-9.]/g,''));
       return isNaN(n) ? null : n;
     };
+
+    // 1. "between X and Y"
     const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
     if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
-    const und = s.match(/(?:under|below|less than|max|beneath|up to|no more than)\s+([\d.kmillion]+)/i);
-    if (und) { hi = toNum(und[1]); return {lo,hi}; }
-    const ov = s.match(/(?:over|above|more than|min|at least|starting from|from)\s+([\d.kmillion]+)/i);
-    if (ov) { lo = toNum(ov[1]); return {lo,hi}; }
-    const bare = s.match(/\b([\d]+(?:[.]\d+)?[km])\b/i);
-    if (bare) { hi = toNum(bare[1]); return {lo,hi}; }
+
+    // 2. "under / below / less than / up to X"
+    const und = s.match(/(?:under|below|less than|max|beneath|up to|no more than)\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)/i);
+    if (und) { hi = toNum(und[1]); if(hi) return {lo,hi}; }
+
+    // 3. "over / above / more than / from / starting X"
+    const ov = s.match(/(?:over|above|more than|min|at least|starting from|starting at|from)\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)/i);
+    if (ov) { lo = toNum(ov[1]); if(lo) return {lo,hi}; }
+
+    // 4. "for X" — treat as target price (±25%)
+    const forMatch = s.match(/\bfor\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)\b/i);
+    if (forMatch) {
+      const target = toNum(forMatch[1]);
+      if (target && target >= 500) { return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target }; }
+    }
+
+    // 5. "X million" / "X thousand" standalone (no keyword before it)
+    const millMatch = s.match(/\b(\d+(?:\.\d+)?)\s*(?:million|mil)\b/i);
+    if (millMatch) {
+      const target = parseFloat(millMatch[1])*1e6;
+      if (target) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
+    }
+    const thousMatch = s.match(/\b(\d+(?:\.\d+)?)\s*thousand\b/i);
+    if (thousMatch) {
+      const target = parseFloat(thousMatch[1])*1e3;
+      if (target) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
+    }
+
+    // 6. Bare shorthand: "2m", "80k", "500k"
+    const bareShort = s.match(/\b(\d+(?:\.\d+)?)\s*([km])\b/i);
+    if (bareShort) {
+      const num = parseFloat(bareShort[1]);
+      const mult = bareShort[2].toLowerCase() === 'm' ? 1e6 : 1e3;
+      const target = num * mult;
+      if (target >= 500) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
+    }
+
+    // 7. Bare large number (5+ digits, likely a JMD price)
+    const bareBig = s.match(/\b(\d{5,})\b/);
+    if (bareBig) {
+      const target = parseInt(bareBig[1]);
+      if (target >= 1000) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
+    }
+
+    // 8. Keyword-based
     if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|bargain|steal|good deal|nuh dear)\b/.test(s))
       return { cheap: true };
     if (/\b(expensive|dear|premium|luxury|high.?end|top.?shelf)\b/.test(s))
       return { expensive: true };
+
     return {lo,hi};
   }
 
@@ -4601,7 +4643,7 @@ const YaadBrain = (() => {
     const catNames = ctx.cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
     const loc = ctx.parish ? ` in ${ctx.parish}` : '';
     const catStr = catNames.length ? catNames.join('/') : 'listings';
-    const price = ctx.hi ? ` under J$${fmtN(ctx.hi)}` : ctx.lo ? ` from J$${fmtN(ctx.lo)}` : '';
+    const price = ctx.target ? ` around J$${fmtN(ctx.target)}` : ctx.hi ? ` under J$${fmtN(ctx.hi)}` : ctx.lo ? ` from J$${fmtN(ctx.lo)}` : '';
 
     if (n===0) {
       // Smart empty state — suggest alternatives
@@ -4675,7 +4717,7 @@ const YaadBrain = (() => {
       const cats  = detectedCats;
       const parish = detectedParish;
       const terms = tokenize(normalized).filter(t=>t.length>2 && !STOP_WORDS.has(t));
-      return { cats, parish, lo: price.lo, hi: price.hi, cheap: price.cheap, expensive: price.expensive, terms, offset:0 };
+      return { cats, parish, lo: price.lo, hi: price.hi, target: price.target, cheap: price.cheap, expensive: price.expensive, terms, offset:0 };
     })();
 
     // 4. Rebuild IDF if needed
