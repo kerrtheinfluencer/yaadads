@@ -1321,14 +1321,7 @@ footer {
   background: linear-gradient(90deg, var(--green), var(--gold));
   border-radius: 4px 18px 0 0;
 }
-.sheet-count-tag {
-  display: inline-block;
-  background: rgba(244,195,0,.2); color: var(--gold);
-  border: 1px solid rgba(244,195,0,.3);
-  font-size: 11px; font-weight: 700;
-  padding: 2px 10px; border-radius: 12px;
-  margin-top: 8px;
-}
+/* sheet-count-tag defined below */
 /* Mini listing results inside sheet */
 .sheet-results {
   display: flex; flex-direction: column; gap: 8px;
@@ -1337,24 +1330,49 @@ footer {
 .sheet-result-card {
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.1);
-  border-radius: 12px; padding: 12px 14px;
-  cursor: pointer; transition: all .18s;
-  display: flex; align-items: center; gap: 12px;
+  border-radius: 12px; padding: 10px 12px;
+  cursor: pointer; transition: background .15s, border-color .15s, transform .15s;
+  display: flex; align-items: center; gap: 10px;
+  -webkit-tap-highlight-color: transparent;
 }
-.sheet-result-card:hover { background: rgba(255,255,255,.12); border-color: rgba(244,195,0,.4); }
-.src-icon { font-size: 26px; flex-shrink: 0; }
+.sheet-result-card:hover  { background: rgba(255,255,255,.12); border-color: rgba(244,195,0,.45); }
+.sheet-result-card:active { transform: scale(.98); }
+.src-thumb {
+  width: 46px; height: 46px; border-radius: 8px;
+  object-fit: cover; flex-shrink: 0;
+}
+.src-icon { font-size: 26px; flex-shrink: 0; width: 46px; text-align: center; }
 .src-info { flex: 1; min-width: 0; }
-.src-price { font-family: var(--font-d); font-size: 15px; font-weight: 700; color: var(--gold); }
-.src-title { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.src-meta  { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 2px; }
-.sheet-view-all {
-  background: rgba(244,195,0,.15); border: 1px solid rgba(244,195,0,.35);
-  color: var(--gold); padding: 10px; border-radius: 12px;
-  font-size: 13px; font-weight: 700; cursor: pointer;
-  text-align: center; margin-top: 6px; transition: all .2s;
-  font-family: var(--font-b);
+.src-price {
+  font-family: var(--font-d); font-size: 14px; font-weight: 700;
+  color: var(--gold); display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
 }
-.sheet-view-all:hover { background: rgba(244,195,0,.25); }
+.src-title { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.src-meta  { font-size: 10px; color: rgba(255,255,255,.38); margin-top: 3px; }
+.src-arrow { color: rgba(255,255,255,.3); font-size: 18px; flex-shrink: 0; line-height: 1; }
+.src-neg-badge {
+  font-size: 9px; font-weight: 700; background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.55); border-radius: 5px; padding: 1px 5px;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+.src-new-badge {
+  font-size: 9px; font-weight: 800; background: rgba(0,200,100,.2);
+  color: #4caf7d; border-radius: 5px; padding: 1px 5px;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+.sheet-view-all {
+  background: rgba(244,195,0,.12); border: 1px solid rgba(244,195,0,.3);
+  color: var(--gold); padding: 10px 14px; border-radius: 12px; width: 100%;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  text-align: center; margin-top: 8px; transition: background .2s;
+  font-family: var(--font-b); display: block;
+}
+.sheet-view-all:hover { background: rgba(244,195,0,.22); }
+.sheet-count-tag {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,.45); margin: 6px 0 8px;
+  background: rgba(255,255,255,.07); border-radius: 8px; padding: 3px 9px;
+}
 
 /* Typing indicator */
 .sheet-typing {
@@ -2086,6 +2104,7 @@ const CFG = {
   },
 };
 
+
 /* ═══════════════════════════════════════════════════════════
    CONSTANTS
 ═══════════════════════════════════════════════════════════ */
@@ -2656,963 +2675,367 @@ function setAiQuery(q) {
   runAiSearch();
 }
 
-async function runAiSearch() {
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  YAAD BRAIN — Local NLP Search Engine (zero API calls)      ║
+   ║  Gets smarter as more listings are added to the site.       ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+const YaadBrain = (() => {
+
+  /* ── JAMAICAN PRICE PARSER ──────────────────────────────── */
+  const CHEAP_CEILING = { vehicles:2500000, property:12000000, electronics:60000, fashion:8000, furniture:25000, jobs:0, services:5000, food:2000, music:15000, sports:10000, kids:5000, other:20000 };
+  function parsePrice(q) {
+    let lo = null, hi = null;
+    const s = q.toLowerCase();
+    // Multipliers: k=1000, m/million=1000000
+    const toNum = t => {
+      t = t.trim();
+      if (/^\d+(\.\d+)?m$/i.test(t))  return parseFloat(t)*1e6;
+      if (/^\d+(\.\d+)?k$/i.test(t))  return parseFloat(t)*1e3;
+      if (/million/i.test(t))          return parseFloat(t.replace(/[^0-9.]/g,''))*1e6;
+      if (/thousand/i.test(t))         return parseFloat(t.replace(/[^0-9.]/g,''))*1e3;
+      const n = parseFloat(t.replace(/[^0-9.]/g,''));
+      return isNaN(n) ? null : n;
+    };
+    // "between X and Y"
+    const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
+    if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
+    // "under/below/less than X"
+    const und = s.match(/(?:under|below|less than|max|beneath)\s+([\d.kmillion]+)/i);
+    if (und) { hi = toNum(und[1]); return {lo,hi}; }
+    // "over/above/more than X"
+    const ov = s.match(/(?:over|above|more than|min|at least)\s+([\d.kmillion]+)/i);
+    if (ov) { lo = toNum(ov[1]); return {lo,hi}; }
+    // standalone numbers like "under 80000" already caught, catch bare "80k"
+    const bare = s.match(/\b([\d]+(?:[.]\d+)?[km])\b/i);
+    if (bare) { hi = toNum(bare[1]); return {lo,hi}; }
+    // "cheap/budget/affordable/likkle money"
+    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh)\b/.test(s))
+      return { cheap: true };
+    return {lo,hi};
+  }
+
+  /* ── CATEGORY MAPPER ────────────────────────────────────── */
+  const CAT_MAP = {
+    vehicles:    /\b(car|truck|van|bus|bike|scooter|vehicle|drive|civic|corolla|camry|bmw|toyota|honda|hyundai|nissan|kia|suzuki|mazda|jeep|suv|pickup|auto|motor|motorcycle|2019|2020|2021|2022|2023|mileage)\b/i,
+    property:    /\b(house|home|flat|apartment|room|land|lot|rent|property|real estate|sq ft|square feet|bed|bath|bedroom|studio|tenant|landlord|yard|bungalow|villa|mansion|townhouse)\b/i,
+    electronics: /\b(phone|iphone|samsung|xiaomi|laptop|computer|pc|tablet|tv|television|camera|console|playstation|xbox|ps4|ps5|airpods|earphones|speakers|headphones|charger|bluetooth|screen|monitor|android|galaxy|pixel)\b/i,
+    fashion:     /\b(clothes|clothing|shirt|shoe|bag|dress|fashion|jeans|pants|wear|outfit|sneaker|boot|blouse|skirt|suit|jacket|handbag|jewelry|watch|accessory)\b/i,
+    furniture:   /\b(sofa|couch|chair|table|bed|mattress|fridge|stove|washer|dryer|microwave|oven|furniture|appliance|wardrobe|cabinet|desk|shelf)\b/i,
+    jobs:        /\b(job|work|hiring|vacancy|career|employment|position|staff|employee|salary|wage|internship|full.?time|part.?time|freelance)\b/i,
+    services:    /\b(service|repair|fix|plumber|electrician|painter|cleaning|maid|helper|driver|delivery|contractor|builder|carpenter|mechanic|tutor|lesson)\b/i,
+    food:        /\b(food|farm|fruit|fish|meat|vegetable|produce|ackee|jerk|cook|bake|juice|spice|pepper|yam|banana|plantain|grocery|bakery)\b/i,
+    music:       /\b(guitar|music|instrument|drum|keyboard|piano|dj|speaker|amp|amplifier|microphone|beat|studio|sound|art|painting|craft)\b/i,
+    sports:      /\b(sport|gym|bicycle|cycle|football|cricket|swimming|running|fitness|equipment|treadmill|weights|dumbbell|jersey|ball)\b/i,
+    kids:        /\b(baby|kid|child|children|toy|stroller|pram|crib|diaper|school|uniform|backpack|crayon|bicycle|trike|playpen)\b/i,
+  };
+  function detectCategories(q) {
+    const found = [];
+    for (const [cat, rx] of Object.entries(CAT_MAP)) { if (rx.test(q)) found.push(cat); }
+    return found;
+  }
+
+  /* ── PARISH MAPPER ──────────────────────────────────────── */
+  const PARISH_MAP = {
+    'kingston':['kingston','kgn','downtown','town','uwi','half way tree','hwt'],
+    'st. andrew':['st andrew','saint andrew','uptown','new kingston','liguanea','barbican','manor park','papine'],
+    'st. catherine':['st catherine','portmore','spanish town','old harbour','linstead','bog walk'],
+    'st. james':['st james','montego bay','mobay','mo bay'],
+    'st. ann':["st ann","saint ann","ocho rios","ochi","ocho","discovery bay","runaway bay"],
+    'manchester':['manchester','mandeville'],
+    'clarendon':['clarendon','may pen','chapelton'],
+    'st. elizabeth':['st elizabeth','black river','santa cruz'],
+    'westmoreland':['westmoreland','sav','savanna','savanna-la-mar','negril'],
+    'hanover':['hanover','lucea'],
+    'trelawny':['trelawny','falmouth'],
+    'st. mary':['st mary','port maria','annotto bay'],
+    'st. thomas':['st thomas','morant bay'],
+    'portland':['portland','port antonio'],
+  };
+  function detectParish(q) {
+    const s = q.toLowerCase();
+    for (const [parish, aliases] of Object.entries(PARISH_MAP)) {
+      if (aliases.some(a => s.includes(a))) return parish.split(' ').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
+    }
+    return null;
+  }
+
+  /* ── INTENT CLASSIFIER ──────────────────────────────────── */
+  const FAQ_PATTERNS = [
+    [/how.*(post|sell|list|put up|advertise)/i, 'how_to_post'],
+    [/(is it|it is|is yaadads|cost|fee|charge|paid|free)/i, 'is_free'],
+    [/how.*(contact|reach|message|talk|call|whatsapp)/i, 'how_contact'],
+    [/(safe|trust|scam|fraud|legit|real|verify)/i, 'safety'],
+    [/(how.*(work|use)|what is yaadads|about yaadads|explain)/i, 'how_it_works'],
+    [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
+    [/hi|hello|hey|good (morning|afternoon|evening|night)|wah gwaan|whappen|ello/i, 'greeting'],
+    [/thank|thanks|appreciate|nice|great|good job/i, 'thanks'],
+    [/(who|what|where|when|how many).*(seller|buyer|member|user)/i, 'stats'],
+  ];
+  const FAQ_ANSWERS = {
+    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details, add a photo, and you're live in under 2 minutes. 🚀 Completely free!`,
+    is_free: () => `YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. 🇯🇲`,
+    how_contact: () => `Open any listing and you'll see Call 📞, WhatsApp 💬, and Message ✉️ buttons. Message uses in-app chat (free account needed). WhatsApp and Call work right away, no account required.`,
+    safety: () => `Great question! Meet in public spots — Half Way Tree, a busy mall, or a police station. Bring a friend for big purchases. Check the seller's profile and reviews. Never send money before seeing the item. 🛡️`,
+    how_it_works: () => `YaadAds is Jamaica's free marketplace. Browse listings across all 14 parishes, post your own ads in minutes, and chat directly with buyers or sellers. No middleman, no fees — just straightforward buying and selling. 🇯🇲`,
+    manage_ads: () => `To manage your ads, tap your name in the top nav (or "Account" in the bottom menu). You can view, mark as sold, or delete any of your listings from there.`,
+    greeting: () => { const g=['Wah gwaan! 👋','Big up! Ready to help you find something? 🇯🇲','Hey! What yuh looking for today?','Respect! What can I help you find?']; return g[Math.floor(Math.random()*g.length)]; },
+    thanks: () => 'No problem at all! Anything else you need? 😊',
+    stats: () => `Right now there are ${_ads.length} active listings across all 14 parishes. New listings are added every day — use search to find exactly what you need!`,
+  };
+
+  /* ── FOLLOW-UP DETECTOR ─────────────────────────────────── */
+  function detectFollowUp(q, lastCtx) {
+    if (!lastCtx) return null;
+    const s = q.toLowerCase();
+    if (/\b(cheaper|lower price|less expensive|more affordable|under that)\b/.test(s) && lastCtx.hi)
+      return { ...lastCtx, hi: Math.floor(lastCtx.hi * 0.65) };
+    if (/\b(more|show more|other|different|else|anything else)\b/.test(s))
+      return { ...lastCtx, offset: (lastCtx.offset||0) + 5 };
+    if (/\b(newer|recent|latest|fresh)\b/.test(s))
+      return { ...lastCtx, sort:'newest' };
+    if (/\b(in (\w+ ?\w*)|near (\w+ ?\w*))\b/.test(s)) {
+      const parish = detectParish(q);
+      if (parish) return { ...lastCtx, parish };
+    }
+    return null;
+  }
+
+  /* ── TF-IDF SCORER ──────────────────────────────────────── */
+  let _idfCache = null, _termFreqCache = {};
+  function buildIDF(ads) {
+    const df = {}, N = ads.length || 1;
+    for (const ad of ads) {
+      const terms = new Set(tokenize(getHaystack(ad)));
+      for (const t of terms) df[t] = (df[t]||0)+1;
+    }
+    const idf = {};
+    for (const [t,n] of Object.entries(df)) idf[t] = Math.log((N+1)/(n+1))+1;
+    return idf;
+  }
+  function tokenize(text) {
+    return (text||'').toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(t=>t.length>1);
+  }
+  function getHaystack(ad) {
+    const cat = CATS.find(c=>c.id===ad.category)?.name||'';
+    return `${ad.title} ${ad.title} ${ad.title} ${cat} ${cat} ${ad.parish} ${ad.parish} ${ad.desc||''}`;
+  }
+  function scoreAd(ad, queryTerms, idf, clickBoosts) {
+    const hay = tokenize(getHaystack(ad));
+    const tf = {};
+    for (const t of hay) tf[t] = (tf[t]||0)+1;
+    let score = 0;
+    for (const qt of queryTerms) {
+      const t = tf[qt]||0;
+      if (!t) {
+        // partial match: check if any field starts with qt
+        const partial = hay.some(w=>w.startsWith(qt)&&w!==qt);
+        if (partial) score += 0.4 * (idf[qt]||1);
+        continue;
+      }
+      score += (t / hay.length) * (idf[qt]||1);
+    }
+    // Recency boost
+    const ageDays = (Date.now()-new Date(ad.date||0))/86400000;
+    if (ageDays<3) score*=1.35; else if (ageDays<7) score*=1.2; else if (ageDays<30) score*=1.08;
+    // Popularity boost (views)
+    const v = ad.views||0;
+    if (v>50) score*=1.12; else if (v>20) score*=1.06;
+    // Click boost — user previously engaged with this ad for this type of query
+    if (clickBoosts[ad.id]) score *= (1 + Math.min(clickBoosts[ad.id]*0.15, 0.6));
+    return score;
+  }
+
+  /* ── LEARNING: Click tracking ────────────────────────────── */
+  function getClickBoosts(queryTerms) {
+    const key = queryTerms.slice().sort().join('_');
+    const all = JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
+    return all[key] || {};
+  }
+  function recordClick(adId, queryTerms) {
+    if (!queryTerms.length) return;
+    const key = queryTerms.slice().sort().join('_');
+    const all = JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
+    if (!all[key]) all[key] = {};
+    all[key][adId] = (all[key][adId]||0) + 1;
+    // Cap storage at 200 query keys
+    const keys = Object.keys(all);
+    if (keys.length > 200) delete all[keys[0]];
+    localStorage.setItem('ya_brain_clicks', JSON.stringify(all));
+  }
+
+  /* ── DYNAMIC SUGGESTIONS ─────────────────────────────────── */
+  function buildSuggestions() {
+    if (!_ads.length) return [];
+    // Top 3 categories by count
+    const catCounts = {};
+    _ads.forEach(a => { if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
+    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+    // Median price per top category
+    const sugs = [];
+    for (const catId of topCats) {
+      const cat = CATS.find(c=>c.id===catId);
+      const prices = _ads.filter(a=>a.category===catId&&a.status!=='sold').map(a=>a.price).sort((a,b)=>a-b);
+      const median = prices[Math.floor(prices.length/2)]||0;
+      if (cat && median) sugs.push({ label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`, query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}` });
+    }
+    // Most recent listing
+    const newest = _ads.filter(a=>a.status!=='sold')[0];
+    if (newest) sugs.push({ label:`🆕 ${newest.title.slice(0,30)}…`, query:newest.title.split(' ').slice(0,3).join(' ') });
+    return sugs.slice(0,4);
+  }
+
+  /* ── RESULT MESSAGES ─────────────────────────────────────── */
+  function buildMessage(results, cats, parish, priceCtx, query) {
+    const n = results.length;
+    const catNames = cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    const loc = parish ? ` in ${parish}` : '';
+    const catStr = catNames.length ? catNames.join('/') : 'listings';
+    if (n===0) return `No ${catStr} found${loc} right now — check back soon or try a broader search! 🔍`;
+    const price = priceCtx?.hi ? ` under J$${fmtN(priceCtx.hi)}` : priceCtx?.lo ? ` over J$${fmtN(priceCtx.lo)}` : '';
+    const msgs = [
+      `Found ${n} ${catStr}${price}${loc} for you! 🔥`,
+      `${n} result${n!==1?'s':''} matching your search${loc}. Check them out! 👇`,
+      `Here ${n===1?'is':'are'} ${n} ${catStr}${loc}${price}. 👀`,
+      `Nice! ${n} ${catStr}${price}${loc} available right now. 🇯🇲`,
+    ];
+    // Smart context
+    if (n===1) return `Only 1 match${loc} — but it looks good! Check it out. 👇`;
+    if (n>10) return `Plenty options! ${n} ${catStr}${price}${loc} available. I'm showing the best matches first. 🔥`;
+    return msgs[Math.floor(Math.random()*msgs.length)];
+  }
+
+  /* ── MAIN PROCESS ────────────────────────────────────────── */
+  let _lastCtx = null;
+  function process(query, history) {
+    const q = query.trim();
+
+    // 1. Check FAQ/intent first
+    for (const [pattern, intent] of FAQ_PATTERNS) {
+      if (pattern.test(q) && !detectCategories(q).length && !detectParish(q)) {
+        const fn = FAQ_ANSWERS[intent];
+        if (fn) return { type:'answer', message: fn() };
+      }
+    }
+
+    // 2. Check follow-up
+    const followUp = history.length ? detectFollowUp(q, _lastCtx) : null;
+    const ctx = followUp || (() => {
+      const price = parsePrice(q);
+      const cats  = detectCategories(q);
+      const parish = detectParish(q);
+      const terms = tokenize(q).filter(t=>t.length>2&&!/^\d+$/.test(t));
+      return { cats, parish, lo: price.lo, hi: price.hi, cheap: price.cheap, terms, offset:0 };
+    })();
+
+    // 3. Rebuild IDF if ads changed
+    if (!_idfCache || _idfCache._n !== _ads.length) {
+      _idfCache = buildIDF(_ads.filter(a=>a.status!=='sold'));
+      _idfCache._n = _ads.length;
+    }
+
+    // 4. Filter candidates
+    let pool = _ads.filter(a=>a.status!=='sold');
+    if (ctx.cats.length) pool = pool.filter(a=>ctx.cats.includes(a.category));
+    if (ctx.parish) pool = pool.filter(a=>a.parish.toLowerCase()===ctx.parish.toLowerCase());
+    if (ctx.hi) pool = pool.filter(a=>a.price<=ctx.hi);
+    if (ctx.lo) pool = pool.filter(a=>a.price>=ctx.lo);
+    if (ctx.cheap) pool = pool.filter(a => {
+      const ceil = CHEAP_CEILING[a.category]||20000;
+      return a.price <= ceil;
+    });
+
+    // 5. Score
+    const qTerms = ctx.terms || tokenize(q).filter(t=>t.length>2);
+    const boosts = getClickBoosts(qTerms);
+    let scored = pool.map(ad=>({ ad, score:scoreAd(ad, qTerms, _idfCache, boosts) }))
+      .sort((a,b)=>b.score-a.score);
+
+    // 6. Broaden if empty
+    let broadened = false;
+    if (!scored.length && ctx.cats.length) {
+      broadened = true;
+      let broad = _ads.filter(a=>a.status!=='sold');
+      if (ctx.hi) broad = broad.filter(a=>a.price<=ctx.hi);
+      if (ctx.lo) broad = broad.filter(a=>a.price>=ctx.lo);
+      scored = broad.map(ad=>({ ad, score:scoreAd(ad, qTerms, _idfCache, boosts) })).sort((a,b)=>b.score-a.score);
+    }
+
+    const offset = ctx.offset||0;
+    const results = scored.slice(offset, offset+6).map(s=>s.ad);
+    const allResults = scored.map(s=>s.ad);
+
+    _lastCtx = { ...ctx, _qTerms: qTerms };
+
+    const msg = broadened
+      ? `No exact matches — here are the closest results I found across all categories. 🔍`
+      : buildMessage(results, ctx.cats, ctx.parish, ctx, q);
+
+    return {
+      type: 'search',
+      message: msg,
+      results,
+      allResults,
+      filters: {
+        categories: ctx.cats,
+        parish: ctx.parish,
+        minPrice: ctx.lo,
+        maxPrice: ctx.hi,
+        keywords: qTerms,
+      },
+      _qTerms: qTerms,
+    };
+  }
+
+  function learn(adId, qTerms) { recordClick(adId, qTerms||[]); }
+  function suggestions() { return buildSuggestions(); }
+
+  return { process, learn, suggestions };
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   SMART SEARCH — Hero bar (instant, no API)
+═══════════════════════════════════════════════════════════ */
+function runAiSearch() {
   const inp = document.getElementById('aiInput');
   const query = (inp?.value || '').trim();
   if (!query) return;
-
-  // Save to recent searches
   saveRecentSearch(query);
 
   const btn = document.getElementById('aiBtn');
   const lbl = document.getElementById('aiBtnLabel');
   btn.classList.add('loading');
   lbl.innerHTML = '<div class="btn-spinner"></div>';
+  hideAiResponse(); showSkeletons();
 
-  hideAiResponse();
-  showSkeletons();
-
-  const ads = L.ads;
-  const adsSummary = ads.slice(0, 40).map(a =>
-    `"${a.title}" | cat:${a.category} | J$${a.price} | ${a.parish} | ${a.status}`
-  ).join('\n');
-
-  const systemPrompt = `You are YaadAds AI — the sharp, culturally-aware search assistant for YaadAds, Jamaica's free classifieds marketplace. You think like a local and understand how Jamaicans actually talk and search.
-
-══ SITE KNOWLEDGE ══
-• YaadAds is 100% free to post, browse, and message sellers. No hidden fees ever.
-• To post: tap "+ Post Ad" or the green ＋ in the mobile bottom nav. 3-step wizard, under 2 minutes.
-• To contact a seller: open any listing → Call, WhatsApp, or Message (in-app Message needs free account).
-• Favourites: tap the 🤍 heart on any card. Saved to your device.
-• Messaging: live in-app chat. Check "Messages" tab in bottom nav. Unread badge shows new messages.
-• Accounts are free. Benefits: post ads, in-app chat, manage listings, track favourites.
-• Seller profiles: tap any seller name inside a listing to see all their ads and stats.
-• Mark as Sold: sellers can mark items sold from My Listings tab.
-• Safety tip: meet in public, bring a friend for big purchases, verify the item before payment.
-• YaadAds is Jamaica-only. All 14 parishes covered: Kingston, St. Andrew, St. Thomas, Portland, St. Mary, St. Ann, Trelawny, St. James, Hanover, Westmoreland, St. Elizabeth, Manchester, Clarendon, St. Catherine.
-
-══ JAMAICAN PRICE INTELLIGENCE ══
-Prices on YaadAds are in Jamaican Dollars (JMD). Users RARELY write J$ — treat ALL bare numbers as JMD.
-Parse prices intelligently:
-  "under 100000" or "less than 100000" → maxPrice: 100000
-  "80k" / "80,000" / "eighty thousand" → 80000
-  "2 million" / "2m" / "2mil" / "2M"  → 2000000
-  "3.5m" / "3.5 million"              → 3500000
-  "between 1m and 3m"                 → minPrice:1000000, maxPrice:3000000
-  "over 5 million"                    → minPrice: 5000000
-  "cheap" (standalone) → context-based: electronics→maxPrice:60000, vehicles→maxPrice:2500000, property→maxPrice:12000000, fashion→maxPrice:5000, other→maxPrice:30000
-  "affordable" → same as cheap but 20% higher ceiling
-  "expensive" / "luxury" / "high-end" → minPrice based on category: vehicles→minPrice:5000000, property→minPrice:30000000, electronics→minPrice:150000
-  "budget" → cheap ceilings
-  "reasonable" → affordable ceilings
-  "fi give weh" / "must sell" / "fi sell" / "sacrificing" → add urgency flag, use cheap ceilings
-Never ask for clarification on currency — always assume JMD.
-
-══ SMART CATEGORY MAPPING ══
-Map natural language to exact category IDs:
-  car/vehicle/truck/van/bus/jeep/SUV/pickup/motorbike/scooter/bike → vehicles
-  house/home/apartment/flat/room/studio/land/lot/plot/property/rent/lease/condo/townhouse/villa → property
-  phone/laptop/computer/desktop/TV/tablet/camera/gaming/console/PS5/Xbox/earphones/speaker/electronic → electronics
-  clothes/shoes/sneakers/dress/shirt/pants/bag/purse/handbag/jewellery/fashion/style/outfit/brand → fashion
-  sofa/couch/bed/mattress/table/chair/desk/wardrobe/fridge/stove/washing machine/oven/appliance/furniture → furniture
-  job/jobs/work/hiring/vacancy/employment/career/position/salary → jobs
-  repair/plumber/electrician/graphic design/cleaning/painter/carpenter/mechanic/handyman/service → services
-  food/fruit/vegetables/farm/fish/ackee/saltfish/produce/market/groceries/bakery/catering → food
-  guitar/piano/drum/instrument/art/painting/music/craft/DJ → music
-  bicycle/gym/fitness/sport/football/cricket/tennis/gym equipment → sports
-  baby/kids/toys/children/stroller/infant/school/uniform → kids
-
-══ JAMAICAN LANGUAGE & SLANG ══
-Understand these patterns naturally:
-  "likkle" / "lil" / "small" → compact size or budget option
-  "dutty cheap" / "dirt cheap" / "giveaway price" → very low price, urgency
-  "fi sell" / "must sell" / "need gone" / "sacrificing" → seller motivated, good deal likely
-  "nuh" / "nah" = no; "wah" = want; "yuh"/"yu" = you; "mi" = I/me; "dem" = them/those
-  "uptown" → St. Andrew (Cherry Gardens, Norbrook, Barbican, Constant Spring area)
-  "downtown" → central Kingston
-  "halfway tree" / "HWT" → Kingston/St. Andrew
-  "portmore" → St. Catherine
-  "mobay" / "MoBay" / "MBJ" → St. James (Montego Bay)
-  "ocho" / "ochi" → St. Ann (Ocho Rios)
-  "mandeville" → Manchester
-  "may pen" → Clarendon
-  "Spanish town" / "S/Town" → St. Catherine
-  "sav" / "savanna" → Westmoreland (Savanna-la-Mar)
-  "linstead" / "old harbour" → St. Catherine
-
-══ SMART SEARCH BEHAVIOUR ══
-- If the user says "show me everything" or "all listings" → type:search with no filters
-- If they ask "what's available?" → type:search, all categories
-- If they say "I'm looking for..." treat as a search
-- If multiple categories implied ("phones and laptops") → categories:["electronics"]
-- If location is vague ("near Kingston" / "in town") → parish:"Kingston" or "St. Andrew"
-- If someone asks "how much is [item]?" → give a rough JMD price range from your knowledge, then show similar listings (type:search)
-- If query is ambiguous between search and question, default to search and answer briefly in message
-- If no listings match exactly, broaden filters slightly and note it in message
-
-══ CURRENT LISTINGS (${ads.length} total) ══
-${adsSummary}
-
-══ RESPONSE FORMAT — ONLY OUTPUT JSON ══
-
-SEARCH (user wants to find listings):
-{"type":"search","message":"Warm 1-sentence reply saying what you found and any helpful context","filters":{"categories":["electronics"],"maxPrice":80000,"minPrice":null,"parish":"Kingston","keywords":["phone"]}}
-
-ANSWER (user asking about the site, safety, how things work, prices, etc.):
-{"type":"answer","message":"Clear, warm answer in 1-3 sentences. Be conversational and Jamaican-friendly. Don't be robotic."}
-
-RULES:
-- categories: array of IDs, or [] for all categories
-- parish: exact parish name or null
-- keywords: 1-3 core item terms only — no prices, no locations (those go in their filter fields)
-- message: always warm, specific, and useful — reference what you found if it's a search
-- NEVER output anything outside the JSON object. No markdown, no preamble, no explanation.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: query }]
-      })
-    });
-
-    const data = await res.json();
-    const raw = (data.content?.[0]?.text || '').replace(/```json|```/g, '').trim();
-    let parsed;
-    try { parsed = JSON.parse(raw); }
-    catch { parsed = { type: 'answer', message: raw || 'Let me show you all listings.' }; }
-
-    compactHero();
-
-    let count;
-    if (parsed.type === 'search' && parsed.filters) {
-      const f = parsed.filters;
-      // Single category → use category filter; multiple or none → all
-      if (f.categories && f.categories.length === 1) activeF = f.categories[0];
-      else activeF = 'all';
-      // Keywords exclude price-like tokens and parish names
-      const kw = (f.keywords || []).filter(k => !/^\d+/.test(k) && k.length > 1);
-      searchQ = kw.join(' ');
-      window._aiFilters = f;
-      renderCats();
-      count = renderHome();
-      delete window._aiFilters;
-      // If 0 results, try broadening: drop category filter
-      if (count === 0 && activeF !== 'all') {
-        activeF = 'all';
-        window._aiFilters = f;
-        renderCats();
-        count = renderHome();
-        delete window._aiFilters;
-        if (count > 0) {
-          // Update AI message to note broadened search
-          showAiResponse('No exact matches — showing similar results from all categories.', count);
-          scrollToResults(); return;
-        }
-      }
-    } else {
-      activeF = 'all'; searchQ = '';
-      renderCats();
-      count = renderHome();
-    }
-
-    // Show response with count, then scroll results into view
-    showAiResponse(parsed.message || '', parsed.type === 'search' ? count : null);
-    scrollToResults();
-
-  } catch (err) {
-    searchQ = query; activeF = 'all';
-    compactHero();
-    renderCats();
-    const count = renderHome();
-    showAiResponse(`Showing results for "${query}"`, count);
-    scrollToResults();
-  }
-
-  btn.classList.remove('loading');
-  lbl.textContent = 'Ask AI';
-}
-
-function showAiResponse(text, count) {
-  const card  = document.getElementById('aiResponseCard');
-  const el    = document.getElementById('aiResponseText');
-  const badge = document.getElementById('aiCountBadge');
-  card.classList.add('show');
-  el.innerHTML = '';
-
-  // Count badge — pop in with slight delay
-  if (count !== undefined && count !== null) {
-    badge.textContent = count === 0 ? 'No results' : `${count} listing${count !== 1 ? 's' : ''} found`;
-    setTimeout(() => badge.classList.add('show'), 180);
-  } else {
-    badge.classList.remove('show');
-  }
-
-  // Word-by-word reveal — feels more natural and "thinking" than char-by-char
-  const words = text.split(' ');
-  let wi = 0;
-  const cursor = document.createElement('span');
-  cursor.className = 'ai-cursor';
-  el.appendChild(cursor);
-
-  function dropWord() {
-    if (wi >= words.length) { cursor.remove(); return; }
-    const span = document.createElement('span');
-    span.className = 'ai-word';
-    span.textContent = (wi > 0 ? ' ' : '') + words[wi];
-    el.insertBefore(span, cursor);
-    wi++;
-    // Slight variable speed — longer words a touch slower
-    const delay = 28 + words[wi - 1].length * 2.5;
-    setTimeout(dropWord, delay);
-  }
-  dropWord();
-}
-
-function hideAiResponse() {
-  document.getElementById('aiResponseCard')?.classList.remove('show');
-  const badge = document.getElementById('aiCountBadge');
-  if (badge) badge.classList.remove('show');
-}
-
-function compactHero() {
-  document.querySelector('.hero')?.classList.add('searched');
-}
-
-function scrollToResults() {
-  setTimeout(() => {
-    requestAnimationFrame(() => {
-      const card = document.getElementById('aiResponseCard');
-      if (!card) return;
-      const navH = document.querySelector('nav')?.offsetHeight || 56;
-      const top  = card.getBoundingClientRect().top + window.scrollY - navH - 12;
-      window.scrollTo({ top, behavior: 'smooth' });
-    });
-  }, 100);
-}
-
-function resetHeroSearch() {
-  activeF = 'all'; searchQ = '';
-  const inp = document.getElementById('aiInput');
-  if (inp) inp.value = '';
-  document.querySelector('.hero')?.classList.remove('searched');
-  hideAiResponse();
-  renderCats();
-  renderHome();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function showSkeletons() {
-  // Vary heights slightly to look like real cards
-  const heights = [280, 300, 268, 292, 280, 310];
-  document.getElementById('homeGrid').innerHTML = heights.map((h, i) =>
-    `<div class="skeleton-card" style="height:${h}px;animation-delay:${i * 0.07}s"></div>`
-  ).join('');
-  document.getElementById('resultsHeader').style.display = 'none';
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SEARCH (nav / browse page)
-═══════════════════════════════════════════════════════════ */
-function doSearch(q) { searchQ = q.trim(); activeF = 'all'; goPage('browse'); }
-function handleNavSearch(q) {
-  searchQ = q.trim(); activeF = 'all';
-  if (q.length > 1) { goPage('browse'); renderBrowse(); }
-  else if (!q) { goHome(); }
-}
-
-function focusAiSearch() {
-  // If not on home page, navigate there first then focus
-  if (!document.getElementById('page-home').classList.contains('active')) {
-    goPage('home');
-    setTimeout(() => {
-      const inp = document.getElementById('aiInput');
-      if (inp) { inp.focus(); inp.select(); }
-      // Animate the search bar to draw attention
-      const bar = document.querySelector('.ai-search-bar');
-      if (bar) {
-        bar.style.transition = 'box-shadow .15s, border-color .15s';
-        bar.style.boxShadow = '0 0 0 4px rgba(244,195,0,.55), 0 12px 52px rgba(0,0,0,.42)';
-        bar.style.borderColor = 'rgba(244,195,0,.8)';
-        setTimeout(() => { bar.style.transition = ''; bar.style.boxShadow = ''; bar.style.borderColor = ''; }, 900);
-      }
-    }, 180);
-  } else {
-    const inp = document.getElementById('aiInput');
-    if (inp) { inp.focus(); inp.select(); }
-    const bar = document.querySelector('.ai-search-bar');
-    if (bar) {
-      bar.classList.add('pulse-focus');
-      setTimeout(() => bar.classList.remove('pulse-focus'), 700);
-    }
-  }
-}
-
-
-/* ═══════════════════════════════════════════════════════════
-   FAVOURITES
-═══════════════════════════════════════════════════════════ */
-function isFav(id) { return L.favs.includes(id); }
-function togFav(id, btn) {
-  const f = [...L.favs]; const i = f.indexOf(id);
-  if (i > -1) { f.splice(i,1); btn.textContent='🤍'; showToast('Removed from favourites','🤍'); }
-  else         { f.push(id);   btn.textContent='❤️'; showToast('Saved to favourites','❤️'); }
-  L.favs = f;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   AD DETAIL
-═══════════════════════════════════════════════════════════ */
-function openDetail(id) {
-  const ad = L.ads.find(a => a.id === id); if (!ad) return;
-  sbIncrView(id);
-
-  const cat    = CATS.find(c => c.id === ad.category);
-  const photos = Array.isArray(ad.photos) && ad.photos.length ? ad.photos : (ad.image ? [ad.image] : []);
-  const clr    = avatarColor(ad.seller||'?');
-  const ini    = ad.sellerInit || initials(ad.seller||'?');
-  const isMine = CU && CU.id === ad.sellerId;
-  const wa     = `https://wa.me/1${(ad.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent('Hi! I saw your ad on YaadAds: '+ad.title)}`;
-  const totalViews = getViews(id);
-  const eyeSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-
-  // ── Swipeable photo gallery ───────────────────────────
-  const galleryHTML = (() => {
-    if (!photos.length) {
-      return `<div class="gallery-wrap"><div class="gallery-track"><div class="gallery-slide"><span class="emoji-ph">${cat?.icon||'📦'}</span></div></div></div>`;
-    }
-    const slides = photos.map(p =>
-      `<div class="gallery-slide">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="emoji-ph">${cat?.icon||'📦'}</span>`}</div>`
-    ).join('');
-    const dots = photos.length > 1 ? `<div class="gallery-dots" id="galleryDots">${photos.map((_,i)=>`<div class="gallery-dot${i===0?' active':''}" onclick="galleryGoTo(${i})"></div>`).join('')}</div>` : '';
-    const arrows = photos.length > 1 ? `<button class="gallery-arrow gallery-prev" onclick="galleryPrev()">‹</button><button class="gallery-arrow gallery-next" onclick="galleryNext()">›</button>` : '';
-    const cnt = photos.length > 1 ? `<div class="gallery-count">1 / ${photos.length}</div>` : '';
-    const soldOverlay = ad.status==='sold' ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;pointer-events:none"><span style="background:#000;color:#fff;font-size:22px;font-weight:800;padding:10px 28px;border-radius:8px">SOLD</span></div>' : '';
-    return `<div class="gallery-wrap" id="detailGallery"><div class="gallery-track" id="galleryTrack">${slides}</div>${dots}${arrows}${cnt}${soldOverlay}</div>`;
-  })();
-
-  // ── Star rating summary ───────────────────────────────
-  const ratings = getRatings(ad.sellerId);
-  const avg = ratings.length ? (ratings.reduce((s,r)=>s+r.stars,0)/ratings.length) : 0;
-  const ratingHTML = ratings.length
-    ? `<div class="rating-row"><div class="stars">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</div><span class="rating-count">${avg.toFixed(1)} (${ratings.length} review${ratings.length!==1?'s':''})</span></div>`
-    : `<div style="font-size:11px;color:var(--text-3);margin-top:2px">No reviews yet · Be first</div>`;
-
-  // ── Verified badge ────────────────────────────────────
-  const vBadge = isSellerVerified(ad.sellerId) ? `<span class="verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>` : '';
-
-  // ── Safe meetup spots ─────────────────────────────────
-  const SPOTS = {'Kingston':'Half Way Tree Centre, Sovereign Centre','St. Andrew':'Liguanea Plaza, Manor Park Plaza','St. Catherine':'Portmore Mall, Caymanas Bay','St. James':'Sam Sharpe Square, Fairview Shopping Centre','Manchester':'Mandeville Plaza','St. Ann':'Ocho Rios Town Centre'};
-  const spots = SPOTS[ad.parish] || 'a busy public area or police station';
-  const meetupHTML = !isMine ? `<div class="meetup-tip"><div class="meetup-tip-icon">🛡️</div><div class="meetup-tip-text"><strong>Safe meetup — ${ad.parish}</strong>Try: ${spots}. Bring a friend for big purchases.</div></div>` : '';
-
-  // ── Similar listings ──────────────────────────────────
-  const similar = _ads.filter(a=>a.id!==id&&a.category===ad.category&&a.status!=='sold').slice(0,4);
-  const similarHTML = similar.length ? `<div class="similar-section"><div class="similar-title">Similar Listings</div><div class="similar-grid">${similar.map((a,i)=>cardHTML(a,i)).join('')}</div></div>` : '';
-
-  // ── Seller analytics (owner only) ────────────────────
-  const analyticsHTML = isMine ? `<div class="analytics-strip"><div class="ana-item"><div class="ana-num">${fmtN(totalViews)}</div><div class="ana-lbl">👁 Views</div></div><div class="ana-item"><div class="ana-num">${getFavCount(id)}</div><div class="ana-lbl">❤️ Saves</div></div><div class="ana-item"><div class="ana-num">${ago(ad.date)}</div><div class="ana-lbl">📅 Posted</div></div><div class="ana-item"><div class="ana-num" style="font-size:14px;color:${ad.status==='sold'?'var(--red)':'var(--green)'}">${ad.status==='sold'?'SOLD':'Active'}</div><div class="ana-lbl">📋 Status</div></div></div>` : '';
-
-  document.getElementById('detailInner').innerHTML = `
-    ${galleryHTML}
-    <div class="detail-body">
-      ${analyticsHTML}
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div class="detail-price" style="margin-bottom:0">J$${fmtN(ad.price)}${ad.neg?'<span style="font-size:13px;font-weight:400;color:var(--text-3)"> · neg.</span>':''}</div>
-        <button class="share-btn" onclick="shareAd('${id}')">↑ Share</button>
-      </div>
-      <div class="detail-title" style="margin-top:6px">${ad.title}${vBadge}</div>
-      <div class="detail-tags">
-        <span class="dtag">📍 ${ad.parish}</span>
-        <span class="dtag">🏷️ ${cat?.name||'Other'}</span>
-        <span class="dtag">🕐 ${ago(ad.date)}</span>
-        <span class="dtag" style="display:inline-flex;align-items:center;gap:3px">${eyeSvg} ${fmtN(totalViews)}</span>
-        ${ad.status==='sold'?'<span class="dtag" style="background:#111;color:#fff;border-radius:10px;padding:2px 10px;font-weight:700">SOLD</span>':''}
-      </div>
-      <p class="detail-desc">${ad.desc}</p>
-      <div class="seller-box">
-        <div class="s-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
-        <div class="s-info">
-          <div class="s-name" onclick="openProfile('${ad.sellerId}')">${ad.seller||'Anonymous'}${vBadge}</div>
-          ${ratingHTML}
-        </div>
-        <div class="s-acts">
-          ${isMine ? `<button class="btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm" onclick="toggleSold('${ad.id}')">${ad.status==='sold'?'Mark Active':'Mark Sold'}</button>` : ''}
-          ${!isMine && ad.phone ? `<a class="btn btn-green btn-sm" href="tel:${ad.phone}">📞 Call</a>` : ''}
-          ${!isMine && ad.phone ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank">💬 WhatsApp</a>` : ''}
-          ${!isMine && CU ? `<button class="btn btn-ghost btn-sm" onclick="openChat('${ad.id}','${ad.sellerId}','${(ad.seller||'').replace(/'/g,"\\'")}','${ini}')">✉️ Message</button>` : ''}
-          ${!isMine && !CU ? `<button class="btn btn-ghost btn-sm" onclick="openAuth('login')">✉️ Message</button>` : ''}
-        </div>
-      </div>
-      ${!isMine && CU ? `
-        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px;border-color:var(--gold);color:var(--gold-dark)" onclick="openOfferPanel('${id}')">💰 Make an Offer</button>
-        <div class="offer-panel" id="offerPanel">
-          <div class="offer-panel-title">Your Offer (JMD)</div>
-          <div class="offer-row">
-            <span style="font-size:15px;font-weight:700;color:var(--text-2)">J$</span>
-            <input class="offer-input" id="offerAmt" type="number" min="0" placeholder="e.g. 70000">
-            <button class="btn btn-gold btn-sm" onclick="sendOffer('${id}','${ad.sellerId}','${(ad.seller||'').replace(/'/g,"\\'")}','${ini}')">Send</button>
-          </div>
-          <div class="offer-note">Sent directly to seller as an in-app message.</div>
-        </div>` : ''}
-      ${meetupHTML}
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-        ${!isMine && CU ? `<button class="btn btn-ghost btn-sm" onclick="openRateModal('${ad.sellerId}','${(ad.seller||'').replace(/'/g,"\\'")}')">⭐ Rate Seller</button>` : '<div></div>'}
-        <button class="report-btn" onclick="openReport('${id}')">⚑ Report listing</button>
-      </div>
-    </div>
-    ${similarHTML}`;
-
-  // Sync gallery dots on scroll
+  // Small RAF delay so spinner shows before synchronous work
   requestAnimationFrame(() => {
-    const track = document.getElementById('galleryTrack');
-    if (track && photos.length > 1) {
-      track.addEventListener('scroll', () => {
-        const idx = Math.round(track.scrollLeft / (track.offsetWidth||1));
-        document.querySelectorAll('.gallery-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
-        const cnt = document.querySelector('.gallery-count'); if (cnt) cnt.textContent = `${idx+1} / ${photos.length}`;
-      }, {passive:true});
+    const result = YaadBrain.process(query, []);
+
+    if (result.type === 'answer') {
+      activeF = 'all'; searchQ = ''; renderCats();
+      const count = renderHome();
+      showAiResponse(result.message, null);
+    } else {
+      const f = result.filters;
+      activeF = f.categories?.length===1 ? f.categories[0] : 'all';
+      searchQ = (f.keywords||[]).join(' ');
+      window._aiFilters = f;
+      compactHero(); renderCats();
+      const count = renderHome();
+      delete window._aiFilters;
+      showAiResponse(result.message, count);
     }
+    scrollToResults();
+    btn.classList.remove('loading'); lbl.textContent = 'Search';
   });
-  openOverlay('ovDetail');
-}
-
-function galleryGoTo(i) { const t=document.getElementById('galleryTrack'); if(t) t.scrollTo({left:i*t.offsetWidth,behavior:'smooth'}); }
-function galleryPrev()  { const t=document.getElementById('galleryTrack'); if(t) galleryGoTo(Math.max(0,Math.round(t.scrollLeft/t.offsetWidth)-1)); }
-function galleryNext()  { const t=document.getElementById('galleryTrack'); if(t) galleryGoTo(Math.min(t.children.length-1,Math.round(t.scrollLeft/t.offsetWidth)+1)); }
-
-async function toggleSold(id) {
-  const ad = _ads.find(a => a.id === id); if (!ad) return;
-  const newStatus = ad.status === 'sold' ? 'active' : 'sold';
-  try {
-    await sbUpdateAdStatus(id, newStatus);
-    closeOverlay('ovDetail');
-    renderHome(); renderCats(); updateStats();
-    showToast(newStatus==='sold'?'Marked as sold ✓':'Marked as active ✓', newStatus==='sold'?'🏷️':'✅');
-  } catch(e) {
-    showToast('Update failed. Try again.', '⚠️');
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SELLER PROFILE
+   AI SEARCH SHEET STATE
 ═══════════════════════════════════════════════════════════ */
-function openProfile(sellerId) {
-  const ads = L.ads.filter(a => a.sellerId === sellerId);
-  const sample = ads[0]; if (!sample) return;
-  const clr  = avatarColor(sample.seller||'?');
-  const ini  = sample.sellerInit || initials(sample.seller||'?');
-  const name = sample.seller || 'Anonymous';
-  const activeAds = ads.filter(a => a.status !== 'sold');
-
-  // Ratings
-  const ratings = getRatings(sellerId);
-  const avg = ratings.length ? (ratings.reduce((s,r)=>s+r.stars,0)/ratings.length) : 0;
-  const ratingHTML = ratings.length
-    ? `<div class="rating-row" style="margin-top:8px"><div class="stars">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</div><span class="rating-count">${avg.toFixed(1)} · ${ratings.length} review${ratings.length!==1?'s':''}</span></div>`
-    : `<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:6px">No reviews yet</div>`;
-
-  // Verified
-  const vBadge = isSellerVerified(sellerId) ? `<span class="verified-badge" style="background:rgba(255,255,255,.15);color:#a5d6a7;border-color:rgba(165,214,167,.4)"><svg viewBox="0 0 24 24" fill="none" stroke="#a5d6a7" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>` : '';
-
-  // Total views across all ads
-  const totalViews = ads.reduce((n,a) => n + getViews(a.id), 0);
-
-  document.getElementById('profileInner').innerHTML = `
-    <div class="prof-header">
-      <div class="prof-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
-      <div class="prof-info">
-        <div class="prof-name">${name} ${vBadge}</div>
-        <div class="prof-since">📍 ${sample.parish||'Jamaica'} · YaadAds Member</div>
-        ${ratingHTML}
-        <div class="prof-stats" style="margin-top:14px">
-          <div><div class="prof-stat-n">${activeAds.length}</div><div class="prof-stat-l">Active</div></div>
-          <div><div class="prof-stat-n">${ads.filter(a=>a.status==='sold').length}</div><div class="prof-stat-l">Sold</div></div>
-          <div><div class="prof-stat-n">${fmtN(totalViews)}</div><div class="prof-stat-l">👁 Views</div></div>
-        </div>
-      </div>
-      ${CU && CU.id !== sellerId ? `<button class="btn btn-gold btn-sm" onclick="openChat('${ads[0].id}','${sellerId}','${name.replace(/'/g,"\\'")}','${ini}')">✉️ Message</button>` : ''}
-    </div>
-    <div class="prof-body">
-      <h3 style="font-family:var(--font-d);font-size:18px;margin-bottom:16px">Listings by ${name.split(' ')[0]}</h3>
-      ${ads.length ? `<div class="listings-grid">${ads.map((a,i)=>cardHTML(a,i)).join('')}</div>` : `<p style="color:var(--text-3)">No listings.</p>`}
-      ${ratings.length ? `
-        <h3 style="font-family:var(--font-d);font-size:18px;margin:28px 0 14px">Reviews</h3>
-        ${ratings.slice().reverse().slice(0,6).map(r => `
-          <div style="border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <span style="font-weight:600;font-size:13px">${r.reviewerName||'Anonymous'}</span>
-              <span style="color:var(--gold);font-size:15px">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</span>
-            </div>
-            ${r.comment ? `<p style="font-size:13px;color:var(--text-2);line-height:1.5">${r.comment}</p>` : ''}
-            <div style="font-size:11px;color:var(--text-3);margin-top:4px">${fmtTime(r.ts)}</div>
-          </div>`).join('')}` : ''}
-    </div>`;
-  closeOverlay('ovDetail');
-  openOverlay('ovProfile');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MESSAGING
-═══════════════════════════════════════════════════════════ */
-function convKey(uid1, uid2, adId) {
-  return [uid1, uid2].sort().join('__') + '__' + adId;
-}
-
-async function openChat(adId, sellerId, sellerName, sellerInit) {
-  if (!CU) return openAuth('login');
-  if (CU.id === sellerId) return showToast("That's your own listing.",'ℹ️');
-
-  const ad = _ads.find(a => a.id === adId);
-  const key = convKey(CU.id, sellerId, adId);
-  if (!_msgs[key]) {
-    _msgs[key] = {
-      adId, adTitle: ad?.title||'',
-      sellerName, sellerInit, sellerId,
-      buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name),
-      messages: [],
-    };
-  }
-  await sbMarkRead(key);
-  currentConv = key;
-  renderChat(key);
-  closeOverlay('ovDetail');
-  openOverlay('ovChat');
-  updateMsgBadge();
-}
-
-function renderChat(key) {
-  const msgs = _msgs;
-  const conv = msgs[key];
-  if (!conv) return;
-  const isbuyer = CU.id === conv.buyerId;
-  const otherName = isbuyer ? conv.sellerName : conv.buyerName;
-  const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
-  const otherId   = isbuyer ? conv.sellerId  : conv.buyerId;
-  const clr = avatarColor(otherName);
-
-  document.getElementById('chatInner').innerHTML = `
-    <div class="chat-header">
-      <div class="s-avatar" style="background:${clr.bg};color:${clr.fg};width:42px;height:42px;font-size:16px">${otherInit}</div>
-      <div class="chat-info">
-        <div class="chat-name">${otherName}</div>
-        <div class="chat-ad-ref">Re: ${conv.adTitle}</div>
-      </div>
-    </div>
-    <div class="chat-messages" id="chatMsgs">
-      ${conv.messages.length===0 ? `<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!<br>Ask about the listing.</div>` : ''}
-      ${conv.messages.map(m => {
-        const out = m.from === CU.id;
-        return `<div class="msg ${out?'msg-out':'msg-in'}">
-          <div class="msg-bubble">${m.text}</div>
-          <div class="msg-time">${fmtTime(m.ts)}</div>
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="chat-input-row">
-      <input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendMsg()">
-      <button class="chat-send" onclick="sendMsg()">➤</button>
-    </div>`;
-  setTimeout(() => { const el = document.getElementById('chatMsgs'); if (el) el.scrollTop = el.scrollHeight; }, 50);
-}
-
-async function sendMsg() {
-  const input = document.getElementById('chatInput');
-  const text = input?.value.trim();
-  if (!text || !currentConv) return;
-  const conv = _msgs[currentConv];
-  if (!conv) return;
-  input.value = '';
-  try {
-    await sbSendMessage(currentConv, conv, text);
-    renderChat(currentConv);
-    updateMsgBadge();
-  } catch(e) {
-    input.value = text;
-    showToast('Message failed to send. Try again.', '⚠️');
-  }
-}
-
-function renderInbox() {
-  if (!CU) {
-    document.getElementById('inboxList').innerHTML = `<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth('login')">Log In</button></div>`;
-    return;
-  }
-  const msgs = _msgs;
-  const myConvs = Object.entries(msgs).filter(([k,c]) => c.sellerId===CU.id || c.buyerId===CU.id);
-  if (!myConvs.length) {
-    document.getElementById('inboxList').innerHTML = `<div class="empty"><div class="empty-icon">💬</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>`;
-    return;
-  }
-  // Sort by latest message
-  myConvs.sort((a,b) => {
-    const am = a[1].messages.at(-1)?.ts||0;
-    const bm = b[1].messages.at(-1)?.ts||0;
-    return bm - am;
-  });
-  document.getElementById('inboxList').innerHTML = myConvs.map(([key, conv]) => {
-    const isbuyer = CU.id === conv.buyerId;
-    const otherName = isbuyer ? conv.sellerName : conv.buyerName;
-    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
-    const last = conv.messages.at(-1);
-    const unread = conv.messages.filter(m => m.from !== CU.id && !m.read).length;
-    const clr = avatarColor(otherName);
-    return `<div class="inbox-item ${unread?'unread':''}" onclick="openChatFromInbox('${key}')">
-      <div class="inbox-avatar" style="background:${clr.bg};color:${clr.fg}">${otherInit}</div>
-      <div class="inbox-info">
-        <div class="inbox-name">${otherName} ${unread?`<span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">${unread} new</span>`:''}</div>
-        <div class="inbox-preview">${last?last.text:'Start a conversation…'}</div>
-        <span class="inbox-ad">📋 ${conv.adTitle}</span>
-      </div>
-      <div class="inbox-time">${last?fmtTime(last.ts):''}</div>
-    </div>`;
-  }).join('');
-}
-
-async function openChatFromInbox(key) {
-  const conv = _msgs[key]; if (!conv) return;
-  await sbMarkRead(key);
-  currentConv = key;
-  renderChat(key);
-  openOverlay('ovChat');
-  updateMsgBadge();
-  if (document.getElementById('page-msgs').classList.contains('active')) renderInbox();
-}
-
-function updateMsgBadge() {
-  const count = unreadCount();
-  const badge = document.getElementById('mobMsgBadge');
-  if (badge) { badge.textContent = count||''; badge.classList.toggle('show', count>0); }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MY ADS
-═══════════════════════════════════════════════════════════ */
-function renderMyAds() {
-  const el = document.getElementById('myAdsBox');
-  if (!CU) { el.innerHTML = `<div class="empty"><div class="empty-icon">🔐</div><h3>Please log in</h3><p>You need an account to manage listings.</p><button class="btn btn-green" onclick="openAuth('login')">Log In</button></div>`; return; }
-  const ads = L.ads.filter(a => a.sellerId === CU.id);
-  if (!ads.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><h3>No listings yet</h3><p>Post your first free ad and start selling today!</p><button class="btn btn-green" onclick="openPostAd()">Post Your First Ad</button></div>`; return; }
-  el.innerHTML = ads.map(ad => {
-    const cat = CATS.find(c => c.id === ad.category);
-    const thumb = ad.image ? `<img src="${ad.image}" onerror="this.style.display='none'">` : (cat?.icon||'📦');
-    return `<div class="my-ad-row">
-      <div class="my-ad-thumb">${thumb}</div>
-      <div class="my-ad-info">
-        <div class="my-ad-title">${ad.title}</div>
-        <div class="my-ad-price">J$${fmtN(ad.price)}</div>
-        <div class="my-ad-meta">📍 ${ad.parish} · ${cat?.name||'Other'} · ${ago(ad.date)}</div>
-      </div>
-      <span class="s-badge ${ad.status==='sold'?'s-sold':'s-active'}">${ad.status==='sold'?'● Sold':'● Active'}</span>
-      <div class="my-ad-acts">
-        <button class="btn btn-ghost btn-sm" onclick="openDetail('${ad.id}')">View</button>
-        <button class="btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm" onclick="toggleSold('${ad.id}');renderMyAds()">${ad.status==='sold'?'Relist':'Sold'}</button>
-        <button class="btn btn-red btn-sm" onclick="delAd('${ad.id}')">Delete</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function delAd(id) {
-  if (!confirm('Delete this listing? This cannot be undone.')) return;
-  try {
-    await sbDeleteAd(id);
-    renderMyAds(); renderHome(); renderCats(); updateStats();
-    showToast('Listing deleted.', '🗑️');
-  } catch(e) {
-    showToast('Delete failed. Try again.', '⚠️');
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   AUTH
-═══════════════════════════════════════════════════════════ */
-function openAuth(tab) {
-  authTab(tab);
-  document.getElementById('authAlert').classList.remove('show');
-  openOverlay('ovAuth');
-}
-function authTab(t) {
-  document.getElementById('fLogin').style.display = t==='login' ? '' : 'none';
-  document.getElementById('fReg').style.display   = t==='register' ? '' : 'none';
-  document.getElementById('tLogin').classList.toggle('active', t==='login');
-  document.getElementById('tReg').classList.toggle('active',   t==='register');
-  document.getElementById('authAlert').classList.remove('show');
-}
-function authErr(m) { const e = document.getElementById('authAlert'); e.textContent=m; e.className='alert-box alert-err show'; }
-
-async function doLogin() {
-  const email = document.getElementById('lEmail').value.trim();
-  const pass  = document.getElementById('lPass').value;
-  if (!email||!pass) return authErr('Please fill in all fields.');
-  const btn = document.querySelector('#fLogin .btn-green');
-  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
-  try {
-    const user = await sbLogin(email, pass);
-    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
-    L.sess = CU;
-    await loadMessages();
-    subscribeMessages();
-    closeOverlay('ovAuth');
-    renderNav(); updateStats(); updateMsgBadge();
-    showToast(`Welcome back, ${user.name.split(' ')[0]}! 👋`, '👋');
-  } catch(e) {
-    authErr(e.message || 'Login failed.');
-  } finally {
-    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
-  }
-}
-
-async function doRegister() {
-  const name  = document.getElementById('rName').value.trim();
-  const email = document.getElementById('rEmail').value.trim();
-  const phone = document.getElementById('rPhone').value.trim();
-  const pass  = document.getElementById('rPass').value;
-  const parish= document.getElementById('rParish').value;
-  if (!name||!email||!pass) return authErr('Please fill in all required fields.');
-  if (pass.length < 6)      return authErr('Password must be at least 6 characters.');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Please enter a valid email address.');
-  const btn = document.querySelector('#fReg .btn-green');
-  if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
-  try {
-    const user = await sbRegister(name, email, phone, parish, pass);
-    CU = { id: user.id, name, email, phone, parish };
-    L.sess = CU;
-    subscribeMessages();
-    closeOverlay('ovAuth');
-    renderNav(); updateStats();
-    showToast(`Welcome to YaadAds, ${name.split(' ')[0]}! 🎉`, '🎉');
-  } catch(e) {
-    authErr(e.message || 'Registration failed. Please try again.');
-  } finally {
-    if (btn) { btn.textContent = 'Create Free Account'; btn.disabled = false; }
-  }
-}
-
-function doLogout() {
-  CU = null; L.sess = null;
-  _msgs = {};
-  renderNav(); goHome(); updateMsgBadge();
-  showToast('Logged out successfully.', '👋');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   POST AD (3-step wizard)
-═══════════════════════════════════════════════════════════ */
-function openPostAd() {
-  if (!CU) return openAuth('login');
-  currentPostStep = 1;
-  ['aTitle','aDesc','aPrice','aPhone'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('aParish').value='';
-  document.getElementById('aNeg').checked=false;
-  document.getElementById('postAlert').classList.remove('show');
-  clearImg(); setStep(1);
-  openOverlay('ovPost');
-}
-
-function setStep(n) {
-  currentPostStep = n;
-  [1,2,3].forEach(i => {
-    const s = document.getElementById('s'+i); const p = document.getElementById('sp'+i);
-    s.classList.toggle('active', i===n); s.classList.toggle('done', i<n);
-    p.classList.toggle('active', i===n);
-  });
-  if (n===3) buildPreview();
-}
-
-function nextStep(n) {
-  const alert = document.getElementById('postAlert');
-  alert.classList.remove('show');
-  if (n>currentPostStep) {
-    if (currentPostStep===1) {
-      if (!document.getElementById('aTitle').value.trim()) return showPostErr('Please enter a title.');
-      if (!document.getElementById('aParish').value) return showPostErr('Please select a parish.');
-      if (!document.getElementById('aPrice').value) return showPostErr('Please enter a price.');
-      if (!document.getElementById('aDesc').value.trim()) return showPostErr('Please add a description.');
-    }
-  }
-  setStep(n);
-}
-
-function showPostErr(m) {
-  const e = document.getElementById('postAlert'); e.textContent=m; e.className='alert-box alert-err show';
-}
-
-function buildPreview() {
-  const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);
-  const title = document.getElementById('aTitle').value.trim();
-  const price = document.getElementById('aPrice').value;
-  const parish = document.getElementById('aParish').value;
-  const img = uploadUrl ? `<img src="${uploadUrl}" style="width:100%;height:150px;object-fit:cover">` : `<div style="height:150px;background:${cat?.color||'#f0f0f0'};display:flex;align-items:center;justify-content:center;font-size:56px">${cat?.icon||'📦'}</div>`;
-  document.getElementById('adPreviewCard').innerHTML = `
-    <div class="ad-card" style="cursor:default;transform:none!important">
-      <div class="ad-card-img" style="height:150px">${img}<span class="ad-cat-tag">${cat?.name||'Other'}</span></div>
-      <div class="ad-card-body">
-        <div class="ad-price">J$${fmtN(parseFloat(price)||0)}</div>
-        <div class="ad-title">${title}</div>
-        <div class="ad-meta"><span>📍 ${parish}</span><span>🕐 just now</span></div>
-      </div>
-    </div>`;
-  document.getElementById('previewDetails').innerHTML = `
-    <strong>Description:</strong> ${document.getElementById('aDesc').value.trim()}<br>
-    <strong>Contact:</strong> ${document.getElementById('aPhone').value || CU.phone || 'Not provided'}<br>
-    <strong>Negotiable:</strong> ${document.getElementById('aNeg').checked ? 'Yes' : 'No'}`;
-}
-
-/* Multi-photo state */
-let uploadPhotos = []; // array of base64 strings, max 6
-
-function handleImgFiles(input) {
-  const files = Array.from(input.files||[]);
-  const remaining = 6 - uploadPhotos.length;
-  if (!remaining) { showToast('Maximum 6 photos reached','⚠️'); return; }
-  const toAdd = files.slice(0, remaining);
-  let loaded = 0;
-  toAdd.forEach(file => {
-    if (file.size > 2000000) { showToast(`${file.name} too large (max 2MB)`,'⚠️'); loaded++; if(loaded===toAdd.length) renderPhotoGrid(); return; }
-    const r = new FileReader();
-    r.onload = e => { uploadPhotos.push(e.target.result); loaded++; if(loaded===toAdd.length) renderPhotoGrid(); };
-    r.readAsDataURL(file);
-  });
-  input.value = '';
-}
-
-function renderPhotoGrid() {
-  const grid = document.getElementById('photoGrid'); if (!grid) return;
-  const thumbs = uploadPhotos.map((src, i) => `
-    <div class="photo-thumb${i===0?' selected':''}">
-      <img src="${src}" alt="">
-      <button class="del-photo" onclick="removePhoto(${i})">✕</button>
-    </div>`).join('');
-  const addBtn = uploadPhotos.length < 6
-    ? `<div class="photo-add-btn" onclick="document.getElementById('imgFile').click()"><span>📸</span><span>Add</span></div>` : '';
-  grid.innerHTML = thumbs + addBtn;
-  // Keep uploadUrl synced to first photo for preview compat
-  uploadUrl = uploadPhotos[0] || '';
-}
-
-function removePhoto(i) {
-  uploadPhotos.splice(i, 1);
-  uploadUrl = uploadPhotos[0] || '';
-  renderPhotoGrid();
-}
-
-function clearImg() {
-  uploadPhotos = []; uploadUrl = '';
-  renderPhotoGrid();
-}
-
-// Legacy single-file compat (keep old id working)
-function handleImgFile(input) { handleImgFiles(input); }
-
-async function doPostAd() {
-  const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);
-  const photos = [...uploadPhotos]; // snapshot
-  const ad = {
-    id:         'a' + Date.now(),
-    title:      document.getElementById('aTitle').value.trim(),
-    category:   document.getElementById('aCat').value,
-    parish:     document.getElementById('aParish').value,
-    price:      parseFloat(document.getElementById('aPrice').value) || 0,
-    desc:       document.getElementById('aDesc').value.trim(),
-    phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
-    image:      photos[0] || '',
-    photos,
-    neg:        document.getElementById('aNeg').checked,
-    seller:     CU.name,
-    sellerInit: initials(CU.name),
-    sellerId:   CU.id,
-    date:       new Date().toISOString(),
-    status:     'active',
-    views:      0,
-  };
-  const btn = document.querySelector('#sp3 .btn-gold');
-  if (btn) { btn.textContent = 'Publishing…'; btn.disabled = true; }
-  try {
-    await sbInsertAd(ad);
-    closeOverlay('ovPost');
-    renderCats(); renderHome(); updateStats();
-    showToast('Your ad is live! 🚀', '🚀');
-    // Celebrate
-    launchConfetti();
-  } catch(e) {
-    console.error('Post ad error:', e);
-    showPostErr('Failed to publish. Please try again.');
-  } finally {
-    if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SETUP GUIDE
-═══════════════════════════════════════════════════════════ */
-function openSetupGuide() {
-  showToast('Check the README for setup instructions.','📖');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   OVERLAY / MODAL
-═══════════════════════════════════════════════════════════ */
-function openOverlay(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
-function closeOverlay(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
-document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target===o) closeOverlay(o.id); }));
-document.addEventListener('keydown', e => { if (e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(m => closeOverlay(m.id)); });
-
-/* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
-function showToast(msg, icon='✅') {
-  const t = document.getElementById('toast');
-  document.getElementById('tMsg').textContent = msg;
-  document.getElementById('tIcon').textContent = icon;
-  t.classList.add('show');
-  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3200);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   UTILS
-═══════════════════════════════════════════════════════════ */
-function fmtN(n)  { return Number(n).toLocaleString(); }
-function initials(name) { return (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2); }
-function avatarColor(name) {
-  const palettes = [
-    {bg:'#fde68a',fg:'#92400e'},{bg:'#bbf7d0',fg:'#065f46'},{bg:'#bfdbfe',fg:'#1e40af'},
-    {bg:'#fecaca',fg:'#991b1b'},{bg:'#e9d5ff',fg:'#6b21a8'},{bg:'#fed7aa',fg:'#9a3412'},
-    {bg:'#a7f3d0',fg:'#064e3b'},{bg:'#fde68a',fg:'#78350f'},
-  ];
-  let h = 0; for (const c of name||'A') h = (h*31+c.charCodeAt(0)) & 0xffff;
-  return palettes[h % palettes.length];
-}
-function ago(d) {
-  if (!d) return 'recently';
-  const s = Math.floor((Date.now()-new Date(d))/1000);
-  if (s<60)    return 'just now';
-  if (s<3600)  return Math.floor(s/60)+'m ago';
-  if (s<86400) return Math.floor(s/3600)+'h ago';
-  const days = Math.floor(s/86400);
-  if (days<30)  return days+'d ago';
-  if (days<365) return Math.floor(days/30)+'mo ago';
-  return Math.floor(days/365)+'y ago';
-}
-function fmtTime(ts) {
-  if (!ts) return '';
-  const d = new Date(ts);
-  const now = new Date();
-  const diff = Math.floor((now-d)/86400000);
-  if (diff===0) return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  if (diff===1) return 'Yesterday';
-  return d.toLocaleDateString([],{month:'short',day:'numeric'});
-}
-
-/* ═══════════════════════════════════════════════════════════
-   AI SEARCH SHEET
-═══════════════════════════════════════════════════════════ */
-let sheetOpen = false;
-let sheetHistory = []; // {role, text, results, filters}
+let sheetOpen    = false;
+let sheetHistory = [];  // {role, text}
+let _sheetLastQTerms = [];
 
 function saveRecentSearch(q) {
   if (!q || q.length < 3) return;
@@ -3624,14 +3047,26 @@ function renderRecentSearches() {
   const recent = L.searches;
   const wrap = document.getElementById('sheetRecentWrap');
   const list = document.getElementById('sheetRecentList');
-  if (!wrap || !list) return;
-  if (!recent.length) { wrap.style.display = 'none'; return; }
+  if (!wrap||!list) return;
+  if (!recent.length) { wrap.style.display='none'; return; }
   wrap.style.display = 'block';
-  list.innerHTML = recent.slice(0, 6).map(s =>
-    `<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'")}')">
-      <span class="src-chip-icon">🕐</span>${s}
-    </button>`
+  list.innerHTML = recent.slice(0,6).map(s =>
+    `<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'")}')">`+
+    `<span class="src-chip-icon">🕐</span>${s}</button>`
   ).join('');
+}
+
+/* Update suggestion chips from live data */
+function updateSheetSugs() {
+  const sugs = YaadBrain.suggestions();
+  const wrap = document.getElementById('sheetSugs');
+  if (!wrap || !sugs.length) return;
+  const extra = sugs.map(s=>
+    `<button class="sheet-sug" onclick="sheetSearch('${s.query.replace(/'/g,"\\'")}')">` +
+    `${s.label}</button>`
+  ).join('');
+  // Append to existing chips
+  wrap.insertAdjacentHTML('beforeend', extra);
 }
 
 function openAiSheet() {
@@ -3639,10 +3074,11 @@ function openAiSheet() {
   document.getElementById('aiSheetOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   sheetOpen = true;
-  document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
   renderRecentSearches();
-  setTimeout(() => document.getElementById('sheetInput')?.focus(), 380);
+  updateSheetSugs();
+  setTimeout(()=>document.getElementById('sheetInput')?.focus(), 380);
 }
 
 function closeAiSheet() {
@@ -3658,191 +3094,154 @@ function sheetSearch(query) {
   sheetSubmit();
 }
 
-async function sheetSubmit() {
+/* ═══════════════════════════════════════════════════════════
+   SHEET SUBMIT — Pure local brain, zero network calls
+═══════════════════════════════════════════════════════════ */
+function sheetSubmit() {
   const inp     = document.getElementById('sheetInput');
   const sendBtn = document.getElementById('sheetSendBtn');
-  const query   = (inp?.value || '').trim();
+  const query   = (inp?.value||'').trim();
   if (!query) return;
   inp.value = '';
 
-  // Save to recent searches
   saveRecentSearch(query);
-
-  // Disable send button during request
   sendBtn.disabled = true;
   sendBtn.classList.add('sending');
 
-  // Hide suggestions after first use
   document.getElementById('sheetSugs')?.classList.add('hidden');
   document.getElementById('sheetRecentWrap')?.classList.add('hidden');
 
-  // Add user message
   addSheetMsg('user', query);
-
-  // Show typing indicator
   const typingEl = addTyping();
 
-  // Build ads summary
-  const ads = L.ads;
-  const adsSummary = ads.slice(0, 40).map(a =>
-    `"${a.title}" | cat:${a.category} | J$${a.price} | ${a.parish} | ${a.status}`
-  ).join('\n');
+  // Use rAF so typing indicator renders before synchronous work
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      try {
+        const result = YaadBrain.process(query, sheetHistory);
+        typingEl.remove();
 
-  const systemPrompt = `You are YaadAds AI — the sharp, culturally-aware search assistant for YaadAds, Jamaica's free classifieds marketplace. You think like a local and understand how Jamaicans actually talk and search.
+        if (result.type === 'answer') {
+          addSheetMsg('ai', result.message, null, null);
+        } else {
+          // Pass qTerms so click learning works
+          _sheetLastQTerms = result._qTerms || [];
+          addSheetMsg('ai', result.message, result.results, result.filters, result.allResults, _sheetLastQTerms);
+        }
 
-══ SITE KNOWLEDGE ══
-• YaadAds is 100% free to post, browse, and message sellers. No hidden fees ever.
-• To post: tap "+ Post Ad" or the green ＋ in the mobile bottom nav. 3-step wizard, under 2 minutes.
-• To contact a seller: open any listing → Call, WhatsApp, or Message (in-app Message needs free account).
-• Favourites: tap the 🤍 heart on any card. Saved to your device.
-• Messaging: live in-app chat. Check "Messages" tab in bottom nav. Unread badge shows new messages.
-• Accounts are free. Benefits: post ads, in-app chat, manage listings, track favourites.
-• Seller profiles: tap any seller name inside a listing to see all their ads and stats.
-• Safety tip: meet in public, bring a friend for big purchases, verify the item before payment.
-• YaadAds is Jamaica-only. All 14 parishes covered.
-
-══ JAMAICAN PRICE INTELLIGENCE ══
-All prices are JMD. Users RARELY write J$ — treat ALL bare numbers as JMD:
-  "under 100000" → maxPrice:100000 | "80k" → 80000 | "2m/2 million" → 2000000
-  "between 1m and 3m" → minPrice:1000000, maxPrice:3000000
-  "cheap" → electronics:60000, vehicles:2500000, property:12000000, other:30000
-  "affordable" → 20% higher than cheap ceilings | "budget" = cheap
-  "fi give weh"/"must sell"/"sacrificing" → cheap ceilings, seller motivated
-
-══ SMART CATEGORY MAPPING ══
-car/truck/van/bus/bike/scooter → vehicles | house/flat/land/rent/property → property
-phone/laptop/tv/tablet/camera/console → electronics | clothes/shoes/bag/fashion → fashion
-sofa/bed/fridge/stove/furniture → furniture | job/hiring/vacancy → jobs
-repair/plumber/cleaning/service → services | food/farm/fruit/fish → food
-guitar/art/music/instrument → music | sport/gym/bicycle → sports | baby/kids/toys → kids
-
-══ JAMAICAN SLANG ══
-"likkle/lil/small"→budget | "dutty cheap/giveaway"→very low price | "fi sell/must sell/need gone"→motivated seller
-"uptown"→St. Andrew | "downtown/HWT"→Kingston | "portmore/spanish town"→St. Catherine
-"mobay/MoBay"→St. James | "ochi/ocho"→St. Ann | "mandeville"→Manchester | "sav"→Westmoreland
-
-══ CURRENT LISTINGS (${ads.length} total) ══
-${adsSummary}
-
-══ CHAT CONTEXT ══
-This is a conversational AI chat. Previous messages: ${JSON.stringify(sheetHistory.slice(-4))}
-
-══ RESPONSE FORMAT — ONLY OUTPUT JSON ══
-{"type":"search","message":"Warm conversational reply","filters":{"categories":["electronics"],"maxPrice":80000,"minPrice":null,"parish":"Kingston","keywords":["phone"]}}
-OR
-{"type":"answer","message":"Clear warm answer in 1-3 sentences. Conversational, Jamaican-friendly."}
-
-For searches: message should be short and natural like a chat reply, not formal.
-NEVER output anything outside the JSON.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 350,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: query }]
-      })
-    });
-
-    const data = await res.json();
-    const raw = (data.content?.[0]?.text || '').replace(/\`\`\`json|\`\`\`/g, '').trim();
-    let parsed;
-    try { parsed = JSON.parse(raw); }
-    catch { parsed = { type: 'answer', message: raw || "Let me show you what's available." }; }
-
-    typingEl.remove();
-
-    if (parsed.type === 'search' && parsed.filters) {
-      const f = parsed.filters;
-      // Filter listings client-side
-      let results = L.ads;
-      if (f.categories?.length) results = results.filter(a => f.categories.includes(a.category));
-      if (f.keywords?.length) {
-        const kw = f.keywords.join(' ').toLowerCase();
-        results = results.filter(a =>
-          a.title.toLowerCase().includes(kw.split(' ')[0]) ||
-          a.desc.toLowerCase().includes(kw.split(' ')[0])
-        );
+        sheetHistory.push({ role:'user', text:query });
+        sheetHistory.push({ role:'ai', text:result.message });
+        if (sheetHistory.length > 8) sheetHistory = sheetHistory.slice(-8);
+      } catch(err) {
+        console.error('Brain error:', err);
+        typingEl.remove();
+        addSheetMsg('ai', "Something went wrong — try rephrasing your search! 🔍", null, null);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove('sending');
+        document.getElementById('sheetInput')?.focus();
       }
-      if (f.maxPrice) results = results.filter(a => a.price <= f.maxPrice);
-      if (f.minPrice) results = results.filter(a => a.price >= f.minPrice);
-      if (f.parish)   results = results.filter(a => a.parish.toLowerCase() === f.parish.toLowerCase());
-      results = results.filter(a => a.status !== 'sold').slice(0, 5);
-
-      addSheetMsg('ai', parsed.message, results, f);
-      sheetHistory.push({ role: 'user', text: query });
-      sheetHistory.push({ role: 'ai', text: parsed.message });
-    } else {
-      addSheetMsg('ai', parsed.message, null, null);
-      sheetHistory.push({ role: 'user', text: query });
-      sheetHistory.push({ role: 'ai', text: parsed.message });
-    }
-  } catch (err) {
-    typingEl.remove();
-    addSheetMsg('ai', "Couldn't connect right now. Try again in a moment.", null, null);
-  } finally {
-    sendBtn.disabled = false;
-    sendBtn.classList.remove('sending');
-    document.getElementById('sheetInput')?.focus();
-  }
+    }, 180); // tiny delay for UX realism
+  });
 }
 
-function addSheetMsg(role, text, results, filters) {
+
+function addSheetMsg(role, text, results, filters, allResults, qTerms) {
   const chat = document.getElementById('sheetChat');
-  const el = document.createElement('div');
+  const el   = document.createElement('div');
 
   if (role === 'user') {
     el.className = 'sheet-msg-user';
     el.textContent = text;
-  } else {
-    el.className = 'sheet-msg-ai';
-    el.innerHTML = `<div class="sheet-msg-text">${escHtml(text)}</div>`;
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+    return el;
+  }
 
-    if (results !== null) {
-      const count = results ? results.length : 0;
-      const tag = document.createElement('div');
-      tag.className = 'sheet-count-tag';
-      tag.textContent = count === 0 ? 'No listings found' : `${count} listing${count!==1?'s':''} found`;
-      el.appendChild(tag);
+  // AI message
+  el.className = 'sheet-msg-ai';
+  el.innerHTML = '<div class="sheet-msg-text">' + escHtml(text) + '</div>';
 
-      if (results && results.length > 0) {
-        const resWrap = document.createElement('div');
-        resWrap.className = 'sheet-results';
-        results.forEach(ad => {
-          const cat = CATS.find(c => c.id === ad.category);
-          const card = document.createElement('div');
-          card.className = 'sheet-result-card';
-          card.innerHTML = `<div class="src-icon">${cat?.icon||'📦'}</div><div class="src-info"><div class="src-price">J$${fmtN(ad.price)}</div><div class="src-title">${escHtml(ad.title)}</div><div class="src-meta">📍 ${ad.parish}</div></div>`;
-          card.onclick = () => { closeAiSheet(); setTimeout(() => openDetail(ad.id), 200); };
-          resWrap.appendChild(card);
-        });
+  if (results !== null) {
+    const count      = results ? results.length : 0;
+    const totalCount = allResults ? allResults.length : count;
 
-        // View All button that applies filters to home page
-        if (filters) {
-          const viewAll = document.createElement('div');
-          viewAll.className = 'sheet-view-all';
-          viewAll.textContent = `View all results on home →`;
-          viewAll.onclick = () => {
+    // Count badge
+    const tag = document.createElement('div');
+    tag.className = 'sheet-count-tag';
+    if (count === 0) {
+      tag.textContent = 'No listings found';
+    } else {
+      tag.textContent = totalCount + ' result' + (totalCount!==1?'s':'') + ' — top ' + Math.min(count,totalCount) + ' shown';
+    }
+    el.appendChild(tag);
+
+    if (results && results.length > 0) {
+      const resWrap = document.createElement('div');
+      resWrap.className = 'sheet-results';
+
+      results.forEach(function(ad) {
+        const cat  = CATS.find(function(c){ return c.id === ad.category; });
+        const card = document.createElement('div');
+        card.className = 'sheet-result-card';
+        const isNew  = ((Date.now() - new Date(ad.date||0)) / 86400000) < 3;
+        const negBadge = ad.neg ? '<span class="src-neg-badge">neg.</span>' : '';
+        const newBadge = isNew  ? '<span class="src-new-badge">New</span>'  : '';
+        const thumb = ad.image
+          ? '<img class="src-thumb" src="' + ad.image + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          : '<div class="src-icon">' + (cat ? cat.icon : '📦') + '</div>';
+        card.innerHTML =
+          thumb +
+          '<div class="src-info">' +
+            '<div class="src-price">J$' + fmtN(ad.price) + ' ' + negBadge + newBadge + '</div>' +
+            '<div class="src-title">' + escHtml(ad.title) + '</div>' +
+            '<div class="src-meta">📍 ' + ad.parish + ' · ' + (cat ? cat.name : 'Other') + '</div>' +
+          '</div>' +
+          '<div class="src-arrow">›</div>';
+
+        // Closure so ad ref is captured correctly
+        card.onclick = (function(adCopy) {
+          return function() {
+            if (qTerms && qTerms.length) YaadBrain.learn(adCopy.id, qTerms);
             closeAiSheet();
-            // Apply filters to home page
-            if (filters.categories?.length === 1) activeF = filters.categories[0];
-            else activeF = 'all';
-            searchQ = (filters.keywords || []).join(' ');
-            window._aiFilters = filters;
-            compactHero();
-            const inp = document.getElementById('aiInput');
-            if (inp) inp.value = document.getElementById('sheetInput')?.value || '';
-            renderCats(); renderHome(); delete window._aiFilters;
-            showAiResponse(text, null);
-            scrollToResults();
+            setTimeout(function(){ openDetail(adCopy.id); }, 200);
           };
-          resWrap.appendChild(viewAll);
-        }
-        el.appendChild(resWrap);
+        })(ad);
+        resWrap.appendChild(card);
+      });
+
+      // View All on home button
+      if (filters && totalCount > 0) {
+        const viewAll = document.createElement('button');
+        viewAll.className = 'sheet-view-all';
+        viewAll.textContent = 'View all ' + totalCount + ' results on home →';
+        viewAll.onclick = function() {
+          closeAiSheet();
+          activeF = (filters.categories && filters.categories.length === 1) ? filters.categories[0] : 'all';
+          searchQ = (filters.keywords || []).join(' ');
+          window._aiFilters = filters;
+          compactHero();
+          const inp = document.getElementById('aiInput');
+          if (inp) inp.value = searchQ;
+          renderCats(); renderHome(); delete window._aiFilters;
+          showAiResponse(text, totalCount);
+          scrollToResults();
+        };
+        resWrap.appendChild(viewAll);
       }
+      el.appendChild(resWrap);
+
+    } else {
+      // No results helpers
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:12px;color:rgba(255,255,255,.4);margin-top:8px;padding:0 4px';
+      hint.textContent = 'Try different keywords, or browse all listings below.';
+      el.appendChild(hint);
+      const browseBtn = document.createElement('button');
+      browseBtn.className = 'sheet-view-all';
+      browseBtn.textContent = 'Browse all listings →';
+      browseBtn.onclick = function(){ closeAiSheet(); goHome(); };
+      el.appendChild(browseBtn);
     }
   }
 
