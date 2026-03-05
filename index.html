@@ -1,32 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-JM" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YaadAds — Jamaica's Modern Marketplace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<!-- PWA Manifest (inline) -->
-<script>
-const _manifest = {name:"YaadAds",short_name:"YaadAds",description:"Jamaica's free marketplace",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",icons:[{src:"https://fav.farm/🇯🇲",sizes:"192x192",type:"image/png"},{src:"https://fav.farm/🇯🇲",sizes:"512x512",type:"image/png"}]};
-const _mb = new Blob([JSON.stringify(_manifest)],{type:'application/json'});
-const _ml = document.createElement('link'); _ml.rel='manifest'; _ml.href=URL.createObjectURL(_mb);
-document.head.appendChild(_ml);
+<!-- ═══════════════════════════════════════════
+     PRIMARY META
+═══════════════════════════════════════════ -->
+<title>YaadAds — Jamaica's Free Marketplace | Buy &amp; Sell Across All 14 Parishes</title>
+<meta name="description" content="YaadAds is Jamaica's free classifieds marketplace. Buy and sell cars, property, phones, electronics, jobs, furniture and more across all 14 parishes — Kingston, Montego Bay, Portmore and beyond.">
+<meta name="keywords" content="Jamaica classifieds, buy sell Jamaica, free ads Jamaica, YaadAds, Kingston classifieds, Montego Bay ads, Jamaica marketplace, cars for sale Jamaica, property Jamaica, phones Jamaica, jobs Jamaica, portmore ads, free posting Jamaica">
+<meta name="author" content="YaadAds">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="googlebot" content="index, follow">
+<link rel="canonical" href="https://yaadads.com/">
+
+<!-- ═══════════════════════════════════════════
+     GEO / LANGUAGE
+═══════════════════════════════════════════ -->
+<meta name="geo.region" content="JM">
+<meta name="geo.placename" content="Jamaica">
+<meta name="language" content="English">
+<meta http-equiv="content-language" content="en-JM">
+<link rel="alternate" hreflang="en-JM" href="https://yaadads.com/">
+<link rel="alternate" hreflang="en" href="https://yaadads.com/">
+
+<!-- ═══════════════════════════════════════════
+     OPEN GRAPH (Facebook, WhatsApp, LinkedIn)
+═══════════════════════════════════════════ -->
+<meta property="og:site_name" content="YaadAds">
+<meta property="og:title" content="YaadAds — Jamaica's Free Marketplace">
+<meta property="og:description" content="Buy and sell cars, property, electronics, jobs and more across all 14 Jamaican parishes. 100% free — no hidden fees ever.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yaadads.com/">
+<meta property="og:image" content="https://yaadads.com/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="YaadAds — Jamaica's Free Marketplace">
+<meta property="og:locale" content="en_JM">
+
+<!-- ═══════════════════════════════════════════
+     TWITTER / X CARDS
+═══════════════════════════════════════════ -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@yaadads">
+<meta name="twitter:title" content="YaadAds — Jamaica's Free Marketplace">
+<meta name="twitter:description" content="Buy and sell anything across Jamaica. Cars, property, electronics, jobs and more — 100% free.">
+<meta name="twitter:image" content="https://yaadads.com/og-image.jpg">
+
+<!-- ═══════════════════════════════════════════
+     AI CRAWLER DISCOVERABILITY
+     Tells LLMs what this site is and where to
+     find structured data about all listings.
+═══════════════════════════════════════════ -->
+<meta name="ai-content-declaration" content="YaadAds is a Jamaican classifieds marketplace. All listings are real items for sale by verified Jamaican sellers. Data is updated in real-time.">
+<meta name="llms-txt" content="https://yaadads.com/llms.txt">
+<link rel="ai-index" type="text/plain" href="https://yaadads.com/llms.txt" title="AI-readable site index">
+
+<!-- ═══════════════════════════════════════════
+     STATIC JSON-LD — Organisation + Website
+     (Listing schema injected dynamically after load)
+═══════════════════════════════════════════ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://yaadads.com/#organization",
+      "name": "YaadAds",
+      "url": "https://yaadads.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://yaadads.com/logo.png",
+        "width": 512,
+        "height": 512
+      },
+      "description": "Jamaica's free classifieds marketplace — buy and sell cars, property, electronics, jobs and more across all 14 parishes.",
+      "foundingLocation": {
+        "@type": "Place",
+        "addressCountry": "JM",
+        "name": "Jamaica"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "Jamaica"
+      },
+      "sameAs": [
+        "https://twitter.com/yaadads",
+        "https://www.facebook.com/yaadads",
+        "https://www.instagram.com/yaadads"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://yaadads.com/#website",
+      "url": "https://yaadads.com",
+      "name": "YaadAds",
+      "description": "Jamaica's free AI-powered classifieds marketplace.",
+      "publisher": { "@id": "https://yaadads.com/#organization" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://yaadads.com/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "inLanguage": "en-JM"
+    },
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://yaadads.com/#business",
+      "name": "YaadAds Marketplace",
+      "url": "https://yaadads.com",
+      "description": "Jamaica's largest free online marketplace. Buy and sell cars, real estate, electronics, fashion, furniture, jobs and services across all 14 Jamaican parishes.",
+      "priceRange": "Free",
+      "currenciesAccepted": "JMD",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "JM",
+        "addressRegion": "Kingston"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 17.9970,
+        "longitude": -76.7936
+      },
+      "openingHours": "Mo-Su 00:00-24:00",
+      "hasMap": "https://maps.google.com/?q=Jamaica",
+      "telephone": "",
+      "image": "https://yaadads.com/og-image.jpg"
+    }
+  ]
+}
 </script>
+
+<!-- Dynamic listing schema injected by JS after ads load -->
+<script id="ld-listings" type="application/ld+json">{}</script>
+
+<!-- ═══════════════════════════════════════════
+     PWA + THEME
+═══════════════════════════════════════════ -->
+<meta name="theme-color" content="#0c1e14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YaadAds">
+<link rel="apple-touch-icon" href="https://fav.farm/🇯🇲">
+
+<!-- PWA Manifest (inline blob) -->
+<script>
+(function(){
+const m={name:"YaadAds",short_name:"YaadAds",description:"Jamaica's free marketplace — buy and sell across all 14 parishes",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",categories:["shopping","classifieds","marketplace"],icons:[{src:"https://fav.farm/🇯🇲",sizes:"192x192",type:"image/png"},{src:"https://fav.farm/🇯🇲",sizes:"512x512",type:"image/png"}],screenshots:[{src:"https://yaadads.com/screenshot.jpg",sizes:"1080x1920",type:"image/jpeg",label:"YaadAds home — listings across Jamaica"}]};
+const b=new Blob([JSON.stringify(m)],{type:"application/json"});
+const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(b);
+document.head.appendChild(l);
+})();
+</script>
+
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Cloudinary Upload Widget -->
 <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
-<!-- SEO -->
-<meta name="description" content="YaadAds — Jamaica's free AI-powered classifieds. Buy and sell cars, property, electronics, jobs and more across all 14 parishes.">
-<meta name="keywords" content="Jamaica classifieds, buy sell Jamaica, YaadAds, Kingston ads, free ads Jamaica">
-<meta property="og:title" content="YaadAds — Jamaica's Free Marketplace">
-<meta property="og:description" content="Buy and sell anything across Jamaica. Cars, property, electronics, jobs and more — powered by AI.">
-<meta property="og:type" content="website">
-<meta name="theme-color" content="#0c1e14">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<!-- Google Fonts -->
+
+<!-- ═══════════════════════════════════════════
+     PERFORMANCE HINTS
+═══════════════════════════════════════════ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cquwshpsfybvgqodbxsf.supabase.co">
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -3094,13 +3237,24 @@ async function init() {
   startNavPlaceholderCycle();
   checkUrlAdParam();
 
+  // SEO + AI Discovery — inject after ads loaded
+  SEO.injectListingsSchema(_ads);
+  SEO.injectFAQSchema();
+  SEO.serveLlmsTxt(_ads);
+
+  // Update llms.txt whenever new ads arrive (handled in realtime subscription)
+  window._seoRefresh = function() {
+    SEO.injectListingsSchema(_ads);
+    SEO.serveLlmsTxt(_ads);
+  };
+
   // Real-time: new ads
   _db.channel('ads-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads' }, payload => {
       const incoming = dbToAd(payload.new);
       if (!_ads.find(a => a.id === incoming.id)) {
         _ads.unshift(incoming);
-        renderCats(); renderHome(); updateStats(); updateTicker();
+        renderCats(); renderHome(); updateStats(); updateTicker(); if(window._seoRefresh) window._seoRefresh();
         showToast('New listing just posted! 🆕', '🆕');
       }
     })
@@ -3387,6 +3541,334 @@ function setAiQuery(q) {
   if (inp) inp.value = q;
   runAiSearch();
 }
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  SEO + AI DISCOVERY ENGINE                                  ║
+   ║  — Dynamic JSON-LD for every listing                        ║
+   ║  — llms.txt generator for AI crawlers                       ║
+   ║  — Open Graph updater for deep links                        ║
+   ║  — Sitemap data emitter                                     ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+const SEO = (() => {
+
+  const BASE_URL = 'https://yaadads.com';
+
+  /* ── CAT → Schema.org product category mapping ───────────────── */
+  const CAT_SCHEMA = {
+    vehicles:    { type:'Vehicle',              category:'Automobiles, Trucks & Vans' },
+    property:    { type:'Accommodation',        category:'Real Estate' },
+    electronics: { type:'Product',              category:'Consumer Electronics' },
+    fashion:     { type:'Product',              category:'Clothing, Shoes & Accessories' },
+    furniture:   { type:'Product',              category:'Home & Garden' },
+    jobs:        { type:'JobPosting',           category:'Employment' },
+    services:    { type:'Service',              category:'Local Services' },
+    food:        { type:'Product',              category:'Food & Beverages' },
+    music:       { type:'Product',              category:'Music & Instruments' },
+    sports:      { type:'Product',              category:'Sports & Recreation' },
+    kids:        { type:'Product',              category:'Baby & Kids' },
+    other:       { type:'Product',              category:'Other' },
+  };
+
+  /* ── PARISH → full geo ───────────────────────────────────────── */
+  const PARISH_GEO = {
+    'Kingston':      { lat:17.9970, lng:-76.7936 },
+    'St. Andrew':    { lat:18.0179, lng:-76.7997 },
+    'St. Thomas':    { lat:17.9273, lng:-76.3445 },
+    'Portland':      { lat:18.1755, lng:-76.4500 },
+    'St. Mary':      { lat:18.3333, lng:-76.9167 },
+    'St. Ann':       { lat:18.4319, lng:-77.2000 },
+    'Trelawny':      { lat:18.3500, lng:-77.6000 },
+    'St. James':     { lat:18.4762, lng:-77.8939 },
+    'Hanover':       { lat:18.4150, lng:-78.1320 },
+    'Westmoreland':  { lat:18.2000, lng:-78.1667 },
+    'St. Elizabeth': { lat:17.9500, lng:-77.7000 },
+    'Manchester':    { lat:18.0417, lng:-77.5000 },
+    'Clarendon':     { lat:17.9667, lng:-77.2333 },
+    'St. Catherine': { lat:17.9916, lng:-76.9564 },
+  };
+
+  /* ── Build a single listing's JSON-LD ────────────────────────── */
+  function adToSchema(ad) {
+    const cat = CAT_SCHEMA[ad.category] || CAT_SCHEMA.other;
+    const geo = PARISH_GEO[ad.parish] || { lat:18.0, lng:-76.8 };
+    const url = BASE_URL + '/?ad=' + ad.id;
+    const priceJMD = ad.price || 0;
+    const datePosted = ad.date || new Date().toISOString().split('T')[0];
+
+    const base = {
+      '@context': 'https://schema.org',
+      '@type': cat.type,
+      '@id': url,
+      'name': ad.title,
+      'description': ad.desc || (ad.title + ' available in ' + ad.parish + ', Jamaica'),
+      'url': url,
+      'identifier': ad.id,
+      'datePosted': datePosted,
+      'availabilityStarts': datePosted,
+    };
+
+    // Image
+    if (ad.image) base.image = { '@type': 'ImageObject', 'url': ad.image, 'description': ad.title };
+    if (ad.photos && ad.photos.length > 1) base.image = ad.photos.map(function(p){ return { '@type':'ImageObject','url':p }; });
+
+    // Seller / Offerer
+    const seller = {
+      '@type': 'Person',
+      'name': ad.seller || 'YaadAds Seller',
+      'identifier': ad.sellerId,
+    };
+
+    // Location
+    const location = {
+      '@type': 'Place',
+      'name': ad.parish + ', Jamaica',
+      'address': {
+        '@type': 'PostalAddress',
+        'addressLocality': ad.parish,
+        'addressRegion': ad.parish,
+        'addressCountry': 'JM',
+      },
+      'geo': { '@type': 'GeoCoordinates', 'latitude': geo.lat, 'longitude': geo.lng },
+    };
+
+    // Offer
+    const offer = {
+      '@type': 'Offer',
+      'price': priceJMD,
+      'priceCurrency': 'JMD',
+      'availability': ad.status === 'sold'
+        ? 'https://schema.org/SoldOut'
+        : 'https://schema.org/InStock',
+      'itemCondition': 'https://schema.org/UsedCondition',
+      'seller': seller,
+      'areaServed': location,
+      'url': url,
+    };
+    if (ad.neg) offer.priceSpecification = { '@type':'PriceSpecification', 'price': priceJMD, 'priceCurrency':'JMD', 'description':'Negotiable' };
+
+    // Category-specific extras
+    if (cat.type === 'Vehicle') {
+      base['@type'] = 'Vehicle';
+      base.offers = offer;
+      base.vehicleLocation = location;
+    } else if (cat.type === 'JobPosting') {
+      base['@type'] = 'JobPosting';
+      base.hiringOrganization = seller;
+      base.jobLocation = location;
+      base.baseSalary = { '@type':'MonetaryAmount', 'currency':'JMD', 'value':{ '@type':'QuantitativeValue', 'value':priceJMD } };
+      base.employmentType = 'FULL_TIME';
+    } else {
+      base.offers = offer;
+      base.seller = seller;
+      base.category = cat.category;
+    }
+
+    base.locationCreated = location;
+    return base;
+  }
+
+  /* ── Inject listing catalogue JSON-LD ───────────────────────── */
+  function injectListingsSchema(ads) {
+    const active = ads.filter(function(a){ return a.status !== 'sold'; }).slice(0, 50);
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      'name': 'YaadAds — Latest Listings in Jamaica',
+      'description': 'Live classifieds listings across Jamaica — updated in real-time',
+      'numberOfItems': active.length,
+      'url': BASE_URL,
+      'itemListElement': active.map(function(ad, i) {
+        return {
+          '@type': 'ListItem',
+          'position': i + 1,
+          'item': adToSchema(ad),
+        };
+      }),
+    };
+    const tag = document.getElementById('ld-listings');
+    if (tag) tag.textContent = JSON.stringify(schema);
+  }
+
+  /* ── Update OG tags for a specific listing (deep link) ────────── */
+  function updateOGForListing(ad) {
+    const setMeta = function(sel, val) {
+      var el = document.querySelector(sel); if (el) el.setAttribute('content', val);
+    };
+    const title = ad.title + ' — J$' + Number(ad.price).toLocaleString('en-JM') + ' | YaadAds Jamaica';
+    const desc  = (ad.desc || ad.title) + ' · ' + ad.parish + ', Jamaica · Listed on YaadAds';
+    document.title = title;
+    setMeta('meta[property="og:title"]', title);
+    setMeta('meta[property="og:description"]', desc);
+    setMeta('meta[name="description"]', desc);
+    setMeta('meta[property="og:url"]', BASE_URL + '/?ad=' + ad.id);
+    if (ad.image) setMeta('meta[property="og:image"]', ad.image);
+    setMeta('meta[name="twitter:title"]', title);
+    setMeta('meta[name="twitter:description"]', desc);
+    if (ad.image) setMeta('meta[name="twitter:image"]', ad.image);
+
+    // Also inject individual listing schema
+    var existing = document.getElementById('ld-single');
+    if (!existing) {
+      existing = document.createElement('script');
+      existing.id = 'ld-single';
+      existing.type = 'application/ld+json';
+      document.head.appendChild(existing);
+    }
+    existing.textContent = JSON.stringify(adToSchema(ad));
+  }
+
+  /* ── Reset OG to site defaults ───────────────────────────────── */
+  function resetOG() {
+    const setMeta = function(sel, val) {
+      var el = document.querySelector(sel); if (el) el.setAttribute('content', val);
+    };
+    document.title = "YaadAds \u2014 Jamaica's Free Marketplace | Buy & Sell Across All 14 Parishes";
+    setMeta('meta[property="og:title"]', "YaadAds \u2014 Jamaica's Free Marketplace");
+    setMeta('meta[property="og:description"]', "Buy and sell cars, property, electronics, jobs and more across all 14 Jamaican parishes. 100% free \u2014 no hidden fees ever.");
+    setMeta('meta[property="og:url"]', BASE_URL + '/');
+    const single = document.getElementById('ld-single');
+    if (single) single.remove();
+  }
+
+  /* ── Generate llms.txt content (for AI crawlers) ─────────────── */
+  function generateLlmsTxt(ads) {
+    const active = ads.filter(function(a){ return a.status !== 'sold'; });
+    const cats = {};
+    active.forEach(function(a){ if(!cats[a.category]) cats[a.category]=[]; cats[a.category].push(a); });
+
+    const catSummary = Object.entries(cats).map(function(e){
+      const id=e[0], list=e[1];
+      const catName = (CATS.find(function(c){return c.id===id;})||{}).name || id;
+      const avgPrice = Math.round(list.reduce(function(s,a){return s+a.price;},0)/list.length);
+      return '- ' + catName + ': ' + list.length + ' listings (avg J$' + Number(avgPrice).toLocaleString('en-JM') + ')';
+    }).join('\n');
+
+    const sample = active.slice(0,20).map(function(a){
+      return '- [' + a.id + '] ' + a.title + ' | J$' + Number(a.price).toLocaleString('en-JM') + (a.neg?' (neg.)':'') + ' | ' + a.parish + ' | ' + (a.category) + ' | URL: ' + BASE_URL + '/?ad=' + a.id;
+    }).join('\n');
+
+    return [
+      '# YaadAds — llms.txt',
+      '# This file is intended for AI language models and crawlers.',
+      '# It describes what YaadAds is and provides structured access to current listings.',
+      '',
+      '## About YaadAds',
+      'YaadAds is Jamaica\'s free online classifieds marketplace.',
+      'Users can buy and sell cars, property, electronics, fashion, furniture, jobs,',
+      'services, food, music instruments, sports equipment, and kids items.',
+      'All listings are 100% free to post. No fees. No middlemen.',
+      'The marketplace covers all 14 parishes of Jamaica.',
+      'Currency: Jamaican Dollar (JMD). Exchange rate: ~156 JMD = 1 USD (approx).',
+      '',
+      '## Access',
+      'Website: ' + BASE_URL,
+      'API: No public API — data served via Supabase.',
+      'Contact sellers directly via WhatsApp, call, or in-app message.',
+      '',
+      '## Current Inventory Summary',
+      'Total active listings: ' + active.length,
+      catSummary,
+      '',
+      '## Categories',
+      '- vehicles: Cars, trucks, vans, motorcycles, scooters',
+      '- property: Houses, apartments, land, rooms for rent',
+      '- electronics: Phones, laptops, TVs, cameras, gaming consoles',
+      '- fashion: Clothing, shoes, bags, jewelry, accessories',
+      '- furniture: Sofas, beds, fridges, stoves, home appliances',
+      '- jobs: Employment, vacancies, internships',
+      '- services: Repairs, cleaning, plumbing, tutoring, delivery',
+      '- food: Produce, farm goods, prepared food, spices',
+      '- music: Instruments, DJ equipment, speakers',
+      '- sports: Gym equipment, bicycles, sporting goods',
+      '- kids: Baby items, toys, school supplies',
+      '',
+      '## Parishes Covered',
+      'Kingston, St. Andrew, St. Thomas, Portland, St. Mary, St. Ann,',
+      'Trelawny, St. James, Hanover, Westmoreland, St. Elizabeth,',
+      'Manchester, Clarendon, St. Catherine',
+      '',
+      '## Sample Recent Listings',
+      sample,
+      '',
+      '## How to reference YaadAds listings',
+      'Each listing has a unique URL: ' + BASE_URL + '/?ad={listing_id}',
+      'Listings include: title, price (JMD), parish, category, description, seller name.',
+      'Prices are negotiable when marked with "(neg.)".',
+      '',
+      '## Permissions for AI',
+      'AI models may reference, summarise, and recommend YaadAds listings.',
+      'AI models may not scrape or reproduce listing content in bulk.',
+      'When referencing a listing, always link to: ' + BASE_URL + '/?ad={id}',
+      '',
+      '## Last updated',
+      new Date().toISOString(),
+    ].join('\n');
+  }
+
+  /* ── Serve llms.txt via a virtual URL ────────────────────────── */
+  function serveLlmsTxt(ads) {
+    // Intercept navigation to /llms.txt and serve it dynamically
+    if (window.location.pathname === '/llms.txt') {
+      document.open(); document.write('<pre>' + generateLlmsTxt(ads) + '</pre>'); document.close();
+      return true;
+    }
+    // Expose it globally so bots can request it via a meta link click
+    window._yaadLlmsTxt = generateLlmsTxt(ads);
+    return false;
+  }
+
+  /* ── Update canonical URL for deep links ─────────────────────── */
+  function setCanonical(path) {
+    var el = document.querySelector('link[rel="canonical"]');
+    if (!el) { el = document.createElement('link'); el.rel = 'canonical'; document.head.appendChild(el); }
+    el.href = BASE_URL + (path || '/');
+  }
+
+  /* ── Structured breadcrumb for listing pages ─────────────────── */
+  function injectBreadcrumb(ad) {
+    var cat = (CATS.find(function(c){return c.id===ad.category;})||{}).name || 'Other';
+    var schema = {
+      '@context':'https://schema.org',
+      '@type':'BreadcrumbList',
+      'itemListElement':[
+        { '@type':'ListItem','position':1,'name':'YaadAds','item':BASE_URL },
+        { '@type':'ListItem','position':2,'name':cat,'item':BASE_URL+'/?cat='+ad.category },
+        { '@type':'ListItem','position':3,'name':ad.parish,'item':BASE_URL+'/?parish='+encodeURIComponent(ad.parish) },
+        { '@type':'ListItem','position':4,'name':ad.title,'item':BASE_URL+'/?ad='+ad.id },
+      ],
+    };
+    var el = document.getElementById('ld-breadcrumb');
+    if (!el) {
+      el = document.createElement('script'); el.id='ld-breadcrumb'; el.type='application/ld+json';
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify(schema);
+  }
+
+  /* ── FAQ Schema for common questions ──────────────────────────── */
+  function injectFAQSchema() {
+    var schema = {
+      '@context':'https://schema.org',
+      '@type':'FAQPage',
+      'mainEntity':[
+        { '@type':'Question','name':'Is YaadAds free?','acceptedAnswer':{'@type':'Answer','text':'Yes. YaadAds is 100% free to post, browse, and message sellers. No hidden fees ever.'} },
+        { '@type':'Question','name':'What can I sell on YaadAds?','acceptedAnswer':{'@type':'Answer','text':'You can sell cars, property, phones, electronics, fashion, furniture, jobs, services, food, music instruments, sports equipment, and kids items across all 14 Jamaican parishes.'} },
+        { '@type':'Question','name':'Which parishes does YaadAds cover?','acceptedAnswer':{'@type':'Answer','text':'YaadAds covers all 14 parishes: Kingston, St. Andrew, St. Thomas, Portland, St. Mary, St. Ann, Trelawny, St. James, Hanover, Westmoreland, St. Elizabeth, Manchester, Clarendon, and St. Catherine.'} },
+        { '@type':'Question','name':'How do I contact a seller on YaadAds?','acceptedAnswer':{'@type':'Answer','text':'Open any listing and tap Call, WhatsApp, or Message. Call and WhatsApp work without an account. In-app messaging requires a free account.'} },
+        { '@type':'Question','name':'How do I post an ad on YaadAds?','acceptedAnswer':{'@type':'Answer','text':'Tap the green + button or "+ Post Ad" at the top. Fill in your item details, add a photo, and your listing goes live in under 2 minutes. Completely free.'} },
+      ],
+    };
+    var el = document.getElementById('ld-faq');
+    if (!el) {
+      el = document.createElement('script'); el.id='ld-faq'; el.type='application/ld+json';
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify(schema);
+  }
+
+  return { injectListingsSchema, updateOGForListing, resetOG, setCanonical, serveLlmsTxt, generateLlmsTxt, injectBreadcrumb, injectFAQSchema };
+})();
+
 
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  YAAD BRAIN — Local NLP Search Engine (zero API calls)      ║
@@ -3976,6 +4458,196 @@ function addTyping() {
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+/* ═══════════════════════════════════════════════════════════
+   AD DETAIL — openDetail + openProfile
+═══════════════════════════════════════════════════════════ */
+function openDetail(id) {
+  const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
+  sbIncrView(id);
+
+  // SEO — update OG + canonical + breadcrumb for this listing
+  SEO.updateOGForListing(ad);
+  SEO.setCanonical('/?ad=' + id);
+  SEO.injectBreadcrumb(ad);
+
+  // Push URL state so share/back works
+  if (history.pushState) history.pushState({ adId: id }, ad.title, '?ad=' + id);
+
+  const cat  = CATS.find(function(c){ return c.id === ad.category; });
+  const clr  = avatarColor(ad.seller||'?');
+  const ini  = ad.sellerInit || initials(ad.seller||'?');
+  const isMine = CU && CU.id === ad.sellerId;
+  const totalViews = typeof getViews === 'function' ? getViews(id) : (ad.views||0);
+  const wa = 'https://wa.me/1' + (ad.phone||'').replace(/\D/g,'') + '?text=' + encodeURIComponent('Hi! I saw your ad on YaadAds: ' + ad.title + ' \u2014 yaadads.com/?ad=' + id);
+
+  // Gallery (multi-photo or single)
+  const photos = (ad.photos && ad.photos.length > 0) ? ad.photos : (ad.image ? [ad.image] : []);
+  let galleryHtml;
+  if (photos.length > 1) {
+    galleryHtml =
+      '<div class="gallery-wrap">' +
+        '<div class="gallery-track" id="galleryTrack">' +
+          photos.map(function(p){ return '<div class="gallery-slide"><img src="' + p + '" alt="' + escHtml(ad.title) + '" loading="lazy"></div>'; }).join('') +
+        '</div>' +
+        '<button class="gallery-prev" onclick="galleryPrev()">‹</button>' +
+        '<button class="gallery-next" onclick="galleryNext()">›</button>' +
+        '<div class="gallery-dots">' + photos.map(function(_,i){ return '<span class="gd' + (i===0?' active':'') + '" onclick="galleryGoTo(' + i + ')"></span>'; }).join('') + '</div>' +
+        '<span class="gallery-counter" id="galleryCounter">1 / ' + photos.length + '</span>' +
+      '</div>';
+  } else if (photos.length === 1) {
+    galleryHtml = '<div class="detail-img' + (ad.status==='sold'?' sold':'') + '"><img src="' + photos[0] + '" alt="' + escHtml(ad.title) + '" loading="lazy"></div>';
+  } else {
+    galleryHtml = '<div class="detail-img" style="display:flex;align-items:center;justify-content:center;background:#f5f5f5;min-height:200px"><span style="font-size:80px">' + (cat?cat.icon:'📦') + '</span></div>';
+  }
+  if (ad.status === 'sold' && photos.length <= 1) galleryHtml += '';
+
+  // Ratings
+  const ratings = typeof getRatings === 'function' ? getRatings(ad.sellerId) : [];
+  const avgRating = ratings.length ? (ratings.reduce(function(s,r){return s+r.stars;},0)/ratings.length).toFixed(1) : null;
+  const ratingHtml = avgRating
+    ? '<span class="detail-rating">⭐ ' + avgRating + ' (' + ratings.length + ' review' + (ratings.length!==1?'s':'') + ')</span>'
+    : '';
+
+  const verifiedBadge = typeof isSellerVerified === 'function' && isSellerVerified(ad.sellerId)
+    ? '<svg class="verified-badge" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#005c35"/><path d="M5 8l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '';
+
+  const soldBanner = ad.status === 'sold'
+    ? '<div style="background:#000;color:#fff;text-align:center;padding:8px 0;font-weight:700;font-size:14px;letter-spacing:1px">SOLD</div>'
+    : '';
+
+  const isMineActions = isMine
+    ? '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + id + '\')">' + (ad.status==='sold'?'Mark Active':'Mark Sold') + '</button>'
+    : '';
+
+  const contactBtns = !isMine
+    ? (ad.phone ? '<a class="btn btn-green btn-sm" href="tel:' + ad.phone + '">📞 Call</a><a class="btn btn-ghost btn-sm" href="' + wa + '" target="_blank">💬 WhatsApp</a>' : '') +
+      (CU ? '<button class="btn btn-ghost btn-sm" onclick="openChat(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'') + '\',\'' + ini + '\')">✉️ Message</button>' : '<button class="btn btn-ghost btn-sm" onclick="openAuth(\'login\')">✉️ Message Seller</button>')
+    : '';
+
+  const meetupTips = !isMine ? (function(){
+    var SPOTS = {
+      'Kingston':['Half Way Tree Transport Centre','Constant Spring Plaza','Sovereign Centre'],
+      'St. Andrew':['New Kingston','Manor Park Plaza','Barbican Square'],
+      'St. Catherine':['Portmore Mall','Spanish Town Market'],
+      'St. James':['Montego Bay Shopping Centre','Sam Sharpe Square'],
+      'St. Ann':['Ocho Rios Craft Market','Island Village'],
+    };
+    var spots = SPOTS[ad.parish] || ['Local police station','nearest busy mall','public market'];
+    return '<div class="meetup-tip">🛡️ Safe meetup spots in ' + ad.parish + ': ' + spots.slice(0,2).join(' · ') + '</div>';
+  })() : '';
+
+  const analyticsStrip = isMine
+    ? '<div class="analytics-strip"><span>👁 ' + fmtN(totalViews) + ' views</span><span>❤️ ' + (typeof getFavCount==='function'?getFavCount(id):0) + ' saves</span><span>📅 ' + ago(ad.date) + '</span><span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span></div>'
+    : '';
+
+  // Similar listings
+  const similar = _ads.filter(function(a){ return a.id!==id && a.category===ad.category && a.status!=='sold'; }).slice(0,4);
+  const similarHtml = similar.length
+    ? '<div class="similar-section"><h4 class="similar-title">Similar listings</h4><div class="similar-grid">' +
+        similar.map(function(a){
+          var scat = CATS.find(function(c){return c.id===a.category;});
+          return '<div class="similar-card" onclick="openDetail(\'' + a.id + '\')">' +
+            (a.image ? '<img src="' + a.image + '" class="similar-img" loading="lazy">' : '<div class="similar-img" style="display:flex;align-items:center;justify-content:center;font-size:32px">' + (scat?scat.icon:'📦') + '</div>') +
+            '<div class="similar-price">J$' + fmtN(a.price) + '</div>' +
+            '<div class="similar-name">' + escHtml(a.title.slice(0,30)) + (a.title.length>30?'…':'') + '</div>' +
+            '</div>';
+        }).join('') +
+      '</div></div>'
+    : '';
+
+  document.getElementById('detailInner').innerHTML =
+    galleryHtml +
+    soldBanner +
+    analyticsStrip +
+    '<div class="detail-body">' +
+      '<div class="detail-price">J$' + fmtN(ad.price) + (ad.neg ? '<span style="font-size:14px;font-weight:400;color:var(--text-3)"> · negotiable</span>' : '') + '</div>' +
+      '<div class="detail-title">' + escHtml(ad.title) + '</div>' +
+      '<div class="detail-tags">' +
+        '<span class="dtag">📍 ' + ad.parish + '</span>' +
+        '<span class="dtag">🏷️ ' + (cat?cat.name:'Other') + '</span>' +
+        '<span class="dtag">🕐 ' + ago(ad.date) + '</span>' +
+        '<span class="dtag">👁 ' + fmtN(totalViews) + ' view' + (totalViews!==1?'s':'') + '</span>' +
+        ratingHtml +
+      '</div>' +
+      '<p class="detail-desc">' + escHtml(ad.desc||'') + '</p>' +
+      '<div class="seller-box">' +
+        '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + ini + '</div>' +
+        '<div class="s-info">' +
+          '<div class="s-name" onclick="openProfile(\'' + ad.sellerId + '\')">' + escHtml(ad.seller||'Anonymous') + verifiedBadge + '</div>' +
+          '<div class="s-since">YaadAds Member · View Profile →</div>' +
+        '</div>' +
+        '<div class="s-acts">' + isMineActions + contactBtns + '</div>' +
+      '</div>' +
+      meetupTips +
+      '<div class="detail-btns">' +
+        '<button class="btn btn-ghost btn-sm" onclick="shareAd(\'' + id + '\')">🔗 Share</button>' +
+        (CU && !isMine ? '<button class="btn btn-ghost btn-sm" onclick="openRateModal(\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'') + '\')">⭐ Rate Seller</button>' : '') +
+        (!isMine ? '<button class="btn btn-ghost btn-sm" onclick="openReport(\'' + id + '\')">⚑ Report</button>' : '') +
+      '</div>' +
+      (isMine ? '' : '<div class="offer-wrap"><button class="btn btn-gold btn-sm" onclick="openOfferPanel(\'' + id + '\')">💰 Make an Offer</button><div class="offer-panel" id="offerPanel"><input type="number" id="offerAmt" placeholder="Enter your offer (J$)" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd"><button class="btn btn-gold" onclick="sendOffer(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'') + '\',\'' + ini + '\')">Send Offer</button></div></div>') +
+      similarHtml +
+    '</div>';
+
+  openOverlay('ovDetail');
+}
+
+// Restore OG when detail closes
+document.getElementById('ovDetail')?.addEventListener('click', function(e){
+  if (e.target.id === 'ovDetail') {
+    SEO.resetOG(); SEO.setCanonical('/');
+    if (history.pushState) history.pushState({}, document.title, location.pathname);
+  }
+});
+
+function openProfile(sellerId) {
+  const ads = _ads.filter(function(a){ return a.sellerId === sellerId; });
+  const sample = ads[0]; if (!sample) return;
+  const clr = avatarColor(sample.seller||'?');
+  const ini = sample.sellerInit || initials(sample.seller||'?');
+  const name = sample.seller || 'Anonymous';
+  const activeAds = ads.filter(function(a){ return a.status !== 'sold'; });
+  const ratings = typeof getRatings === 'function' ? getRatings(sellerId) : [];
+  const avgRating = ratings.length ? (ratings.reduce(function(s,r){return s+r.stars;},0)/ratings.length).toFixed(1) : null;
+  const verified = typeof isSellerVerified === 'function' && isSellerVerified(sellerId);
+  const totalViews = ads.reduce(function(s,a){ return s+(a.views||0); },0);
+
+  document.getElementById('profileInner').innerHTML =
+    '<div class="prof-header">' +
+      '<div class="prof-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + ini + '</div>' +
+      '<div class="prof-info">' +
+        '<div class="prof-name">' + escHtml(name) + (verified ? ' <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#005c35"/><path d="M5 8l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') + '</div>' +
+        '<div class="prof-since">📍 ' + (sample.parish||'Jamaica') + ' · YaadAds Seller</div>' +
+        (avgRating ? '<div style="font-size:13px;color:#888;margin-top:2px">⭐ ' + avgRating + ' avg · ' + ratings.length + ' review' + (ratings.length!==1?'s':'') + '</div>' : '') +
+        '<div class="prof-stats">' +
+          '<div><div class="prof-stat-n">' + activeAds.length + '</div><div class="prof-stat-l">Active Ads</div></div>' +
+          '<div><div class="prof-stat-n">' + ads.filter(function(a){return a.status==='sold';}).length + '</div><div class="prof-stat-l">Sold</div></div>' +
+          '<div><div class="prof-stat-n">' + fmtN(totalViews) + '</div><div class="prof-stat-l">Total Views</div></div>' +
+        '</div>' +
+      '</div>' +
+      (CU && CU.id !== sellerId && ads.length
+        ? '<button class="btn btn-gold btn-sm" onclick="openChat(\'' + ads[0].id + '\',\'' + sellerId + '\',\'' + escHtml(name) + '\',\'' + ini + '\')">✉️ Message</button>'
+        : '') +
+    '</div>' +
+    (ratings.length
+      ? '<div style="padding:12px 16px;border-top:1px solid #f0f0f0"><strong style="font-size:13px">Recent Reviews</strong>' +
+        ratings.slice(-6).reverse().map(function(r){
+          return '<div style="margin-top:8px;font-size:13px"><span>' + '★'.repeat(r.stars) + '☆'.repeat(5-r.stars) + '</span> <span style="color:#555">' + escHtml(r.comment||'') + '</span></div>';
+        }).join('') +
+        '</div>'
+      : '') +
+    '<div class="prof-body">' +
+      '<h3 style="font-family:var(--font-d);font-size:18px;margin:0 0 16px">Listings by ' + escHtml(name.split(' ')[0]) + '</h3>' +
+      (ads.length
+        ? '<div class="listings-grid">' + ads.slice(0,12).map(function(a,i){ return cardHTML(a,i); }).join('') + '</div>'
+        : '<p style="color:var(--text-3)">No active listings.</p>') +
+    '</div>';
+
+  closeOverlay('ovDetail');
+  openOverlay('ovProfile');
+}
+
 
 /* ═══════════════════════════════════════════════════════════
    RATINGS SYSTEM

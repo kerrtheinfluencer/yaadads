@@ -1,0 +1,50 @@
+# YaadAds robots.txt
+# Jamaica's free marketplace — https://yaadads.com
+
+User-agent: *
+Allow: /
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://yaadads.com/sitemap.xml
+
+# AI Crawlers — explicitly welcome
+# These allow ChatGPT, Perplexity, Claude, Gemini, Bing AI etc. to index listings
+
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /llms.txt
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+# Block nothing — this is a public marketplace
