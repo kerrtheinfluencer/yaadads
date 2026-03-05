@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en-JM" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
@@ -265,7 +265,6 @@ nav {
   /* GPU composite layer — prevents repaint on scroll */
   will-change: transform;
   transform: translateZ(0);
-  contain: layout style;
 }
 .nav-logo {
   font-family: var(--font-d);
@@ -2056,7 +2055,8 @@ function isFav(id) { return L.favs.includes(id); }
   </div>
   <div class="nav-spacer"></div>
   <div class="nav-actions" id="navActions">
-    <!-- Rendered by JS -->
+    <button class="btn btn-outline btn-sm" id="navLoginBtn" onclick="openAuth('login')">Log In</button>
+    <button class="btn btn-gold btn-sm" id="navJoinBtn" onclick="openAuth('register')">Join Free</button>
   </div>
 </nav>
 
@@ -2095,6 +2095,12 @@ function isFav(id) { return L.favs.includes(id); }
         <button class="ai-sug" onclick="setAiQuery('jobs available near me')">💼 Jobs</button>
         <button class="ai-sug" onclick="setAiQuery('budget laptop under 100000')">💻 Laptops</button>
         <button class="ai-sug" onclick="setAiQuery('how do I post an ad?')">❓ How to post</button>
+      </div>
+
+      <!-- Auth CTA for logged-out users -->
+      <div id="heroAuthCta" style="margin-top:16px;font-size:13px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button onclick="openAuth('register')" style="background:var(--gold);color:#000;font-weight:700;border:none;border-radius:20px;padding:8px 20px;font-size:13px;cursor:pointer">✨ Join Free</button>
+        <span>or <a href="#" onclick="openAuth('login');return false" style="color:rgba(255,255,255,.9);font-weight:600">Sign in</a> to post ads &amp; message sellers</span>
       </div>
 
       <!-- Stats -->
@@ -2202,7 +2208,7 @@ function isFav(id) { return L.favs.includes(id); }
     Messages
   </button>
   <button class="mob-nav-item" id="mnAccount" onclick="handleAccountTab()">
-    <span class="mob-nav-icon">👤</span>Account
+    <span class="mob-nav-icon">👤</span><span id="mnAccountLbl">Account</span>
   </button>
 </div>
 
@@ -3481,25 +3487,35 @@ function fillCatSelect() {
    NAV
 ═══════════════════════════════════════════════════════════ */
 function renderNav() {
-  const el = document.getElementById('navActions');
+  var el = document.getElementById('navActions');
+  if (!el) return;
   if (CU) {
-    const clr = avatarColor(CU.name);
-    const ini = initials(CU.name);
-    el.innerHTML = `
-      <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
-      <div class="badge-wrap">
-        <div class="user-pill" onclick="goPage('myads')">
-          <div class="u-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
-          ${CU.name.split(' ')[0]}
-        </div>
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="doLogout()">Log out</button>`;
+    var clr = avatarColor(CU.name || '?');
+    var ini = initials(CU.name || '?');
+    var firstName = escHtml((CU.name || '').split(' ')[0]);
+    el.innerHTML = [
+      '<button class="btn btn-gold btn-sm" onclick="openPostAd()">&#65291; Post Ad</button>',
+      '<div class="user-pill" onclick="handleAccountTab()" style="cursor:pointer">',
+        '<div class="u-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + ini + '</div>',
+        '<span style="color:#fff;font-weight:600">' + firstName + '</span>',
+      '</div>',
+      '<button class="btn btn-outline btn-sm" onclick="doLogout()">Log out</button>'
+    ].join('');
   } else {
-    el.innerHTML = `
-      <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
-      <button class="btn btn-gold btn-sm" onclick="openAuth('register')">Join Free</button>`;
+    el.innerHTML = [
+      '<button class="btn btn-outline btn-sm" ',
+        'style="color:#fff;border-color:rgba(255,255,255,.5)" ',
+        'onclick="openAuth(&quot;login&quot;)">Log In</button>',
+      '<button class="btn btn-gold btn-sm" ',
+        'onclick="openAuth(&quot;register&quot;)">Join Free &#10024;</button>'
+    ].join('');
   }
+  var lbl = document.getElementById('mnAccountLbl');
+  if (lbl) lbl.textContent = CU ? 'Account' : 'Sign In';
+  var cta = document.getElementById('heroAuthCta');
+  if (cta) cta.style.display = CU ? 'none' : '';
 }
+
 
 /* ═══════════════════════════════════════════════════════════
    PAGES
