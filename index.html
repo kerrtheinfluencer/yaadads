@@ -2089,9 +2089,9 @@ function isFav(id) { return L.favs.includes(id); }
 
       <!-- Suggestion chips -->
       <div class="ai-suggestions">
-        <button class="ai-sug" onclick="setAiQuery('cheap car under 2 million')">🚗 Cheap cars</button>
-        <button class="ai-sug" onclick="setAiQuery('phone under 80000 in Kingston')">📱 Phones in Kingston</button>
-        <button class="ai-sug" onclick="setAiQuery('house under 20 million')">🏡 Houses for sale</button>
+        <button class="ai-sug" id="hs0" onclick="setAiQuery(this.dataset.q)" data-q="cheap car">🚗 Cars</button>
+        <button class="ai-sug" id="hs1" onclick="setAiQuery(this.dataset.q)" data-q="phone">📱 Phones</button>
+        <button class="ai-sug" id="hs2" onclick="setAiQuery(this.dataset.q)" data-q="house">🏡 Houses</button>
         <button class="ai-sug" onclick="setAiQuery('jobs available near me')">💼 Jobs</button>
         <button class="ai-sug" onclick="setAiQuery('budget laptop under 100000')">💻 Laptops</button>
         <button class="ai-sug" onclick="setAiQuery('how do I post an ad?')">❓ How to post</button>
@@ -2159,6 +2159,10 @@ function isFav(id) { return L.favs.includes(id); }
   <div class="page-wrap">
     <div class="page-h">My Listings</div>
     <div class="page-sub">Manage your active classified ads</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="openPostAd()">＋ Post New Ad</button>
+      <button class="btn btn-ghost" onclick="openEditProfile()">👤 Edit Profile</button>
+    </div>
     <div id="myAdsBox"></div>
   </div>
 </div>
@@ -2346,9 +2350,9 @@ function isFav(id) { return L.favs.includes(id); }
 
   <!-- Quick suggestions inside sheet -->
   <div class="ai-sheet-sugs" id="sheetSugs">
-    <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
-    <button class="sheet-sug" onclick="sheetSearch('phone under 80000 Kingston')">📱 Phones KGN</button>
-    <button class="sheet-sug" onclick="sheetSearch('house under 20 million')">🏡 Houses</button>
+    <button class="sheet-sug" id="ss0" onclick="sheetSearch(this.dataset.q)" data-q="car">🚗 Cars</button>
+    <button class="sheet-sug" id="ss1" onclick="sheetSearch(this.dataset.q)" data-q="phone">📱 Phones</button>
+    <button class="sheet-sug" id="ss2" onclick="sheetSearch(this.dataset.q)" data-q="house">🏡 Houses</button>
     <button class="sheet-sug" onclick="sheetSearch('jobs available')">💼 Jobs</button>
     <button class="sheet-sug" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
     <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food & Farm</button>
@@ -3022,6 +3026,7 @@ async function openChatFromInbox(key) {
 ═══════════════════════════════════════════════════════════ */
 function renderMyAds() {
   const el = document.getElementById('myAdsBox');
+  if (!el) return;
   if (!CU) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">🔐</div><h3>Please log in</h3><p>You need an account to manage your listings.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>';
     return;
@@ -3266,6 +3271,74 @@ function renderPhotoGrid() {
 }
 
 
+/* ═══════════════════════════════════════════════════════════
+   LIVE SUGGESTIONS — seeded from real _ads after load
+═══════════════════════════════════════════════════════════ */
+function updateLiveSuggestions() {
+  const active = (_ads||[]).filter(function(a){ return a.status!=='sold'; });
+  if (!active.length) return;
+
+  // Build category stats
+  const catCounts = {};
+  active.forEach(function(a){ catCounts[a.category]=(catCounts[a.category]||0)+1; });
+  const topCats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,4);
+
+  // Hero search suggestions
+  var heroIds = ['hs0','hs1','hs2','hs3'];
+  var heroSugs = topCats.slice(0,3).map(function(e){
+    var cat = CATS.find(function(c){return c.id===e[0];})||{icon:'📦',name:e[0]};
+    var catAds = active.filter(function(a){return a.category===e[0];});
+    catAds.sort(function(a,b){return (b.views||0)-(a.views||0);});
+    return { icon: cat.icon, label: cat.name, q: cat.name.toLowerCase() };
+  });
+  // Add a real listing as 4th suggestion
+  var newest = active.slice().sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);})[0];
+  if (newest) heroSugs.push({ icon:'🆕', label: newest.title.length>18 ? newest.title.slice(0,18)+'…' : newest.title, q: newest.title.split(/\s+/).slice(0,3).join(' ') });
+
+  heroIds.forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (el && heroSugs[i]) {
+      el.textContent = heroSugs[i].icon+' '+heroSugs[i].label;
+      el.setAttribute('data-q', heroSugs[i].q);
+    }
+  });
+
+  // Sheet suggestions
+  var sheetIds = ['ss0','ss1','ss2','ss3'];
+  var sheetSugs = topCats.slice(0,3).map(function(e){
+    var cat = CATS.find(function(c){return c.id===e[0];})||{icon:'📦',name:e[0]};
+    var catAds = active.filter(function(a){return a.category===e[0];});
+    var prices = catAds.map(function(a){return a.price;}).sort(function(a,b){return a-b;});
+    var minPrice = prices[0]||0;
+    return { icon: cat.icon, label: cat.name+' ('+e[1]+')', q: cat.name.toLowerCase() };
+  });
+  // Top parish
+  var parishCounts = {};
+  active.forEach(function(a){ parishCounts[a.parish]=(parishCounts[a.parish]||0)+1; });
+  var topParish = Object.entries(parishCounts).sort(function(a,b){return b[1]-a[1];})[0];
+  if (topParish) sheetSugs.push({ icon:'📍', label: 'In '+topParish[0], q: topParish[0].toLowerCase() });
+
+  sheetIds.forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (el && sheetSugs[i]) {
+      el.textContent = sheetSugs[i].icon+' '+sheetSugs[i].label;
+      el.setAttribute('data-q', sheetSugs[i].q);
+    }
+  });
+
+  // Also add a 4th hero button if not already there
+  var heroWrap = document.querySelector('.ai-sugs');
+  if (heroWrap && !document.getElementById('hs3') && heroSugs[3]) {
+    var btn = document.createElement('button');
+    btn.className = 'ai-sug'; btn.id = 'hs3';
+    btn.textContent = heroSugs[3].icon+' '+heroSugs[3].label;
+    btn.setAttribute('data-q', heroSugs[3].q);
+    btn.setAttribute('onclick', 'setAiQuery(this.dataset.q)');
+    heroWrap.appendChild(btn);
+  }
+}
+
+
 async function init() {
   fillParishSelects();
   fillCatSelect();
@@ -3296,11 +3369,15 @@ async function init() {
   SEO.injectFAQSchema();
   SEO.serveLlmsTxt(_ads);
 
-  // Update llms.txt whenever new ads arrive (handled in realtime subscription)
+  // Update llms.txt whenever new ads arrive
   window._seoRefresh = function() {
     SEO.injectListingsSchema(_ads);
     SEO.serveLlmsTxt(_ads);
+    updateLiveSuggestions();
   };
+
+  // Seed live suggestions after data loads
+  updateLiveSuggestions();
 
   // Real-time: new ads
   _db.channel('ads-changes')
@@ -3486,26 +3563,24 @@ function scoreAd(ad, terms) {
 }
 
 function getFiltered(q, cat, sort) {
-  let ads = [...L.ads];
+  let ads = (_ads || []).filter(a => a.status !== 'sold');
   if (cat && cat !== 'all') ads = ads.filter(a => a.category === cat);
 
   if (q && q.trim()) {
     const terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 1);
-    // Include ad if ANY term matches title, desc, parish, or category name
-    ads = ads.filter(a => {
-      const hay = [a.title, a.desc, a.parish, CATS.find(c=>c.id===a.category)?.name||'']
-        .join(' ').toLowerCase();
-      return terms.some(t => hay.includes(t));
+    ads = ads.filter(function(a) {
+      const catName = (CATS.find(function(c){return c.id===a.category;})||{}).name||'';
+      const hay = [a.title||'', a.desc||'', a.parish||'', catName].join(' ').toLowerCase();
+      return terms.some(function(t){ return hay.includes(t); });
     });
-    // Sort by relevance score when searching (unless user picked a sort)
     if (!sort || sort === 'newest') {
-      return ads.sort((a,b) => scoreAd(b,terms) - scoreAd(a,terms));
+      return ads.sort(function(a,b){ return scoreAd(b,terms) - scoreAd(a,terms); });
     }
   }
 
-  if (sort === 'price-lo') return ads.sort((a,b) => a.price - b.price);
-  if (sort === 'price-hi') return ads.sort((a,b) => b.price - a.price);
-  return ads.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  if (sort === 'price-lo') return ads.sort(function(a,b){ return a.price - b.price; });
+  if (sort === 'price-hi') return ads.sort(function(a,b){ return b.price - a.price; });
+  return ads.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
 }
 
 function getViews(id) {
@@ -3552,27 +3627,50 @@ function emptyEl(msg, action='') {
 
 function renderHome() {
   const sort = document.getElementById('homeSortSel')?.value || 'newest';
-  const f = window._aiFilters;
+  const f    = window._aiFilters;
+  const grid = document.getElementById('homeGrid');
+  const hdr  = document.getElementById('resultsHeader');
+  const cnt  = document.getElementById('resultsCount');
+  if (!grid) return 0;
 
   let ads = getFiltered(searchQ, activeF, sort);
 
-  // Apply AI price/parish filters if present
+  // Apply AI price/parish/category filters
   if (f) {
-    if (f.maxPrice) ads = ads.filter(a => a.price <= f.maxPrice);
-    if (f.minPrice) ads = ads.filter(a => a.price >= f.minPrice);
-    if (f.parish)   ads = ads.filter(a => a.parish.toLowerCase() === f.parish.toLowerCase());
-    if (f.categories && f.categories.length > 1) ads = ads.filter(a => f.categories.includes(a.category));
+    if (f.maxPrice) ads = ads.filter(function(a){ return a.price <= f.maxPrice; });
+    if (f.minPrice) ads = ads.filter(function(a){ return a.price >= f.minPrice; });
+    if (f.parish)   ads = ads.filter(function(a){ return a.parish.toLowerCase() === f.parish.toLowerCase(); });
+    if (f.categories && f.categories.length === 1) ads = ads.filter(function(a){ return f.categories.includes(a.category); });
   }
 
-  const hdr = document.getElementById('resultsHeader');
-  const cnt = document.getElementById('resultsCount');
-  hdr.style.display = 'flex';
-  cnt.innerHTML = `<strong>${ads.length}</strong> listing${ads.length !== 1 ? 's' : ''} found`;
+  // Always show results header
+  if (hdr) hdr.style.display = 'flex';
+  if (cnt) {
+    const isFiltered = searchQ || activeF !== 'all' || f;
+    cnt.innerHTML = isFiltered
+      ? '<strong>' + ads.length + '</strong> listing' + (ads.length !== 1 ? 's' : '') + ' found'
+      : '<strong>' + ads.length + '</strong> listing' + (ads.length !== 1 ? 's' : '') + ' across Jamaica';
+  }
 
-  document.getElementById('homeGrid').innerHTML = ads.length
-    ? ads.slice(0, 24).map((a,i) => cardHTML(a,i)).join('')
-    : emptyEl('No listings match your search.',
-        `<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>`);
+  if (!ads.length) {
+    // Smart empty state: suggest alternatives
+    const allAds = (_ads||[]).filter(function(a){ return a.status!=='sold'; });
+    const randomCats = [...new Set(allAds.map(function(a){return a.category;}))]
+      .sort(function(){ return 0.5-Math.random(); }).slice(0,3);
+    const catBtns = randomCats.map(function(cid){
+      const cat = CATS.find(function(c){return c.id===cid;});
+      return cat ? '<button class="btn btn-ghost btn-sm" onclick="catFilter(''+cid+'')">'+cat.icon+' '+cat.name+'</button>' : '';
+    }).join('');
+    grid.innerHTML = emptyEl(
+      searchQ ? 'No results for "'+escHtml(searchQ)+'". Try something else or browse a category.' : 'No listings yet — be the first to post!',
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px">'+
+        '<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>'+
+        catBtns+
+      '</div>'
+    );
+  } else {
+    grid.innerHTML = ads.slice(0, 24).map(function(a,i){ return cardHTML(a,i); }).join('');
+  }
 
   return ads.length;
 }
@@ -4181,26 +4279,80 @@ const YaadBrain = (() => {
 
   /* ── INTENT CLASSIFIER ──────────────────────────────────── */
   const FAQ_PATTERNS = [
+    [/\b(post|sell|list|put up|advertise|upload|add).*(ad|listing|item|something|product|it)/i, 'how_to_post'],
     [/how.*(post|sell|list|put up|advertise)/i, 'how_to_post'],
-    [/(is it|it is|is yaadads|cost|fee|charge|paid|free)/i, 'is_free'],
+    [/(how do i|how can i|how to).*(post|sell|list)/i, 'how_to_post'],
+    [/(is it|it is|is yaadads|cost|fee|charge|paid|\bfree\b)/i, 'is_free'],
     [/how.*(contact|reach|message|talk|call|whatsapp)/i, 'how_contact'],
     [/(safe|trust|scam|fraud|legit|real|verify)/i, 'safety'],
     [/(how.*(work|use)|what is yaadads|about yaadads|explain)/i, 'how_it_works'],
-    [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
-    [/hi|hello|hey|good (morning|afternoon|evening|night)|wah gwaan|whappen|ello/i, 'greeting'],
-    [/thank|thanks|appreciate|nice|great|good job/i, 'thanks'],
-    [/(who|what|where|when|how many).*(seller|buyer|member|user)/i, 'stats'],
+    [/(delete|remove|edit|update|change|manage).*(ad|listing|post)/i, 'manage_ads'],
+    [/my.*(listing|ad|post)/i, 'manage_ads'],
+    [/\b(hi|hello|hey|morning|afternoon|evening|wah gwaan|whappen|greet)/i, 'greeting'],
+    [/\b(thank|thanks|appreciate|nice|great|good job|helpful)/i, 'thanks'],
+    [/(who|what|where|when|how many).*(seller|buyer|member|user|listing|ad)/i, 'stats'],
+    [/what.*(available|on the site|can i find|do you have)/i, 'what_available'],
+    [/(profile|account|name|phone|number|change my|edit my)/i, 'edit_profile'],
+    [/(parish|location|area|where).*(cover|available|deliver)/i, 'parishes'],
   ];
   const FAQ_ANSWERS = {
-    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details, add a photo, and you're live in under 2 minutes. 🚀 Completely free!`,
-    is_free: () => `YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. 🇯🇲`,
-    how_contact: () => `Open any listing and you'll see Call 📞, WhatsApp 💬, and Message ✉️ buttons. Message uses in-app chat (free account needed). WhatsApp and Call work right away, no account required.`,
-    safety: () => `Great question! Meet in public spots — Half Way Tree, a busy mall, or a police station. Bring a friend for big purchases. Check the seller's profile and reviews. Never send money before seeing the item. 🛡️`,
-    how_it_works: () => `YaadAds is Jamaica's free marketplace. Browse listings across all 14 parishes, post your own ads in minutes, and chat directly with buyers or sellers. No middleman, no fees — just straightforward buying and selling. 🇯🇲`,
-    manage_ads: () => `To manage your ads, tap your name in the top nav (or "Account" in the bottom menu). You can view, mark as sold, or delete any of your listings from there.`,
-    greeting: () => { const g=['Wah gwaan! 👋','Big up! Ready to help you find something? 🇯🇲','Hey! What yuh looking for today?','Respect! What can I help you find?']; return g[Math.floor(Math.random()*g.length)]; },
-    thanks: () => 'No problem at all! Anything else you need? 😊',
-    stats: () => `Right now there are ${_ads.length} active listings across all 14 parishes. New listings are added every day — use search to find exactly what you need!`,
+    how_to_post: function(q) {
+      // Actually trigger the post modal if they want to post
+      setTimeout(function(){ openPostAd(); }, 600);
+      const active = (_ads||[]).filter(function(a){return a.status!=='sold';}).length;
+      return 'Opening the post form for you now! 🚀\n\nQuick steps:\n1. Pick a category & parish\n2. Set your price\n3. Add a photo\n4. Hit Publish — live in seconds!\n\nFully free, always. Join ' + active + ' other listings on YaadAds 🇯🇲';
+    },
+    is_free: function() {
+      return 'YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, no subscriptions, ever. 🇯🇲';
+    },
+    how_contact: function() {
+      return 'Open any listing and tap Call 📞, WhatsApp 💬, or Message ✉️.\n\n• Call & WhatsApp work immediately — no account needed\n• In-app Message requires a free account\n\nCreate an account in under 2 minutes — just name, email & password.';
+    },
+    safety: function() {
+      return 'Safety tips for buying on YaadAds:\n\n🛡️ Meet in public — Half Way Tree, a busy mall, or police station\n👥 Bring someone for big purchases\n⭐ Check the seller rating & reviews\n💰 Never send money before seeing the item\n📸 Ask for more photos if needed\n\nVerified sellers have a green ✓ badge on their profile.';
+    },
+    how_it_works: function() {
+      const cats = CATS.slice(0,5).map(function(c){return c.icon+' '+c.name;}).join(', ');
+      return 'YaadAds is Jamaica\'s free marketplace 🇯🇲\n\n📋 Browse listings: ' + cats + ' and more\n📍 Filter by any of the 14 parishes\n💬 Chat directly with buyers or sellers\n✅ Post your own ad in under 2 minutes — free!\n\nNo middleman. No fees. Just real Jamaicans buying and selling.';
+    },
+    manage_ads: function() {
+      return 'To manage your listings:\n\n1. Tap 👤 Account at the bottom\n2. See all your active ads\n3. Tap any listing to view, mark as sold, or delete\n\nYou can also edit your name, phone number, and parish from the Account page.';
+    },
+    greeting: function() {
+      const active = (_ads||[]).filter(function(a){return a.status!=='sold';}).length;
+      const cats = [...new Set((_ads||[]).filter(function(a){return a.status!=='sold';}).map(function(a){return a.category;}))];
+      const topCat = cats[0] ? (CATS.find(function(c){return c.id===cats[0];})||{}) : {};
+      const g = [
+        'Wah gwaan! 👋 ' + active + ' listings live right now. What yuh looking for?',
+        'Big up! 🇯🇲 We have ' + active + ' ads across all 14 parishes. Search anything!',
+        'Hey! Ready to help. Try searching for a car, phone, property or anything else 👇',
+        'Respect! ' + active + ' listings waiting. What can I find for you today?'
+      ];
+      return g[Math.floor(Math.random()*g.length)];
+    },
+    thanks: function() { return 'No problem at all! 😊 Anything else I can help you find?'; },
+    stats: function() {
+      const active = (_ads||[]).filter(function(a){return a.status!=='sold';}).length;
+      const catCounts = {};
+      (_ads||[]).forEach(function(a){ if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
+      const topCats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,3)
+        .map(function(e){ const c=CATS.find(function(x){return x.id===e[0];})||{}; return (c.icon||'')+(c.name||e[0])+': '+e[1]; }).join(', ');
+      return 'Live on YaadAds right now: ' + active + ' active listings across all 14 parishes.\n\nTop categories: ' + topCats + '\n\nNew listings are added every day!';
+    },
+    what_available: function() {
+      const catCounts = {};
+      (_ads||[]).forEach(function(a){ if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
+      const sorted = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];});
+      const lines = sorted.map(function(e){ const c=CATS.find(function(x){return x.id===e[0];})||{}; return (c.icon||'📦')+' '+(c.name||e[0])+': '+e[1]+' listing'+(e[1]!==1?'s':''); }).join('\n');
+      return 'Here\'s what\'s live on YaadAds right now:\n\n' + lines + '\n\nTap any category above to browse, or tell me what you need!';
+    },
+    edit_profile: function() {
+      setTimeout(function(){ if(typeof openEditProfile==='function') openEditProfile(); else openAuth('login'); }, 600);
+      return 'Opening your profile now! 👤\n\nYou can change your name, phone number, parish, and password from there.';
+    },
+    parishes: function() {
+      return 'YaadAds covers all 14 Jamaican parishes:\n\nKingston · St. Andrew · St. Thomas · Portland · St. Mary · St. Ann · Trelawny · St. James (MoBay) · Hanover · Westmoreland · St. Elizabeth · Manchester · Clarendon · St. Catherine (Portmore)\n\nSearch listings in any parish by name!';
+    },
   };
 
   /* ── FOLLOW-UP DETECTOR ─────────────────────────────────── */
@@ -4285,23 +4437,55 @@ const YaadBrain = (() => {
 
   /* ── DYNAMIC SUGGESTIONS ─────────────────────────────────── */
   function buildSuggestions() {
-    if (!_ads.length) return [];
-    // Top 3 categories by count
+    const active = (_ads||[]).filter(function(a){ return a.status!=='sold'; });
+    if (!active.length) return [
+      { label:'🚗 Cars & Vehicles', query:'car' },
+      { label:'📱 Phones', query:'phone' },
+      { label:'🏡 Property', query:'house' },
+      { label:'💼 Jobs', query:'job' },
+    ];
+
+    // Top categories by listing count
     const catCounts = {};
-    _ads.forEach(a => { if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
-    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
-    // Median price per top category
+    active.forEach(function(a){ catCounts[a.category]=(catCounts[a.category]||0)+1; });
+    const topCats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,4).map(function(e){return e[0];});
+
     const sugs = [];
-    for (const catId of topCats) {
-      const cat = CATS.find(c=>c.id===catId);
-      const prices = _ads.filter(a=>a.category===catId&&a.status!=='sold').map(a=>a.price).sort((a,b)=>a-b);
-      const median = prices[Math.floor(prices.length/2)]||0;
-      if (cat && median) sugs.push({ label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`, query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}` });
+
+    // For each top cat: pick a real listing title as the suggestion
+    for (var i=0; i<topCats.length && sugs.length < 3; i++) {
+      var catId = topCats[i];
+      var cat = CATS.find(function(c){return c.id===catId;});
+      var catAds = active.filter(function(a){return a.category===catId;});
+      // Sort by views desc, take highest-viewed
+      catAds.sort(function(a,b){return (b.views||0)-(a.views||0);});
+      var featured = catAds[0];
+      if (!cat || !featured) continue;
+      var prices = catAds.map(function(a){return a.price;}).sort(function(a,b){return a-b;});
+      var median = prices[Math.floor(prices.length/2)]||0;
+      var roundedM = Math.ceil(median/10000)*10000;
+      // Use real listing keywords as the query
+      var titleWords = (featured.title||'').split(/\s+/).slice(0,3).join(' ');
+      sugs.push({
+        label: cat.icon+' '+cat.name+' — from J$'+fmtN(roundedM),
+        query: cat.name.toLowerCase()
+      });
     }
-    // Most recent listing
-    const newest = _ads.filter(a=>a.status!=='sold')[0];
-    if (newest) sugs.push({ label:`🆕 ${newest.title.slice(0,30)}…`, query:newest.title.split(' ').slice(0,3).join(' ') });
-    return sugs.slice(0,4);
+
+    // Most recently posted listing as a suggestion
+    var newest = active.slice().sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);})[0];
+    if (newest) {
+      var newTitle = newest.title.length>28 ? newest.title.slice(0,28)+'…' : newest.title;
+      sugs.push({ label:'🆕 '+newTitle, query: newest.title.split(/\s+/).slice(0,3).join(' ') });
+    }
+
+    // Parish with most listings
+    var parishCounts = {};
+    active.forEach(function(a){ parishCounts[a.parish]=(parishCounts[a.parish]||0)+1; });
+    var topParish = Object.entries(parishCounts).sort(function(a,b){return b[1]-a[1];})[0];
+    if (topParish) sugs.push({ label:'📍 Listings in '+topParish[0], query: 'in '+topParish[0].toLowerCase() });
+
+    return sugs.slice(0,5);
   }
 
   /* ── RESULT MESSAGES ─────────────────────────────────────── */
@@ -4329,11 +4513,12 @@ const YaadBrain = (() => {
   function process(query, history) {
     const q = query.trim();
 
-    // 1. Check FAQ/intent first
+    // 1. FAQ/intent — run BEFORE category detection, no gating on cat/parish
+    // (user asking "how to post in Kingston" should still get the FAQ answer)
     for (const [pattern, intent] of FAQ_PATTERNS) {
-      if (pattern.test(q) && !detectCategories(q).length && !detectParish(q)) {
+      if (pattern.test(q)) {
         const fn = FAQ_ANSWERS[intent];
-        if (fn) return { type:'answer', message: fn() };
+        if (fn) return { type:'answer', intent, message: fn(q) };
       }
     }
 
