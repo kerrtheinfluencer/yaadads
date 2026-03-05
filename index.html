@@ -2167,6 +2167,13 @@ function isFav(id) { return L.favs.includes(id); }
   </div>
 </div>
 
+<!-- ─── ACCOUNT PAGE ─── -->
+<div id="page-account" class="page">
+  <div class="page-wrap">
+    <div id="accountInner"></div>
+  </div>
+</div>
+
 <!-- ─── MESSAGES PAGE ─── -->
 <div id="page-msgs" class="page">
   <div class="page-wrap">
@@ -2546,12 +2553,23 @@ const L = {
 
 // Load all active ads into cache
 async function loadAds() {
-  const { data, error } = await _db.from('ads')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
-  _ads = (data || []).map(dbToAd);
-  if (!_ads.length) _ads = DEMO; // fallback to demo if DB empty
+  // Show demo data immediately while Supabase loads (fast perceived load)
+  _ads = DEMO;
+  try {
+    const { data, error } = await _db.from('ads')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.warn('Supabase loadAds error — showing demo data:', error.message||error);
+      _ads = DEMO;
+      return;
+    }
+    const live = (data || []).map(dbToAd).filter(function(a){ return a.id && a.title; });
+    _ads = live.length ? live : DEMO;
+  } catch(e) {
+    console.warn('loadAds network error — showing demo data:', e.message||e);
+    _ads = DEMO;
+  }
 }
 
 // Map DB row → app ad object
@@ -3344,17 +3362,22 @@ async function init() {
   fillCatSelect();
   renderNav();
 
-  showSkeletons();
-  document.getElementById('resultsHeader').style.display = 'none';
+  // Step 1: Render DEMO immediately (instant first paint)
+  _ads = DEMO;
+  renderCats();
+  renderHome();
+  updateStats();
 
+  // Step 2: Load real data from Supabase in background
   try {
     await loadAds();
     if (CU) await loadMessages();
   } catch(e) {
-    console.error('Init load error:', e);
+    console.warn('Init load error — keeping demo data:', e.message||e);
     _ads = DEMO;
   }
 
+  // Step 3: Re-render with real data (or demo if Supabase empty/failing)
   renderCats();
   renderHome();
   updateStats();
@@ -3492,11 +3515,12 @@ function goHome() {
 }
 
 function goPage(p) {
-  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
-  document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
-  const map = {home:'mnHome',msgs:'mnMsgs',myads:'mnAccount'};
-  if (map[p]) document.getElementById(map[p])?.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
+  const pg = document.getElementById('page-'+p); if (pg) pg.classList.add('active');
+  document.querySelectorAll('.mob-nav-item').forEach(function(el){ el.classList.remove('active'); });
+  const map = {home:'mnHome',msgs:'mnMsgs',myads:'mnAccount',account:'mnAccount',browse:'mnBrowse'};
+  const navEl = map[p] ? document.getElementById(map[p]) : null;
+  if (navEl) navEl.classList.add('active');
   window.scrollTo({top:0, behavior:'smooth'});
   if (p==='browse')  renderBrowse();
   if (p==='myads')   renderMyAds();
@@ -3504,8 +3528,76 @@ function goPage(p) {
 }
 
 function handleAccountTab() {
-  if (CU) openEditProfile();
-  else openAuth('login');
+  if (CU) {
+    goPage('account');
+    renderAccountPage();
+  } else {
+    openAuth('login');
+  }
+}
+
+function renderAccountPage() {
+  const box = document.getElementById('accountInner');
+  if (!box || !CU) return;
+  const clr = avatarColor(CU.name||'?');
+  const myAds = (_ads||[]).filter(function(a){ return a.sellerId === CU.id; });
+  const active = myAds.filter(function(a){ return a.status !== 'sold'; });
+  const sold   = myAds.filter(function(a){ return a.status === 'sold'; });
+  const totalViews = myAds.reduce(function(s,a){ return s+(a.views||0); }, 0);
+
+  box.innerHTML =
+    // Profile card
+    '<div class="profile-banner" style="border-radius:16px;margin-bottom:20px">' +
+      '<div class="profile-av-wrap" onclick="openEditProfile()">' +
+        '<div class="profile-av-big" style="background:' + clr.bg + ';color:' + clr.fg + '">' + initials(CU.name||'?') + '</div>' +
+        '<div class="profile-av-edit" title="Edit profile">✏️</div>' +
+      '</div>' +
+      '<div class="profile-name-display">' + escHtml(CU.name||'') + '</div>' +
+      '<div class="profile-email-display">' + escHtml(CU.email||'') + '</div>' +
+      (CU.parish ? '<div style="color:rgba(255,255,255,.7);font-size:13px">📍 ' + escHtml(CU.parish) + '</div>' : '') +
+      '<div class="profile-stat-row">' +
+        '<div class="profile-stat-item"><div class="profile-stat-num">' + active.length + '</div><div class="profile-stat-lbl">Active</div></div>' +
+        '<div class="profile-stat-item"><div class="profile-stat-num">' + sold.length + '</div><div class="profile-stat-lbl">Sold</div></div>' +
+        '<div class="profile-stat-item"><div class="profile-stat-num">' + fmtN(totalViews) + '</div><div class="profile-stat-lbl">Views</div></div>' +
+      '</div>' +
+    '</div>' +
+    // Action buttons
+    '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
+      '<button class="btn btn-green" style="flex:1" onclick="openPostAd()">＋ Post New Ad</button>' +
+      '<button class="btn btn-ghost" style="flex:1" onclick="openEditProfile()">✏️ Edit Profile</button>' +
+    '</div>' +
+    // My Listings section
+    '<div class="page-h" style="font-size:20px;margin-bottom:12px">My Listings</div>' +
+    (myAds.length
+      ? '<div id="accountAdsBox"></div>'
+      : '<div class="empty" style="margin:0 0 24px"><div class="empty-icon">📋</div><h3>No listings yet</h3><p>Post your first free ad in under 2 minutes!</p><button class="btn btn-green" onclick="openPostAd()">Post Your First Ad</button></div>'
+    ) +
+    // Logout
+    '<div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">' +
+      '<button class="profile-danger-btn" onclick="doLogout()">🚪 Log Out</button>' +
+    '</div>';
+
+  // Render ads list
+  if (myAds.length) {
+    const box2 = document.getElementById('accountAdsBox');
+    if (box2) box2.innerHTML = myAds.map(function(ad) {
+      const cat = CATS.find(function(c){ return c.id === ad.category; });
+      return '<div class="my-ad-row" onclick="openDetail('" + ad.id + "')" style="cursor:pointer">' +
+        '<div class="my-ad-thumb">' + (ad.image ? '<img src="' + ad.image + '" onerror="this.style.display='none'">' : (cat ? cat.icon : '📦')) + '</div>' +
+        '<div class="my-ad-info">' +
+          '<div class="my-ad-title">' + escHtml(ad.title) + '</div>' +
+          '<div class="my-ad-price">J$' + fmtN(ad.price) + '</div>' +
+          '<div class="my-ad-meta">📍 ' + ad.parish + ' · ' + ago(ad.date) + '</div>' +
+        '</div>' +
+        '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
+        '<div class="my-ad-acts" onclick="event.stopPropagation()">' +
+          '<button class="btn btn-ghost btn-sm" onclick="openDetail('" + ad.id + "')">View</button>' +
+          '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold('" + ad.id + "');renderAccountPage()">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
+          '<button class="btn btn-red btn-sm" onclick="delAd('" + ad.id + "')">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3540,8 +3632,8 @@ function catFilter(id) {
 /* ═══════════════════════════════════════════════════════════
    LISTING RENDERING
 ═══════════════════════════════════════════════════════════ */
-function scoreAd(ad, terms) {
-  // Relevance scoring: title match > category name match > desc match
+function _scoreSimple(ad, terms) {
+  // Simple relevance scoring for getFiltered (no IDF needed)
   const title = (ad.title||'').toLowerCase();
   const desc  = (ad.desc||'').toLowerCase();
   const par   = (ad.parish||'').toLowerCase();
@@ -3574,7 +3666,7 @@ function getFiltered(q, cat, sort) {
       return terms.some(function(t){ return hay.includes(t); });
     });
     if (!sort || sort === 'newest') {
-      return ads.sort(function(a,b){ return scoreAd(b,terms) - scoreAd(a,terms); });
+      return ads.sort(function(a,b){ return _scoreSimple(b,terms) - _scoreSimple(a,terms); });
     }
   }
 
@@ -3589,10 +3681,14 @@ function getViews(id) {
 }
 
 function cardHTML(ad, idx) {
-  const cat   = CATS.find(c => c.id === ad.category);
+  const cat   = CATS.find(function(c){ return c.id === ad.category; });
+  const catIcon = (cat && cat.icon) ? cat.icon : '📦';
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span style=font-size:56px>${cat?.icon||'📦'}</span>'">`
-    : `<span style="font-size:56px">${cat?.icon||'📦'}</span>`;
+    ? '<img src="' + ad.image + '" alt="' + (ad.title||'').replace(/"/g,"'") + '" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="this.style.display='none'">'
+    : '';
+  const imgOrIcon = ad.image
+    ? img
+    : '<span style="font-size:56px">' + catIcon + '</span>';
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
     ? `<span class="sold-tag">SOLD</span>`
@@ -3603,7 +3699,7 @@ function cardHTML(ad, idx) {
   const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.06,0.5)}s` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
-    <div class="ad-card-img">${img}${tag}${trending}
+    <div class="ad-card-img">${imgOrIcon}${tag}${trending}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
@@ -3659,7 +3755,7 @@ function renderHome() {
       .sort(function(){ return 0.5-Math.random(); }).slice(0,3);
     const catBtns = randomCats.map(function(cid){
       const cat = CATS.find(function(c){return c.id===cid;});
-      return cat ? '<button class="btn btn-ghost btn-sm" onclick="catFilter(''+cid+'')">'+cat.icon+' '+cat.name+'</button>' : '';
+      return cat ? '<button class="btn btn-ghost btn-sm" onclick="catFilter(\'' + cid + '\')">' + cat.icon + ' ' + cat.name + '</button>' : '';
     }).join('');
     grid.innerHTML = emptyEl(
       searchQ ? 'No results for "'+escHtml(searchQ)+'". Try something else or browse a category.' : 'No listings yet — be the first to post!',
