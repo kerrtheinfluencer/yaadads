@@ -1664,7 +1664,7 @@ function showAiResponse(text, count) {
   const textEl = document.getElementById('aiResponseText');
   const badge = document.getElementById('aiCountBadge');
   if (!card) return;
-  textEl.textContent = text;
+  textEl.innerHTML = (typeof escHtml==='function' ? escHtml(text) : text).replace(/\n/g, '<br>');
   if (count !== null && count !== undefined) {
     badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
     badge.style.display = '';
@@ -2935,7 +2935,7 @@ function showAiResponse(text, count) {
   const textEl = document.getElementById('aiResponseText');
   const badge = document.getElementById('aiCountBadge');
   if (!card) return;
-  textEl.textContent = text;
+  textEl.innerHTML = escHtml(text).replace(/\n/g, '<br>');
   if (count !== null && count !== undefined) {
     badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
     badge.style.display = '';
@@ -4089,17 +4089,113 @@ const SEO = (() => {
 
 
 /* ╔══════════════════════════════════════════════════════════════╗
-   ║  YAAD BRAIN — Local NLP Search Engine (zero API calls)      ║
-   ║  Gets smarter as more listings are added to the site.       ║
+   ║  YAAD BRAIN v2 — Self-Learning Local NLP Engine             ║
+   ║  Zero API calls · Gets smarter as listings grow             ║
+   ║  • Auto-vocabulary from listing content                     ║
+   ║  • Fuzzy typo-tolerant matching                             ║
+   ║  • Deep Jamaican Patois NLP                                 ║
+   ║  • Price intelligence & comparisons                         ║
+   ║  • Trending detection & smart recommendations               ║
+   ║  • Multi-turn conversational context                        ║
    ╚══════════════════════════════════════════════════════════════╝ */
 const YaadBrain = (() => {
 
-  /* ── JAMAICAN PRICE PARSER ──────────────────────────────── */
+  /* ══════════════════════════════════════════
+     1. TOKENIZER & TEXT UTILS
+  ══════════════════════════════════════════ */
+  const STOP_WORDS = new Set(['the','a','an','is','are','was','were','be','been','being',
+    'have','has','had','do','does','did','will','would','could','should','shall','may',
+    'might','can','for','and','but','or','nor','at','by','to','from','in','on','of',
+    'with','about','this','that','these','those','it','its','i','me','my','we','us',
+    'you','your','he','she','they','them','there','here','what','which','who','whom',
+    'how','when','where','why','am','im','some','any','all','each','every','no','not',
+    'so','very','just','also','than','then','now','up','out','if','as']);
+
+  function tokenize(text) {
+    return (text||'').toLowerCase().replace(/[^\w\s$]/g,' ').split(/\s+/).filter(t=>t.length>1 && !STOP_WORDS.has(t));
+  }
+  function bigrams(word) {
+    const b = []; for (let i=0;i<word.length-1;i++) b.push(word[i]+word[i+1]); return b;
+  }
+  function bigramSim(a, b) {
+    if (a===b) return 1;
+    if (a.length<2||b.length<2) return 0;
+    const ba=bigrams(a), bb=bigrams(b);
+    const setB = new Set(bb);
+    let hits = 0; for (const g of ba) if (setB.has(g)) hits++;
+    return (2*hits)/(ba.length+bb.length);
+  }
+  function fuzzyMatch(query, target, threshold) {
+    if (target.startsWith(query) || query.startsWith(target)) return true;
+    return bigramSim(query, target) >= (threshold||0.55);
+  }
+
+  /* ══════════════════════════════════════════
+     2. JAMAICAN PATOIS NLP LAYER
+  ══════════════════════════════════════════ */
+  const PATOIS_SYNONYMS = {
+    // intent words
+    want:['waan','waah','wah','need','affi','haffi','mus','mussi','fi get'],
+    find:['fine','look','search','check','peep','si','see','locate','seek','show','gimme','gimmie','gi mi','give me'],
+    buy:['cop','grab','purchase','get','tek','pick up','scoop'],
+    sell:['dash out','gi weh','fling','offload','flip','hock'],
+    cheap:['cheap','chiip','budget','affordable','inexpensive','likkle money','dutty cheap','giveaway','a dash weh','fi give weh','bargain','steal','criss price','good deal','value','low price','nuh dear','not expensive','free up'],
+    expensive:['dear','costly','pricey','high price','nuff money','heap a money'],
+    good:['criss','blessed','bless','sick','fire','mad','wicked','dope','lit','mint','nice','decent','proper','solid','legit','clean','tidy'],
+    bad:['dutty','mash up','bruk','bruck','broke','damage','defective','faulty','beat up'],
+    new:['brand new','box fresh','factory','sealed','unused','fresh','mint','untouched','still inna box','inna box'],
+    used:['second hand','2nd hand','preowned','pre-owned','pre owned','slightly used','likkle use','barely used','gently used'],
+    big:['large','huge','massive','nuff','spacious','roomy','wide','broad'],
+    small:['likkle','tiny','compact','mini','portable','space saving'],
+    fast:['quick','speedy','rapid'],
+    near:['close','nearby','around','round','inna','close to'],
+    best:['top','number one','#1','greatest','finest','premium','quality','a1','first class'],
+    // vehicles
+    car:['vehicle','ride','whip','machine','wheels','motor','automobile','auto','motorcar'],
+    // property
+    house:['yard','home','crib','place','dwelling','residence','spot','flat','apartment','apt'],
+    room:['space','board','lodging','rent','fi rent','to rent','rental'],
+    land:['lot','plot','property','acre','square','vacant','piece a land'],
+    // electronics
+    phone:['fone','cell','cellular','mobile','handset','smartphone','smart phone','device','gadget'],
+    laptop:['computer','comp','pc','notebook','macbook','chromebook','lappy'],
+    tv:['television','telly','screen','monitor','flat screen','smart tv'],
+    // people
+    seller:['vendor','dealer','man','woman','person','smaddy','somebody'],
+    // general
+    please:['pls','plz','beg yu','beg yuh','beggin'],
+    thanks:['tanx','tank','tanks','bless up','nuff respect','respect','big up','good looking'],
+    hello:['hi','hey','yo','wah gwaan','whaapen','whappen','ello','hail','greetings','good day','morning','afternoon','evening'],
+  };
+
+  // Build reverse lookup: word → canonical
+  const _patoisLookup = {};
+  for (const [canonical, syns] of Object.entries(PATOIS_SYNONYMS)) {
+    for (const syn of syns) {
+      // Support multi-word synonyms
+      _patoisLookup[syn] = canonical;
+    }
+    _patoisLookup[canonical] = canonical;
+  }
+
+  function normalizePatois(text) {
+    let s = text.toLowerCase();
+    // Multi-word substitutions first (longest first)
+    const multiWord = Object.keys(_patoisLookup).filter(k=>k.includes(' ')).sort((a,b)=>b.length-a.length);
+    for (const phrase of multiWord) {
+      if (s.includes(phrase)) s = s.replace(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), _patoisLookup[phrase]);
+    }
+    // Single-word substitutions
+    return s.split(/\s+/).map(w => _patoisLookup[w] || w).join(' ');
+  }
+
+  /* ══════════════════════════════════════════
+     3. PRICE PARSER (enhanced)
+  ══════════════════════════════════════════ */
   const CHEAP_CEILING = { vehicles:2500000, property:12000000, electronics:60000, fashion:8000, furniture:25000, jobs:0, services:5000, food:2000, music:15000, sports:10000, kids:5000, other:20000 };
   function parsePrice(q) {
     let lo = null, hi = null;
     const s = q.toLowerCase();
-    // Multipliers: k=1000, m/million=1000000
     const toNum = t => {
       t = t.trim();
       if (/^\d+(\.\d+)?m$/i.test(t))  return parseFloat(t)*1e6;
@@ -4109,60 +4205,115 @@ const YaadBrain = (() => {
       const n = parseFloat(t.replace(/[^0-9.]/g,''));
       return isNaN(n) ? null : n;
     };
-    // "between X and Y"
     const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
     if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
-    // "under/below/less than X"
-    const und = s.match(/(?:under|below|less than|max|beneath)\s+([\d.kmillion]+)/i);
+    const und = s.match(/(?:under|below|less than|max|beneath|up to|no more than)\s+([\d.kmillion]+)/i);
     if (und) { hi = toNum(und[1]); return {lo,hi}; }
-    // "over/above/more than X"
-    const ov = s.match(/(?:over|above|more than|min|at least)\s+([\d.kmillion]+)/i);
+    const ov = s.match(/(?:over|above|more than|min|at least|starting from|from)\s+([\d.kmillion]+)/i);
     if (ov) { lo = toNum(ov[1]); return {lo,hi}; }
-    // standalone numbers like "under 80000" already caught, catch bare "80k"
     const bare = s.match(/\b([\d]+(?:[.]\d+)?[km])\b/i);
     if (bare) { hi = toNum(bare[1]); return {lo,hi}; }
-    // "cheap/budget/affordable/likkle money"
-    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh)\b/.test(s))
+    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|bargain|steal|good deal|nuh dear)\b/.test(s))
       return { cheap: true };
+    if (/\b(expensive|dear|premium|luxury|high.?end|top.?shelf)\b/.test(s))
+      return { expensive: true };
     return {lo,hi};
   }
 
-  /* ── CATEGORY MAPPER ────────────────────────────────────── */
-  const CAT_MAP = {
-    vehicles:    /\b(car|truck|van|bus|bike|scooter|vehicle|drive|civic|corolla|camry|bmw|toyota|honda|hyundai|nissan|kia|suzuki|mazda|jeep|suv|pickup|auto|motor|motorcycle|2019|2020|2021|2022|2023|mileage)\b/i,
-    property:    /\b(house|home|flat|apartment|room|land|lot|rent|property|real estate|sq ft|square feet|bed|bath|bedroom|studio|tenant|landlord|yard|bungalow|villa|mansion|townhouse)\b/i,
-    electronics: /\b(phone|iphone|samsung|xiaomi|laptop|computer|pc|tablet|tv|television|camera|console|playstation|xbox|ps4|ps5|airpods|earphones|speakers|headphones|charger|bluetooth|screen|monitor|android|galaxy|pixel)\b/i,
-    fashion:     /\b(clothes|clothing|shirt|shoe|bag|dress|fashion|jeans|pants|wear|outfit|sneaker|boot|blouse|skirt|suit|jacket|handbag|jewelry|watch|accessory)\b/i,
-    furniture:   /\b(sofa|couch|chair|table|bed|mattress|fridge|stove|washer|dryer|microwave|oven|furniture|appliance|wardrobe|cabinet|desk|shelf)\b/i,
-    jobs:        /\b(job|work|hiring|vacancy|career|employment|position|staff|employee|salary|wage|internship|full.?time|part.?time|freelance)\b/i,
-    services:    /\b(service|repair|fix|plumber|electrician|painter|cleaning|maid|helper|driver|delivery|contractor|builder|carpenter|mechanic|tutor|lesson)\b/i,
-    food:        /\b(food|farm|fruit|fish|meat|vegetable|produce|ackee|jerk|cook|bake|juice|spice|pepper|yam|banana|plantain|grocery|bakery)\b/i,
-    music:       /\b(guitar|music|instrument|drum|keyboard|piano|dj|speaker|amp|amplifier|microphone|beat|studio|sound|art|painting|craft)\b/i,
-    sports:      /\b(sport|gym|bicycle|cycle|football|cricket|swimming|running|fitness|equipment|treadmill|weights|dumbbell|jersey|ball)\b/i,
-    kids:        /\b(baby|kid|child|children|toy|stroller|pram|crib|diaper|school|uniform|backpack|crayon|bicycle|trike|playpen)\b/i,
+  /* ══════════════════════════════════════════
+     4. CATEGORY MAPPER (base + auto-expand)
+  ══════════════════════════════════════════ */
+  const BASE_CAT_KEYWORDS = {
+    vehicles:    ['car','truck','van','bus','bike','scooter','vehicle','drive','civic','corolla','camry','bmw','toyota','honda','hyundai','nissan','kia','suzuki','mazda','jeep','suv','pickup','auto','motor','motorcycle','mileage','sedan','hatchback','coupe','minivan','coaster','hiace','fielder','axio','vitz','fit','swift','march','note','demio','rav4','crv','cx5','hilux','tacoma','prado','fortuner','ipsum','wish','stream','ride','whip'],
+    property:    ['house','home','flat','apartment','room','land','lot','rent','property','estate','sq ft','square feet','bed','bath','bedroom','studio','tenant','landlord','yard','bungalow','villa','mansion','townhouse','condo','lease','mortgage','acre','plot','vacant','commercial','warehouse','shop','office'],
+    electronics: ['phone','iphone','samsung','xiaomi','laptop','computer','pc','tablet','tv','television','camera','console','playstation','xbox','ps4','ps5','airpods','earphones','speakers','headphones','charger','bluetooth','screen','monitor','android','galaxy','pixel','nintendo','switch','macbook','printer','router','wifi','gopro','drone','smartwatch','apple','redmi','oppo','huawei','tecno','infinix','jbl','marshall','bose'],
+    fashion:     ['clothes','clothing','shirt','shoe','bag','dress','fashion','jeans','pants','wear','outfit','sneaker','boot','blouse','skirt','suit','jacket','handbag','jewelry','watch','accessory','nike','adidas','jordan','puma','crocs','gucci','lv','zara','polo','cap','hat','belt','ring','chain','necklace','bracelet','sunglasses','perfume','cologne','wig','hair'],
+    furniture:   ['sofa','couch','chair','table','bed','mattress','fridge','stove','washer','dryer','microwave','oven','furniture','appliance','wardrobe','cabinet','desk','shelf','bookcase','drawer','dining','lamp','fan','ac','air condition','iron','blender','freezer','cupboard','bench','mirror'],
+    jobs:        ['job','work','hiring','vacancy','career','employment','position','staff','employee','salary','wage','internship','full time','part time','freelance','contract','temporary','permanent','secretary','cashier','driver','security','manager','supervisor','clerk','helper','assistant','bartender','chef','cook','waitress','waiter'],
+    services:    ['service','repair','fix','plumber','electrician','painter','cleaning','maid','helper','driver','delivery','contractor','builder','carpenter','mechanic','tutor','lesson','barber','hairdresser','photographer','dj','caterer','mason','tiler','welder','locksmith','pest control','landscaping','moving','trucking','transportation'],
+    food:        ['food','farm','fruit','fish','meat','vegetable','produce','ackee','jerk','cook','bake','juice','spice','pepper','yam','banana','plantain','grocery','bakery','mango','breadfruit','callaloo','scotch bonnet','sorrel','patty','dumpling','bun','cheese','chicken','pork','goat','curry','rice','flour','sugar','honey','coconut'],
+    music:       ['guitar','music','instrument','drum','keyboard','piano','dj','speaker','amp','amplifier','microphone','beat','studio','sound','art','painting','craft','turntable','mixer','midi','saxophone','violin','flute','trumpet','harmonica','ukulele','bass','vinyl','record'],
+    sports:      ['sport','gym','bicycle','cycle','football','cricket','swimming','running','fitness','equipment','treadmill','weights','dumbbell','jersey','ball','yoga','boxing','basketball','tennis','racquet','golf','surfboard','skateboard','roller','camping','hiking','fishing','kayak','helmet','protein'],
+    kids:        ['baby','kid','child','children','toy','stroller','pram','crib','diaper','school','uniform','backpack','crayon','bicycle','trike','playpen','formula','bottle','pacifier','car seat','doll','lego','puzzle','board game','pampers','clothes kids','walker'],
   };
-  function detectCategories(q) {
-    const found = [];
-    for (const [cat, rx] of Object.entries(CAT_MAP)) { if (rx.test(q)) found.push(cat); }
-    return found;
+
+  // Dynamic vocabulary that auto-expands from listing content
+  let _dynVocab = {};   // { category: Set<term> }
+  let _vocabBuilt = 0;  // track when we last built
+
+  function buildDynamicVocab(ads) {
+    _dynVocab = {};
+    const termCatCount = {}; // term → { category: count }
+    for (const ad of ads) {
+      if (ad.status==='sold') continue;
+      const terms = tokenize(`${ad.title} ${ad.desc||''}`);
+      for (const t of terms) {
+        if (t.length < 3) continue;
+        if (!termCatCount[t]) termCatCount[t] = {};
+        termCatCount[t][ad.category] = (termCatCount[t][ad.category]||0) + 1;
+      }
+    }
+    // A term belongs to a category if 70%+ of its appearances are in that category
+    for (const [term, cats] of Object.entries(termCatCount)) {
+      const total = Object.values(cats).reduce((s,n)=>s+n,0);
+      if (total < 2) continue; // need at least 2 occurrences
+      for (const [cat, count] of Object.entries(cats)) {
+        if (count/total >= 0.7) {
+          if (!_dynVocab[cat]) _dynVocab[cat] = new Set();
+          _dynVocab[cat].add(term);
+        }
+      }
+    }
+    _vocabBuilt = ads.length;
   }
 
-  /* ── PARISH MAPPER ──────────────────────────────────────── */
+  function detectCategories(q) {
+    const tokens = tokenize(q);
+    const scores = {};
+    // Score from base keywords
+    for (const [cat, keywords] of Object.entries(BASE_CAT_KEYWORDS)) {
+      for (const token of tokens) {
+        // Exact match
+        if (keywords.includes(token)) { scores[cat] = (scores[cat]||0) + 3; continue; }
+        // Fuzzy match (catches typos)
+        for (const kw of keywords) {
+          if (fuzzyMatch(token, kw, 0.6)) { scores[cat] = (scores[cat]||0) + 2; break; }
+        }
+      }
+    }
+    // Score from dynamic vocabulary (learned from listings)
+    for (const [cat, terms] of Object.entries(_dynVocab)) {
+      for (const token of tokens) {
+        if (terms.has(token)) { scores[cat] = (scores[cat]||0) + 1.5; }
+        else {
+          for (const t of terms) {
+            if (fuzzyMatch(token, t, 0.65)) { scores[cat] = (scores[cat]||0) + 1; break; }
+          }
+        }
+      }
+    }
+    // Return categories with score >= 2, sorted by score
+    return Object.entries(scores).filter(([_,s])=>s>=2).sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+  }
+
+  /* ══════════════════════════════════════════
+     5. PARISH MAPPER (enhanced)
+  ══════════════════════════════════════════ */
   const PARISH_MAP = {
-    'kingston':['kingston','kgn','downtown','town','uwi','half way tree','hwt'],
-    'st. andrew':['st andrew','saint andrew','uptown','new kingston','liguanea','barbican','manor park','papine'],
-    'st. catherine':['st catherine','portmore','spanish town','old harbour','linstead','bog walk'],
-    'st. james':['st james','montego bay','mobay','mo bay'],
-    'st. ann':["st ann","saint ann","ocho rios","ochi","ocho","discovery bay","runaway bay"],
-    'manchester':['manchester','mandeville'],
-    'clarendon':['clarendon','may pen','chapelton'],
-    'st. elizabeth':['st elizabeth','black river','santa cruz'],
-    'westmoreland':['westmoreland','sav','savanna','savanna-la-mar','negril'],
-    'hanover':['hanover','lucea'],
-    'trelawny':['trelawny','falmouth'],
-    'st. mary':['st mary','port maria','annotto bay'],
-    'st. thomas':['st thomas','morant bay'],
-    'portland':['portland','port antonio'],
+    'kingston':['kingston','kgn','kng','downtown','town','uwi','half way tree','hwt','cross roads','constant spring'],
+    'st. andrew':['st andrew','saint andrew','uptown','new kingston','liguanea','barbican','manor park','papine','red hills','stony hill','cherry gardens','hope pastures','mona','august town'],
+    'st. catherine':['st catherine','saint catherine','portmore','spanish town','old harbour','linstead','bog walk','ewarton','above rocks','caymanas','bridgeport','hellshire','gregory park','waterford'],
+    'st. james':['st james','saint james','montego bay','mobay','mo bay','ironshore','rose hall','catherine hall','reading','bogue'],
+    'st. ann':['st ann','saint ann','ocho rios','ochi','ocho','discovery bay','runaway bay','brown\'s town','claremont','steer town','priory'],
+    'manchester':['manchester','mandeville','christiana','williamsfield','porus'],
+    'clarendon':['clarendon','may pen','chapelton','lionel town','hayes','frankfield'],
+    'st. elizabeth':['st elizabeth','saint elizabeth','black river','santa cruz','junction','treasure beach','malvern'],
+    'westmoreland':['westmoreland','sav','savanna','savanna-la-mar','negril','little london','bethel town'],
+    'hanover':['hanover','lucea','green island','hopewell','sandy bay'],
+    'trelawny':['trelawny','falmouth','duncans','clark\'s town','albert town','wakefield'],
+    'st. mary':['st mary','saint mary','port maria','annotto bay','oracabessa','highgate','richmond'],
+    'st. thomas':['st thomas','saint thomas','morant bay','yallahs','bath','seaforth','port morant'],
+    'portland':['portland','port antonio','buff bay','hope bay','long bay','fairy hill','san san'],
   };
   function detectParish(q) {
     const s = q.toLowerCase();
@@ -4172,49 +4323,129 @@ const YaadBrain = (() => {
     return null;
   }
 
-  /* ── INTENT CLASSIFIER ──────────────────────────────────── */
-  const FAQ_PATTERNS = [
-    [/how.*(post|sell|list|put up|advertise)/i, 'how_to_post'],
-    [/(is it|it is|is yaadads|cost|fee|charge|paid|free)/i, 'is_free'],
-    [/how.*(contact|reach|message|talk|call|whatsapp)/i, 'how_contact'],
-    [/(safe|trust|scam|fraud|legit|real|verify)/i, 'safety'],
-    [/(how.*(work|use)|what is yaadads|about yaadads|explain)/i, 'how_it_works'],
+  /* ══════════════════════════════════════════
+     6. INTENT CLASSIFIER (deep)
+  ══════════════════════════════════════════ */
+  const INTENT_PATTERNS = [
+    // FAQ / info
+    [/how.*(post|sell|list|put up|advertise|upload|create)/i, 'how_to_post'],
+    [/(is it|it is|is yaadads|cost|fee|charge|paid|free)\b/i, 'is_free'],
+    [/how.*(contact|reach|message|talk|call|whatsapp|chat with)/i, 'how_contact'],
+    [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],
+    [/(how.*(work|use)|what is yaadads|about yaadads|explain|tell me about)/i, 'how_it_works'],
     [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
-    [/hi|hello|hey|good (morning|afternoon|evening|night)|wah gwaan|whappen|ello/i, 'greeting'],
-    [/thank|thanks|appreciate|nice|great|good job/i, 'thanks'],
-    [/(who|what|where|when|how many).*(seller|buyer|member|user)/i, 'stats'],
+    [/(pay|payment|accept|transfer|method)/i, 'payment'],
+    [/(deliver|ship|shipping|pick.?up|drop.?off|meet)/i, 'delivery'],
+
+    // Greetings / social
+    [/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening|night)|wah\s*gwaan|whaapen|whappen|ello|hail|greetings|sup)\b/i, 'greeting'],
+    [/^(thank|thanks|tanx|bless up|nuff respect|respect|big up|good looking|appreciate|nice|great|good job)/i, 'thanks'],
+    [/(help|assist|what can you|what do you)/i, 'help'],
+
+    // Comparison / analytics
+    [/(cheapest|lowest price|most affordable|best deal|best value|best price)/i, 'compare_cheapest'],
+    [/(most expensive|highest price|priciest|top dollar|premium)/i, 'compare_expensive'],
+    [/(most popular|trending|hot|most viewed|top listing|most wanted)/i, 'compare_popular'],
+    [/(newest|latest|just posted|just listed|most recent|fresh listing)/i, 'compare_newest'],
+    [/(how much|what.*price|average price|price range|going rate|market price|worth)/i, 'price_check'],
+    [/(compare|versus|vs|or|better|which one|difference|recommendation|recommend|suggest)/i, 'compare_general'],
+
+    // Stats
+    [/(how many|count|total|number of|stats|statistics|data)/i, 'stats'],
+    [/(who|which).*(seller|top seller|best seller|most listings)/i, 'top_sellers'],
   ];
-  const FAQ_ANSWERS = {
-    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details, add a photo, and you're live in under 2 minutes. 🚀 Completely free!`,
-    is_free: () => `YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. 🇯🇲`,
-    how_contact: () => `Open any listing and you'll see Call 📞, WhatsApp 💬, and Message ✉️ buttons. Message uses in-app chat (free account needed). WhatsApp and Call work right away, no account required.`,
-    safety: () => `Great question! Meet in public spots — Half Way Tree, a busy mall, or a police station. Bring a friend for big purchases. Check the seller's profile and reviews. Never send money before seeing the item. 🛡️`,
-    how_it_works: () => `YaadAds is Jamaica's free marketplace. Browse listings across all 14 parishes, post your own ads in minutes, and chat directly with buyers or sellers. No middleman, no fees — just straightforward buying and selling. 🇯🇲`,
-    manage_ads: () => `To manage your ads, tap your name in the top nav (or "Account" in the bottom menu). You can view, mark as sold, or delete any of your listings from there.`,
-    greeting: () => { const g=['Wah gwaan! 👋','Big up! Ready to help you find something? 🇯🇲','Hey! What yuh looking for today?','Respect! What can I help you find?']; return g[Math.floor(Math.random()*g.length)]; },
-    thanks: () => 'No problem at all! Anything else you need? 😊',
-    stats: () => `Right now there are ${_ads.length} active listings across all 14 parishes. New listings are added every day — use search to find exactly what you need!`,
+
+  const INTENT_ANSWERS = {
+    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details — title, price, parish, description — add up to 6 photos, and you're live in under 2 minutes. 🚀 Completely free, always!`,
+    is_free: () => `YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. We mek it fi everybody. 🇯🇲`,
+    how_contact: () => `Open any listing and you'll see three options: Call 📞 (direct), WhatsApp 💬 (opens chat with a pre-written message), and Message ✉️ (in-app chat — needs a free account). Pro tip: WhatsApp usually gets the fastest reply!`,
+    safety: () => `Good question! Safety tips for buying on YaadAds:\n🛡️ Meet in public — Half Way Tree, a busy mall, or a police station\n👀 Check the seller's profile and ratings\n🤝 Bring a friend for expensive items\n💵 Never send money before seeing the item\n📱 Use in-app chat so there's a record\nStay safe out there! 🇯🇲`,
+    how_it_works: () => `YaadAds is Jamaica's free marketplace. Here's the flow:\n1️⃣ Browse or search listings across all 14 parishes\n2️⃣ Found something? Contact the seller (call, WhatsApp, or message)\n3️⃣ Arrange meetup & payment directly\n4️⃣ Want to sell? Post a free ad in under 2 minutes!\nNo middleman, no commission, no fees. Just Jamaicans buying and selling directly. 🇯🇲`,
+    manage_ads: () => `To manage your ads:\n1. Tap your name/avatar at the top (or "Account" in the bottom menu)\n2. You'll see all your listings with options to:\n   • Mark as Sold (shows "SOLD" badge)\n   • Delete (permanent)\n3. Buyers will still see sold items but can't make offers on them.\nEasy!`,
+    payment: () => `YaadAds doesn't handle payments — you deal directly with the seller. Common methods in Jamaica:\n💵 Cash on meetup (most common)\n📱 Bank transfer\n💳 NCB/Scotiabank transfer\n📲 Lynk or other mobile wallets\nAlways meet first, pay after you see the item!`,
+    delivery: () => `Delivery is arranged between buyer and seller. Most items are pickup, but many sellers offer:\n🚗 Local delivery (sometimes free)\n📦 Knutsford Express for cross-parish\n🏪 Meet at a safe public spot\nTip: Check the listing description — sellers usually mention if they deliver.`,
+    greeting: () => { const g=['Wah gwaan! 👋 What yuh looking for today?','Big up! 🇯🇲 How can I help?','Hey! Ask me anything — search for items, get price advice, or just chat.','Respect! 🤝 Ready to help you find exactly what you need.','Yow! Welcome to YaadAds AI. Search, compare, or ask me anything!']; return g[Math.floor(Math.random()*g.length)]; },
+    thanks: () => { const g=['No problem! Anything else? 😊','Anytime! That\'s what I\'m here for. 🤝','Bless up! Hit me if you need anything else. 🇯🇲','You\'re welcome! Happy searching! 🔍']; return g[Math.floor(Math.random()*g.length)]; },
+    help: () => `I'm your YaadAds AI assistant! Here's what I can do:\n\n🔍 **Search** — "cheap car under 2M" or "phone in Kingston"\n💰 **Price check** — "average price for iPhone 14"\n📊 **Compare** — "cheapest laptop" or "most popular listings"\n🏘️ **Filter by parish** — "furniture in Portmore"\n💬 **Answer questions** — "how do I post an ad?"\n🇯🇲 **Speak Jamaican** — "mi waan a criss phone fi likkle money"\n\nJust type naturally — I'll figure out what you mean!`,
+    stats: () => {
+      const active = _ads.filter(a=>a.status!=='sold');
+      const cats = {};
+      active.forEach(a => { cats[a.category] = (cats[a.category]||0)+1; });
+      const topCat = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+      const topCatName = topCat ? (CATS.find(c=>c.id===topCat[0])?.name||topCat[0]) : 'N/A';
+      const totalValue = active.reduce((s,a)=>s+a.price,0);
+      return `📊 YaadAds right now:\n• ${active.length} active listings\n• ${_ads.filter(a=>a.status==='sold').length} sold\n• Top category: ${topCatName} (${topCat?topCat[1]:0} listings)\n• Total marketplace value: J$${fmtN(totalValue)}\n• Covering all 14 parishes\nGrowing every day! 🚀`;
+    },
+    top_sellers: () => {
+      const counts = {};
+      _ads.filter(a=>a.status!=='sold').forEach(a => { counts[a.seller] = (counts[a.seller]||0)+1; });
+      const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+      if (!top.length) return 'No sellers yet — be the first to post! 🚀';
+      return `🏆 Top sellers on YaadAds:\n` + top.map(([name,n],i)=>`${['🥇','🥈','🥉'][i]} ${name} — ${n} listing${n>1?'s':''}`).join('\n') + '\n\nPost your own ads to join the ranks!';
+    },
   };
 
-  /* ── FOLLOW-UP DETECTOR ─────────────────────────────────── */
-  function detectFollowUp(q, lastCtx) {
-    if (!lastCtx) return null;
-    const s = q.toLowerCase();
-    if (/\b(cheaper|lower price|less expensive|more affordable|under that)\b/.test(s) && lastCtx.hi)
-      return { ...lastCtx, hi: Math.floor(lastCtx.hi * 0.65) };
-    if (/\b(more|show more|other|different|else|anything else)\b/.test(s))
-      return { ...lastCtx, offset: (lastCtx.offset||0) + 5 };
-    if (/\b(newer|recent|latest|fresh)\b/.test(s))
-      return { ...lastCtx, sort:'newest' };
-    if (/\b(in (\w+ ?\w*)|near (\w+ ?\w*))\b/.test(s)) {
-      const parish = detectParish(q);
-      if (parish) return { ...lastCtx, parish };
+  /* ══════════════════════════════════════════
+     7. COMPARISON & ANALYTICS ENGINE
+  ══════════════════════════════════════════ */
+  function handleComparison(intent, query) {
+    const normalized = normalizePatois(query);
+    const cats = detectCategories(normalized);
+    const parish = detectParish(normalized);
+    let pool = _ads.filter(a=>a.status!=='sold');
+    if (cats.length) pool = pool.filter(a=>cats.includes(a.category));
+    if (parish) pool = pool.filter(a=>a.parish.toLowerCase()===parish.toLowerCase());
+    if (!pool.length) return null;
+
+    const catNames = cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    const catStr = catNames.length ? catNames.join('/') : 'listings';
+    const loc = parish ? ` in ${parish}` : '';
+
+    if (intent === 'compare_cheapest') {
+      const sorted = [...pool].sort((a,b)=>a.price-b.price);
+      const top = sorted.slice(0,6);
+      const avg = Math.round(pool.reduce((s,a)=>s+a.price,0)/pool.length);
+      return { type:'search', message: `💰 Here are the cheapest ${catStr}${loc}! Average price is J$${fmtN(avg)} — these are the best deals right now:`, results: top, allResults: sorted, filters: { categories:cats, parish } };
+    }
+    if (intent === 'compare_expensive') {
+      const sorted = [...pool].sort((a,b)=>b.price-a.price);
+      return { type:'search', message: `💎 Top premium ${catStr}${loc}:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    }
+    if (intent === 'compare_popular') {
+      const sorted = [...pool].sort((a,b)=>(b.views||0)-(a.views||0));
+      return { type:'search', message: `🔥 Most viewed ${catStr}${loc} right now:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    }
+    if (intent === 'compare_newest') {
+      const sorted = [...pool].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+      return { type:'search', message: `🆕 Freshest ${catStr}${loc} just posted:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    }
+    if (intent === 'price_check') {
+      const prices = pool.map(a=>a.price).sort((a,b)=>a-b);
+      const avg = Math.round(prices.reduce((s,p)=>s+p,0)/prices.length);
+      const median = prices[Math.floor(prices.length/2)];
+      const lo = prices[0], hi = prices[prices.length-1];
+      const sorted = [...pool].sort((a,b)=>a.price-b.price);
+      return { type:'search', message: `📊 Price analysis for ${catStr}${loc}:\n• Average: J$${fmtN(avg)}\n• Median: J$${fmtN(median)}\n• Range: J$${fmtN(lo)} — J$${fmtN(hi)}\n• ${prices.length} listings analyzed\n\nHere are some options:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    }
+    if (intent === 'compare_general') {
+      const sorted = [...pool].sort((a,b)=>{
+        let sa=0, sb=0;
+        if (a.views>50) sa+=2; if (b.views>50) sb+=2;
+        const ageA = (Date.now()-new Date(a.date||0))/86400000;
+        const ageB = (Date.now()-new Date(b.date||0))/86400000;
+        if (ageA<7) sa+=2; if (ageB<7) sb+=2;
+        if (a.neg) sa+=0.5; if (b.neg) sb+=0.5;
+        return sb-sa;
+      });
+      return { type:'search', message: `Here's my top picks for ${catStr}${loc} — sorted by freshness, popularity, and value:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
     }
     return null;
   }
 
-  /* ── TF-IDF SCORER ──────────────────────────────────────── */
-  let _idfCache = null, _termFreqCache = {};
+  /* ══════════════════════════════════════════
+     8. TF-IDF SCORER (improved)
+  ══════════════════════════════════════════ */
+  let _idfCache = null;
   function buildIDF(ads) {
     const df = {}, N = ads.length || 1;
     for (const ad of ads) {
@@ -4225,40 +4456,48 @@ const YaadBrain = (() => {
     for (const [t,n] of Object.entries(df)) idf[t] = Math.log((N+1)/(n+1))+1;
     return idf;
   }
-  function tokenize(text) {
-    return (text||'').toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(t=>t.length>1);
-  }
   function getHaystack(ad) {
     const cat = CATS.find(c=>c.id===ad.category)?.name||'';
     return `${ad.title} ${ad.title} ${ad.title} ${cat} ${cat} ${ad.parish} ${ad.parish} ${ad.desc||''}`;
   }
   function scoreAd(ad, queryTerms, idf, clickBoosts) {
-    const hay = tokenize(getHaystack(ad));
+    const hayTokens = tokenize(getHaystack(ad));
     const tf = {};
-    for (const t of hay) tf[t] = (tf[t]||0)+1;
+    for (const t of hayTokens) tf[t] = (tf[t]||0)+1;
     let score = 0;
     for (const qt of queryTerms) {
-      const t = tf[qt]||0;
-      if (!t) {
-        // partial match: check if any field starts with qt
-        const partial = hay.some(w=>w.startsWith(qt)&&w!==qt);
-        if (partial) score += 0.4 * (idf[qt]||1);
+      // Exact match
+      if (tf[qt]) {
+        score += (tf[qt] / hayTokens.length) * (idf[qt]||1) * 2;
         continue;
       }
-      score += (t / hay.length) * (idf[qt]||1);
+      // Fuzzy match — catches typos and variants
+      let bestFuzzy = 0;
+      for (const w of Object.keys(tf)) {
+        const sim = bigramSim(qt, w);
+        if (sim > bestFuzzy && sim >= 0.55) bestFuzzy = sim;
+      }
+      if (bestFuzzy > 0) score += bestFuzzy * (idf[qt]||1) * 0.8;
+      // Prefix match
+      const prefix = hayTokens.some(w=>w.startsWith(qt)&&w!==qt);
+      if (prefix) score += 0.5 * (idf[qt]||1);
     }
     // Recency boost
     const ageDays = (Date.now()-new Date(ad.date||0))/86400000;
-    if (ageDays<3) score*=1.35; else if (ageDays<7) score*=1.2; else if (ageDays<30) score*=1.08;
-    // Popularity boost (views)
+    if (ageDays<1) score*=1.5; else if (ageDays<3) score*=1.35; else if (ageDays<7) score*=1.2; else if (ageDays<30) score*=1.08;
+    // Popularity boost
     const v = ad.views||0;
-    if (v>50) score*=1.12; else if (v>20) score*=1.06;
-    // Click boost — user previously engaged with this ad for this type of query
-    if (clickBoosts[ad.id]) score *= (1 + Math.min(clickBoosts[ad.id]*0.15, 0.6));
+    if (v>100) score*=1.15; else if (v>50) score*=1.1; else if (v>20) score*=1.05;
+    // Click boost from learning
+    if (clickBoosts && clickBoosts[ad.id]) score *= (1 + Math.min(clickBoosts[ad.id]*0.15, 0.6));
+    // Negotiable slight bonus (buyers like flexibility)
+    if (ad.neg) score *= 1.03;
     return score;
   }
 
-  /* ── LEARNING: Click tracking ────────────────────────────── */
+  /* ══════════════════════════════════════════
+     9. LEARNING ENGINE (persists to localStorage)
+  ══════════════════════════════════════════ */
   function getClickBoosts(queryTerms) {
     const key = queryTerms.slice().sort().join('_');
     const all = JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
@@ -4270,108 +4509,217 @@ const YaadBrain = (() => {
     const all = JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
     if (!all[key]) all[key] = {};
     all[key][adId] = (all[key][adId]||0) + 1;
-    // Cap storage at 200 query keys
     const keys = Object.keys(all);
-    if (keys.length > 200) delete all[keys[0]];
+    if (keys.length > 300) delete all[keys[0]];
     localStorage.setItem('ya_brain_clicks', JSON.stringify(all));
   }
 
-  /* ── DYNAMIC SUGGESTIONS ─────────────────────────────────── */
+  // Track search frequency for trending
+  function recordSearch(query) {
+    const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
+    const day = new Date().toISOString().slice(0,10);
+    if (!data[day]) data[day] = {};
+    const terms = tokenize(query);
+    for (const t of terms) data[day][t] = (data[day][t]||0)+1;
+    // Keep only last 7 days
+    const keys = Object.keys(data).sort();
+    while (keys.length > 7) { delete data[keys.shift()]; }
+    localStorage.setItem('ya_brain_searches', JSON.stringify(data));
+  }
+  function getTrendingTerms() {
+    const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
+    const merged = {};
+    for (const day of Object.values(data)) {
+      for (const [t,c] of Object.entries(day)) merged[t] = (merged[t]||0)+c;
+    }
+    return Object.entries(merged).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([t])=>t);
+  }
+
+  /* ══════════════════════════════════════════
+     10. FOLLOW-UP DETECTOR (deep context)
+  ══════════════════════════════════════════ */
+  function detectFollowUp(q, lastCtx) {
+    if (!lastCtx) return null;
+    const s = q.toLowerCase();
+    // Price refinements
+    if (/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less)\b/.test(s) && lastCtx.hi)
+      return { ...lastCtx, hi: Math.floor(lastCtx.hi * 0.6), offset:0 };
+    if (/\b(more expensive|higher|pricier|bigger budget|spend more|willing to pay more)\b/.test(s) && (lastCtx.hi || lastCtx.lo))
+      return { ...lastCtx, hi: lastCtx.hi ? Math.floor(lastCtx.hi * 1.5) : null, lo: lastCtx.lo ? Math.floor(lastCtx.lo * 1.5) : null, offset:0 };
+    // Pagination
+    if (/\b(more|show more|other|different|else|anything else|next|continue|keep going)\b/.test(s))
+      return { ...lastCtx, offset: (lastCtx.offset||0) + 6 };
+    // Sort changes
+    if (/\b(newer|recent|latest|fresh|just posted)\b/.test(s)) return { ...lastCtx, sort:'newest', offset:0 };
+    if (/\b(cheapest first|price low|lowest first|sort by price)\b/.test(s)) return { ...lastCtx, sort:'price_lo', offset:0 };
+    // Location refinement
+    const parish = detectParish(q);
+    if (parish && parish !== lastCtx.parish) return { ...lastCtx, parish, offset:0 };
+    // Category pivot
+    const newCats = detectCategories(normalizePatois(q));
+    if (newCats.length && JSON.stringify(newCats) !== JSON.stringify(lastCtx.cats))
+      return { ...lastCtx, cats: newCats, offset:0 };
+    // "negotiable only" / "nego only"
+    if (/\b(negotiable|nego|haggle|bargain)\b/.test(s))
+      return { ...lastCtx, negoOnly: true, offset:0 };
+    return null;
+  }
+
+  /* ══════════════════════════════════════════
+     11. DYNAMIC SUGGESTIONS
+  ══════════════════════════════════════════ */
   function buildSuggestions() {
     if (!_ads.length) return [];
-    // Top 3 categories by count
-    const catCounts = {};
-    _ads.forEach(a => { if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
-    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
-    // Median price per top category
+    const active = _ads.filter(a=>a.status!=='sold');
     const sugs = [];
+    // Top trending search terms
+    const trending = getTrendingTerms();
+    if (trending.length > 2) sugs.push({ label:'🔥 Trending: '+trending.slice(0,3).join(', '), query:trending.slice(0,2).join(' ') });
+    // Top categories by count
+    const catCounts = {};
+    active.forEach(a => { catCounts[a.category]=(catCounts[a.category]||0)+1; });
+    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
     for (const catId of topCats) {
       const cat = CATS.find(c=>c.id===catId);
-      const prices = _ads.filter(a=>a.category===catId&&a.status!=='sold').map(a=>a.price).sort((a,b)=>a-b);
+      const prices = active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
       const median = prices[Math.floor(prices.length/2)]||0;
       if (cat && median) sugs.push({ label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`, query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}` });
     }
-    // Most recent listing
-    const newest = _ads.filter(a=>a.status!=='sold')[0];
-    if (newest) sugs.push({ label:`🆕 ${newest.title.slice(0,30)}…`, query:newest.title.split(' ').slice(0,3).join(' ') });
-    return sugs.slice(0,4);
+    // Newest listing
+    const newest = active[0];
+    if (newest) sugs.push({ label:`🆕 ${newest.title.slice(0,25)}…`, query:newest.title.split(' ').slice(0,3).join(' ') });
+    // "What's popular?"
+    sugs.push({ label:'📊 Most popular listings', query:'most popular' });
+    return sugs.slice(0,5);
   }
 
-  /* ── RESULT MESSAGES ─────────────────────────────────────── */
-  function buildMessage(results, cats, parish, priceCtx, query) {
+  /* ══════════════════════════════════════════
+     12. SMART RESPONSE BUILDER
+  ══════════════════════════════════════════ */
+  function buildMessage(results, ctx, query) {
     const n = results.length;
-    const catNames = cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
-    const loc = parish ? ` in ${parish}` : '';
+    const catNames = ctx.cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    const loc = ctx.parish ? ` in ${ctx.parish}` : '';
     const catStr = catNames.length ? catNames.join('/') : 'listings';
-    if (n===0) return `No ${catStr} found${loc} right now — check back soon or try a broader search! 🔍`;
-    const price = priceCtx?.hi ? ` under J$${fmtN(priceCtx.hi)}` : priceCtx?.lo ? ` over J$${fmtN(priceCtx.lo)}` : '';
-    const msgs = [
-      `Found ${n} ${catStr}${price}${loc} for you! 🔥`,
-      `${n} result${n!==1?'s':''} matching your search${loc}. Check them out! 👇`,
-      `Here ${n===1?'is':'are'} ${n} ${catStr}${loc}${price}. 👀`,
-      `Nice! ${n} ${catStr}${price}${loc} available right now. 🇯🇲`,
-    ];
-    // Smart context
-    if (n===1) return `Only 1 match${loc} — but it looks good! Check it out. 👇`;
-    if (n>10) return `Plenty options! ${n} ${catStr}${price}${loc} available. I'm showing the best matches first. 🔥`;
-    return msgs[Math.floor(Math.random()*msgs.length)];
+    const price = ctx.hi ? ` under J$${fmtN(ctx.hi)}` : ctx.lo ? ` from J$${fmtN(ctx.lo)}` : '';
+
+    if (n===0) {
+      // Smart empty state — suggest alternatives
+      const allCat = ctx.cats.length ? _ads.filter(a=>a.status!=='sold'&&ctx.cats.includes(a.category)) : [];
+      if (allCat.length && ctx.hi) return `No ${catStr}${price}${loc} right now — but there are ${allCat.length} ${catStr} at other prices. Try raising your budget or removing the location filter! 💡`;
+      if (allCat.length && ctx.parish) return `No ${catStr} found${loc} — but ${allCat.length} available in other parishes. Try "show all ${catStr}" to see them! 🔍`;
+      return `No ${catStr} found${loc}${price} right now. New listings drop daily — check back soon or try different keywords! 🔍`;
+    }
+
+    // Context-aware responses
+    if (ctx.cheap) return `💰 Here are the budget-friendly ${catStr}${loc} — straight bargains! ${n > 5 ? 'Showing the best deals first.' : ''}`;
+    if (ctx.expensive) return `💎 Here's the premium ${catStr}${loc} — top shelf quality:`;
+
+    // Variety based on count
+    const templates = n === 1
+      ? [`Only 1 ${catStr} match${loc}${price} — but it looks solid! Check it out 👇`]
+      : n <= 3
+      ? [`Found ${n} ${catStr}${price}${loc}. Small selection, but quality! 👇`,
+         `${n} results${loc}${price} — here's what's available:`]
+      : n <= 10
+      ? [`Found ${n} ${catStr}${price}${loc}! 🔥 Best matches first.`,
+         `${n} ${catStr}${loc}${price} — nice selection! 🇯🇲`,
+         `Here ${n===1?'is':'are'} ${n} ${catStr}${loc}${price}. Check them! 👀`]
+      : [`Nuff options! ${n} ${catStr}${price}${loc} available. Showing top matches first. 🔥`,
+         `${n} ${catStr}${loc}${price} — I'm showing the most relevant first. Use "cheapest" or "newest" to re-sort! 📊`];
+
+    return templates[Math.floor(Math.random()*templates.length)];
   }
 
-  /* ── MAIN PROCESS ────────────────────────────────────────── */
+  /* ══════════════════════════════════════════
+     13. MAIN PROCESS — the brain's entry point
+  ══════════════════════════════════════════ */
   let _lastCtx = null;
-  function process(query, history) {
-    const q = query.trim();
 
-    // 1. Check FAQ/intent first
-    for (const [pattern, intent] of FAQ_PATTERNS) {
-      if (pattern.test(q) && !detectCategories(q).length && !detectParish(q)) {
-        const fn = FAQ_ANSWERS[intent];
+  function process(query, history) {
+    const rawQ = query.trim();
+    const normalized = normalizePatois(rawQ);
+
+    // Record search for trending
+    recordSearch(rawQ);
+
+    // Rebuild vocab if ads changed
+    if (_vocabBuilt !== _ads.length) buildDynamicVocab(_ads);
+
+    // 1. Check intent/FAQ first (only if no product keywords detected)
+    const detectedCats = detectCategories(normalized);
+    const detectedParish = detectParish(normalized);
+    for (const [pattern, intent] of INTENT_PATTERNS) {
+      if (pattern.test(rawQ) && !detectedCats.length && !detectedParish) {
+        // FAQ answer
+        const fn = INTENT_ANSWERS[intent];
         if (fn) return { type:'answer', message: fn() };
       }
     }
 
-    // 2. Check follow-up
-    const followUp = history.length ? detectFollowUp(q, _lastCtx) : null;
+    // 2. Check comparison intents (these return search results WITH analytics)
+    for (const [pattern, intent] of INTENT_PATTERNS) {
+      if (pattern.test(rawQ) && (intent.startsWith('compare_') || intent === 'price_check')) {
+        const result = handleComparison(intent, normalized);
+        if (result) {
+          result._qTerms = tokenize(normalized).filter(t=>t.length>2);
+          return result;
+        }
+      }
+    }
+
+    // 3. Follow-up from previous conversation
+    const followUp = history.length ? detectFollowUp(rawQ, _lastCtx) : null;
     const ctx = followUp || (() => {
-      const price = parsePrice(q);
-      const cats  = detectCategories(q);
-      const parish = detectParish(q);
-      const terms = tokenize(q).filter(t=>t.length>2&&!/^\d+$/.test(t));
-      return { cats, parish, lo: price.lo, hi: price.hi, cheap: price.cheap, terms, offset:0 };
+      const price = parsePrice(normalized);
+      const cats  = detectedCats;
+      const parish = detectedParish;
+      const terms = tokenize(normalized).filter(t=>t.length>2 && !STOP_WORDS.has(t));
+      return { cats, parish, lo: price.lo, hi: price.hi, cheap: price.cheap, expensive: price.expensive, terms, offset:0 };
     })();
 
-    // 3. Rebuild IDF if ads changed
+    // 4. Rebuild IDF if needed
     if (!_idfCache || _idfCache._n !== _ads.length) {
       _idfCache = buildIDF(_ads.filter(a=>a.status!=='sold'));
       _idfCache._n = _ads.length;
     }
 
-    // 4. Filter candidates
+    // 5. Filter candidate pool
     let pool = _ads.filter(a=>a.status!=='sold');
     if (ctx.cats.length) pool = pool.filter(a=>ctx.cats.includes(a.category));
     if (ctx.parish) pool = pool.filter(a=>a.parish.toLowerCase()===ctx.parish.toLowerCase());
     if (ctx.hi) pool = pool.filter(a=>a.price<=ctx.hi);
     if (ctx.lo) pool = pool.filter(a=>a.price>=ctx.lo);
+    if (ctx.negoOnly) pool = pool.filter(a=>a.neg);
     if (ctx.cheap) pool = pool.filter(a => {
       const ceil = CHEAP_CEILING[a.category]||20000;
       return a.price <= ceil;
     });
+    if (ctx.expensive) {
+      // Top 30% by price in category
+      const sorted = [...pool].sort((a,b)=>b.price-a.price);
+      pool = sorted.slice(0, Math.max(Math.ceil(sorted.length*0.3), 3));
+    }
 
-    // 5. Score
-    const qTerms = ctx.terms || tokenize(q).filter(t=>t.length>2);
+    // 6. Score with TF-IDF + fuzzy matching
+    const qTerms = ctx.terms || tokenize(normalized).filter(t=>t.length>2);
     const boosts = getClickBoosts(qTerms);
     let scored = pool.map(ad=>({ ad, score:scoreAd(ad, qTerms, _idfCache, boosts) }))
       .sort((a,b)=>b.score-a.score);
 
-    // 6. Broaden if empty
+    // 7. Broaden search if empty
     let broadened = false;
-    if (!scored.length && ctx.cats.length) {
+    if (!scored.length && (ctx.cats.length || ctx.parish)) {
       broadened = true;
       let broad = _ads.filter(a=>a.status!=='sold');
       if (ctx.hi) broad = broad.filter(a=>a.price<=ctx.hi);
       if (ctx.lo) broad = broad.filter(a=>a.price>=ctx.lo);
       scored = broad.map(ad=>({ ad, score:scoreAd(ad, qTerms, _idfCache, boosts) })).sort((a,b)=>b.score-a.score);
     }
+
+    // Apply sort override from follow-up
+    if (ctx.sort === 'newest') scored.sort((a,b)=>new Date(b.ad.date||0)-new Date(a.ad.date||0));
+    if (ctx.sort === 'price_lo') scored.sort((a,b)=>a.ad.price-b.ad.price);
 
     const offset = ctx.offset||0;
     const results = scored.slice(offset, offset+6).map(s=>s.ad);
@@ -4380,8 +4728,8 @@ const YaadBrain = (() => {
     _lastCtx = { ...ctx, _qTerms: qTerms };
 
     const msg = broadened
-      ? `No exact matches — here are the closest results I found across all categories. 🔍`
-      : buildMessage(results, ctx.cats, ctx.parish, ctx, q);
+      ? `No exact matches${ctx.parish?' in '+ctx.parish:''} — showing closest results across all categories. Try broader terms! 🔍`
+      : buildMessage(allResults, ctx, rawQ);
 
     return {
       type: 'search',
@@ -4573,7 +4921,7 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
 
   // AI message
   el.className = 'sheet-msg-ai';
-  el.innerHTML = '<div class="sheet-msg-text">' + escHtml(text) + '</div>';
+  el.innerHTML = '<div class="sheet-msg-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>';
 
   if (results !== null) {
     const count      = results ? results.length : 0;
