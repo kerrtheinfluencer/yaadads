@@ -1580,70 +1580,20 @@ footer {
 @keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
 
 
-function openAuth(tab) {\n  2435\t  authTab(tab);\n  2436\t  document.getElementById('authAlert').classList.remove('show');\n  2437\t  openOverlay('ovAuth');\n  2438\t}
 
-function authTab(t) {\n  2440\t  document.getElementById('fLogin').style.display = t==='login' ? '' : 'none';\n  2441\t  document.getElementById('fReg').style.display   = t==='register' ? '' : 'none';\n  2442\t  document.getElementById('tLogin').classList.toggle('active', t==='login');\n  2443\t  document.getElementById('tReg').classList.toggle('active',   t==='register');\n  2444\t  document.getElementById('authAlert').classList.remove('show');\n  2445\t}
 
-function authErr(m) { const e = document.getElementById('authAlert'); e.textContent=m; e.className='alert-box alert-err show'; }
 
-async function doLogin() {
-  const email = document.getElementById('lEmail').value.trim();
-  const pass  = document.getElementById('lPass').value;
-  if (!email || !pass) return authErr('Please fill in all fields.');
-  const btn = document.querySelector('#fLogin .btn-green');
-  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
-  try {
-    const user = await sbLogin(email, pass);
-    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
-    L.sess = CU;
-    await loadMessages();
-    subscribeMessages();
-    closeOverlay('ovAuth');
-    renderNav(); updateStats(); updateMsgBadge();
-    showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
-  } catch(e) {
-    authErr(e.message || 'Incorrect email or password.');
-  } finally {
-    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
   }
 };\n  2455\t  L.sess = CU; closeOverlay('ovAuth');\n  2456\t  renderNav(); updateStats(); updateMsgBadge();\n  2457\t  showToast(`Welcome back, ${user.name.split(' ')[0]}! ??`, '??');\n  2458\t}
 
-async function doRegister() {
-  const name   = document.getElementById('rName').value.trim();
-  const email  = document.getElementById('rEmail').value.trim();
-  const phone  = document.getElementById('rPhone').value.trim();
-  const pass   = document.getElementById('rPass').value;
-  const parish = document.getElementById('rParish').value;
   if (!name || !email || !pass) return authErr('Please fill in all required fields.');
-  if (pass.length < 6) return authErr('Password must be at least 6 characters.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Please enter a valid email.');
-  const btn = document.querySelector('#fReg .btn-green');
-  if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
-  try {
-    const user = await sbRegister(name, email, phone, parish, pass);
-    CU = { id: user.id, name, email, phone, parish };
-    L.sess = CU;
-    subscribeMessages();
-    closeOverlay('ovAuth');
-    renderNav(); updateStats();
-    showToast('Welcome to YaadAds, ' + name.split(' ')[0] + '! 🎉', '🎉');
-  } catch(e) {
-    authErr(e.message || 'Registration failed. Please try again.');
-  } finally {
-    if (btn) { btn.textContent = 'Create Free Account'; btn.disabled = false; }
   }
 }
 
 /* ── BUILD PREVIEW (post step 3) ── */
-function buildPreview() {
-  const cat    = CATS.find(c => c.id === document.getElementById('aCat').value);
-  const title  = document.getElementById('aTitle').value.trim();
-  const price  = document.getElementById('aPrice').value;
-  const parish = document.getElementById('aParish').value;
-  const img    = uploadUrl
     ? '<img src="' + uploadUrl + '" style="width:100%;height:150px;object-fit:cover">'
     : '<div style="height:150px;background:' + (cat?.color||'#f5f5f5') + ';display:flex;align-items:center;justify-content:center;font-size:56px">' + (cat?.icon||'\u{1F4E6}') + '</div>';
-  document.getElementById('adPreviewCard').innerHTML =
     '<div class="ad-card" style="cursor:default;transform:none!important">' +
       '<div class="ad-card-img" style="height:150px">' + img + '<span class="ad-cat-tag">' + (cat?.name||'Other') + '</span></div>' +
       '<div class="ad-card-body">' +
@@ -1652,109 +1602,47 @@ function buildPreview() {
         '<div class="ad-meta"><span>\u{1F4CD} ' + parish + '</span><span>\u{1F550} just now</span></div>' +
       '</div>' +
     '</div>';
-  document.getElementById('previewDetails').innerHTML =
     '<strong>Description:</strong> ' + document.getElementById('aDesc').value.trim() + '<br>' +
     '<strong>Contact:</strong> ' + (document.getElementById('aPhone').value || CU.phone || 'Not provided') + '<br>' +
     '<strong>Negotiable:</strong> ' + (document.getElementById('aNeg').checked ? 'Yes' : 'No');
 }
 
 /* ── AI RESPONSE (hero bar) ── */
-function showAiResponse(text, count) {
-  const card = document.getElementById('aiResponseCard');
-  const textEl = document.getElementById('aiResponseText');
-  const badge = document.getElementById('aiCountBadge');
   if (!card) return;
-  textEl.textContent = text;
-  if (count !== null && count !== undefined) {
-    badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
-    badge.style.display = '';
-  } else {
-    badge.style.display = 'none';
   }
-  card.style.display = '';
 }
-function hideAiResponse() {
-  const card = document.getElementById('aiResponseCard');
-  if (card) card.style.display = 'none';
 }
-function compactHero() {
-  const hero = document.getElementById('heroSection');
-  if (hero) hero.classList.add('compact');
 }
 
 /* ── RESET HERO SEARCH ── */
-function resetHeroSearch() {
-  searchQ = ''; activeF = 'all';
-  window._aiFilters = null;
-  const inp = document.getElementById('aiInput');
-  if (inp) inp.value = '';
-  const hero = document.getElementById('heroSection');
-  if (hero) hero.classList.remove('compact');
-  hideAiResponse();
-  renderCats(); renderHome();
-  const reset = document.querySelector('.hero-reset');
-  if (reset) reset.style.display = 'none';
 }
 
 /* ── MSG BADGE ── */
-function updateMsgBadge() {
-  const count = unreadCount ? unreadCount() : 0;
-  const badge = document.getElementById('mobMsgBadge');
   if (badge) { badge.textContent = count || ''; badge.classList.toggle('show', count > 0); }
 }
 
 /* ── GALLERY NAV ── */
-function galleryGoTo(i) {
-  const t = document.getElementById('galleryTrack');
-  if (t) t.scrollTo({ left: i * t.offsetWidth, behavior: 'smooth' });
 }
-function galleryPrev() {
-  const t = document.getElementById('galleryTrack');
-  if (t) galleryGoTo(Math.max(0, Math.round(t.scrollLeft / (t.offsetWidth||1)) - 1));
 }
-function galleryNext() {
-  const t = document.getElementById('galleryTrack');
-  if (t) galleryGoTo(Math.min(t.children.length - 1, Math.round(t.scrollLeft / (t.offsetWidth||1)) + 1));
 }
 
 /* ── OPEN CHAT FROM INBOX ── */
-async function openChatFromInbox(key) {
-  const conv = _msgs[key]; if (!conv) return;
-  await sbMarkRead(key);
-  currentConv = key;
-  renderChat(key);
-  openOverlay('ovChat');
-  updateMsgBadge();
   if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
 }
 
-function doLogout() {\n  2479\t  CU = null; L.sess = null; renderNav(); goHome();\n  2480\t  showToast('Logged out successfully.', '??');\n  2481\t}
 
-function toggleSold(id) {\n  2098\t  const ads = L.ads; const ad = ads.find(a => a.id === id); if (!ad) return;\n  2099\t  ad.status = ad.status === 'sold' ? 'active' : 'sold';\n  2100\t  L.ads = ads;\n  2101\t  closeOverlay('ovDetail');\n  2102\t  renderHome(); renderCats(); updateStats();\n  2103\t  showToast(ad.status==='sold'?'Marked as sold ✓':'Marked as active ✓', ad.status==='sold'?'??️':'✅');\n  2104\t}
 
-function delAd(id) {\n  2426\t  if (!confirm('Delete this listing? This cannot be undone.')) return;\n  2427\t  L.ads = L.ads.filter(a => a.id !== id);\n  2428\t  renderMyAds(); renderHome(); renderCats(); updateStats();\n  2429\t}
 
-function openPostAd() {\n  2487\t  if (!CU) return openAuth('login');\n  2488\t  currentPostStep = 1;\n  2489\t  ['aTitle','aDesc','aPrice','aPhone'].forEach(id => document.getElementById(id).value='');\n  2490\t  document.getElementById('aParish').value='';\n  2491\t  document.getElementById('aNeg').checked=false;\n  2492\t  document.getElementById('postAlert').classList.remove('show');\n  2493\t  clearImg(); setStep(1);\n  2494\t  openOverlay('ovPost');\n  2495\t}
 
-function clearImg() {\n  2560\t  uploadUrl = '';\n  2561\t  document.getElementById('imgUploadArea').style.display = '';\n  2562\t  document.getElementById('imgPreviewBox').style.display = 'none';\n  2563\t  document.getElementById('imgPreview').src = '';\n  2564\t  document.getElementById('imgFile').value = '';\n  2565\t}
 
-function handleImgFile(input) {\n  2547\t  const file = input.files[0]; if (!file) return;\n  2548\t  if (file.size > 2000000) { showToast('Image too large (max 2MB)','⚠️'); return; }\n  2549\t  const reader = new FileReader();\n  2550\t  reader.onload = e => {\n  2551\t    uploadUrl = e.target.result;\n  2552\t    document.getElementById('imgUploadArea').style.display = 'none';\n  2553\t    document.getElementById('imgPreviewBox').style.display = '';\n  2554\t    document.getElementById('imgPreview').src = uploadUrl;\n  2555\t  };\n  2556\t  reader.readAsDataURL(file);\n  2557\t}
 
-function doPostAd() {\n  2568\t  const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);\n  2569\t  const ad = {\n  2570\t    id: 'a'+Date.now(),\n  2571\t    title:    document.getElementById('aTitle').value.trim(),\n  2572\t    category: document.getElementById('aCat').value,\n  2573\t    parish:   document.getElementById('aParish').value,\n  2574\t    price:    parseFloat(document.getElementById('aPrice').value)||0,\n  2575\t    desc:     document.getElementById('aDesc').value.trim(),\n  2576\t    phone:    document.getElementById('aPhone').value.trim() || CU.phone || '',\n  2577\t    image:    uploadUrl,\n  2578\t    neg:      document.getElementById('aNeg').checked,\n  2579\t    icon:     cat?.icon||'??',\n  2580\t    seller:   CU.name,\n  2581\t    sellerInit: initials(CU.name),\n  2582\t    sellerId: CU.id,\n  2583\t    date:     new Date().toISOString().split('T')[0],\n  2584\t    status:   'active',\n  2585\t  };\n  2586\t  const ads = L.ads; ads.unshift(ad); L.ads = ads;\n  2587\t  closeOverlay('ovPost');\n  2588\t  renderCats(); renderHome(); updateStats();\n  2589\t  showToast('Your ad is live! ??', '??');\n  2590\t}
 
-function renderMyAds() {\n  2401\t  const el = document.getElementById('myAdsBox');\n  2402\t  if (!CU) { el.innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>Please log in</h3><p>You need an account to manage listings.</p><button class=\"btn btn-green\" onclick=\"openAuth('login')\">Log In</button></div>`; return; }\n  2403\t  const ads = L.ads.filter(a => a.sellerId === CU.id);\n  2404\t  if (!ads.length) { el.innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>No listings yet</h3><p>Post your first free ad and start selling today!</p><button class=\"btn btn-green\" onclick=\"openPostAd()\">Post Your First Ad</button></div>`; return; }\n  2405\t  el.innerHTML = ads.map(ad => {\n  2406\t    const cat = CATS.find(c => c.id === ad.category);\n  2407\t    const thumb = ad.image ? `<img src=\"${ad.image}\" onerror=\"this.style.display='none'\">` : (cat?.icon||'??');\n  2408\t    return `<div class=\"my-ad-row\">\n  2409\t      <div class=\"my-ad-thumb\">${thumb}</div>\n  2410\t      <div class=\"my-ad-info\">\n  2411\t        <div class=\"my-ad-title\">${ad.title}</div>\n  2412\t        <div class=\"my-ad-price\">J$${fmtN(ad.price)}</div>\n  2413\t        <div class=\"my-ad-meta\">?? ${ad.parish} · ${cat?.name||'Other'} · ${ago(ad.date)}</div>\n  2414\t      </div>\n  2415\t      <span class=\"s-badge ${ad.status==='sold'?'s-sold':'s-active'}\">${ad.status==='sold'?'● Sold':'● Active'}</span>\n  2416\t      <div class=\"my-ad-acts\">\n  2417\t        <button class=\"btn btn-ghost btn-sm\" onclick=\"openDetail('${ad.id}')\">View</button>\n  2418\t        <button class=\"btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm\" onclick=\"toggleSold('${ad.id}');renderMyAds()\">${ad.status==='sold'?'Relist':'Sold'}</button>\n  2419\t        <button class=\"btn btn-red btn-sm\" onclick=\"delAd('${ad.id}')\">Delete</button>\n  2420\t      </div>\n  2421\t    </div>`;\n  2422\t  }).join('');\n  2423\t}
 
-function renderChat(key) {\n  2294\t  const msgs = L.msgs;\n  2295\t  const conv = msgs[key];\n  2296\t  if (!conv) return;\n  2297\t  const isbuyer = CU.id === conv.buyerId;\n  2298\t  const otherName = isbuyer ? conv.sellerName : conv.buyerName;\n  2299\t  const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;\n  2300\t  const otherId   = isbuyer ? conv.sellerId  : conv.buyerId;\n  2301\t  const clr = avatarColor(otherName);\n  2302\t\n  2303\t  document.getElementById('chatInner').innerHTML = `\n  2304\t    <div class=\"chat-header\">\n  2305\t      <div class=\"s-avatar\" style=\"background:${clr.bg};color:${clr.fg};width:42px;height:42px;font-size:16px\">${otherInit}</div>\n  2306\t      <div class=\"chat-info\">\n  2307\t        <div class=\"chat-name\">${otherName}</div>\n  2308\t        <div class=\"chat-ad-ref\">Re: ${conv.adTitle}</div>\n  2309\t      </div>\n  2310\t    </div>\n  2311\t    <div class=\"chat-messages\" id=\"chatMsgs\">\n  2312\t      ${conv.messages.length===0 ? `<div style=\"text-align:center;padding:40px 0;color:var(--text-3);font-size:14px\">Start the conversation!<br>Ask about the listing.</div>` : ''}\n  2313\t      ${conv.messages.map(m => {\n  2314\t        const out = m.from === CU.id;\n  2315\t        return `<div class=\"msg ${out?'msg-out':'msg-in'}\">\n  2316\t          <div class=\"msg-bubble\">${m.text}</div>\n  2317\t          <div class=\"msg-time\">${fmtTime(m.ts)}</div>\n  2318\t        </div>`;\n  2319\t      }).join('')}\n  2320\t    </div>\n  2321\t    <div class=\"chat-input-row\">\n  2322\t      <input class=\"chat-input\" id=\"chatInput\" placeholder=\"Type a message…\" onkeydown=\"if(event.key==='Enter')sendMsg()\">\n  2323\t      <button class=\"chat-send\" onclick=\"sendMsg()\">➤</button>\n  2324\t    </div>`;\n  2325\t  setTimeout(() => { const el = document.getElementById('chatMsgs'); if (el) el.scrollTop = el.scrollHeight; }, 50);\n  2326\t}
 
-function renderInbox() {\n  2343\t  if (!CU) {\n  2344\t    document.getElementById('inboxList').innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class=\"btn btn-green\" onclick=\"openAuth('login')\">Log In</button></div>`;\n  2345\t    return;\n  2346\t  }\n  2347\t  const msgs = L.msgs;\n  2348\t  const myConvs = Object.entries(msgs).filter(([k,c]) => c.sellerId===CU.id || c.buyerId===CU.id);\n  2349\t  if (!myConvs.length) {\n  2350\t    document.getElementById('inboxList').innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>`;\n  2351\t    return;\n  2352\t  }\n  2353\t  // Sort by latest message\n  2354\t  myConvs.sort((a,b) => {\n  2355\t    const am = a[1].messages.at(-1)?.ts||0;\n  2356\t    const bm = b[1].messages.at(-1)?.ts||0;\n  2357\t    return bm - am;\n  2358\t  });\n  2359\t  document.getElementById('inboxList').innerHTML = myConvs.map(([key, conv]) => {\n  2360\t    const isbuyer = CU.id === conv.buyerId;\n  2361\t    const otherName = isbuyer ? conv.sellerName : conv.buyerName;\n  2362\t    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;\n  2363\t    const last = conv.messages.at(-1);\n  2364\t    const unread = conv.messages.filter(m => m.from !== CU.id && !m.read).length;\n  2365\t    const clr = avatarColor(otherName);\n  2366\t    return `<div class=\"inbox-item ${unread?'unread':''}\" onclick=\"openChatFromInbox('${key}')\">\n  2367\t      <div class=\"inbox-avatar\" style=\"background:${clr.bg};color:${clr.fg}\">${otherInit}</div>\n  2368\t      <div class=\"inbox-info\">\n  2369\t        <div class=\"inbox-name\">${otherName} ${unread?`<span style=\"background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px\">${unread} new</span>`:''}</div>\n  2370\t        <div class=\"inbox-preview\">${last?last.text:'Start a conversation…'}</div>\n  2371\t        <span class=\"inbox-ad\">?? ${conv.adTitle}</span>\n  2372\t      </div>\n  2373\t      <div class=\"inbox-time\">${last?fmtTime(last.ts):''}</div>\n  2374\t    </div>`;\n  2375\t  }).join('');\n  2376\t}
 
-function sendMsg() {\n  2329\t  const input = document.getElementById('chatInput');\n  2330\t  const text = input?.value.trim();\n  2331\t  if (!text || !currentConv) return;\n  2332\t  const msgs = L.msgs;\n  2333\t  const conv = msgs[currentConv];\n  2334\t  if (!conv) return;\n  2335\t  conv.messages.push({ from: CU.id, text, ts: Date.now(), read: false });\n  2336\t  L.msgs = msgs;\n  2337\t  input.value = '';\n  2338\t  renderChat(currentConv);\n  2339\t  updateMsgBadge();\n  2340\t}
 
-function togFav(id, btn) {\n  2049\t  const f = [...L.favs]; const i = f.indexOf(id);\n  2050\t  if (i > -1) { f.splice(i,1); btn.textContent='??'; showToast('Removed from favourites','??'); }\n  2051\t  else         { f.push(id);   btn.textContent='❤️'; showToast('Saved to favourites','❤️'); }\n  2052\t  L.favs = f;\n  2053\t}
 
-function convKey(uid1, uid2, adId) {\n  2272\t  return [uid1, uid2].sort().join('__') + '__' + adId;\n  2273\t}
 
-function isFav(id) { return L.favs.includes(id); }
 
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  QUALITY-OF-LIFE FEATURES — CSS                             ║
@@ -2516,16 +2404,6 @@ const CATS = [
 
 const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon','St. Catherine'];
 
-const DEMO = [
-  {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
-  {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
-  {id:'d3',title:'iPhone 14 Pro 256GB — Like New',category:'electronics',price:95000,parish:'St. James',desc:'Used 6 months only. Deep purple. Original box, charger & case included. No cracks. Battery 98%. Last price.',seller:'Kezia Brown',sellerInit:'KB',sellerId:'s3',phone:'876-654-3210',date:'2025-06-05',image:'',status:'active',neg:false, views:124},
-  {id:'d4',title:'Graphic Designer — Logos, Flyers & Social',category:'services',price:5000,parish:'St. Andrew',desc:'Professional designer, 5+ years experience. Logos, flyers, business cards, Instagram content. Fast turnaround. WhatsApp for portfolio.',seller:'Andre Thomas',sellerInit:'AT',sellerId:'s4',phone:'876-789-0123',date:'2025-06-06',image:'',status:'active',neg:true, views:31},
-  {id:'d5',title:'Fresh Ackee & Saltfish — Free Delivery',category:'food',price:1500,parish:'Clarendon',desc:'Fresh ackee from my own tree, cleaned and ready. Saltfish packages available. Free delivery within Clarendon.',seller:'Miss Gloria',sellerInit:'MG',sellerId:'s5',phone:'876-555-1234',date:'2025-06-07',image:'',status:'active',neg:false, views:19},
-  {id:'d6',title:'Yamaha Guitar + Amp Bundle',category:'music',price:35000,parish:'Kingston',desc:'Yamaha Pacifica 112V in sonic blue. 15W amp, cable, strap & picks included. Perfect for beginners.',seller:'Justin Lee',sellerInit:'JL',sellerId:'s6',phone:'876-234-5678',date:'2025-06-08',image:'',status:'active',neg:false, views:66},
-  {id:'d7',title:'Samsung 65" 4K Smart TV',category:'electronics',price:85000,parish:'St. Andrew',desc:'Samsung 65" 4K UHD Smart TV. Netflix, YouTube, Disney+ built-in. Bought 1 year ago, upgrading. Pickup only.',seller:'Troy Brown',sellerInit:'TB',sellerId:'s7',phone:'876-111-2222',date:'2025-06-09',image:'',status:'active',neg:true, views:91},
-  {id:'d8',title:'Vacant Lot for Sale — Portmore',category:'property',price:4500000,parish:'St. Catherine',desc:'800 sq ft residential lot in gated community. Survey done, title available. Owner moving abroad.',seller:'Pearl Watson',sellerInit:'PW',sellerId:'s8',phone:'876-777-8888',date:'2025-06-10',image:'',status:'active',neg:false, views:38},
-];
 
 /* ═══════════════════════════════════════════════════════════
    SUPABASE CLIENT
@@ -2559,22 +2437,19 @@ const L = {
 
 // Load all active ads into cache
 async function loadAds() {
-  // Show demo data immediately while Supabase loads (fast perceived load)
-  _ads = DEMO;
   try {
     const { data, error } = await _db.from('ads')
       .select('*')
       .order('created_at', { ascending: false });
     if (error) {
-      console.warn('Supabase loadAds error — showing demo data:', error.message||error);
-      _ads = DEMO;
+      console.error('Supabase loadAds error:', error.message || error);
+      _ads = [];
       return;
     }
-    const live = (data || []).map(dbToAd).filter(function(a){ return a.id && a.title; });
-    _ads = live.length ? live : DEMO;
+    _ads = (data || []).map(dbToAd).filter(function(a){ return a.id && a.title; });
   } catch(e) {
-    console.warn('loadAds network error — showing demo data:', e.message||e);
-    _ads = DEMO;
+    console.error('loadAds network error:', e.message || e);
+    _ads = [];
   }
 }
 
@@ -3368,8 +3243,7 @@ async function init() {
   fillCatSelect();
   renderNav();
 
-  // Step 1: Render DEMO immediately (instant first paint)
-  _ads = DEMO;
+  _ads = [];
   renderCats();
   renderHome();
   updateStats();
@@ -3380,7 +3254,7 @@ async function init() {
     if (CU) await loadMessages();
   } catch(e) {
     console.warn('Init load error — keeping demo data:', e.message||e);
-    _ads = DEMO;
+    _ads = [];
   }
 
   // Step 3: Re-render with real data (or demo if Supabase empty/failing)
@@ -3502,13 +3376,9 @@ function renderNav() {
       '<button class="btn btn-outline btn-sm" onclick="doLogout()">Log out</button>'
     ].join('');
   } else {
-    el.innerHTML = [
-      '<button class="btn btn-outline btn-sm" ',
-        'style="color:#fff;border-color:rgba(255,255,255,.5)" ',
-        'onclick="openAuth(&quot;login&quot;)">Log In</button>',
-      '<button class="btn btn-gold btn-sm" ',
-        'onclick="openAuth(&quot;register&quot;)">Join Free &#10024;</button>'
-    ].join('');
+    el.innerHTML =
+      '<button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.5)" onclick="openAuth(\'login\')">Log In</button>' +
+      '<button class="btn btn-gold btn-sm" onclick="openAuth(\'register\')">Join Free ✨</button>';
   }
   var lbl = document.getElementById('mnAccountLbl');
   if (lbl) lbl.textContent = CU ? 'Account' : 'Sign In';
@@ -3774,7 +3644,7 @@ function renderHome() {
       return cat ? '<button class="btn btn-ghost btn-sm" onclick="catFilter(\'' + cid + '\')">' + cat.icon + ' ' + cat.name + '</button>' : '';
     }).join('');
     grid.innerHTML = emptyEl(
-      searchQ ? 'No results for "'+escHtml(searchQ)+'". Try something else or browse a category.' : 'No listings yet — be the first to post!',
+      searchQ ? 'No results for "'+escHtml(searchQ)+'". Try something else or browse a category.' : 'No listings yet — be the first to post! 🇯🇲',
       '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px">'+
         '<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>'+
         catBtns+
