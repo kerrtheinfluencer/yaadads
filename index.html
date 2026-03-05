@@ -1967,6 +1967,60 @@ function isFav(id) { return L.favs.includes(id); }
 }
 .share-btn:hover { border-color: var(--green); color: var(--green); }
 
+/* ═══════════════════════════════════════════════════════════
+   EDIT PROFILE MODAL CSS
+═══════════════════════════════════════════════════════════ */
+.profile-banner {
+  background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
+  border-radius: 16px 16px 0 0;
+  padding: 28px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: -24px -24px 20px;
+}
+.profile-av-wrap { position: relative; cursor: pointer; }
+.profile-av-big {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 700;
+  border: 3px solid rgba(255,255,255,.3);
+  color: #fff;
+}
+.profile-av-edit {
+  position: absolute; bottom: 0; right: 0;
+  background: var(--gold); color: #000;
+  width: 26px; height: 26px; border-radius: 50%;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.profile-name-display { color: #fff; font-size: 20px; font-weight: 700; }
+.profile-email-display { color: rgba(255,255,255,.7); font-size: 13px; }
+.profile-stat-row {
+  display: flex; gap: 20px; margin-top: 4px;
+}
+.profile-stat-item { text-align: center; color: rgba(255,255,255,.85); }
+.profile-stat-num { font-size: 20px; font-weight: 700; color: #fff; }
+.profile-stat-lbl { font-size: 11px; opacity: .7; }
+.profile-section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--text-3); margin: 20px 0 10px;
+}
+.profile-danger-btn {
+  width: 100%; padding: 12px; border: 1px solid #f5c2c7;
+  background: #fff5f5; color: #c0392b; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px;
+  text-align: center;
+}
+.profile-danger-btn:hover { background: #fee2e2; }
+.profile-save-strip {
+  position: sticky; bottom: -24px; margin: 20px -24px -24px;
+  background: #fff; border-top: 1px solid var(--border);
+  padding: 16px 24px;
+}
+.profile-err { font-size: 13px; color: #c0392b; margin-top: 6px; min-height: 18px; }
+
 </style>
 </head>
 <body>
@@ -3373,7 +3427,7 @@ function goPage(p) {
 }
 
 function handleAccountTab() {
-  if (CU) goPage('myads');
+  if (CU) openEditProfile();
   else openAuth('login');
 }
 
@@ -3381,7 +3435,7 @@ function handleAccountTab() {
    CATEGORIES — compact row
 ═══════════════════════════════════════════════════════════ */
 function renderCats() {
-  const ads = L.ads;
+  const ads = _ads || [];
   const row = document.getElementById('catRow');
   if (!row) return;
   const allCount = ads.filter(a => a.status !== 'sold').length;
@@ -3874,6 +3928,141 @@ const SEO = (() => {
    ║  YAAD BRAIN — Local NLP Search Engine (zero API calls)      ║
    ║  Gets smarter as more listings are added to the site.       ║
    ╚══════════════════════════════════════════════════════════════╝ */
+/* ═══════════════════════════════════════════════════════════
+   EDIT PROFILE
+═══════════════════════════════════════════════════════════ */
+
+async function sbUpdateUser(id, fields) {
+  const { error } = await _db.from('users').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+function openEditProfile() {
+  if (!CU) return openAuth('login');
+
+  // Fill parish select
+  const sel = document.getElementById('epParish');
+  if (sel && sel.options.length <= 1) {
+    PARISHES.forEach(function(p) {
+      const o = document.createElement('option');
+      o.value = p; o.textContent = p;
+      sel.appendChild(o);
+    });
+  }
+
+  // Fill current values
+  document.getElementById('epName').value  = CU.name  || '';
+  document.getElementById('epPhone').value = CU.phone || '';
+  document.getElementById('epPass').value  = '';
+  document.getElementById('epPass2').value = '';
+  document.getElementById('epAlert').textContent = '';
+  if (sel) sel.value = CU.parish || '';
+
+  // Update banner
+  const clr = avatarColor(CU.name);
+  const av  = document.getElementById('epAvatar');
+  if (av) { av.textContent = initials(CU.name); av.style.background = clr.bg; av.style.color = clr.fg; }
+  const nd = document.getElementById('epNameDisplay');
+  if (nd) nd.textContent = CU.name;
+  const ed = document.getElementById('epEmailDisplay');
+  if (ed) ed.textContent = CU.email;
+
+  // Stats
+  const myAds  = _ads.filter(function(a){ return a.sellerId === CU.id; });
+  const active = myAds.filter(function(a){ return a.status !== 'sold'; });
+  const sold   = myAds.filter(function(a){ return a.status === 'sold'; });
+  const views  = myAds.reduce(function(s,a){ return s+(a.views||0); },0);
+  const stats  = document.getElementById('epStats');
+  if (stats) stats.innerHTML =
+    '<div class="profile-stat-item"><div class="profile-stat-num">' + active.length + '</div><div class="profile-stat-lbl">Active</div></div>' +
+    '<div class="profile-stat-item"><div class="profile-stat-num">' + sold.length   + '</div><div class="profile-stat-lbl">Sold</div></div>' +
+    '<div class="profile-stat-item"><div class="profile-stat-num">' + fmtN(views)   + '</div><div class="profile-stat-lbl">Views</div></div>';
+
+  // Mini my-ads list in profile
+  const box = document.getElementById('epMyAds');
+  if (box) {
+    if (!myAds.length) {
+      box.innerHTML = '<p style="font-size:13px;color:var(--text-3);margin:0">No listings yet — <a href="#" style="color:var(--green);font-weight:600" onclick="closeOverlay('ovEditProfile');openPostAd();return false">post your first ad</a></p>';
+    } else {
+      box.innerHTML = myAds.slice(0,5).map(function(ad) {
+        var cat = CATS.find(function(c){ return c.id===ad.category; });
+        return '<div class="my-ad-row" style="cursor:pointer" onclick="closeOverlay('ovEditProfile');openDetail('' + ad.id + '')">' +
+          '<div class="my-ad-thumb">' + (ad.image ? '<img src="' + ad.image + '" onerror="this.style.display='none'">' : (cat?cat.icon:'📦')) + '</div>' +
+          '<div class="my-ad-info">' +
+            '<div class="my-ad-title">' + escHtml(ad.title) + '</div>' +
+            '<div class="my-ad-price">J$' + fmtN(ad.price) + '</div>' +
+          '</div>' +
+          '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
+        '</div>';
+      }).join('') +
+      (myAds.length > 5 ? '<p style="font-size:12px;color:var(--text-3);text-align:center;margin-top:8px">+ ' + (myAds.length-5) + ' more — <a href="#" style="color:var(--green)" onclick="closeOverlay('ovEditProfile');goPage('myads');return false">see all</a></p>' : '');
+    }
+  }
+
+  openOverlay('ovEditProfile');
+}
+
+async function doSaveProfile() {
+  const name   = document.getElementById('epName').value.trim();
+  const phone  = document.getElementById('epPhone').value.trim();
+  const parish = document.getElementById('epParish').value;
+  const pass   = document.getElementById('epPass').value;
+  const pass2  = document.getElementById('epPass2').value;
+  const errEl  = document.getElementById('epAlert');
+
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Name cannot be empty.'; return; }
+  if (pass && pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if (pass && pass !== pass2) { errEl.textContent = 'Passwords do not match.'; return; }
+
+  const btn = document.getElementById('epSaveBtn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+
+  try {
+    const fields = { name, phone, parish };
+    if (pass) fields.password = pass;
+    await sbUpdateUser(CU.id, fields);
+
+    // Update local session
+    CU.name = name; CU.phone = phone; CU.parish = parish;
+    L.sess = CU;
+
+    // Re-render avatar in banner
+    const clr = avatarColor(name);
+    const av  = document.getElementById('epAvatar');
+    if (av) { av.textContent = initials(name); av.style.background = clr.bg; av.style.color = clr.fg; }
+    document.getElementById('epNameDisplay').textContent = name;
+
+    renderNav();
+    closeOverlay('ovEditProfile');
+    showToast('Profile updated! ✅', '✅');
+  } catch(e) {
+    errEl.textContent = e.message || 'Save failed. Please try again.';
+  } finally {
+    if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
+  }
+}
+
+async function doDeleteAccount() {
+  if (!CU) return;
+  if (!confirm('Are you sure you want to permanently delete your account and all your listings? This cannot be undone.')) return;
+  if (!confirm('Last chance — really delete everything?')) return;
+  try {
+    // Delete ads
+    await _db.from('ads').delete().eq('seller_id', CU.id);
+    // Delete messages
+    await _db.from('messages').delete().or('seller_id.eq.' + CU.id + ',buyer_id.eq.' + CU.id);
+    // Delete user
+    await _db.from('users').delete().eq('id', CU.id);
+    closeOverlay('ovEditProfile');
+    doLogout();
+    showToast('Account deleted. Goodbye! 👋', '👋');
+  } catch(e) {
+    showToast('Delete failed: ' + (e.message||'try again'), '⚠️');
+  }
+}
+
+
 const YaadBrain = (() => {
 
   /* ── JAMAICAN PRICE PARSER ──────────────────────────────── */
@@ -3881,32 +4070,68 @@ const YaadBrain = (() => {
   function parsePrice(q) {
     let lo = null, hi = null;
     const s = q.toLowerCase();
-    // Multipliers: k=1000, m/million=1000000
+
+    // ── Core number converter ─────────────────────────────────
+    // Handles: 2m, 2.5m, 80k, 1.5k, "2 million", "500 thousand",
+    //          bare integers/floats, comma-formatted numbers (1,500,000)
     const toNum = t => {
-      t = t.trim();
-      if (/^\d+(\.\d+)?m$/i.test(t))  return parseFloat(t)*1e6;
-      if (/^\d+(\.\d+)?k$/i.test(t))  return parseFloat(t)*1e3;
-      if (/million/i.test(t))          return parseFloat(t.replace(/[^0-9.]/g,''))*1e6;
-      if (/thousand/i.test(t))         return parseFloat(t.replace(/[^0-9.]/g,''))*1e3;
-      const n = parseFloat(t.replace(/[^0-9.]/g,''));
+      if (!t) return null;
+      t = t.trim().replace(/,/g, '');
+      if (/^(\d+(?:\.\d+)?)\s*m(illion)?$/i.test(t)) return parseFloat(t) * 1e6;
+      if (/^(\d+(?:\.\d+)?)\s*k$/i.test(t))          return parseFloat(t) * 1e3;
+      const n = parseFloat(t.replace(/[^0-9.]/g, ''));
       return isNaN(n) ? null : n;
     };
-    // "between X and Y"
-    const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
-    if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
-    // "under/below/less than X"
-    const und = s.match(/(?:under|below|less than|max|beneath)\s+([\d.kmillion]+)/i);
+
+    // ── Normalised token: collapse "2 million" → "2m", "500 thousand" → "500k"
+    // so all downstream patterns work uniformly
+    const norm = s
+      .replace(/(\d+(?:\.\d+)?)\s*million/gi, (_, n) => n + 'm')
+      .replace(/(\d+(?:\.\d+)?)\s*thousand/gi, (_, n) => n + 'k')
+      .replace(/(\d+(?:\.\d+)?)\s*mil\b/gi, (_, n) => n + 'm');
+
+    // ── NUM pattern (matches 2m / 2.5m / 80k / 1500000 / 1,500,000)
+    const N = '([\\d,]+(?:\\.\\d+)?(?:[mk])?)';
+
+    // "between X and Y" / "X to Y" / "X - Y"
+    const bet = norm.match(new RegExp(N + '\\s*(?:to|-|and)\\s*' + N, 'i'));
+    if (bet) {
+      const a = toNum(bet[1]), b = toNum(bet[2]);
+      if (a && b) { lo = Math.min(a,b); hi = Math.max(a,b); return {lo,hi}; }
+    }
+
+    // "under / below / less than / max / within X"
+    const und = norm.match(/(?:under|below|less than|max|beneath|within|no more than|at most)\s*j?\$?\s*([\\d,]+(?:\.\d+)?[mk]?)/i);
     if (und) { hi = toNum(und[1]); return {lo,hi}; }
-    // "over/above/more than X"
-    const ov = s.match(/(?:over|above|more than|min|at least)\s+([\d.kmillion]+)/i);
+
+    // "over / above / more than / min / at least / starting X"
+    const ov = norm.match(/(?:over|above|more than|min|at least|starting|from)\s*j?\$?\s*([\\d,]+(?:\.\d+)?[mk]?)/i);
     if (ov) { lo = toNum(ov[1]); return {lo,hi}; }
-    // standalone numbers like "under 80000" already caught, catch bare "80k"
-    const bare = s.match(/\b([\d]+(?:[.]\d+)?[km])\b/i);
-    if (bare) { hi = toNum(bare[1]); return {lo,hi}; }
-    // "cheap/budget/affordable/likkle money"
-    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh)\b/.test(s))
+
+    // "around / about / ~X" → ±30% band
+    const approx = norm.match(/(?:around|about|~|roughly|approximately)\s*([\\d,]+(?:\.\d+)?[mk]?)/i);
+    if (approx) {
+      const mid = toNum(approx[1]);
+      if (mid) { lo = Math.floor(mid * 0.7); hi = Math.ceil(mid * 1.3); return {lo,hi}; }
+    }
+
+    // Bare suffixed number: "80k" / "2m" / "1.5m"
+    const suffixed = norm.match(/\b(\d+(?:\.\d+)?[mk])\b/i);
+    if (suffixed) { hi = toNum(suffixed[1]); return {lo,hi}; }
+
+    // Bare large number (≥5 digits — treat as price ceiling)
+    const bigNum = norm.match(/\b(\d{5,}(?:,\d{3})*)\b/);
+    if (bigNum) { hi = toNum(bigNum[1]); return {lo,hi}; }
+
+    // Bare medium number 1000–999999 with no units — ambiguous, treat as ceiling
+    const midNum = norm.match(/\b(\d{4,6})\b/);
+    if (midNum) { const v = toNum(midNum[1]); if (v >= 1000) { hi = v; return {lo,hi}; } }
+
+    // Cheap / budget slang
+    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|low price|bargain|bless up price)\b/.test(s))
       return { cheap: true };
-    return {lo,hi};
+
+    return {lo, hi};
   }
 
   /* ── CATEGORY MAPPER ────────────────────────────────────── */
@@ -4118,7 +4343,9 @@ const YaadBrain = (() => {
       const price = parsePrice(q);
       const cats  = detectCategories(q);
       const parish = detectParish(q);
-      const terms = tokenize(q).filter(t=>t.length>2&&!/^\d+$/.test(t));
+      // Strip price-related words from TF-IDF terms so "2 million" doesn't pollute scoring
+      const PRICE_NOISE = /^(million|thousand|under|below|above|over|between|and|for|around|about|least|most|than|from|starting|within|max|min|cheap|budget|affordable|price|jmd|j\$|\d+[mk]?|\d+)$/i;
+      const terms = tokenize(q).filter(t=>t.length>2&&!PRICE_NOISE.test(t));
       return { cats, parish, lo: price.lo, hi: price.hi, cheap: price.cheap, terms, offset:0 };
     })();
 
@@ -4878,5 +5105,65 @@ window.addEventListener('resize', () => {
 ═══════════════════════════════════════════════════════════ */
 init();
 </script>
+
+<!-- ══════════════════════════════════════════════════════
+     EDIT PROFILE MODAL
+══════════════════════════════════════════════════════ -->
+<div class="overlay" id="ovEditProfile">
+  <div class="modal modal-wide" style="max-width:500px">
+    <button class="m-close" onclick="closeOverlay('ovEditProfile')">✕</button>
+
+    <!-- Banner with avatar + stats -->
+    <div class="profile-banner" id="epBanner">
+      <div class="profile-av-wrap">
+        <div class="profile-av-big" id="epAvatar"></div>
+        <div class="profile-av-edit">✏️</div>
+      </div>
+      <div class="profile-name-display" id="epNameDisplay"></div>
+      <div class="profile-email-display" id="epEmailDisplay"></div>
+      <div class="profile-stat-row" id="epStats"></div>
+    </div>
+
+    <!-- Edit form -->
+    <div class="profile-section-title">Personal Information</div>
+    <div id="epAlert" class="profile-err"></div>
+
+    <div class="form-grp">
+      <label class="form-lbl">Full Name *</label>
+      <input class="form-inp" id="epName" type="text" placeholder="Your full name">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Phone Number</label>
+      <input class="form-inp" id="epPhone" type="tel" placeholder="876-XXX-XXXX">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Parish</label>
+      <select class="form-inp" id="epParish">
+        <option value="">Select your parish…</option>
+      </select>
+    </div>
+
+    <div class="profile-section-title">Change Password</div>
+    <div class="form-grp">
+      <label class="form-lbl">New Password <span>(leave blank to keep current)</span></label>
+      <input class="form-inp" id="epPass" type="password" placeholder="At least 6 characters">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Confirm New Password</label>
+      <input class="form-inp" id="epPass2" type="password" placeholder="Repeat new password">
+    </div>
+
+    <div class="profile-section-title">My Listings</div>
+    <div id="epMyAds" style="margin-bottom:8px"></div>
+
+    <div class="profile-section-title">Danger Zone</div>
+    <button class="profile-danger-btn" onclick="doDeleteAccount()">🗑️ Delete My Account</button>
+
+    <div class="profile-save-strip">
+      <button class="btn btn-green btn-block btn-lg" id="epSaveBtn" onclick="doSaveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
