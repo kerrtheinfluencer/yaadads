@@ -265,6 +265,7 @@ nav {
   /* GPU composite layer — prevents repaint on scroll */
   will-change: transform;
   transform: translateZ(0);
+  contain: layout style;
 }
 .nav-logo {
   font-family: var(--font-d);
@@ -1580,20 +1581,70 @@ footer {
 @keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
 
 
+function openAuth(tab) {\n  2435\t  authTab(tab);\n  2436\t  document.getElementById('authAlert').classList.remove('show');\n  2437\t  openOverlay('ovAuth');\n  2438\t}
 
+function authTab(t) {\n  2440\t  document.getElementById('fLogin').style.display = t==='login' ? '' : 'none';\n  2441\t  document.getElementById('fReg').style.display   = t==='register' ? '' : 'none';\n  2442\t  document.getElementById('tLogin').classList.toggle('active', t==='login');\n  2443\t  document.getElementById('tReg').classList.toggle('active',   t==='register');\n  2444\t  document.getElementById('authAlert').classList.remove('show');\n  2445\t}
 
+function authErr(m) { const e = document.getElementById('authAlert'); e.textContent=m; e.className='alert-box alert-err show'; }
 
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  if (!email || !pass) return authErr('Please fill in all fields.');
+  const btn = document.querySelector('#fLogin .btn-green');
+  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
+  try {
+    const user = await sbLogin(email, pass);
+    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
+    L.sess = CU;
+    await loadMessages();
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats(); updateMsgBadge();
+    showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+  } catch(e) {
+    authErr(e.message || 'Incorrect email or password.');
+  } finally {
+    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
   }
 };\n  2455\t  L.sess = CU; closeOverlay('ovAuth');\n  2456\t  renderNav(); updateStats(); updateMsgBadge();\n  2457\t  showToast(`Welcome back, ${user.name.split(' ')[0]}! ??`, '??');\n  2458\t}
 
+async function doRegister() {
+  const name   = document.getElementById('rName').value.trim();
+  const email  = document.getElementById('rEmail').value.trim();
+  const phone  = document.getElementById('rPhone').value.trim();
+  const pass   = document.getElementById('rPass').value;
+  const parish = document.getElementById('rParish').value;
   if (!name || !email || !pass) return authErr('Please fill in all required fields.');
+  if (pass.length < 6) return authErr('Password must be at least 6 characters.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Please enter a valid email.');
+  const btn = document.querySelector('#fReg .btn-green');
+  if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
+  try {
+    const user = await sbRegister(name, email, phone, parish, pass);
+    CU = { id: user.id, name, email, phone, parish };
+    L.sess = CU;
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats();
+    showToast('Welcome to YaadAds, ' + name.split(' ')[0] + '! 🎉', '🎉');
+  } catch(e) {
+    authErr(e.message || 'Registration failed. Please try again.');
+  } finally {
+    if (btn) { btn.textContent = 'Create Free Account'; btn.disabled = false; }
   }
 }
 
 /* ── BUILD PREVIEW (post step 3) ── */
+function buildPreview() {
+  const cat    = CATS.find(c => c.id === document.getElementById('aCat').value);
+  const title  = document.getElementById('aTitle').value.trim();
+  const price  = document.getElementById('aPrice').value;
+  const parish = document.getElementById('aParish').value;
+  const img    = uploadUrl
     ? '<img src="' + uploadUrl + '" style="width:100%;height:150px;object-fit:cover">'
     : '<div style="height:150px;background:' + (cat?.color||'#f5f5f5') + ';display:flex;align-items:center;justify-content:center;font-size:56px">' + (cat?.icon||'\u{1F4E6}') + '</div>';
+  document.getElementById('adPreviewCard').innerHTML =
     '<div class="ad-card" style="cursor:default;transform:none!important">' +
       '<div class="ad-card-img" style="height:150px">' + img + '<span class="ad-cat-tag">' + (cat?.name||'Other') + '</span></div>' +
       '<div class="ad-card-body">' +
@@ -1602,47 +1653,109 @@ footer {
         '<div class="ad-meta"><span>\u{1F4CD} ' + parish + '</span><span>\u{1F550} just now</span></div>' +
       '</div>' +
     '</div>';
+  document.getElementById('previewDetails').innerHTML =
     '<strong>Description:</strong> ' + document.getElementById('aDesc').value.trim() + '<br>' +
     '<strong>Contact:</strong> ' + (document.getElementById('aPhone').value || CU.phone || 'Not provided') + '<br>' +
     '<strong>Negotiable:</strong> ' + (document.getElementById('aNeg').checked ? 'Yes' : 'No');
 }
 
 /* ── AI RESPONSE (hero bar) ── */
+function showAiResponse(text, count) {
+  const card = document.getElementById('aiResponseCard');
+  const textEl = document.getElementById('aiResponseText');
+  const badge = document.getElementById('aiCountBadge');
   if (!card) return;
+  textEl.textContent = text;
+  if (count !== null && count !== undefined) {
+    badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
   }
+  card.style.display = '';
 }
+function hideAiResponse() {
+  const card = document.getElementById('aiResponseCard');
+  if (card) card.style.display = 'none';
 }
+function compactHero() {
+  const hero = document.getElementById('heroSection');
+  if (hero) hero.classList.add('compact');
 }
 
 /* ── RESET HERO SEARCH ── */
+function resetHeroSearch() {
+  searchQ = ''; activeF = 'all';
+  window._aiFilters = null;
+  const inp = document.getElementById('aiInput');
+  if (inp) inp.value = '';
+  const hero = document.getElementById('heroSection');
+  if (hero) hero.classList.remove('compact');
+  hideAiResponse();
+  renderCats(); renderHome();
+  const reset = document.querySelector('.hero-reset');
+  if (reset) reset.style.display = 'none';
 }
 
 /* ── MSG BADGE ── */
+function updateMsgBadge() {
+  const count = unreadCount ? unreadCount() : 0;
+  const badge = document.getElementById('mobMsgBadge');
   if (badge) { badge.textContent = count || ''; badge.classList.toggle('show', count > 0); }
 }
 
 /* ── GALLERY NAV ── */
+function galleryGoTo(i) {
+  const t = document.getElementById('galleryTrack');
+  if (t) t.scrollTo({ left: i * t.offsetWidth, behavior: 'smooth' });
 }
+function galleryPrev() {
+  const t = document.getElementById('galleryTrack');
+  if (t) galleryGoTo(Math.max(0, Math.round(t.scrollLeft / (t.offsetWidth||1)) - 1));
 }
+function galleryNext() {
+  const t = document.getElementById('galleryTrack');
+  if (t) galleryGoTo(Math.min(t.children.length - 1, Math.round(t.scrollLeft / (t.offsetWidth||1)) + 1));
 }
 
 /* ── OPEN CHAT FROM INBOX ── */
+async function openChatFromInbox(key) {
+  const conv = _msgs[key]; if (!conv) return;
+  await sbMarkRead(key);
+  currentConv = key;
+  renderChat(key);
+  openOverlay('ovChat');
+  updateMsgBadge();
   if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
 }
 
+function doLogout() {\n  2479\t  CU = null; L.sess = null; renderNav(); goHome();\n  2480\t  showToast('Logged out successfully.', '??');\n  2481\t}
 
+function toggleSold(id) {\n  2098\t  const ads = L.ads; const ad = ads.find(a => a.id === id); if (!ad) return;\n  2099\t  ad.status = ad.status === 'sold' ? 'active' : 'sold';\n  2100\t  L.ads = ads;\n  2101\t  closeOverlay('ovDetail');\n  2102\t  renderHome(); renderCats(); updateStats();\n  2103\t  showToast(ad.status==='sold'?'Marked as sold ✓':'Marked as active ✓', ad.status==='sold'?'??️':'✅');\n  2104\t}
 
+function delAd(id) {\n  2426\t  if (!confirm('Delete this listing? This cannot be undone.')) return;\n  2427\t  L.ads = L.ads.filter(a => a.id !== id);\n  2428\t  renderMyAds(); renderHome(); renderCats(); updateStats();\n  2429\t}
 
+function openPostAd() {\n  2487\t  if (!CU) return openAuth('login');\n  2488\t  currentPostStep = 1;\n  2489\t  ['aTitle','aDesc','aPrice','aPhone'].forEach(id => document.getElementById(id).value='');\n  2490\t  document.getElementById('aParish').value='';\n  2491\t  document.getElementById('aNeg').checked=false;\n  2492\t  document.getElementById('postAlert').classList.remove('show');\n  2493\t  clearImg(); setStep(1);\n  2494\t  openOverlay('ovPost');\n  2495\t}
 
+function clearImg() {\n  2560\t  uploadUrl = '';\n  2561\t  document.getElementById('imgUploadArea').style.display = '';\n  2562\t  document.getElementById('imgPreviewBox').style.display = 'none';\n  2563\t  document.getElementById('imgPreview').src = '';\n  2564\t  document.getElementById('imgFile').value = '';\n  2565\t}
 
+function handleImgFile(input) {\n  2547\t  const file = input.files[0]; if (!file) return;\n  2548\t  if (file.size > 2000000) { showToast('Image too large (max 2MB)','⚠️'); return; }\n  2549\t  const reader = new FileReader();\n  2550\t  reader.onload = e => {\n  2551\t    uploadUrl = e.target.result;\n  2552\t    document.getElementById('imgUploadArea').style.display = 'none';\n  2553\t    document.getElementById('imgPreviewBox').style.display = '';\n  2554\t    document.getElementById('imgPreview').src = uploadUrl;\n  2555\t  };\n  2556\t  reader.readAsDataURL(file);\n  2557\t}
 
+function doPostAd() {\n  2568\t  const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);\n  2569\t  const ad = {\n  2570\t    id: 'a'+Date.now(),\n  2571\t    title:    document.getElementById('aTitle').value.trim(),\n  2572\t    category: document.getElementById('aCat').value,\n  2573\t    parish:   document.getElementById('aParish').value,\n  2574\t    price:    parseFloat(document.getElementById('aPrice').value)||0,\n  2575\t    desc:     document.getElementById('aDesc').value.trim(),\n  2576\t    phone:    document.getElementById('aPhone').value.trim() || CU.phone || '',\n  2577\t    image:    uploadUrl,\n  2578\t    neg:      document.getElementById('aNeg').checked,\n  2579\t    icon:     cat?.icon||'??',\n  2580\t    seller:   CU.name,\n  2581\t    sellerInit: initials(CU.name),\n  2582\t    sellerId: CU.id,\n  2583\t    date:     new Date().toISOString().split('T')[0],\n  2584\t    status:   'active',\n  2585\t  };\n  2586\t  const ads = L.ads; ads.unshift(ad); L.ads = ads;\n  2587\t  closeOverlay('ovPost');\n  2588\t  renderCats(); renderHome(); updateStats();\n  2589\t  showToast('Your ad is live! ??', '??');\n  2590\t}
 
+function renderMyAds() {\n  2401\t  const el = document.getElementById('myAdsBox');\n  2402\t  if (!CU) { el.innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>Please log in</h3><p>You need an account to manage listings.</p><button class=\"btn btn-green\" onclick=\"openAuth('login')\">Log In</button></div>`; return; }\n  2403\t  const ads = L.ads.filter(a => a.sellerId === CU.id);\n  2404\t  if (!ads.length) { el.innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>No listings yet</h3><p>Post your first free ad and start selling today!</p><button class=\"btn btn-green\" onclick=\"openPostAd()\">Post Your First Ad</button></div>`; return; }\n  2405\t  el.innerHTML = ads.map(ad => {\n  2406\t    const cat = CATS.find(c => c.id === ad.category);\n  2407\t    const thumb = ad.image ? `<img src=\"${ad.image}\" onerror=\"this.style.display='none'\">` : (cat?.icon||'??');\n  2408\t    return `<div class=\"my-ad-row\">\n  2409\t      <div class=\"my-ad-thumb\">${thumb}</div>\n  2410\t      <div class=\"my-ad-info\">\n  2411\t        <div class=\"my-ad-title\">${ad.title}</div>\n  2412\t        <div class=\"my-ad-price\">J$${fmtN(ad.price)}</div>\n  2413\t        <div class=\"my-ad-meta\">?? ${ad.parish} · ${cat?.name||'Other'} · ${ago(ad.date)}</div>\n  2414\t      </div>\n  2415\t      <span class=\"s-badge ${ad.status==='sold'?'s-sold':'s-active'}\">${ad.status==='sold'?'● Sold':'● Active'}</span>\n  2416\t      <div class=\"my-ad-acts\">\n  2417\t        <button class=\"btn btn-ghost btn-sm\" onclick=\"openDetail('${ad.id}')\">View</button>\n  2418\t        <button class=\"btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm\" onclick=\"toggleSold('${ad.id}');renderMyAds()\">${ad.status==='sold'?'Relist':'Sold'}</button>\n  2419\t        <button class=\"btn btn-red btn-sm\" onclick=\"delAd('${ad.id}')\">Delete</button>\n  2420\t      </div>\n  2421\t    </div>`;\n  2422\t  }).join('');\n  2423\t}
 
+function renderChat(key) {\n  2294\t  const msgs = L.msgs;\n  2295\t  const conv = msgs[key];\n  2296\t  if (!conv) return;\n  2297\t  const isbuyer = CU.id === conv.buyerId;\n  2298\t  const otherName = isbuyer ? conv.sellerName : conv.buyerName;\n  2299\t  const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;\n  2300\t  const otherId   = isbuyer ? conv.sellerId  : conv.buyerId;\n  2301\t  const clr = avatarColor(otherName);\n  2302\t\n  2303\t  document.getElementById('chatInner').innerHTML = `\n  2304\t    <div class=\"chat-header\">\n  2305\t      <div class=\"s-avatar\" style=\"background:${clr.bg};color:${clr.fg};width:42px;height:42px;font-size:16px\">${otherInit}</div>\n  2306\t      <div class=\"chat-info\">\n  2307\t        <div class=\"chat-name\">${otherName}</div>\n  2308\t        <div class=\"chat-ad-ref\">Re: ${conv.adTitle}</div>\n  2309\t      </div>\n  2310\t    </div>\n  2311\t    <div class=\"chat-messages\" id=\"chatMsgs\">\n  2312\t      ${conv.messages.length===0 ? `<div style=\"text-align:center;padding:40px 0;color:var(--text-3);font-size:14px\">Start the conversation!<br>Ask about the listing.</div>` : ''}\n  2313\t      ${conv.messages.map(m => {\n  2314\t        const out = m.from === CU.id;\n  2315\t        return `<div class=\"msg ${out?'msg-out':'msg-in'}\">\n  2316\t          <div class=\"msg-bubble\">${m.text}</div>\n  2317\t          <div class=\"msg-time\">${fmtTime(m.ts)}</div>\n  2318\t        </div>`;\n  2319\t      }).join('')}\n  2320\t    </div>\n  2321\t    <div class=\"chat-input-row\">\n  2322\t      <input class=\"chat-input\" id=\"chatInput\" placeholder=\"Type a message…\" onkeydown=\"if(event.key==='Enter')sendMsg()\">\n  2323\t      <button class=\"chat-send\" onclick=\"sendMsg()\">➤</button>\n  2324\t    </div>`;\n  2325\t  setTimeout(() => { const el = document.getElementById('chatMsgs'); if (el) el.scrollTop = el.scrollHeight; }, 50);\n  2326\t}
 
+function renderInbox() {\n  2343\t  if (!CU) {\n  2344\t    document.getElementById('inboxList').innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class=\"btn btn-green\" onclick=\"openAuth('login')\">Log In</button></div>`;\n  2345\t    return;\n  2346\t  }\n  2347\t  const msgs = L.msgs;\n  2348\t  const myConvs = Object.entries(msgs).filter(([k,c]) => c.sellerId===CU.id || c.buyerId===CU.id);\n  2349\t  if (!myConvs.length) {\n  2350\t    document.getElementById('inboxList').innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>`;\n  2351\t    return;\n  2352\t  }\n  2353\t  // Sort by latest message\n  2354\t  myConvs.sort((a,b) => {\n  2355\t    const am = a[1].messages.at(-1)?.ts||0;\n  2356\t    const bm = b[1].messages.at(-1)?.ts||0;\n  2357\t    return bm - am;\n  2358\t  });\n  2359\t  document.getElementById('inboxList').innerHTML = myConvs.map(([key, conv]) => {\n  2360\t    const isbuyer = CU.id === conv.buyerId;\n  2361\t    const otherName = isbuyer ? conv.sellerName : conv.buyerName;\n  2362\t    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;\n  2363\t    const last = conv.messages.at(-1);\n  2364\t    const unread = conv.messages.filter(m => m.from !== CU.id && !m.read).length;\n  2365\t    const clr = avatarColor(otherName);\n  2366\t    return `<div class=\"inbox-item ${unread?'unread':''}\" onclick=\"openChatFromInbox('${key}')\">\n  2367\t      <div class=\"inbox-avatar\" style=\"background:${clr.bg};color:${clr.fg}\">${otherInit}</div>\n  2368\t      <div class=\"inbox-info\">\n  2369\t        <div class=\"inbox-name\">${otherName} ${unread?`<span style=\"background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px\">${unread} new</span>`:''}</div>\n  2370\t        <div class=\"inbox-preview\">${last?last.text:'Start a conversation…'}</div>\n  2371\t        <span class=\"inbox-ad\">?? ${conv.adTitle}</span>\n  2372\t      </div>\n  2373\t      <div class=\"inbox-time\">${last?fmtTime(last.ts):''}</div>\n  2374\t    </div>`;\n  2375\t  }).join('');\n  2376\t}
 
+function sendMsg() {\n  2329\t  const input = document.getElementById('chatInput');\n  2330\t  const text = input?.value.trim();\n  2331\t  if (!text || !currentConv) return;\n  2332\t  const msgs = L.msgs;\n  2333\t  const conv = msgs[currentConv];\n  2334\t  if (!conv) return;\n  2335\t  conv.messages.push({ from: CU.id, text, ts: Date.now(), read: false });\n  2336\t  L.msgs = msgs;\n  2337\t  input.value = '';\n  2338\t  renderChat(currentConv);\n  2339\t  updateMsgBadge();\n  2340\t}
 
+function togFav(id, btn) {\n  2049\t  const f = [...L.favs]; const i = f.indexOf(id);\n  2050\t  if (i > -1) { f.splice(i,1); btn.textContent='??'; showToast('Removed from favourites','??'); }\n  2051\t  else         { f.push(id);   btn.textContent='❤️'; showToast('Saved to favourites','❤️'); }\n  2052\t  L.favs = f;\n  2053\t}
 
+function convKey(uid1, uid2, adId) {\n  2272\t  return [uid1, uid2].sort().join('__') + '__' + adId;\n  2273\t}
 
+function isFav(id) { return L.favs.includes(id); }
 
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  QUALITY-OF-LIFE FEATURES — CSS                             ║
@@ -1854,60 +1967,6 @@ footer {
 }
 .share-btn:hover { border-color: var(--green); color: var(--green); }
 
-/* ═══════════════════════════════════════════════════════════
-   EDIT PROFILE MODAL CSS
-═══════════════════════════════════════════════════════════ */
-.profile-banner {
-  background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
-  border-radius: 16px 16px 0 0;
-  padding: 28px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin: -24px -24px 20px;
-}
-.profile-av-wrap { position: relative; cursor: pointer; }
-.profile-av-big {
-  width: 80px; height: 80px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: 700;
-  border: 3px solid rgba(255,255,255,.3);
-  color: #fff;
-}
-.profile-av-edit {
-  position: absolute; bottom: 0; right: 0;
-  background: var(--gold); color: #000;
-  width: 26px; height: 26px; border-radius: 50%;
-  font-size: 13px; display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
-}
-.profile-name-display { color: #fff; font-size: 20px; font-weight: 700; }
-.profile-email-display { color: rgba(255,255,255,.7); font-size: 13px; }
-.profile-stat-row {
-  display: flex; gap: 20px; margin-top: 4px;
-}
-.profile-stat-item { text-align: center; color: rgba(255,255,255,.85); }
-.profile-stat-num { font-size: 20px; font-weight: 700; color: #fff; }
-.profile-stat-lbl { font-size: 11px; opacity: .7; }
-.profile-section-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .8px; color: var(--text-3); margin: 20px 0 10px;
-}
-.profile-danger-btn {
-  width: 100%; padding: 12px; border: 1px solid #f5c2c7;
-  background: #fff5f5; color: #c0392b; border-radius: 10px;
-  font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px;
-  text-align: center;
-}
-.profile-danger-btn:hover { background: #fee2e2; }
-.profile-save-strip {
-  position: sticky; bottom: -24px; margin: 20px -24px -24px;
-  background: #fff; border-top: 1px solid var(--border);
-  padding: 16px 24px;
-}
-.profile-err { font-size: 13px; color: #c0392b; margin-top: 6px; min-height: 18px; }
-
 </style>
 </head>
 <body>
@@ -1943,8 +2002,7 @@ footer {
   </div>
   <div class="nav-spacer"></div>
   <div class="nav-actions" id="navActions">
-    <button class="btn btn-outline btn-sm" id="navLoginBtn" onclick="openAuth('login')">Log In</button>
-    <button class="btn btn-gold btn-sm" id="navJoinBtn" onclick="openAuth('register')">Join Free</button>
+    <!-- Rendered by JS -->
   </div>
 </nav>
 
@@ -1977,18 +2035,12 @@ footer {
 
       <!-- Suggestion chips -->
       <div class="ai-suggestions">
-        <button class="ai-sug" id="hs0" onclick="setAiQuery(this.dataset.q)" data-q="cheap car">🚗 Cars</button>
-        <button class="ai-sug" id="hs1" onclick="setAiQuery(this.dataset.q)" data-q="phone">📱 Phones</button>
-        <button class="ai-sug" id="hs2" onclick="setAiQuery(this.dataset.q)" data-q="house">🏡 Houses</button>
+        <button class="ai-sug" onclick="setAiQuery('cheap car under 2 million')">🚗 Cheap cars</button>
+        <button class="ai-sug" onclick="setAiQuery('phone under 80000 in Kingston')">📱 Phones in Kingston</button>
+        <button class="ai-sug" onclick="setAiQuery('house under 20 million')">🏡 Houses for sale</button>
         <button class="ai-sug" onclick="setAiQuery('jobs available near me')">💼 Jobs</button>
         <button class="ai-sug" onclick="setAiQuery('budget laptop under 100000')">💻 Laptops</button>
         <button class="ai-sug" onclick="setAiQuery('how do I post an ad?')">❓ How to post</button>
-      </div>
-
-      <!-- Auth CTA for logged-out users -->
-      <div id="heroAuthCta" style="margin-top:16px;font-size:13px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button onclick="openAuth('register')" style="background:var(--gold);color:#000;font-weight:700;border:none;border-radius:20px;padding:8px 20px;font-size:13px;cursor:pointer">✨ Join Free</button>
-        <span>or <a href="#" onclick="openAuth('login');return false" style="color:rgba(255,255,255,.9);font-weight:600">Sign in</a> to post ads &amp; message sellers</span>
       </div>
 
       <!-- Stats -->
@@ -2053,18 +2105,7 @@ footer {
   <div class="page-wrap">
     <div class="page-h">My Listings</div>
     <div class="page-sub">Manage your active classified ads</div>
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <button class="btn btn-green" onclick="openPostAd()">＋ Post New Ad</button>
-      <button class="btn btn-ghost" onclick="openEditProfile()">👤 Edit Profile</button>
-    </div>
     <div id="myAdsBox"></div>
-  </div>
-</div>
-
-<!-- ─── ACCOUNT PAGE ─── -->
-<div id="page-account" class="page">
-  <div class="page-wrap">
-    <div id="accountInner"></div>
   </div>
 </div>
 
@@ -2096,7 +2137,7 @@ footer {
     Messages
   </button>
   <button class="mob-nav-item" id="mnAccount" onclick="handleAccountTab()">
-    <span class="mob-nav-icon">👤</span><span id="mnAccountLbl">Account</span>
+    <span class="mob-nav-icon">👤</span>Account
   </button>
 </div>
 
@@ -2251,9 +2292,9 @@ footer {
 
   <!-- Quick suggestions inside sheet -->
   <div class="ai-sheet-sugs" id="sheetSugs">
-    <button class="sheet-sug" id="ss0" onclick="sheetSearch(this.dataset.q)" data-q="car">🚗 Cars</button>
-    <button class="sheet-sug" id="ss1" onclick="sheetSearch(this.dataset.q)" data-q="phone">📱 Phones</button>
-    <button class="sheet-sug" id="ss2" onclick="sheetSearch(this.dataset.q)" data-q="house">🏡 Houses</button>
+    <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
+    <button class="sheet-sug" onclick="sheetSearch('phone under 80000 Kingston')">📱 Phones KGN</button>
+    <button class="sheet-sug" onclick="sheetSearch('house under 20 million')">🏡 Houses</button>
     <button class="sheet-sug" onclick="sheetSearch('jobs available')">💼 Jobs</button>
     <button class="sheet-sug" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
     <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food & Farm</button>
@@ -2404,6 +2445,16 @@ const CATS = [
 
 const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon','St. Catherine'];
 
+const DEMO = [
+  {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
+  {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
+  {id:'d3',title:'iPhone 14 Pro 256GB — Like New',category:'electronics',price:95000,parish:'St. James',desc:'Used 6 months only. Deep purple. Original box, charger & case included. No cracks. Battery 98%. Last price.',seller:'Kezia Brown',sellerInit:'KB',sellerId:'s3',phone:'876-654-3210',date:'2025-06-05',image:'',status:'active',neg:false, views:124},
+  {id:'d4',title:'Graphic Designer — Logos, Flyers & Social',category:'services',price:5000,parish:'St. Andrew',desc:'Professional designer, 5+ years experience. Logos, flyers, business cards, Instagram content. Fast turnaround. WhatsApp for portfolio.',seller:'Andre Thomas',sellerInit:'AT',sellerId:'s4',phone:'876-789-0123',date:'2025-06-06',image:'',status:'active',neg:true, views:31},
+  {id:'d5',title:'Fresh Ackee & Saltfish — Free Delivery',category:'food',price:1500,parish:'Clarendon',desc:'Fresh ackee from my own tree, cleaned and ready. Saltfish packages available. Free delivery within Clarendon.',seller:'Miss Gloria',sellerInit:'MG',sellerId:'s5',phone:'876-555-1234',date:'2025-06-07',image:'',status:'active',neg:false, views:19},
+  {id:'d6',title:'Yamaha Guitar + Amp Bundle',category:'music',price:35000,parish:'Kingston',desc:'Yamaha Pacifica 112V in sonic blue. 15W amp, cable, strap & picks included. Perfect for beginners.',seller:'Justin Lee',sellerInit:'JL',sellerId:'s6',phone:'876-234-5678',date:'2025-06-08',image:'',status:'active',neg:false, views:66},
+  {id:'d7',title:'Samsung 65" 4K Smart TV',category:'electronics',price:85000,parish:'St. Andrew',desc:'Samsung 65" 4K UHD Smart TV. Netflix, YouTube, Disney+ built-in. Bought 1 year ago, upgrading. Pickup only.',seller:'Troy Brown',sellerInit:'TB',sellerId:'s7',phone:'876-111-2222',date:'2025-06-09',image:'',status:'active',neg:true, views:91},
+  {id:'d8',title:'Vacant Lot for Sale — Portmore',category:'property',price:4500000,parish:'St. Catherine',desc:'800 sq ft residential lot in gated community. Survey done, title available. Owner moving abroad.',seller:'Pearl Watson',sellerInit:'PW',sellerId:'s8',phone:'876-777-8888',date:'2025-06-10',image:'',status:'active',neg:false, views:38},
+];
 
 /* ═══════════════════════════════════════════════════════════
    SUPABASE CLIENT
@@ -2437,20 +2488,12 @@ const L = {
 
 // Load all active ads into cache
 async function loadAds() {
-  try {
-    const { data, error } = await _db.from('ads')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) {
-      console.error('Supabase loadAds error:', error.message || error);
-      _ads = [];
-      return;
-    }
-    _ads = (data || []).map(dbToAd).filter(function(a){ return a.id && a.title; });
-  } catch(e) {
-    console.error('loadAds network error:', e.message || e);
-    _ads = [];
-  }
+  const { data, error } = await _db.from('ads')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
+  _ads = (data || []).map(dbToAd);
+  if (!_ads.length) _ads = DEMO; // fallback to demo if DB empty
 }
 
 // Map DB row → app ad object
@@ -2925,7 +2968,6 @@ async function openChatFromInbox(key) {
 ═══════════════════════════════════════════════════════════ */
 function renderMyAds() {
   const el = document.getElementById('myAdsBox');
-  if (!el) return;
   if (!CU) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">🔐</div><h3>Please log in</h3><p>You need an account to manage your listings.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>';
     return;
@@ -3170,94 +3212,22 @@ function renderPhotoGrid() {
 }
 
 
-/* ═══════════════════════════════════════════════════════════
-   LIVE SUGGESTIONS — seeded from real _ads after load
-═══════════════════════════════════════════════════════════ */
-function updateLiveSuggestions() {
-  const active = (_ads||[]).filter(function(a){ return a.status!=='sold'; });
-  if (!active.length) return;
-
-  // Build category stats
-  const catCounts = {};
-  active.forEach(function(a){ catCounts[a.category]=(catCounts[a.category]||0)+1; });
-  const topCats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,4);
-
-  // Hero search suggestions
-  var heroIds = ['hs0','hs1','hs2','hs3'];
-  var heroSugs = topCats.slice(0,3).map(function(e){
-    var cat = CATS.find(function(c){return c.id===e[0];})||{icon:'📦',name:e[0]};
-    var catAds = active.filter(function(a){return a.category===e[0];});
-    catAds.sort(function(a,b){return (b.views||0)-(a.views||0);});
-    return { icon: cat.icon, label: cat.name, q: cat.name.toLowerCase() };
-  });
-  // Add a real listing as 4th suggestion
-  var newest = active.slice().sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);})[0];
-  if (newest) heroSugs.push({ icon:'🆕', label: newest.title.length>18 ? newest.title.slice(0,18)+'…' : newest.title, q: newest.title.split(/\s+/).slice(0,3).join(' ') });
-
-  heroIds.forEach(function(id, i) {
-    var el = document.getElementById(id);
-    if (el && heroSugs[i]) {
-      el.textContent = heroSugs[i].icon+' '+heroSugs[i].label;
-      el.setAttribute('data-q', heroSugs[i].q);
-    }
-  });
-
-  // Sheet suggestions
-  var sheetIds = ['ss0','ss1','ss2','ss3'];
-  var sheetSugs = topCats.slice(0,3).map(function(e){
-    var cat = CATS.find(function(c){return c.id===e[0];})||{icon:'📦',name:e[0]};
-    var catAds = active.filter(function(a){return a.category===e[0];});
-    var prices = catAds.map(function(a){return a.price;}).sort(function(a,b){return a-b;});
-    var minPrice = prices[0]||0;
-    return { icon: cat.icon, label: cat.name+' ('+e[1]+')', q: cat.name.toLowerCase() };
-  });
-  // Top parish
-  var parishCounts = {};
-  active.forEach(function(a){ parishCounts[a.parish]=(parishCounts[a.parish]||0)+1; });
-  var topParish = Object.entries(parishCounts).sort(function(a,b){return b[1]-a[1];})[0];
-  if (topParish) sheetSugs.push({ icon:'📍', label: 'In '+topParish[0], q: topParish[0].toLowerCase() });
-
-  sheetIds.forEach(function(id, i) {
-    var el = document.getElementById(id);
-    if (el && sheetSugs[i]) {
-      el.textContent = sheetSugs[i].icon+' '+sheetSugs[i].label;
-      el.setAttribute('data-q', sheetSugs[i].q);
-    }
-  });
-
-  // Also add a 4th hero button if not already there
-  var heroWrap = document.querySelector('.ai-sugs');
-  if (heroWrap && !document.getElementById('hs3') && heroSugs[3]) {
-    var btn = document.createElement('button');
-    btn.className = 'ai-sug'; btn.id = 'hs3';
-    btn.textContent = heroSugs[3].icon+' '+heroSugs[3].label;
-    btn.setAttribute('data-q', heroSugs[3].q);
-    btn.setAttribute('onclick', 'setAiQuery(this.dataset.q)');
-    heroWrap.appendChild(btn);
-  }
-}
-
-
 async function init() {
   fillParishSelects();
   fillCatSelect();
   renderNav();
 
-  _ads = [];
-  renderCats();
-  renderHome();
-  updateStats();
+  showSkeletons();
+  document.getElementById('resultsHeader').style.display = 'none';
 
-  // Step 2: Load real data from Supabase in background
   try {
     await loadAds();
     if (CU) await loadMessages();
   } catch(e) {
-    console.warn('Init load error — keeping demo data:', e.message||e);
-    _ads = [];
+    console.error('Init load error:', e);
+    _ads = DEMO;
   }
 
-  // Step 3: Re-render with real data (or demo if Supabase empty/failing)
   renderCats();
   renderHome();
   updateStats();
@@ -3272,15 +3242,11 @@ async function init() {
   SEO.injectFAQSchema();
   SEO.serveLlmsTxt(_ads);
 
-  // Update llms.txt whenever new ads arrive
+  // Update llms.txt whenever new ads arrive (handled in realtime subscription)
   window._seoRefresh = function() {
     SEO.injectListingsSchema(_ads);
     SEO.serveLlmsTxt(_ads);
-    updateLiveSuggestions();
   };
-
-  // Seed live suggestions after data loads
-  updateLiveSuggestions();
 
   // Real-time: new ads
   _db.channel('ads-changes')
@@ -3361,31 +3327,25 @@ function fillCatSelect() {
    NAV
 ═══════════════════════════════════════════════════════════ */
 function renderNav() {
-  var el = document.getElementById('navActions');
-  if (!el) return;
+  const el = document.getElementById('navActions');
   if (CU) {
-    var clr = avatarColor(CU.name || '?');
-    var ini = initials(CU.name || '?');
-    var firstName = escHtml((CU.name || '').split(' ')[0]);
-    el.innerHTML = [
-      '<button class="btn btn-gold btn-sm" onclick="openPostAd()">&#65291; Post Ad</button>',
-      '<div class="user-pill" onclick="handleAccountTab()" style="cursor:pointer">',
-        '<div class="u-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + ini + '</div>',
-        '<span style="color:#fff;font-weight:600">' + firstName + '</span>',
-      '</div>',
-      '<button class="btn btn-outline btn-sm" onclick="doLogout()">Log out</button>'
-    ].join('');
+    const clr = avatarColor(CU.name);
+    const ini = initials(CU.name);
+    el.innerHTML = `
+      <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
+      <div class="badge-wrap">
+        <div class="user-pill" onclick="goPage('myads')">
+          <div class="u-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
+          ${CU.name.split(' ')[0]}
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">Log out</button>`;
   } else {
-    el.innerHTML =
-      '<button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.5)" onclick="openAuth(\'login\')">Log In</button>' +
-      '<button class="btn btn-gold btn-sm" onclick="openAuth(\'register\')">Join Free ✨</button>';
+    el.innerHTML = `
+      <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
+      <button class="btn btn-gold btn-sm" onclick="openAuth('register')">Join Free</button>`;
   }
-  var lbl = document.getElementById('mnAccountLbl');
-  if (lbl) lbl.textContent = CU ? 'Account' : 'Sign In';
-  var cta = document.getElementById('heroAuthCta');
-  if (cta) cta.style.display = CU ? 'none' : '';
 }
-
 
 /* ═══════════════════════════════════════════════════════════
    PAGES
@@ -3401,12 +3361,11 @@ function goHome() {
 }
 
 function goPage(p) {
-  document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
-  const pg = document.getElementById('page-'+p); if (pg) pg.classList.add('active');
-  document.querySelectorAll('.mob-nav-item').forEach(function(el){ el.classList.remove('active'); });
-  const map = {home:'mnHome',msgs:'mnMsgs',myads:'mnAccount',account:'mnAccount',browse:'mnBrowse'};
-  const navEl = map[p] ? document.getElementById(map[p]) : null;
-  if (navEl) navEl.classList.add('active');
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
+  const map = {home:'mnHome',msgs:'mnMsgs',myads:'mnAccount'};
+  if (map[p]) document.getElementById(map[p])?.classList.add('active');
   window.scrollTo({top:0, behavior:'smooth'});
   if (p==='browse')  renderBrowse();
   if (p==='myads')   renderMyAds();
@@ -3414,83 +3373,15 @@ function goPage(p) {
 }
 
 function handleAccountTab() {
-  if (CU) {
-    goPage('account');
-    renderAccountPage();
-  } else {
-    openAuth('login');
-  }
-}
-
-function renderAccountPage() {
-  const box = document.getElementById('accountInner');
-  if (!box || !CU) return;
-  const clr = avatarColor(CU.name||'?');
-  const myAds = (_ads||[]).filter(function(a){ return a.sellerId === CU.id; });
-  const active = myAds.filter(function(a){ return a.status !== 'sold'; });
-  const sold   = myAds.filter(function(a){ return a.status === 'sold'; });
-  const totalViews = myAds.reduce(function(s,a){ return s+(a.views||0); }, 0);
-
-  box.innerHTML =
-    // Profile card
-    '<div class="profile-banner" style="border-radius:16px;margin-bottom:20px">' +
-      '<div class="profile-av-wrap" onclick="openEditProfile()">' +
-        '<div class="profile-av-big" style="background:' + clr.bg + ';color:' + clr.fg + '">' + initials(CU.name||'?') + '</div>' +
-        '<div class="profile-av-edit" title="Edit profile">✏️</div>' +
-      '</div>' +
-      '<div class="profile-name-display">' + escHtml(CU.name||'') + '</div>' +
-      '<div class="profile-email-display">' + escHtml(CU.email||'') + '</div>' +
-      (CU.parish ? '<div style="color:rgba(255,255,255,.7);font-size:13px">📍 ' + escHtml(CU.parish) + '</div>' : '') +
-      '<div class="profile-stat-row">' +
-        '<div class="profile-stat-item"><div class="profile-stat-num">' + active.length + '</div><div class="profile-stat-lbl">Active</div></div>' +
-        '<div class="profile-stat-item"><div class="profile-stat-num">' + sold.length + '</div><div class="profile-stat-lbl">Sold</div></div>' +
-        '<div class="profile-stat-item"><div class="profile-stat-num">' + fmtN(totalViews) + '</div><div class="profile-stat-lbl">Views</div></div>' +
-      '</div>' +
-    '</div>' +
-    // Action buttons
-    '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
-      '<button class="btn btn-green" style="flex:1" onclick="openPostAd()">＋ Post New Ad</button>' +
-      '<button class="btn btn-ghost" style="flex:1" onclick="openEditProfile()">✏️ Edit Profile</button>' +
-    '</div>' +
-    // My Listings section
-    '<div class="page-h" style="font-size:20px;margin-bottom:12px">My Listings</div>' +
-    (myAds.length
-      ? '<div id="accountAdsBox"></div>'
-      : '<div class="empty" style="margin:0 0 24px"><div class="empty-icon">📋</div><h3>No listings yet</h3><p>Post your first free ad in under 2 minutes!</p><button class="btn btn-green" onclick="openPostAd()">Post Your First Ad</button></div>'
-    ) +
-    // Logout
-    '<div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">' +
-      '<button class="profile-danger-btn" onclick="doLogout()">🚪 Log Out</button>' +
-    '</div>';
-
-  // Render ads list
-  if (myAds.length) {
-    const box2 = document.getElementById('accountAdsBox');
-    if (box2) box2.innerHTML = myAds.map(function(ad) {
-      const cat = CATS.find(function(c){ return c.id === ad.category; });
-      return '<div class="my-ad-row" onclick="openDetail('" + ad.id + "')" style="cursor:pointer">' +
-        '<div class="my-ad-thumb">' + (ad.image ? '<img src="' + ad.image + '" onerror="this.style.display='none'">' : (cat ? cat.icon : '📦')) + '</div>' +
-        '<div class="my-ad-info">' +
-          '<div class="my-ad-title">' + escHtml(ad.title) + '</div>' +
-          '<div class="my-ad-price">J$' + fmtN(ad.price) + '</div>' +
-          '<div class="my-ad-meta">📍 ' + ad.parish + ' · ' + ago(ad.date) + '</div>' +
-        '</div>' +
-        '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
-        '<div class="my-ad-acts" onclick="event.stopPropagation()">' +
-          '<button class="btn btn-ghost btn-sm" onclick="openDetail('" + ad.id + "')">View</button>' +
-          '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold('" + ad.id + "');renderAccountPage()">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
-          '<button class="btn btn-red btn-sm" onclick="delAd('" + ad.id + "')">Delete</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
+  if (CU) goPage('myads');
+  else openAuth('login');
 }
 
 /* ═══════════════════════════════════════════════════════════
    CATEGORIES — compact row
 ═══════════════════════════════════════════════════════════ */
 function renderCats() {
-  const ads = _ads || [];
+  const ads = L.ads;
   const row = document.getElementById('catRow');
   if (!row) return;
   const allCount = ads.filter(a => a.status !== 'sold').length;
@@ -3518,8 +3409,8 @@ function catFilter(id) {
 /* ═══════════════════════════════════════════════════════════
    LISTING RENDERING
 ═══════════════════════════════════════════════════════════ */
-function _scoreSimple(ad, terms) {
-  // Simple relevance scoring for getFiltered (no IDF needed)
+function scoreAd(ad, terms) {
+  // Relevance scoring: title match > category name match > desc match
   const title = (ad.title||'').toLowerCase();
   const desc  = (ad.desc||'').toLowerCase();
   const par   = (ad.parish||'').toLowerCase();
@@ -3541,24 +3432,26 @@ function _scoreSimple(ad, terms) {
 }
 
 function getFiltered(q, cat, sort) {
-  let ads = (_ads || []).filter(a => a.status !== 'sold');
+  let ads = [...L.ads];
   if (cat && cat !== 'all') ads = ads.filter(a => a.category === cat);
 
   if (q && q.trim()) {
     const terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 1);
-    ads = ads.filter(function(a) {
-      const catName = (CATS.find(function(c){return c.id===a.category;})||{}).name||'';
-      const hay = [a.title||'', a.desc||'', a.parish||'', catName].join(' ').toLowerCase();
-      return terms.some(function(t){ return hay.includes(t); });
+    // Include ad if ANY term matches title, desc, parish, or category name
+    ads = ads.filter(a => {
+      const hay = [a.title, a.desc, a.parish, CATS.find(c=>c.id===a.category)?.name||'']
+        .join(' ').toLowerCase();
+      return terms.some(t => hay.includes(t));
     });
+    // Sort by relevance score when searching (unless user picked a sort)
     if (!sort || sort === 'newest') {
-      return ads.sort(function(a,b){ return _scoreSimple(b,terms) - _scoreSimple(a,terms); });
+      return ads.sort((a,b) => scoreAd(b,terms) - scoreAd(a,terms));
     }
   }
 
-  if (sort === 'price-lo') return ads.sort(function(a,b){ return a.price - b.price; });
-  if (sort === 'price-hi') return ads.sort(function(a,b){ return b.price - a.price; });
-  return ads.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
+  if (sort === 'price-lo') return ads.sort((a,b) => a.price - b.price);
+  if (sort === 'price-hi') return ads.sort((a,b) => b.price - a.price);
+  return ads.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
 }
 
 function getViews(id) {
@@ -3567,14 +3460,10 @@ function getViews(id) {
 }
 
 function cardHTML(ad, idx) {
-  const cat   = CATS.find(function(c){ return c.id === ad.category; });
-  const catIcon = (cat && cat.icon) ? cat.icon : '📦';
+  const cat   = CATS.find(c => c.id === ad.category);
   const img   = ad.image
-    ? '<img src="' + ad.image + '" alt="' + (ad.title||'').replace(/"/g,"'") + '" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="this.style.display='none'">'
-    : '';
-  const imgOrIcon = ad.image
-    ? img
-    : '<span style="font-size:56px">' + catIcon + '</span>';
+    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span style=font-size:56px>${cat?.icon||'📦'}</span>'">`
+    : `<span style="font-size:56px">${cat?.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
     ? `<span class="sold-tag">SOLD</span>`
@@ -3585,7 +3474,7 @@ function cardHTML(ad, idx) {
   const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.06,0.5)}s` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
-    <div class="ad-card-img">${imgOrIcon}${tag}${trending}
+    <div class="ad-card-img">${img}${tag}${trending}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
@@ -3609,50 +3498,27 @@ function emptyEl(msg, action='') {
 
 function renderHome() {
   const sort = document.getElementById('homeSortSel')?.value || 'newest';
-  const f    = window._aiFilters;
-  const grid = document.getElementById('homeGrid');
-  const hdr  = document.getElementById('resultsHeader');
-  const cnt  = document.getElementById('resultsCount');
-  if (!grid) return 0;
+  const f = window._aiFilters;
 
   let ads = getFiltered(searchQ, activeF, sort);
 
-  // Apply AI price/parish/category filters
+  // Apply AI price/parish filters if present
   if (f) {
-    if (f.maxPrice) ads = ads.filter(function(a){ return a.price <= f.maxPrice; });
-    if (f.minPrice) ads = ads.filter(function(a){ return a.price >= f.minPrice; });
-    if (f.parish)   ads = ads.filter(function(a){ return a.parish.toLowerCase() === f.parish.toLowerCase(); });
-    if (f.categories && f.categories.length === 1) ads = ads.filter(function(a){ return f.categories.includes(a.category); });
+    if (f.maxPrice) ads = ads.filter(a => a.price <= f.maxPrice);
+    if (f.minPrice) ads = ads.filter(a => a.price >= f.minPrice);
+    if (f.parish)   ads = ads.filter(a => a.parish.toLowerCase() === f.parish.toLowerCase());
+    if (f.categories && f.categories.length > 1) ads = ads.filter(a => f.categories.includes(a.category));
   }
 
-  // Always show results header
-  if (hdr) hdr.style.display = 'flex';
-  if (cnt) {
-    const isFiltered = searchQ || activeF !== 'all' || f;
-    cnt.innerHTML = isFiltered
-      ? '<strong>' + ads.length + '</strong> listing' + (ads.length !== 1 ? 's' : '') + ' found'
-      : '<strong>' + ads.length + '</strong> listing' + (ads.length !== 1 ? 's' : '') + ' across Jamaica';
-  }
+  const hdr = document.getElementById('resultsHeader');
+  const cnt = document.getElementById('resultsCount');
+  hdr.style.display = 'flex';
+  cnt.innerHTML = `<strong>${ads.length}</strong> listing${ads.length !== 1 ? 's' : ''} found`;
 
-  if (!ads.length) {
-    // Smart empty state: suggest alternatives
-    const allAds = (_ads||[]).filter(function(a){ return a.status!=='sold'; });
-    const randomCats = [...new Set(allAds.map(function(a){return a.category;}))]
-      .sort(function(){ return 0.5-Math.random(); }).slice(0,3);
-    const catBtns = randomCats.map(function(cid){
-      const cat = CATS.find(function(c){return c.id===cid;});
-      return cat ? '<button class="btn btn-ghost btn-sm" onclick="catFilter(\'' + cid + '\')">' + cat.icon + ' ' + cat.name + '</button>' : '';
-    }).join('');
-    grid.innerHTML = emptyEl(
-      searchQ ? 'No results for "'+escHtml(searchQ)+'". Try something else or browse a category.' : 'No listings yet — be the first to post! 🇯🇲',
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px">'+
-        '<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>'+
-        catBtns+
-      '</div>'
-    );
-  } else {
-    grid.innerHTML = ads.slice(0, 24).map(function(a,i){ return cardHTML(a,i); }).join('');
-  }
+  document.getElementById('homeGrid').innerHTML = ads.length
+    ? ads.slice(0, 24).map((a,i) => cardHTML(a,i)).join('')
+    : emptyEl('No listings match your search.',
+        `<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>`);
 
   return ads.length;
 }
@@ -4008,141 +3874,6 @@ const SEO = (() => {
    ║  YAAD BRAIN — Local NLP Search Engine (zero API calls)      ║
    ║  Gets smarter as more listings are added to the site.       ║
    ╚══════════════════════════════════════════════════════════════╝ */
-/* ═══════════════════════════════════════════════════════════
-   EDIT PROFILE
-═══════════════════════════════════════════════════════════ */
-
-async function sbUpdateUser(id, fields) {
-  const { error } = await _db.from('users').update(fields).eq('id', id);
-  if (error) throw error;
-}
-
-function openEditProfile() {
-  if (!CU) return openAuth('login');
-
-  // Fill parish select
-  const sel = document.getElementById('epParish');
-  if (sel && sel.options.length <= 1) {
-    PARISHES.forEach(function(p) {
-      const o = document.createElement('option');
-      o.value = p; o.textContent = p;
-      sel.appendChild(o);
-    });
-  }
-
-  // Fill current values
-  document.getElementById('epName').value  = CU.name  || '';
-  document.getElementById('epPhone').value = CU.phone || '';
-  document.getElementById('epPass').value  = '';
-  document.getElementById('epPass2').value = '';
-  document.getElementById('epAlert').textContent = '';
-  if (sel) sel.value = CU.parish || '';
-
-  // Update banner
-  const clr = avatarColor(CU.name);
-  const av  = document.getElementById('epAvatar');
-  if (av) { av.textContent = initials(CU.name); av.style.background = clr.bg; av.style.color = clr.fg; }
-  const nd = document.getElementById('epNameDisplay');
-  if (nd) nd.textContent = CU.name;
-  const ed = document.getElementById('epEmailDisplay');
-  if (ed) ed.textContent = CU.email;
-
-  // Stats
-  const myAds  = _ads.filter(function(a){ return a.sellerId === CU.id; });
-  const active = myAds.filter(function(a){ return a.status !== 'sold'; });
-  const sold   = myAds.filter(function(a){ return a.status === 'sold'; });
-  const views  = myAds.reduce(function(s,a){ return s+(a.views||0); },0);
-  const stats  = document.getElementById('epStats');
-  if (stats) stats.innerHTML =
-    '<div class="profile-stat-item"><div class="profile-stat-num">' + active.length + '</div><div class="profile-stat-lbl">Active</div></div>' +
-    '<div class="profile-stat-item"><div class="profile-stat-num">' + sold.length   + '</div><div class="profile-stat-lbl">Sold</div></div>' +
-    '<div class="profile-stat-item"><div class="profile-stat-num">' + fmtN(views)   + '</div><div class="profile-stat-lbl">Views</div></div>';
-
-  // Mini my-ads list in profile
-  const box = document.getElementById('epMyAds');
-  if (box) {
-    if (!myAds.length) {
-      box.innerHTML = '<p style="font-size:13px;color:var(--text-3);margin:0">No listings yet — <a href="#" style="color:var(--green);font-weight:600" onclick="closeOverlay('ovEditProfile');openPostAd();return false">post your first ad</a></p>';
-    } else {
-      box.innerHTML = myAds.slice(0,5).map(function(ad) {
-        var cat = CATS.find(function(c){ return c.id===ad.category; });
-        return '<div class="my-ad-row" style="cursor:pointer" onclick="closeOverlay('ovEditProfile');openDetail('' + ad.id + '')">' +
-          '<div class="my-ad-thumb">' + (ad.image ? '<img src="' + ad.image + '" onerror="this.style.display='none'">' : (cat?cat.icon:'📦')) + '</div>' +
-          '<div class="my-ad-info">' +
-            '<div class="my-ad-title">' + escHtml(ad.title) + '</div>' +
-            '<div class="my-ad-price">J$' + fmtN(ad.price) + '</div>' +
-          '</div>' +
-          '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
-        '</div>';
-      }).join('') +
-      (myAds.length > 5 ? '<p style="font-size:12px;color:var(--text-3);text-align:center;margin-top:8px">+ ' + (myAds.length-5) + ' more — <a href="#" style="color:var(--green)" onclick="closeOverlay('ovEditProfile');goPage('myads');return false">see all</a></p>' : '');
-    }
-  }
-
-  openOverlay('ovEditProfile');
-}
-
-async function doSaveProfile() {
-  const name   = document.getElementById('epName').value.trim();
-  const phone  = document.getElementById('epPhone').value.trim();
-  const parish = document.getElementById('epParish').value;
-  const pass   = document.getElementById('epPass').value;
-  const pass2  = document.getElementById('epPass2').value;
-  const errEl  = document.getElementById('epAlert');
-
-  errEl.textContent = '';
-  if (!name) { errEl.textContent = 'Name cannot be empty.'; return; }
-  if (pass && pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
-  if (pass && pass !== pass2) { errEl.textContent = 'Passwords do not match.'; return; }
-
-  const btn = document.getElementById('epSaveBtn');
-  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
-
-  try {
-    const fields = { name, phone, parish };
-    if (pass) fields.password = pass;
-    await sbUpdateUser(CU.id, fields);
-
-    // Update local session
-    CU.name = name; CU.phone = phone; CU.parish = parish;
-    L.sess = CU;
-
-    // Re-render avatar in banner
-    const clr = avatarColor(name);
-    const av  = document.getElementById('epAvatar');
-    if (av) { av.textContent = initials(name); av.style.background = clr.bg; av.style.color = clr.fg; }
-    document.getElementById('epNameDisplay').textContent = name;
-
-    renderNav();
-    closeOverlay('ovEditProfile');
-    showToast('Profile updated! ✅', '✅');
-  } catch(e) {
-    errEl.textContent = e.message || 'Save failed. Please try again.';
-  } finally {
-    if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
-  }
-}
-
-async function doDeleteAccount() {
-  if (!CU) return;
-  if (!confirm('Are you sure you want to permanently delete your account and all your listings? This cannot be undone.')) return;
-  if (!confirm('Last chance — really delete everything?')) return;
-  try {
-    // Delete ads
-    await _db.from('ads').delete().eq('seller_id', CU.id);
-    // Delete messages
-    await _db.from('messages').delete().or('seller_id.eq.' + CU.id + ',buyer_id.eq.' + CU.id);
-    // Delete user
-    await _db.from('users').delete().eq('id', CU.id);
-    closeOverlay('ovEditProfile');
-    doLogout();
-    showToast('Account deleted. Goodbye! 👋', '👋');
-  } catch(e) {
-    showToast('Delete failed: ' + (e.message||'try again'), '⚠️');
-  }
-}
-
-
 const YaadBrain = (() => {
 
   /* ── JAMAICAN PRICE PARSER ──────────────────────────────── */
@@ -4150,68 +3881,32 @@ const YaadBrain = (() => {
   function parsePrice(q) {
     let lo = null, hi = null;
     const s = q.toLowerCase();
-
-    // ── Core number converter ─────────────────────────────────
-    // Handles: 2m, 2.5m, 80k, 1.5k, "2 million", "500 thousand",
-    //          bare integers/floats, comma-formatted numbers (1,500,000)
+    // Multipliers: k=1000, m/million=1000000
     const toNum = t => {
-      if (!t) return null;
-      t = t.trim().replace(/,/g, '');
-      if (/^(\d+(?:\.\d+)?)\s*m(illion)?$/i.test(t)) return parseFloat(t) * 1e6;
-      if (/^(\d+(?:\.\d+)?)\s*k$/i.test(t))          return parseFloat(t) * 1e3;
-      const n = parseFloat(t.replace(/[^0-9.]/g, ''));
+      t = t.trim();
+      if (/^\d+(\.\d+)?m$/i.test(t))  return parseFloat(t)*1e6;
+      if (/^\d+(\.\d+)?k$/i.test(t))  return parseFloat(t)*1e3;
+      if (/million/i.test(t))          return parseFloat(t.replace(/[^0-9.]/g,''))*1e6;
+      if (/thousand/i.test(t))         return parseFloat(t.replace(/[^0-9.]/g,''))*1e3;
+      const n = parseFloat(t.replace(/[^0-9.]/g,''));
       return isNaN(n) ? null : n;
     };
-
-    // ── Normalised token: collapse "2 million" → "2m", "500 thousand" → "500k"
-    // so all downstream patterns work uniformly
-    const norm = s
-      .replace(/(\d+(?:\.\d+)?)\s*million/gi, (_, n) => n + 'm')
-      .replace(/(\d+(?:\.\d+)?)\s*thousand/gi, (_, n) => n + 'k')
-      .replace(/(\d+(?:\.\d+)?)\s*mil\b/gi, (_, n) => n + 'm');
-
-    // ── NUM pattern (matches 2m / 2.5m / 80k / 1500000 / 1,500,000)
-    const N = '([\\d,]+(?:\\.\\d+)?(?:[mk])?)';
-
-    // "between X and Y" / "X to Y" / "X - Y"
-    const bet = norm.match(new RegExp(N + '\\s*(?:to|-|and)\\s*' + N, 'i'));
-    if (bet) {
-      const a = toNum(bet[1]), b = toNum(bet[2]);
-      if (a && b) { lo = Math.min(a,b); hi = Math.max(a,b); return {lo,hi}; }
-    }
-
-    // "under / below / less than / max / within X"
-    const und = norm.match(/(?:under|below|less than|max|beneath|within|no more than|at most)\s*j?\$?\s*([\\d,]+(?:\.\d+)?[mk]?)/i);
+    // "between X and Y"
+    const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
+    if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
+    // "under/below/less than X"
+    const und = s.match(/(?:under|below|less than|max|beneath)\s+([\d.kmillion]+)/i);
     if (und) { hi = toNum(und[1]); return {lo,hi}; }
-
-    // "over / above / more than / min / at least / starting X"
-    const ov = norm.match(/(?:over|above|more than|min|at least|starting|from)\s*j?\$?\s*([\\d,]+(?:\.\d+)?[mk]?)/i);
+    // "over/above/more than X"
+    const ov = s.match(/(?:over|above|more than|min|at least)\s+([\d.kmillion]+)/i);
     if (ov) { lo = toNum(ov[1]); return {lo,hi}; }
-
-    // "around / about / ~X" → ±30% band
-    const approx = norm.match(/(?:around|about|~|roughly|approximately)\s*([\\d,]+(?:\.\d+)?[mk]?)/i);
-    if (approx) {
-      const mid = toNum(approx[1]);
-      if (mid) { lo = Math.floor(mid * 0.7); hi = Math.ceil(mid * 1.3); return {lo,hi}; }
-    }
-
-    // Bare suffixed number: "80k" / "2m" / "1.5m"
-    const suffixed = norm.match(/\b(\d+(?:\.\d+)?[mk])\b/i);
-    if (suffixed) { hi = toNum(suffixed[1]); return {lo,hi}; }
-
-    // Bare large number (≥5 digits — treat as price ceiling)
-    const bigNum = norm.match(/\b(\d{5,}(?:,\d{3})*)\b/);
-    if (bigNum) { hi = toNum(bigNum[1]); return {lo,hi}; }
-
-    // Bare medium number 1000–999999 with no units — ambiguous, treat as ceiling
-    const midNum = norm.match(/\b(\d{4,6})\b/);
-    if (midNum) { const v = toNum(midNum[1]); if (v >= 1000) { hi = v; return {lo,hi}; } }
-
-    // Cheap / budget slang
-    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|low price|bargain|bless up price)\b/.test(s))
+    // standalone numbers like "under 80000" already caught, catch bare "80k"
+    const bare = s.match(/\b([\d]+(?:[.]\d+)?[km])\b/i);
+    if (bare) { hi = toNum(bare[1]); return {lo,hi}; }
+    // "cheap/budget/affordable/likkle money"
+    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh)\b/.test(s))
       return { cheap: true };
-
-    return {lo, hi};
+    return {lo,hi};
   }
 
   /* ── CATEGORY MAPPER ────────────────────────────────────── */
@@ -4261,80 +3956,26 @@ const YaadBrain = (() => {
 
   /* ── INTENT CLASSIFIER ──────────────────────────────────── */
   const FAQ_PATTERNS = [
-    [/\b(post|sell|list|put up|advertise|upload|add).*(ad|listing|item|something|product|it)/i, 'how_to_post'],
     [/how.*(post|sell|list|put up|advertise)/i, 'how_to_post'],
-    [/(how do i|how can i|how to).*(post|sell|list)/i, 'how_to_post'],
-    [/(is it|it is|is yaadads|cost|fee|charge|paid|\bfree\b)/i, 'is_free'],
+    [/(is it|it is|is yaadads|cost|fee|charge|paid|free)/i, 'is_free'],
     [/how.*(contact|reach|message|talk|call|whatsapp)/i, 'how_contact'],
     [/(safe|trust|scam|fraud|legit|real|verify)/i, 'safety'],
     [/(how.*(work|use)|what is yaadads|about yaadads|explain)/i, 'how_it_works'],
-    [/(delete|remove|edit|update|change|manage).*(ad|listing|post)/i, 'manage_ads'],
-    [/my.*(listing|ad|post)/i, 'manage_ads'],
-    [/\b(hi|hello|hey|morning|afternoon|evening|wah gwaan|whappen|greet)/i, 'greeting'],
-    [/\b(thank|thanks|appreciate|nice|great|good job|helpful)/i, 'thanks'],
-    [/(who|what|where|when|how many).*(seller|buyer|member|user|listing|ad)/i, 'stats'],
-    [/what.*(available|on the site|can i find|do you have)/i, 'what_available'],
-    [/(profile|account|name|phone|number|change my|edit my)/i, 'edit_profile'],
-    [/(parish|location|area|where).*(cover|available|deliver)/i, 'parishes'],
+    [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
+    [/hi|hello|hey|good (morning|afternoon|evening|night)|wah gwaan|whappen|ello/i, 'greeting'],
+    [/thank|thanks|appreciate|nice|great|good job/i, 'thanks'],
+    [/(who|what|where|when|how many).*(seller|buyer|member|user)/i, 'stats'],
   ];
   const FAQ_ANSWERS = {
-    how_to_post: function(q) {
-      // Actually trigger the post modal if they want to post
-      setTimeout(function(){ openPostAd(); }, 600);
-      const active = (_ads||[]).filter(function(a){return a.status!=='sold';}).length;
-      return 'Opening the post form for you now! 🚀\n\nQuick steps:\n1. Pick a category & parish\n2. Set your price\n3. Add a photo\n4. Hit Publish — live in seconds!\n\nFully free, always. Join ' + active + ' other listings on YaadAds 🇯🇲';
-    },
-    is_free: function() {
-      return 'YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, no subscriptions, ever. 🇯🇲';
-    },
-    how_contact: function() {
-      return 'Open any listing and tap Call 📞, WhatsApp 💬, or Message ✉️.\n\n• Call & WhatsApp work immediately — no account needed\n• In-app Message requires a free account\n\nCreate an account in under 2 minutes — just name, email & password.';
-    },
-    safety: function() {
-      return 'Safety tips for buying on YaadAds:\n\n🛡️ Meet in public — Half Way Tree, a busy mall, or police station\n👥 Bring someone for big purchases\n⭐ Check the seller rating & reviews\n💰 Never send money before seeing the item\n📸 Ask for more photos if needed\n\nVerified sellers have a green ✓ badge on their profile.';
-    },
-    how_it_works: function() {
-      const cats = CATS.slice(0,5).map(function(c){return c.icon+' '+c.name;}).join(', ');
-      return 'YaadAds is Jamaica\'s free marketplace 🇯🇲\n\n📋 Browse listings: ' + cats + ' and more\n📍 Filter by any of the 14 parishes\n💬 Chat directly with buyers or sellers\n✅ Post your own ad in under 2 minutes — free!\n\nNo middleman. No fees. Just real Jamaicans buying and selling.';
-    },
-    manage_ads: function() {
-      return 'To manage your listings:\n\n1. Tap 👤 Account at the bottom\n2. See all your active ads\n3. Tap any listing to view, mark as sold, or delete\n\nYou can also edit your name, phone number, and parish from the Account page.';
-    },
-    greeting: function() {
-      const active = (_ads||[]).filter(function(a){return a.status!=='sold';}).length;
-      const cats = [...new Set((_ads||[]).filter(function(a){return a.status!=='sold';}).map(function(a){return a.category;}))];
-      const topCat = cats[0] ? (CATS.find(function(c){return c.id===cats[0];})||{}) : {};
-      const g = [
-        'Wah gwaan! 👋 ' + active + ' listings live right now. What yuh looking for?',
-        'Big up! 🇯🇲 We have ' + active + ' ads across all 14 parishes. Search anything!',
-        'Hey! Ready to help. Try searching for a car, phone, property or anything else 👇',
-        'Respect! ' + active + ' listings waiting. What can I find for you today?'
-      ];
-      return g[Math.floor(Math.random()*g.length)];
-    },
-    thanks: function() { return 'No problem at all! 😊 Anything else I can help you find?'; },
-    stats: function() {
-      const active = (_ads||[]).filter(function(a){return a.status!=='sold';}).length;
-      const catCounts = {};
-      (_ads||[]).forEach(function(a){ if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
-      const topCats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,3)
-        .map(function(e){ const c=CATS.find(function(x){return x.id===e[0];})||{}; return (c.icon||'')+(c.name||e[0])+': '+e[1]; }).join(', ');
-      return 'Live on YaadAds right now: ' + active + ' active listings across all 14 parishes.\n\nTop categories: ' + topCats + '\n\nNew listings are added every day!';
-    },
-    what_available: function() {
-      const catCounts = {};
-      (_ads||[]).forEach(function(a){ if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
-      const sorted = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];});
-      const lines = sorted.map(function(e){ const c=CATS.find(function(x){return x.id===e[0];})||{}; return (c.icon||'📦')+' '+(c.name||e[0])+': '+e[1]+' listing'+(e[1]!==1?'s':''); }).join('\n');
-      return 'Here\'s what\'s live on YaadAds right now:\n\n' + lines + '\n\nTap any category above to browse, or tell me what you need!';
-    },
-    edit_profile: function() {
-      setTimeout(function(){ if(typeof openEditProfile==='function') openEditProfile(); else openAuth('login'); }, 600);
-      return 'Opening your profile now! 👤\n\nYou can change your name, phone number, parish, and password from there.';
-    },
-    parishes: function() {
-      return 'YaadAds covers all 14 Jamaican parishes:\n\nKingston · St. Andrew · St. Thomas · Portland · St. Mary · St. Ann · Trelawny · St. James (MoBay) · Hanover · Westmoreland · St. Elizabeth · Manchester · Clarendon · St. Catherine (Portmore)\n\nSearch listings in any parish by name!';
-    },
+    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details, add a photo, and you're live in under 2 minutes. 🚀 Completely free!`,
+    is_free: () => `YaadAds is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. 🇯🇲`,
+    how_contact: () => `Open any listing and you'll see Call 📞, WhatsApp 💬, and Message ✉️ buttons. Message uses in-app chat (free account needed). WhatsApp and Call work right away, no account required.`,
+    safety: () => `Great question! Meet in public spots — Half Way Tree, a busy mall, or a police station. Bring a friend for big purchases. Check the seller's profile and reviews. Never send money before seeing the item. 🛡️`,
+    how_it_works: () => `YaadAds is Jamaica's free marketplace. Browse listings across all 14 parishes, post your own ads in minutes, and chat directly with buyers or sellers. No middleman, no fees — just straightforward buying and selling. 🇯🇲`,
+    manage_ads: () => `To manage your ads, tap your name in the top nav (or "Account" in the bottom menu). You can view, mark as sold, or delete any of your listings from there.`,
+    greeting: () => { const g=['Wah gwaan! 👋','Big up! Ready to help you find something? 🇯🇲','Hey! What yuh looking for today?','Respect! What can I help you find?']; return g[Math.floor(Math.random()*g.length)]; },
+    thanks: () => 'No problem at all! Anything else you need? 😊',
+    stats: () => `Right now there are ${_ads.length} active listings across all 14 parishes. New listings are added every day — use search to find exactly what you need!`,
   };
 
   /* ── FOLLOW-UP DETECTOR ─────────────────────────────────── */
@@ -4419,55 +4060,23 @@ const YaadBrain = (() => {
 
   /* ── DYNAMIC SUGGESTIONS ─────────────────────────────────── */
   function buildSuggestions() {
-    const active = (_ads||[]).filter(function(a){ return a.status!=='sold'; });
-    if (!active.length) return [
-      { label:'🚗 Cars & Vehicles', query:'car' },
-      { label:'📱 Phones', query:'phone' },
-      { label:'🏡 Property', query:'house' },
-      { label:'💼 Jobs', query:'job' },
-    ];
-
-    // Top categories by listing count
+    if (!_ads.length) return [];
+    // Top 3 categories by count
     const catCounts = {};
-    active.forEach(function(a){ catCounts[a.category]=(catCounts[a.category]||0)+1; });
-    const topCats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,4).map(function(e){return e[0];});
-
+    _ads.forEach(a => { if(a.status!=='sold') catCounts[a.category]=(catCounts[a.category]||0)+1; });
+    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+    // Median price per top category
     const sugs = [];
-
-    // For each top cat: pick a real listing title as the suggestion
-    for (var i=0; i<topCats.length && sugs.length < 3; i++) {
-      var catId = topCats[i];
-      var cat = CATS.find(function(c){return c.id===catId;});
-      var catAds = active.filter(function(a){return a.category===catId;});
-      // Sort by views desc, take highest-viewed
-      catAds.sort(function(a,b){return (b.views||0)-(a.views||0);});
-      var featured = catAds[0];
-      if (!cat || !featured) continue;
-      var prices = catAds.map(function(a){return a.price;}).sort(function(a,b){return a-b;});
-      var median = prices[Math.floor(prices.length/2)]||0;
-      var roundedM = Math.ceil(median/10000)*10000;
-      // Use real listing keywords as the query
-      var titleWords = (featured.title||'').split(/\s+/).slice(0,3).join(' ');
-      sugs.push({
-        label: cat.icon+' '+cat.name+' — from J$'+fmtN(roundedM),
-        query: cat.name.toLowerCase()
-      });
+    for (const catId of topCats) {
+      const cat = CATS.find(c=>c.id===catId);
+      const prices = _ads.filter(a=>a.category===catId&&a.status!=='sold').map(a=>a.price).sort((a,b)=>a-b);
+      const median = prices[Math.floor(prices.length/2)]||0;
+      if (cat && median) sugs.push({ label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`, query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}` });
     }
-
-    // Most recently posted listing as a suggestion
-    var newest = active.slice().sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);})[0];
-    if (newest) {
-      var newTitle = newest.title.length>28 ? newest.title.slice(0,28)+'…' : newest.title;
-      sugs.push({ label:'🆕 '+newTitle, query: newest.title.split(/\s+/).slice(0,3).join(' ') });
-    }
-
-    // Parish with most listings
-    var parishCounts = {};
-    active.forEach(function(a){ parishCounts[a.parish]=(parishCounts[a.parish]||0)+1; });
-    var topParish = Object.entries(parishCounts).sort(function(a,b){return b[1]-a[1];})[0];
-    if (topParish) sugs.push({ label:'📍 Listings in '+topParish[0], query: 'in '+topParish[0].toLowerCase() });
-
-    return sugs.slice(0,5);
+    // Most recent listing
+    const newest = _ads.filter(a=>a.status!=='sold')[0];
+    if (newest) sugs.push({ label:`🆕 ${newest.title.slice(0,30)}…`, query:newest.title.split(' ').slice(0,3).join(' ') });
+    return sugs.slice(0,4);
   }
 
   /* ── RESULT MESSAGES ─────────────────────────────────────── */
@@ -4495,12 +4104,11 @@ const YaadBrain = (() => {
   function process(query, history) {
     const q = query.trim();
 
-    // 1. FAQ/intent — run BEFORE category detection, no gating on cat/parish
-    // (user asking "how to post in Kingston" should still get the FAQ answer)
+    // 1. Check FAQ/intent first
     for (const [pattern, intent] of FAQ_PATTERNS) {
-      if (pattern.test(q)) {
+      if (pattern.test(q) && !detectCategories(q).length && !detectParish(q)) {
         const fn = FAQ_ANSWERS[intent];
-        if (fn) return { type:'answer', intent, message: fn(q) };
+        if (fn) return { type:'answer', message: fn() };
       }
     }
 
@@ -4510,9 +4118,7 @@ const YaadBrain = (() => {
       const price = parsePrice(q);
       const cats  = detectCategories(q);
       const parish = detectParish(q);
-      // Strip price-related words from TF-IDF terms so "2 million" doesn't pollute scoring
-      const PRICE_NOISE = /^(million|thousand|under|below|above|over|between|and|for|around|about|least|most|than|from|starting|within|max|min|cheap|budget|affordable|price|jmd|j\$|\d+[mk]?|\d+)$/i;
-      const terms = tokenize(q).filter(t=>t.length>2&&!PRICE_NOISE.test(t));
+      const terms = tokenize(q).filter(t=>t.length>2&&!/^\d+$/.test(t));
       return { cats, parish, lo: price.lo, hi: price.hi, cheap: price.cheap, terms, offset:0 };
     })();
 
@@ -5272,65 +4878,5 @@ window.addEventListener('resize', () => {
 ═══════════════════════════════════════════════════════════ */
 init();
 </script>
-
-<!-- ══════════════════════════════════════════════════════
-     EDIT PROFILE MODAL
-══════════════════════════════════════════════════════ -->
-<div class="overlay" id="ovEditProfile">
-  <div class="modal modal-wide" style="max-width:500px">
-    <button class="m-close" onclick="closeOverlay('ovEditProfile')">✕</button>
-
-    <!-- Banner with avatar + stats -->
-    <div class="profile-banner" id="epBanner">
-      <div class="profile-av-wrap">
-        <div class="profile-av-big" id="epAvatar"></div>
-        <div class="profile-av-edit">✏️</div>
-      </div>
-      <div class="profile-name-display" id="epNameDisplay"></div>
-      <div class="profile-email-display" id="epEmailDisplay"></div>
-      <div class="profile-stat-row" id="epStats"></div>
-    </div>
-
-    <!-- Edit form -->
-    <div class="profile-section-title">Personal Information</div>
-    <div id="epAlert" class="profile-err"></div>
-
-    <div class="form-grp">
-      <label class="form-lbl">Full Name *</label>
-      <input class="form-inp" id="epName" type="text" placeholder="Your full name">
-    </div>
-    <div class="form-grp">
-      <label class="form-lbl">Phone Number</label>
-      <input class="form-inp" id="epPhone" type="tel" placeholder="876-XXX-XXXX">
-    </div>
-    <div class="form-grp">
-      <label class="form-lbl">Parish</label>
-      <select class="form-inp" id="epParish">
-        <option value="">Select your parish…</option>
-      </select>
-    </div>
-
-    <div class="profile-section-title">Change Password</div>
-    <div class="form-grp">
-      <label class="form-lbl">New Password <span>(leave blank to keep current)</span></label>
-      <input class="form-inp" id="epPass" type="password" placeholder="At least 6 characters">
-    </div>
-    <div class="form-grp">
-      <label class="form-lbl">Confirm New Password</label>
-      <input class="form-inp" id="epPass2" type="password" placeholder="Repeat new password">
-    </div>
-
-    <div class="profile-section-title">My Listings</div>
-    <div id="epMyAds" style="margin-bottom:8px"></div>
-
-    <div class="profile-section-title">Danger Zone</div>
-    <button class="profile-danger-btn" onclick="doDeleteAccount()">🗑️ Delete My Account</button>
-
-    <div class="profile-save-strip">
-      <button class="btn btn-green btn-block btn-lg" id="epSaveBtn" onclick="doSaveProfile()">Save Changes</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
