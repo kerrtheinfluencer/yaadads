@@ -1437,6 +1437,183 @@ footer {
 .ai-sheet-send.sending { animation: sendPulse .8s ease-in-out infinite; }
 @keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
 
+
+function openAuth(tab) {\n  2435\t  authTab(tab);\n  2436\t  document.getElementById('authAlert').classList.remove('show');\n  2437\t  openOverlay('ovAuth');\n  2438\t}
+
+function authTab(t) {\n  2440\t  document.getElementById('fLogin').style.display = t==='login' ? '' : 'none';\n  2441\t  document.getElementById('fReg').style.display   = t==='register' ? '' : 'none';\n  2442\t  document.getElementById('tLogin').classList.toggle('active', t==='login');\n  2443\t  document.getElementById('tReg').classList.toggle('active',   t==='register');\n  2444\t  document.getElementById('authAlert').classList.remove('show');\n  2445\t}
+
+function authErr(m) { const e = document.getElementById('authAlert'); e.textContent=m; e.className='alert-box alert-err show'; }
+
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  if (!email || !pass) return authErr('Please fill in all fields.');
+  const btn = document.querySelector('#fLogin .btn-green');
+  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
+  try {
+    const user = await sbLogin(email, pass);
+    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
+    L.sess = CU;
+    await loadMessages();
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats(); updateMsgBadge();
+    showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+  } catch(e) {
+    authErr(e.message || 'Incorrect email or password.');
+  } finally {
+    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+  }
+};\n  2455\t  L.sess = CU; closeOverlay('ovAuth');\n  2456\t  renderNav(); updateStats(); updateMsgBadge();\n  2457\t  showToast(`Welcome back, ${user.name.split(' ')[0]}! ??`, '??');\n  2458\t}
+
+async function doRegister() {
+  const name   = document.getElementById('rName').value.trim();
+  const email  = document.getElementById('rEmail').value.trim();
+  const phone  = document.getElementById('rPhone').value.trim();
+  const pass   = document.getElementById('rPass').value;
+  const parish = document.getElementById('rParish').value;
+  if (!name || !email || !pass) return authErr('Please fill in all required fields.');
+  if (pass.length < 6) return authErr('Password must be at least 6 characters.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Please enter a valid email.');
+  const btn = document.querySelector('#fReg .btn-green');
+  if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
+  try {
+    const user = await sbRegister(name, email, phone, parish, pass);
+    CU = { id: user.id, name, email, phone, parish };
+    L.sess = CU;
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats();
+    showToast('Welcome to YaadAds, ' + name.split(' ')[0] + '! 🎉', '🎉');
+  } catch(e) {
+    authErr(e.message || 'Registration failed. Please try again.');
+  } finally {
+    if (btn) { btn.textContent = 'Create Free Account'; btn.disabled = false; }
+  }
+}
+
+/* ── BUILD PREVIEW (post step 3) ── */
+function buildPreview() {
+  const cat    = CATS.find(c => c.id === document.getElementById('aCat').value);
+  const title  = document.getElementById('aTitle').value.trim();
+  const price  = document.getElementById('aPrice').value;
+  const parish = document.getElementById('aParish').value;
+  const img    = uploadUrl
+    ? '<img src="' + uploadUrl + '" style="width:100%;height:150px;object-fit:cover">'
+    : '<div style="height:150px;background:' + (cat?.color||'#f5f5f5') + ';display:flex;align-items:center;justify-content:center;font-size:56px">' + (cat?.icon||'\u{1F4E6}') + '</div>';
+  document.getElementById('adPreviewCard').innerHTML =
+    '<div class="ad-card" style="cursor:default;transform:none!important">' +
+      '<div class="ad-card-img" style="height:150px">' + img + '<span class="ad-cat-tag">' + (cat?.name||'Other') + '</span></div>' +
+      '<div class="ad-card-body">' +
+        '<div class="ad-price">J$' + fmtN(parseFloat(price)||0) + '</div>' +
+        '<div class="ad-title">' + title + '</div>' +
+        '<div class="ad-meta"><span>\u{1F4CD} ' + parish + '</span><span>\u{1F550} just now</span></div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('previewDetails').innerHTML =
+    '<strong>Description:</strong> ' + document.getElementById('aDesc').value.trim() + '<br>' +
+    '<strong>Contact:</strong> ' + (document.getElementById('aPhone').value || CU.phone || 'Not provided') + '<br>' +
+    '<strong>Negotiable:</strong> ' + (document.getElementById('aNeg').checked ? 'Yes' : 'No');
+}
+
+/* ── AI RESPONSE (hero bar) ── */
+function showAiResponse(text, count) {
+  const card = document.getElementById('aiResponseCard');
+  const textEl = document.getElementById('aiResponseText');
+  const badge = document.getElementById('aiCountBadge');
+  if (!card) return;
+  textEl.textContent = text;
+  if (count !== null && count !== undefined) {
+    badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+  card.style.display = '';
+}
+function hideAiResponse() {
+  const card = document.getElementById('aiResponseCard');
+  if (card) card.style.display = 'none';
+}
+function compactHero() {
+  const hero = document.getElementById('heroSection');
+  if (hero) hero.classList.add('compact');
+}
+
+/* ── RESET HERO SEARCH ── */
+function resetHeroSearch() {
+  searchQ = ''; activeF = 'all';
+  window._aiFilters = null;
+  const inp = document.getElementById('aiInput');
+  if (inp) inp.value = '';
+  const hero = document.getElementById('heroSection');
+  if (hero) hero.classList.remove('compact');
+  hideAiResponse();
+  renderCats(); renderHome();
+  const reset = document.querySelector('.hero-reset');
+  if (reset) reset.style.display = 'none';
+}
+
+/* ── MSG BADGE ── */
+function updateMsgBadge() {
+  const count = unreadCount ? unreadCount() : 0;
+  const badge = document.getElementById('mobMsgBadge');
+  if (badge) { badge.textContent = count || ''; badge.classList.toggle('show', count > 0); }
+}
+
+/* ── GALLERY NAV ── */
+function galleryGoTo(i) {
+  const t = document.getElementById('galleryTrack');
+  if (t) t.scrollTo({ left: i * t.offsetWidth, behavior: 'smooth' });
+}
+function galleryPrev() {
+  const t = document.getElementById('galleryTrack');
+  if (t) galleryGoTo(Math.max(0, Math.round(t.scrollLeft / (t.offsetWidth||1)) - 1));
+}
+function galleryNext() {
+  const t = document.getElementById('galleryTrack');
+  if (t) galleryGoTo(Math.min(t.children.length - 1, Math.round(t.scrollLeft / (t.offsetWidth||1)) + 1));
+}
+
+/* ── OPEN CHAT FROM INBOX ── */
+async function openChatFromInbox(key) {
+  const conv = _msgs[key]; if (!conv) return;
+  await sbMarkRead(key);
+  currentConv = key;
+  renderChat(key);
+  openOverlay('ovChat');
+  updateMsgBadge();
+  if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+}
+
+function doLogout() {\n  2479\t  CU = null; L.sess = null; renderNav(); goHome();\n  2480\t  showToast('Logged out successfully.', '??');\n  2481\t}
+
+function toggleSold(id) {\n  2098\t  const ads = L.ads; const ad = ads.find(a => a.id === id); if (!ad) return;\n  2099\t  ad.status = ad.status === 'sold' ? 'active' : 'sold';\n  2100\t  L.ads = ads;\n  2101\t  closeOverlay('ovDetail');\n  2102\t  renderHome(); renderCats(); updateStats();\n  2103\t  showToast(ad.status==='sold'?'Marked as sold ✓':'Marked as active ✓', ad.status==='sold'?'??️':'✅');\n  2104\t}
+
+function delAd(id) {\n  2426\t  if (!confirm('Delete this listing? This cannot be undone.')) return;\n  2427\t  L.ads = L.ads.filter(a => a.id !== id);\n  2428\t  renderMyAds(); renderHome(); renderCats(); updateStats();\n  2429\t}
+
+function openPostAd() {\n  2487\t  if (!CU) return openAuth('login');\n  2488\t  currentPostStep = 1;\n  2489\t  ['aTitle','aDesc','aPrice','aPhone'].forEach(id => document.getElementById(id).value='');\n  2490\t  document.getElementById('aParish').value='';\n  2491\t  document.getElementById('aNeg').checked=false;\n  2492\t  document.getElementById('postAlert').classList.remove('show');\n  2493\t  clearImg(); setStep(1);\n  2494\t  openOverlay('ovPost');\n  2495\t}
+
+function clearImg() {\n  2560\t  uploadUrl = '';\n  2561\t  document.getElementById('imgUploadArea').style.display = '';\n  2562\t  document.getElementById('imgPreviewBox').style.display = 'none';\n  2563\t  document.getElementById('imgPreview').src = '';\n  2564\t  document.getElementById('imgFile').value = '';\n  2565\t}
+
+function handleImgFile(input) {\n  2547\t  const file = input.files[0]; if (!file) return;\n  2548\t  if (file.size > 2000000) { showToast('Image too large (max 2MB)','⚠️'); return; }\n  2549\t  const reader = new FileReader();\n  2550\t  reader.onload = e => {\n  2551\t    uploadUrl = e.target.result;\n  2552\t    document.getElementById('imgUploadArea').style.display = 'none';\n  2553\t    document.getElementById('imgPreviewBox').style.display = '';\n  2554\t    document.getElementById('imgPreview').src = uploadUrl;\n  2555\t  };\n  2556\t  reader.readAsDataURL(file);\n  2557\t}
+
+function doPostAd() {\n  2568\t  const cat = CATS.find(c=>c.id===document.getElementById('aCat').value);\n  2569\t  const ad = {\n  2570\t    id: 'a'+Date.now(),\n  2571\t    title:    document.getElementById('aTitle').value.trim(),\n  2572\t    category: document.getElementById('aCat').value,\n  2573\t    parish:   document.getElementById('aParish').value,\n  2574\t    price:    parseFloat(document.getElementById('aPrice').value)||0,\n  2575\t    desc:     document.getElementById('aDesc').value.trim(),\n  2576\t    phone:    document.getElementById('aPhone').value.trim() || CU.phone || '',\n  2577\t    image:    uploadUrl,\n  2578\t    neg:      document.getElementById('aNeg').checked,\n  2579\t    icon:     cat?.icon||'??',\n  2580\t    seller:   CU.name,\n  2581\t    sellerInit: initials(CU.name),\n  2582\t    sellerId: CU.id,\n  2583\t    date:     new Date().toISOString().split('T')[0],\n  2584\t    status:   'active',\n  2585\t  };\n  2586\t  const ads = L.ads; ads.unshift(ad); L.ads = ads;\n  2587\t  closeOverlay('ovPost');\n  2588\t  renderCats(); renderHome(); updateStats();\n  2589\t  showToast('Your ad is live! ??', '??');\n  2590\t}
+
+function renderMyAds() {\n  2401\t  const el = document.getElementById('myAdsBox');\n  2402\t  if (!CU) { el.innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>Please log in</h3><p>You need an account to manage listings.</p><button class=\"btn btn-green\" onclick=\"openAuth('login')\">Log In</button></div>`; return; }\n  2403\t  const ads = L.ads.filter(a => a.sellerId === CU.id);\n  2404\t  if (!ads.length) { el.innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>No listings yet</h3><p>Post your first free ad and start selling today!</p><button class=\"btn btn-green\" onclick=\"openPostAd()\">Post Your First Ad</button></div>`; return; }\n  2405\t  el.innerHTML = ads.map(ad => {\n  2406\t    const cat = CATS.find(c => c.id === ad.category);\n  2407\t    const thumb = ad.image ? `<img src=\"${ad.image}\" onerror=\"this.style.display='none'\">` : (cat?.icon||'??');\n  2408\t    return `<div class=\"my-ad-row\">\n  2409\t      <div class=\"my-ad-thumb\">${thumb}</div>\n  2410\t      <div class=\"my-ad-info\">\n  2411\t        <div class=\"my-ad-title\">${ad.title}</div>\n  2412\t        <div class=\"my-ad-price\">J$${fmtN(ad.price)}</div>\n  2413\t        <div class=\"my-ad-meta\">?? ${ad.parish} · ${cat?.name||'Other'} · ${ago(ad.date)}</div>\n  2414\t      </div>\n  2415\t      <span class=\"s-badge ${ad.status==='sold'?'s-sold':'s-active'}\">${ad.status==='sold'?'● Sold':'● Active'}</span>\n  2416\t      <div class=\"my-ad-acts\">\n  2417\t        <button class=\"btn btn-ghost btn-sm\" onclick=\"openDetail('${ad.id}')\">View</button>\n  2418\t        <button class=\"btn ${ad.status==='sold'?'btn-ghost':'btn-red'} btn-sm\" onclick=\"toggleSold('${ad.id}');renderMyAds()\">${ad.status==='sold'?'Relist':'Sold'}</button>\n  2419\t        <button class=\"btn btn-red btn-sm\" onclick=\"delAd('${ad.id}')\">Delete</button>\n  2420\t      </div>\n  2421\t    </div>`;\n  2422\t  }).join('');\n  2423\t}
+
+function renderChat(key) {\n  2294\t  const msgs = L.msgs;\n  2295\t  const conv = msgs[key];\n  2296\t  if (!conv) return;\n  2297\t  const isbuyer = CU.id === conv.buyerId;\n  2298\t  const otherName = isbuyer ? conv.sellerName : conv.buyerName;\n  2299\t  const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;\n  2300\t  const otherId   = isbuyer ? conv.sellerId  : conv.buyerId;\n  2301\t  const clr = avatarColor(otherName);\n  2302\t\n  2303\t  document.getElementById('chatInner').innerHTML = `\n  2304\t    <div class=\"chat-header\">\n  2305\t      <div class=\"s-avatar\" style=\"background:${clr.bg};color:${clr.fg};width:42px;height:42px;font-size:16px\">${otherInit}</div>\n  2306\t      <div class=\"chat-info\">\n  2307\t        <div class=\"chat-name\">${otherName}</div>\n  2308\t        <div class=\"chat-ad-ref\">Re: ${conv.adTitle}</div>\n  2309\t      </div>\n  2310\t    </div>\n  2311\t    <div class=\"chat-messages\" id=\"chatMsgs\">\n  2312\t      ${conv.messages.length===0 ? `<div style=\"text-align:center;padding:40px 0;color:var(--text-3);font-size:14px\">Start the conversation!<br>Ask about the listing.</div>` : ''}\n  2313\t      ${conv.messages.map(m => {\n  2314\t        const out = m.from === CU.id;\n  2315\t        return `<div class=\"msg ${out?'msg-out':'msg-in'}\">\n  2316\t          <div class=\"msg-bubble\">${m.text}</div>\n  2317\t          <div class=\"msg-time\">${fmtTime(m.ts)}</div>\n  2318\t        </div>`;\n  2319\t      }).join('')}\n  2320\t    </div>\n  2321\t    <div class=\"chat-input-row\">\n  2322\t      <input class=\"chat-input\" id=\"chatInput\" placeholder=\"Type a message…\" onkeydown=\"if(event.key==='Enter')sendMsg()\">\n  2323\t      <button class=\"chat-send\" onclick=\"sendMsg()\">➤</button>\n  2324\t    </div>`;\n  2325\t  setTimeout(() => { const el = document.getElementById('chatMsgs'); if (el) el.scrollTop = el.scrollHeight; }, 50);\n  2326\t}
+
+function renderInbox() {\n  2343\t  if (!CU) {\n  2344\t    document.getElementById('inboxList').innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class=\"btn btn-green\" onclick=\"openAuth('login')\">Log In</button></div>`;\n  2345\t    return;\n  2346\t  }\n  2347\t  const msgs = L.msgs;\n  2348\t  const myConvs = Object.entries(msgs).filter(([k,c]) => c.sellerId===CU.id || c.buyerId===CU.id);\n  2349\t  if (!myConvs.length) {\n  2350\t    document.getElementById('inboxList').innerHTML = `<div class=\"empty\"><div class=\"empty-icon\">??</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>`;\n  2351\t    return;\n  2352\t  }\n  2353\t  // Sort by latest message\n  2354\t  myConvs.sort((a,b) => {\n  2355\t    const am = a[1].messages.at(-1)?.ts||0;\n  2356\t    const bm = b[1].messages.at(-1)?.ts||0;\n  2357\t    return bm - am;\n  2358\t  });\n  2359\t  document.getElementById('inboxList').innerHTML = myConvs.map(([key, conv]) => {\n  2360\t    const isbuyer = CU.id === conv.buyerId;\n  2361\t    const otherName = isbuyer ? conv.sellerName : conv.buyerName;\n  2362\t    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;\n  2363\t    const last = conv.messages.at(-1);\n  2364\t    const unread = conv.messages.filter(m => m.from !== CU.id && !m.read).length;\n  2365\t    const clr = avatarColor(otherName);\n  2366\t    return `<div class=\"inbox-item ${unread?'unread':''}\" onclick=\"openChatFromInbox('${key}')\">\n  2367\t      <div class=\"inbox-avatar\" style=\"background:${clr.bg};color:${clr.fg}\">${otherInit}</div>\n  2368\t      <div class=\"inbox-info\">\n  2369\t        <div class=\"inbox-name\">${otherName} ${unread?`<span style=\"background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px\">${unread} new</span>`:''}</div>\n  2370\t        <div class=\"inbox-preview\">${last?last.text:'Start a conversation…'}</div>\n  2371\t        <span class=\"inbox-ad\">?? ${conv.adTitle}</span>\n  2372\t      </div>\n  2373\t      <div class=\"inbox-time\">${last?fmtTime(last.ts):''}</div>\n  2374\t    </div>`;\n  2375\t  }).join('');\n  2376\t}
+
+function sendMsg() {\n  2329\t  const input = document.getElementById('chatInput');\n  2330\t  const text = input?.value.trim();\n  2331\t  if (!text || !currentConv) return;\n  2332\t  const msgs = L.msgs;\n  2333\t  const conv = msgs[currentConv];\n  2334\t  if (!conv) return;\n  2335\t  conv.messages.push({ from: CU.id, text, ts: Date.now(), read: false });\n  2336\t  L.msgs = msgs;\n  2337\t  input.value = '';\n  2338\t  renderChat(currentConv);\n  2339\t  updateMsgBadge();\n  2340\t}
+
+function togFav(id, btn) {\n  2049\t  const f = [...L.favs]; const i = f.indexOf(id);\n  2050\t  if (i > -1) { f.splice(i,1); btn.textContent='??'; showToast('Removed from favourites','??'); }\n  2051\t  else         { f.push(id);   btn.textContent='❤️'; showToast('Saved to favourites','❤️'); }\n  2052\t  L.favs = f;\n  2053\t}
+
+function convKey(uid1, uid2, adId) {\n  2272\t  return [uid1, uid2].sort().join('__') + '__' + adId;\n  2273\t}
+
+function isFav(id) { return L.favs.includes(id); }
+
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  QUALITY-OF-LIFE FEATURES — CSS                             ║
    ╚══════════════════════════════════════════════════════════════╝ */
@@ -2346,6 +2523,441 @@ function unreadCount() {
 /* ═══════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   FORMATTING UTILITIES
+═══════════════════════════════════════════════════════════ */
+function fmtN(n) { return Number(n||0).toLocaleString('en-JM'); }
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts); const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return d.toLocaleDateString('en-JM', { month:'short', day:'numeric' });
+}
+function ago(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr); const now = new Date();
+  const diff = Math.floor((now - d) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'yesterday';
+  if (diff < 7) return diff + ' days ago';
+  if (diff < 30) return Math.floor(diff/7) + ' week' + (Math.floor(diff/7)>1?'s':'') + ' ago';
+  if (diff < 365) return Math.floor(diff/30) + ' month' + (Math.floor(diff/30)>1?'s':'') + ' ago';
+  return Math.floor(diff/365) + ' year' + (Math.floor(diff/365)>1?'s':'') + ' ago';
+}
+function initials(name) {
+  if (!name) return '?';
+  return name.trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+}
+function avatarColor(name) {
+  const colors = [
+    {bg:'#1a3a2a',fg:'#4ade80'},{bg:'#1e1a3a',fg:'#818cf8'},
+    {bg:'#3a1a1a',fg:'#f87171'},{bg:'#3a2e1a',fg:'#fbbf24'},
+    {bg:'#1a2e3a',fg:'#38bdf8'},{bg:'#2e1a3a',fg:'#e879f9'},
+    {bg:'#1a3a2e',fg:'#34d399'},{bg:'#3a1a2e',fg:'#f472b6'},
+  ];
+  let hash = 0;
+  for (let i = 0; i < (name||'?').length; i++) hash = (hash*31 + (name||'?').charCodeAt(i)) & 0xffffffff;
+  return colors[Math.abs(hash) % colors.length];
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UI UTILITIES — Overlay, Toast, Skeletons
+═══════════════════════════════════════════════════════════ */
+function openOverlay(id)  {
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.add('open'); document.body.style.overflow = 'hidden';
+}
+function closeOverlay(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.remove('open');
+  if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+}
+// Close overlay on backdrop click
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('overlay')) closeOverlay(e.target.id);
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(m){ closeOverlay(m.id); });
+});
+
+let _toastTimer;
+function showToast(msg, icon) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:calc(var(--mob-nav-h,64px) + env(safe-area-inset-bottom) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:50px;font-size:14px;font-weight:600;z-index:9990;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    document.body.appendChild(t);
+  }
+  t.textContent = (icon ? icon + '  ' : '') + msg;
+  t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)'; }, 2800);
+}
+
+function showSkeletons() {
+  const grid = document.getElementById('homeGrid');
+  if (!grid) return;
+  grid.innerHTML = Array(8).fill(0).map(() =>
+    '<div class="ad-card skeleton" style="pointer-events:none"><div class="ad-card-img" style="background:#f0f0f0;animation:shimmer 1.2s infinite"></div><div class="ad-card-body"><div style="height:12px;background:#f0f0f0;border-radius:4px;margin-bottom:8px;animation:shimmer 1.2s infinite"></div><div style="height:16px;background:#f0f0f0;border-radius:4px;margin-bottom:6px;animation:shimmer 1.2s infinite"></div><div style="height:10px;background:#f0f0f0;border-radius:4px;width:60%;animation:shimmer 1.2s infinite"></div></div></div>'
+  ).join('');
+}
+function scrollToResults() {
+  const el = document.getElementById('homeGrid') || document.getElementById('resultsHeader');
+  if (el) setTimeout(function(){ el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 50);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO / AI RESPONSE
+═══════════════════════════════════════════════════════════ */
+function showAiResponse(text, count) {
+  const card = document.getElementById('aiResponseCard');
+  const textEl = document.getElementById('aiResponseText');
+  const badge = document.getElementById('aiCountBadge');
+  if (!card) return;
+  textEl.textContent = text;
+  if (count !== null && count !== undefined) {
+    badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
+    badge.style.display = '';
+  } else { badge.style.display = 'none'; }
+  card.style.display = '';
+  const reset = document.querySelector('.hero-reset');
+  if (reset) reset.style.display = '';
+}
+function hideAiResponse() {
+  const card = document.getElementById('aiResponseCard');
+  if (card) card.style.display = 'none';
+}
+function compactHero() {
+  const hero = document.getElementById('heroSection');
+  if (hero) hero.classList.add('compact');
+}
+function resetHeroSearch() {
+  searchQ = ''; activeF = 'all'; window._aiFilters = null;
+  const inp = document.getElementById('aiInput');
+  if (inp) inp.value = '';
+  const hero = document.getElementById('heroSection');
+  if (hero) hero.classList.remove('compact');
+  hideAiResponse();
+  renderCats(); renderHome();
+  const reset = document.querySelector('.hero-reset');
+  if (reset) reset.style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTH — Modal, Login, Register, Logout
+═══════════════════════════════════════════════════════════ */
+function openAuth(tab) {
+  authTab(tab || 'login');
+  document.getElementById('authAlert').classList.remove('show');
+  openOverlay('ovAuth');
+}
+function authTab(t) {
+  document.getElementById('fLogin').style.display = t === 'login' ? '' : 'none';
+  document.getElementById('fReg').style.display   = t === 'register' ? '' : 'none';
+  document.getElementById('tLogin').classList.toggle('active', t === 'login');
+  document.getElementById('tReg').classList.toggle('active',   t === 'register');
+  document.getElementById('authAlert').classList.remove('show');
+}
+function authErr(m) {
+  const e = document.getElementById('authAlert');
+  e.textContent = m; e.className = 'alert-box alert-err show';
+}
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  if (!email || !pass) return authErr('Please fill in all fields.');
+  const btn = document.querySelector('#fLogin .btn-green');
+  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
+  try {
+    const user = await sbLogin(email, pass);
+    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
+    L.sess = CU;
+    await loadMessages(); subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats(); updateMsgBadge();
+    showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+  } catch(e) {
+    authErr(e.message || 'Incorrect email or password.');
+  } finally {
+    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+  }
+}
+async function doRegister() {
+  const name   = document.getElementById('rName').value.trim();
+  const email  = document.getElementById('rEmail').value.trim();
+  const phone  = document.getElementById('rPhone').value.trim();
+  const pass   = document.getElementById('rPass').value;
+  const parish = document.getElementById('rParish').value;
+  if (!name || !email || !pass) return authErr('Please fill in all required fields.');
+  if (pass.length < 6) return authErr('Password must be at least 6 characters.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Please enter a valid email.');
+  const btn = document.querySelector('#fReg .btn-green');
+  if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
+  try {
+    const user = await sbRegister(name, email, phone, parish, pass);
+    CU = { id: user.id, name, email, phone, parish };
+    L.sess = CU;
+    subscribeMessages();
+    closeOverlay('ovAuth');
+    renderNav(); updateStats(); updateMsgBadge();
+    showToast('Welcome to YaadAds, ' + name.split(' ')[0] + '! 🎉', '🎉');
+    launchConfetti();
+  } catch(e) {
+    authErr(e.message || 'Registration failed. Please try again.');
+  } finally {
+    if (btn) { btn.textContent = 'Create Free Account'; btn.disabled = false; }
+  }
+}
+function doLogout() {
+  CU = null; L.sess = null; _msgs = {};
+  renderNav(); updateMsgBadge(); goHome();
+  showToast('Logged out successfully.', '👋');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MSG BADGE
+═══════════════════════════════════════════════════════════ */
+function updateMsgBadge() {
+  const count = typeof unreadCount === 'function' ? unreadCount() : 0;
+  const badge = document.getElementById('mobMsgBadge');
+  if (badge) { badge.textContent = count || ''; badge.classList.toggle('show', count > 0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MESSAGING — renderChat, renderInbox, sendMsg, openChat
+═══════════════════════════════════════════════════════════ */
+function renderChat(key) {
+  const conv = _msgs[key]; if (!conv) return;
+  const isbuyer = CU.id === conv.buyerId;
+  const otherName = isbuyer ? conv.sellerName : conv.buyerName;
+  const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
+  const clr = avatarColor(otherName);
+  document.getElementById('chatInner').innerHTML =
+    '<div class="chat-header">' +
+      '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + otherInit + '</div>' +
+      '<div class="chat-info"><div class="chat-name">' + otherName + '</div><div class="chat-ad-ref">Re: ' + (conv.adTitle||'') + '</div></div>' +
+    '</div>' +
+    '<div class="chat-messages" id="chatMsgs">' +
+      (!conv.messages.length ? '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!</div>' : '') +
+      conv.messages.map(function(m) {
+        const out = m.from === CU.id;
+        return '<div class="msg ' + (out?'msg-out':'msg-in') + '">' +
+          '<div class="msg-bubble">' + escHtml(m.text||'') + '</div>' +
+          '<div class="msg-time">' + fmtTime(m.ts) + '</div></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="chat-input-row">' +
+      '<input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\')sendMsg()">' +
+      '<button class="chat-send" onclick="sendMsg()">➤</button>' +
+    '</div>';
+  setTimeout(function(){ const el = document.getElementById('chatMsgs'); if(el) el.scrollTop = el.scrollHeight; }, 50);
+}
+
+function renderInbox() {
+  const el = document.getElementById('inboxList');
+  if (!CU) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
+  const myConvs = Object.entries(_msgs).filter(function(e){ return e[1].sellerId===CU.id || e[1].buyerId===CU.id; });
+  if (!myConvs.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>'; return; }
+  myConvs.sort(function(a,b){ return (b[1].messages.at(-1)?.ts||0)-(a[1].messages.at(-1)?.ts||0); });
+  el.innerHTML = myConvs.map(function(e){
+    const key = e[0], conv = e[1];
+    const isbuyer = CU.id === conv.buyerId;
+    const otherName = isbuyer ? conv.sellerName : conv.buyerName;
+    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
+    const last = conv.messages.at(-1);
+    const unread = conv.messages.filter(function(m){ return m.from !== CU.id && !m.read; }).length;
+    const clr = avatarColor(otherName);
+    return '<div class="inbox-item' + (unread?' unread':'') + '" onclick="openChatFromInbox(\'' + key + '\')">' +
+      '<div class="inbox-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + otherInit + '</div>' +
+      '<div class="inbox-info">' +
+        '<div class="inbox-name">' + (otherName||'') + (unread?'<span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px">' + unread + ' new</span>':'') + '</div>' +
+        '<div class="inbox-preview">' + (last ? escHtml(last.text) : 'Start a conversation…') + '</div>' +
+        '<span class="inbox-ad">📋 ' + (conv.adTitle||'') + '</span>' +
+      '</div>' +
+      '<div class="inbox-time">' + (last ? fmtTime(last.ts) : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const text = (input?.value || '').trim();
+  if (!text || !currentConv || !CU) return;
+  const conv = _msgs[currentConv]; if (!conv) return;
+  input.value = '';
+  try {
+    await sbSendMessage(currentConv, conv, text);
+    renderChat(currentConv); updateMsgBadge();
+  } catch(e) { showToast('Message failed. Try again.', '⚠️'); }
+}
+
+function openChat(adId, sellerId, sellerName, sellerInit) {
+  if (!CU) return openAuth('login');
+  const ad = _ads.find(function(a){ return a.id === adId; });
+  const key = convKey(CU.id, sellerId, adId);
+  if (!_msgs[key]) {
+    _msgs[key] = { adId, adTitle: ad?.title||'', sellerName, sellerInit, sellerId,
+      buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name), messages: [] };
+  }
+  currentConv = key;
+  renderChat(key);
+  openOverlay('ovChat');
+  updateMsgBadge();
+}
+
+async function openChatFromInbox(key) {
+  const conv = _msgs[key]; if (!conv) return;
+  await sbMarkRead(key);
+  currentConv = key;
+  renderChat(key);
+  openOverlay('ovChat');
+  updateMsgBadge();
+  if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MY ADS
+═══════════════════════════════════════════════════════════ */
+function renderMyAds() {
+  const el = document.getElementById('myAdsBox');
+  if (!CU) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔐</div><h3>Please log in</h3><p>You need an account to manage your listings.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>';
+    return;
+  }
+  const ads = _ads.filter(function(a){ return a.sellerId === CU.id; });
+  if (!ads.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><h3>No listings yet</h3><p>Post your first free ad and start selling today!</p><button class="btn btn-green" onclick="openPostAd()">Post Your First Ad</button></div>';
+    return;
+  }
+  el.innerHTML = ads.map(function(ad) {
+    const cat = CATS.find(function(c){ return c.id === ad.category; });
+    const thumb = ad.image ? '<img src="' + ad.image + '" onerror="this.style.display=\'none\'">' : (cat?.icon||'📦');
+    return '<div class="my-ad-row">' +
+      '<div class="my-ad-thumb">' + thumb + '</div>' +
+      '<div class="my-ad-info">' +
+        '<div class="my-ad-title">' + escHtml(ad.title) + '</div>' +
+        '<div class="my-ad-price">J$' + fmtN(ad.price) + '</div>' +
+        '<div class="my-ad-meta">📍 ' + ad.parish + ' · ' + (cat?.name||'Other') + ' · ' + ago(ad.date) + '</div>' +
+      '</div>' +
+      '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
+      '<div class="my-ad-acts">' +
+        '<button class="btn btn-ghost btn-sm" onclick="openDetail(\'' + ad.id + '\')">View</button>' +
+        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + ad.id + '\');renderMyAds()">' + (ad.status==='sold'?'Relist':'Mark Sold') + '</button>' +
+        '<button class="btn btn-red btn-sm" onclick="delAd(\'' + ad.id + '\')">Delete</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function delAd(id) {
+  if (!confirm('Delete this listing? This cannot be undone.')) return;
+  try {
+    await sbDeleteAd(id);
+    _ads = _ads.filter(function(a){ return a.id !== id; });
+    renderMyAds(); renderHome(); renderCats(); updateStats();
+    showToast('Listing deleted.', '🗑️');
+  } catch(e) { showToast('Delete failed. Try again.', '⚠️'); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   POST AD WIZARD
+═══════════════════════════════════════════════════════════ */
+function openPostAd() {
+  if (!CU) return openAuth('login');
+  currentPostStep = 1; uploadPhotos = []; uploadUrl = '';
+  ['aTitle','aDesc','aPrice','aPhone'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('aParish').value = '';
+  document.getElementById('aNeg').checked = false;
+  document.getElementById('postAlert').classList.remove('show');
+  renderPhotoGrid(); setStep(1);
+  openOverlay('ovPost');
+}
+function setStep(n) {
+  currentPostStep = n;
+  [1,2,3].forEach(function(i) {
+    const s = document.getElementById('s'+i);
+    const p = document.getElementById('sp'+i);
+    if (s) { s.classList.toggle('active', i===n); s.classList.toggle('done', i<n); }
+    if (p) p.classList.toggle('active', i===n);
+  });
+  if (n === 3) buildPreview();
+}
+function nextStep(n) {
+  document.getElementById('postAlert').classList.remove('show');
+  if (n > currentPostStep && currentPostStep === 1) {
+    if (!document.getElementById('aTitle').value.trim()) return showPostErr('Please enter a title.');
+    if (!document.getElementById('aParish').value) return showPostErr('Please select a parish.');
+    if (!document.getElementById('aPrice').value) return showPostErr('Please enter a price.');
+    if (!document.getElementById('aDesc').value.trim()) return showPostErr('Please add a description.');
+  }
+  setStep(n);
+}
+function showPostErr(m) {
+  const e = document.getElementById('postAlert'); e.textContent = m; e.className = 'alert-box alert-err show';
+}
+function buildPreview() {
+  const cat   = CATS.find(function(c){ return c.id === document.getElementById('aCat').value; });
+  const title = document.getElementById('aTitle').value.trim();
+  const price = document.getElementById('aPrice').value;
+  const parish= document.getElementById('aParish').value;
+  const img   = uploadUrl
+    ? '<img src="' + uploadUrl + '" style="width:100%;height:150px;object-fit:cover">'
+    : '<div style="height:150px;background:' + (cat?.color||'#f5f5f5') + ';display:flex;align-items:center;justify-content:center;font-size:56px">' + (cat?.icon||'📦') + '</div>';
+  document.getElementById('adPreviewCard').innerHTML =
+    '<div class="ad-card" style="cursor:default;transform:none!important">' +
+      '<div class="ad-card-img" style="height:150px">' + img + '<span class="ad-cat-tag">' + (cat?.name||'Other') + '</span></div>' +
+      '<div class="ad-card-body">' +
+        '<div class="ad-price">J$' + fmtN(parseFloat(price)||0) + '</div>' +
+        '<div class="ad-title">' + escHtml(title) + '</div>' +
+        '<div class="ad-meta"><span>📍 ' + parish + '</span><span>🕐 just now</span></div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('previewDetails').innerHTML =
+    '<strong>Description:</strong> ' + escHtml(document.getElementById('aDesc').value.trim()) + '<br>' +
+    '<strong>Contact:</strong> ' + (document.getElementById('aPhone').value || CU?.phone || 'Not provided') + '<br>' +
+    '<strong>Negotiable:</strong> ' + (document.getElementById('aNeg').checked ? 'Yes' : 'No');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FAVOURITES
+═══════════════════════════════════════════════════════════ */
+function isFav(id) { return L.favs.includes(id); }
+function togFav(id, btn) {
+  const f = [...L.favs]; const i = f.indexOf(id);
+  if (i > -1) { f.splice(i, 1); if(btn) btn.textContent = '🤍'; showToast('Removed from favourites', '🤍'); }
+  else         { f.push(id);     if(btn) btn.textContent = '❤️'; showToast('Saved to favourites', '❤️'); }
+  L.favs = f;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONVERSATION KEY
+═══════════════════════════════════════════════════════════ */
+function convKey(uid1, uid2, adId) {
+  return [uid1, uid2].sort().join('__') + '__' + adId;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GALLERY NAV
+═══════════════════════════════════════════════════════════ */
+function galleryGoTo(i) {
+  const t = document.getElementById('galleryTrack');
+  if (t) t.scrollTo({ left: i * t.offsetWidth, behavior: 'smooth' });
+}
+function galleryPrev() {
+  const t = document.getElementById('galleryTrack');
+  if (t) galleryGoTo(Math.max(0, Math.round(t.scrollLeft / (t.offsetWidth||1)) - 1));
+}
+function galleryNext() {
+  const t = document.getElementById('galleryTrack');
+  if (t) galleryGoTo(Math.min(t.children.length - 1, Math.round(t.scrollLeft / (t.offsetWidth||1)) + 1));
+}
+
+
 let CU = L.sess;          // current user (from localStorage)
 let activeF = 'all';      // active category filter
 let searchQ = '';         // search query
@@ -2356,6 +2968,107 @@ let currentPostStep = 1;
 /* ═══════════════════════════════════════════════════════════
    INIT — async boot sequence
 ═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   AD STATE MUTATIONS
+═══════════════════════════════════════════════════════════ */
+async function toggleSold(id) {
+  const ad = _ads.find(function(a){ return a.id===id; }); if (!ad) return;
+  const newStatus = ad.status === 'sold' ? 'active' : 'sold';
+  try {
+    await sbUpdateAdStatus(id, newStatus);
+    ad.status = newStatus;
+    renderHome(); renderCats(); updateStats();
+    showToast(newStatus==='sold' ? 'Marked as sold' : 'Relisted as active', newStatus==='sold'?'🏷️':'✅');
+  } catch(e) { showToast('Update failed', '⚠️'); }
+}
+
+async function doPostAd() {
+  const cat   = CATS.find(function(c){ return c.id===document.getElementById('aCat').value; });
+  const title = document.getElementById('aTitle').value.trim();
+  const parish= document.getElementById('aParish').value;
+  const price = parseFloat(document.getElementById('aPrice').value)||0;
+  if (!title || !parish || !price) return showPostErr('Please fill in all required fields.');
+  const ad = {
+    id:         'a' + Date.now(),
+    title,
+    category:   document.getElementById('aCat').value,
+    parish,
+    price,
+    desc:       document.getElementById('aDesc').value.trim(),
+    phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
+    image:      uploadUrl || (uploadPhotos && uploadPhotos.length ? uploadPhotos[0] : ''),
+    photos:     uploadPhotos && uploadPhotos.length ? [...uploadPhotos] : (uploadUrl ? [uploadUrl] : []),
+    neg:        document.getElementById('aNeg').checked,
+    icon:       cat ? cat.icon : '📦',
+    seller:     CU.name,
+    sellerInit: initials(CU.name),
+    sellerId:   CU.id,
+    date:       new Date().toISOString().split('T')[0],
+    status:     'active',
+    views:      0,
+  };
+  const btn = document.getElementById('postPublishBtn');
+  if (btn) { btn.textContent = 'Publishing...'; btn.disabled = true; }
+  try {
+    await sbInsertAd(ad);
+    _ads.unshift(ad);
+    closeOverlay('ovPost');
+    renderCats(); renderHome(); updateStats();
+    showToast('Your ad is live! 🎉', '🎉');
+    launchConfetti();
+  } catch(e) {
+    showPostErr('Failed to post: ' + (e.message||'please try again'));
+  } finally {
+    if (btn) { btn.textContent = 'Publish Ad'; btn.disabled = false; }
+  }
+}
+
+/* Photo upload helpers */
+let uploadPhotos = [];
+function handleImgFiles(input) {
+  var files = Array.from(input.files||[]);
+  files.forEach(function(file) {
+    if (uploadPhotos.length >= 6) return;
+    if (file.size > 2000000) { showToast('Max 2MB per image','⚠️'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      uploadPhotos.push(e.target.result);
+      uploadUrl = uploadPhotos[0];
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function handleImgFile(input) { handleImgFiles(input); }
+function removePhoto(i) {
+  uploadPhotos.splice(i, 1);
+  uploadUrl = uploadPhotos[0] || '';
+  renderPhotoGrid();
+}
+function clearImg() {
+  uploadPhotos = []; uploadUrl = '';
+  renderPhotoGrid();
+  var ua = document.getElementById('imgUploadArea');
+  var pb = document.getElementById('imgPreviewBox');
+  if (ua) ua.style.display = '';
+  if (pb) pb.style.display = 'none';
+}
+function renderPhotoGrid() {
+  var grid = document.getElementById('photoGrid');
+  var ua   = document.getElementById('imgUploadArea');
+  if (!grid) return;
+  grid.innerHTML = uploadPhotos.map(function(src, i) {
+    return '<div class="photo-thumb-wrap">' +
+      '<img src="' + src + '" class="photo-thumb">' +
+      '<button class="photo-rm" onclick="removePhoto(' + i + ')">x</button>' +
+      (i===0 ? '<span class="photo-cover-tag">Cover</span>' : '') +
+    '</div>';
+  }).join('');
+  if (ua) ua.style.display = uploadPhotos.length >= 6 ? 'none' : '';
+}
+
+
 async function init() {
   fillParishSelects();
   fillCatSelect();
