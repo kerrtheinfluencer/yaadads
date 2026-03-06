@@ -155,6 +155,12 @@ const m={name:"Yaad Adz",short_name:"Yaad Adz",description:"Jamaica's free marke
 const b=new Blob([JSON.stringify(m)],{type:"application/json"});
 const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(b);
 document.head.appendChild(l);
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function() {});
+  });
+}
 })();
 </script>
 
@@ -881,6 +887,17 @@ nav {
   color: #fff; font-size: 9px; font-weight: 700;
   padding: 3px 8px; border-radius: 6px;
   text-transform: uppercase; letter-spacing: .4px;
+}
+
+/* ── Photo count indicator ── */
+.photo-count-badge {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 2;
+  background: rgba(0,0,0,.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff; font-size: 10px; font-weight: 600;
+  padding: 3px 9px; border-radius: 6px;
+  letter-spacing: .2px;
 }
 
 /* ── Card body — refined spacing ── */
@@ -2089,7 +2106,12 @@ footer {
   <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
   <p>Jamaica's modern free classifieds — Post, Buy & Sell with ease</p>
   <div class="footer-links">
-    <a href="#">About</a><a href="#">How It Works</a><a href="#">Safety Tips</a><a href="#">Contact</a><a href="#">Terms</a><a href="#">Privacy</a>
+    <a href="#" onclick="openInfoPage('about');return false">About</a>
+    <a href="#" onclick="openInfoPage('how');return false">How It Works</a>
+    <a href="#" onclick="openInfoPage('safety');return false">Safety Tips</a>
+    <a href="#" onclick="openInfoPage('contact');return false">Contact</a>
+    <a href="#" onclick="openInfoPage('terms');return false">Terms</a>
+    <a href="#" onclick="openInfoPage('privacy');return false">Privacy</a>
   </div>
   <p style="margin-top:8px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
@@ -2233,6 +2255,15 @@ footer {
       </div>
     </div>
     <button class="btn btn-green btn-block btn-lg" onclick="saveEditAd()" id="saveEditAdBtn">Save Changes</button>
+  </div>
+</div>
+
+<!-- INFO PAGES MODAL (About, Terms, etc.) -->
+<div class="overlay" id="ovInfo">
+  <div class="modal modal-wide" style="max-width:600px">
+    <div class="modal-drag-handle"></div>
+    <button class="m-close" onclick="closeOverlay('ovInfo')">✕</button>
+    <div id="infoContent" style="line-height:1.8;font-size:14px;color:var(--text-2)"></div>
   </div>
 </div>
 
@@ -3755,10 +3786,12 @@ function cardHTML(ad, idx) {
   const ageDays = (Date.now() - new Date(ad.date||0)) / 86400000;
   const freshBadge = ageDays < 2 && ad.status !== 'sold'
     ? `<span class="fresh-badge">New</span>` : '';
+  const photoCount = (ad.photos && ad.photos.length > 1)
+    ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.04,0.3)}s` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
-    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}
+    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
@@ -3853,6 +3886,9 @@ function renderHome() {
 
   // Push all ad slots
   pushAds();
+
+  // Persist search state in URL
+  if (typeof pushSearchState === 'function') pushSearchState();
 
   return ads.length;
 }
@@ -5151,16 +5187,30 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
       el.appendChild(resWrap);
 
     } else {
-      // No results helpers
-      const hint = document.createElement('div');
-      hint.style.cssText = 'font-size:12px;color:rgba(255,255,255,.4);margin-top:8px;padding:0 4px';
-      hint.textContent = 'Try different keywords, or browse all listings below.';
-      el.appendChild(hint);
+      // No results — helpful empty state with suggestions
+      const emptyWrap = document.createElement('div');
+      emptyWrap.style.cssText = 'text-align:center;padding:12px 0 4px';
+      emptyWrap.innerHTML = '<div style="font-size:32px;margin-bottom:8px">🔍</div>' +
+        '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Try different keywords or check these popular searches:</div>';
+      
+      const sugWrap = document.createElement('div');
+      sugWrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
+      const suggestions = ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'];
+      suggestions.forEach(function(s) {
+        const chip = document.createElement('button');
+        chip.className = 'sheet-sug';
+        chip.textContent = s;
+        chip.onclick = function() { sheetSearch(s); };
+        sugWrap.appendChild(chip);
+      });
+      emptyWrap.appendChild(sugWrap);
+
       const browseBtn = document.createElement('button');
       browseBtn.className = 'sheet-view-all';
       browseBtn.textContent = 'Browse all listings →';
       browseBtn.onclick = function(){ closeAiSheet(); goHome(); };
-      el.appendChild(browseBtn);
+      emptyWrap.appendChild(browseBtn);
+      el.appendChild(emptyWrap);
     }
   }
 
@@ -5203,7 +5253,14 @@ function openDetail(id) {
   const ini  = ad.sellerInit || initials(ad.seller||'?');
   const isMine = CU && CU.id === ad.sellerId;
   const totalViews = typeof getViews === 'function' ? getViews(id) : (ad.views||0);
-  const wa = 'https://wa.me/1' + (ad.phone||'').replace(/\D/g,'') + '?text=' + encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title + ' \u2014 yaadads.com/?ad=' + id);
+  // Normalize phone for WhatsApp — ensure +1876 prefix
+  const rawPhone = (ad.phone||'').replace(/\D/g,'');
+  const waPhone = rawPhone.length === 7 ? '1876' + rawPhone
+    : rawPhone.length === 10 && rawPhone.startsWith('876') ? '1' + rawPhone
+    : rawPhone.length === 11 && rawPhone.startsWith('1876') ? rawPhone
+    : rawPhone.length === 11 && rawPhone.startsWith('1') ? rawPhone
+    : '1876' + rawPhone;
+  const wa = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title + ' \u2014 yaadadz.com/?ad=' + id);
 
   // Gallery (multi-photo or single)
   const photos = (ad.photos && ad.photos.length > 0) ? ad.photos : (ad.image ? [ad.image] : []);
@@ -5722,11 +5779,143 @@ function pwaDismiss() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   OPEN AD FROM URL PARAM (?ad=id)
+   INFO PAGES — About, How It Works, Safety, Contact, Terms, Privacy
+═══════════════════════════════════════════════════════════ */
+const INFO_PAGES = {
+  about: {
+    title: 'About Yaad Adz',
+    body: `<p>Yaad Adz is Jamaica's free online classifieds marketplace — built by Jamaicans, for Jamaicans.</p>
+<p>We believe buying and selling should be simple, free, and accessible to everyone across all 14 parishes. No middleman fees, no agent commissions, no hidden charges — just direct connections between real people.</p>
+<p>Whether you're selling a car in Kingston, renting a room in Montego Bay, or looking for a job in Mandeville, Yaad Adz connects you with your community.</p>
+<p><strong>Our mission:</strong> Make commerce accessible to every Jamaican, powered by AI that actually understands how we search and what we need.</p>`
+  },
+  how: {
+    title: 'How It Works',
+    body: `<p><strong>🔍 Buying</strong></p>
+<p>Browse listings across all 14 parishes or use our AI search — just type naturally like "cheap phone in Kingston" or "house under 15 million". Found something you like? Contact the seller directly via Call, WhatsApp, or in-app Message.</p>
+<p><strong>📝 Selling</strong></p>
+<p>Tap "+ Post Ad" and fill in your item details — title, price, parish, description, and up to 6 photos. Your listing goes live in under 2 minutes. Completely free, always.</p>
+<p><strong>💬 Communicating</strong></p>
+<p>Use the built-in messaging system to chat with buyers or sellers. Make offers, negotiate prices, and arrange meetups — all within the app.</p>
+<p><strong>🤖 AI Search</strong></p>
+<p>Our AI assistant understands natural language, Jamaican Patois, price ranges, parish names, and even typos. It gets smarter as more listings are added to the platform.</p>`
+  },
+  safety: {
+    title: 'Safety Tips',
+    body: `<p>Your safety is our top priority. Follow these guidelines when buying or selling on Yaad Adz:</p>
+<p><strong>🤝 Meet in public places</strong><br>Half Way Tree, Constant Spring Plaza, a busy mall, or your local police station. Never meet at your home for the first transaction.</p>
+<p><strong>👥 Bring a friend</strong><br>Especially for expensive items like vehicles, electronics, or property viewings. There's safety in numbers.</p>
+<p><strong>💵 Cash on meetup</strong><br>Don't send money before seeing the item. If a deal seems too good to be true, it probably is.</p>
+<p><strong>📱 Use in-app messaging</strong><br>Keep your conversations on-platform so there's a record. Avoid sharing personal details like your home address or bank info.</p>
+<p><strong>⭐ Check the seller's profile</strong><br>Look at their ratings, how long they've been a member, and their other listings. Established sellers are generally more trustworthy.</p>
+<p><strong>🚩 Report suspicious listings</strong><br>See something that doesn't look right? Tap the ⚑ Report button on any listing. We review every report.</p>`
+  },
+  contact: {
+    title: 'Contact Us',
+    body: `<p>Have a question, feedback, or need help? We'd love to hear from you.</p>
+<p><strong>📧 Email:</strong> hello@yaadadz.com</p>
+<p><strong>💬 In-app:</strong> Use the AI assistant — it can answer most questions about how the site works, posting ads, and safety.</p>
+<p><strong>🐛 Found a bug?</strong> Let us know at support@yaadadz.com with a screenshot and description of what happened.</p>
+<p><strong>📱 Social Media:</strong></p>
+<p>Instagram: @yaadadz<br>Twitter/X: @yaadadz<br>Facebook: Yaad Adz Jamaica</p>
+<p style="margin-top:16px;padding:14px;background:var(--green-light);border-radius:10px;color:var(--green)"><strong>💡 Tip:</strong> For the fastest response, use the AI chat — it's available 24/7 and can help with most questions instantly.</p>`
+  },
+  terms: {
+    title: 'Terms of Service',
+    body: `<p><em>Last updated: June 2025</em></p>
+<p>By using Yaad Adz, you agree to these terms:</p>
+<p><strong>1. Free to Use</strong><br>Yaad Adz is free to browse, post, and message. We reserve the right to introduce optional premium features in the future.</p>
+<p><strong>2. Your Listings</strong><br>You are responsible for the accuracy of your listings. Do not post illegal items, counterfeit goods, stolen property, or misleading descriptions.</p>
+<p><strong>3. Prohibited Items</strong><br>Weapons, drugs, stolen goods, counterfeit items, and adult services are strictly prohibited. Violations result in immediate account termination.</p>
+<p><strong>4. User Conduct</strong><br>Treat other users with respect. Harassment, scams, and fraud will result in account suspension. We cooperate with law enforcement when required.</p>
+<p><strong>5. Content Rights</strong><br>You retain ownership of your photos and descriptions. By posting, you grant Yaad Adz a license to display your content on the platform.</p>
+<p><strong>6. No Guarantees</strong><br>Yaad Adz is a platform connecting buyers and sellers. We do not guarantee the quality, safety, or legality of any item listed. Transactions are between users.</p>
+<p><strong>7. Account Termination</strong><br>We may remove listings or suspend accounts that violate these terms without prior notice.</p>`
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    body: `<p><em>Last updated: June 2025</em></p>
+<p><strong>What we collect:</strong></p>
+<p>When you create an account: name, email, phone number, and parish. When you post an ad: listing details and photos. We also collect anonymous usage data to improve the platform.</p>
+<p><strong>How we use it:</strong></p>
+<p>To display your listings, enable messaging between users, and improve the AI search experience. We never sell your personal information to third parties.</p>
+<p><strong>Data storage:</strong></p>
+<p>Your data is stored securely on Supabase (hosted on AWS). Photos are stored in Supabase Storage with public URLs for display purposes.</p>
+<p><strong>Cookies & local storage:</strong></p>
+<p>We use localStorage to remember your session, favourites, and search preferences. No tracking cookies are used by Yaad Adz directly. Google AdSense may set cookies for ad personalisation.</p>
+<p><strong>Your rights:</strong></p>
+<p>You can delete your listings at any time from your Account page. To delete your account entirely, contact us at support@yaadadz.com.</p>
+<p><strong>Third parties:</strong></p>
+<p>We use Google AdSense for advertising and Supabase for data storage. These services have their own privacy policies.</p>`
+  }
+};
+
+function openInfoPage(key) {
+  const page = INFO_PAGES[key];
+  if (!page) return;
+  document.getElementById('infoContent').innerHTML =
+    '<h2 style="font-family:var(--font-d);font-size:24px;font-weight:800;margin-bottom:16px;color:var(--text-1)">' + page.title + '</h2>' +
+    page.body;
+  openOverlay('ovInfo');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OPEN AD FROM URL PARAM (?ad=id) + SEARCH STATE
 ═══════════════════════════════════════════════════════════ */
 function checkUrlAdParam() {
-  const id = new URLSearchParams(location.search).get('ad');
-  if (id) { setTimeout(() => openDetail(id), 600); }
+  const params = new URLSearchParams(location.search);
+  const id = params.get('ad');
+  if (id) { setTimeout(() => openDetail(id), 600); return; }
+  // Restore search state from URL
+  const q = params.get('q');
+  const cat = params.get('cat');
+  const parish = params.get('parish');
+  if (q || cat || parish) {
+    if (q) {
+      searchQ = q;
+      const inp = document.getElementById('aiInput');
+      if (inp) inp.value = q;
+    }
+    if (cat && CATS.find(c=>c.id===cat)) activeF = cat;
+    if (parish) window._aiFilters = { parish };
+    setTimeout(() => { renderCats(); renderHome(); scrollToResults(); }, 700);
+  }
+}
+
+// Browser back/forward button support
+window.addEventListener('popstate', function(e) {
+  const params = new URLSearchParams(location.search);
+  const adId = params.get('ad');
+  if (adId) {
+    // Navigating forward to an ad
+    openDetail(adId);
+  } else {
+    // Navigating back — close any open detail modal
+    const ovDetail = document.getElementById('ovDetail');
+    if (ovDetail && ovDetail.classList.contains('open')) {
+      ovDetail.classList.remove('open');
+      document.body.style.overflow = '';
+      SEO.resetOG(); SEO.setCanonical('/');
+    }
+    // Restore search state if present
+    const q = params.get('q');
+    if (q) {
+      searchQ = q;
+      const inp = document.getElementById('aiInput');
+      if (inp) inp.value = q;
+      renderCats(); renderHome();
+    }
+  }
+});
+
+// Helper: push search state to URL
+function pushSearchState() {
+  const params = new URLSearchParams();
+  if (searchQ) params.set('q', searchQ);
+  if (activeF && activeF !== 'all') params.set('cat', activeF);
+  const qs = params.toString();
+  const url = location.pathname + (qs ? '?' + qs : '');
+  if (history.replaceState) history.replaceState({}, '', url);
 }
 
 /* ═══════════════════════════════════════════════════════════
