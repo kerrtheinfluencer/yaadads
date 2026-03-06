@@ -694,18 +694,10 @@ if ('serviceWorker' in navigator) {
       <input class="form-inp" id="eaPhone" type="tel" placeholder="876-XXX-XXXX">
     </div>
     <div class="form-grp">
-      <label class="form-lbl">Current Photo</label>
-      <div id="eaCurrentPhoto" style="margin-bottom:8px"></div>
-      <label class="form-lbl" style="margin-top:8px">Replace Photo <span>(optional)</span></label>
-      <div class="img-upload-area" style="padding:16px" onclick="document.getElementById('eaImgFile').click()">
-        <div class="img-upload-icon">📸</div>
-        <p><strong>Choose new photo</strong> — or keep current</p>
-        <input type="file" accept="image/*" id="eaImgFile" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="handleEditAdImg(this)">
-      </div>
-      <div id="eaNewPhotoPreview" style="display:none;margin-top:8px;position:relative;border-radius:12px;overflow:hidden;height:160px">
-        <img id="eaNewPhotoImg" style="width:100%;height:100%;object-fit:cover">
-        <button onclick="clearEditAdImg()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>
-      </div>
+      <label class="form-lbl">Photos <span>(up to 6 — first is cover)</span></label>
+      <div class="photo-grid" id="eaPhotoGrid"></div>
+      <input type="file" accept="image/*" multiple id="eaImgFile" style="display:none" onchange="handleEditAdImgs(this)">
+      <p style="font-size:11px;color:var(--text-3);margin-top:6px">JPG or PNG · max 5MB each · add, remove, or reorder photos</p>
     </div>
     <button class="btn btn-green btn-block btn-lg" onclick="saveEditAd()" id="saveEditAdBtn">Save Changes</button>
   </div>
@@ -1545,7 +1537,6 @@ function openEditAd(id) {
   const ad = _ads.find(a => a.id === id);
   if (!ad) return;
   _editAdId = id;
-  _editAdNewFile = null;
 
   document.getElementById('eaTitle').value = ad.title || '';
   document.getElementById('eaPrice').value = ad.price || '';
@@ -1561,40 +1552,58 @@ function openEditAd(id) {
   const eaParish = document.getElementById('eaParish');
   eaParish.innerHTML = '<option value="">Select…</option>' + PARISHES.map(p => '<option'+(p===ad.parish?' selected':'')+'>'+p+'</option>').join('');
 
-  // Show current photo
-  const photoEl = document.getElementById('eaCurrentPhoto');
-  if (ad.image) {
-    photoEl.innerHTML = '<div style="border-radius:12px;overflow:hidden;height:140px"><img src="'+ad.image+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML=\'<div style=padding:20px;text-align:center;color:var(--text-3)>No photo</div>\'"></div>';
-  } else {
-    photoEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-3);background:var(--surface-2);border-radius:12px">No photo uploaded</div>';
-  }
+  // Load existing photos into edit photo array
+  _editAdPhotos = [];
+  const existingPhotos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
+  existingPhotos.forEach(function(url) {
+    _editAdPhotos.push({ url: url, file: null, preview: url });
+  });
+  renderEditAdPhotoGrid();
 
-  // Reset new photo preview
-  document.getElementById('eaNewPhotoPreview').style.display = 'none';
   document.getElementById('eaImgFile').value = '';
   document.getElementById('editAdAlert').className = 'alert-box';
 
   openOverlay('ovEditAd');
 }
 
-function handleEditAdImg(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 5000000) { showToast('Max 5MB','⚠️'); return; }
-  if (!file.type.startsWith('image/')) { showToast('Only images allowed','⚠️'); return; }
-  _editAdNewFile = file;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    document.getElementById('eaNewPhotoImg').src = e.target.result;
-    document.getElementById('eaNewPhotoPreview').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
+// Edit ad photo management
+let _editAdPhotos = []; // Array of { url: existing URL or null, file: File or null, preview: dataURL or URL }
+
+function renderEditAdPhotoGrid() {
+  var grid = document.getElementById('eaPhotoGrid');
+  if (!grid) return;
+  var thumbs = _editAdPhotos.map(function(item, i) {
+    return '<div class="photo-thumb-wrap">' +
+      '<img src="' + item.preview + '" class="photo-thumb">' +
+      '<button class="photo-rm" onclick="removeEditAdPhoto(' + i + ')">✕</button>' +
+      (i===0 ? '<span class="photo-cover-tag">Cover</span>' : '') +
+    '</div>';
+  }).join('');
+  var addBtn = _editAdPhotos.length < 6
+    ? '<div class="photo-add-btn" onclick="document.getElementById(\'eaImgFile\').click()"><span>📸</span><span>Add</span></div>'
+    : '';
+  grid.innerHTML = thumbs + addBtn;
 }
 
-function clearEditAdImg() {
-  _editAdNewFile = null;
-  document.getElementById('eaNewPhotoPreview').style.display = 'none';
-  document.getElementById('eaImgFile').value = '';
+function handleEditAdImgs(input) {
+  var files = Array.from(input.files||[]);
+  var remaining = 6 - _editAdPhotos.length;
+  files.slice(0, remaining).forEach(function(file) {
+    if (file.size > 5000000) { showToast('Max 5MB per image','⚠️'); return; }
+    if (!file.type.startsWith('image/')) { showToast('Only image files allowed','⚠️'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      _editAdPhotos.push({ url: null, file: file, preview: e.target.result });
+      renderEditAdPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function removeEditAdPhoto(i) {
+  _editAdPhotos.splice(i, 1);
+  renderEditAdPhotoGrid();
 }
 
 async function saveEditAd() {
@@ -1618,14 +1627,22 @@ async function saveEditAd() {
   btn.textContent = 'Saving…'; btn.disabled = true;
 
   try {
-    let imageUrl = ad.image;
-
-    // Upload new photo if one was selected
-    if (_editAdNewFile) {
-      btn.textContent = 'Uploading photo…';
-      const newUrl = await uploadToSupabase(_editAdNewFile);
-      if (newUrl) imageUrl = newUrl;
+    // Build final photo URLs — upload any new files, keep existing URLs
+    const finalUrls = [];
+    for (let i = 0; i < _editAdPhotos.length; i++) {
+      const item = _editAdPhotos[i];
+      if (item.url && !item.file) {
+        // Existing photo — keep the URL
+        finalUrls.push(item.url);
+      } else if (item.file) {
+        // New photo — upload to Supabase
+        btn.textContent = 'Uploading ' + (i+1) + '/' + _editAdPhotos.length + '…';
+        const url = await uploadToSupabase(item.file);
+        if (url) finalUrls.push(url);
+      }
     }
+
+    const imageUrl = finalUrls.length > 1 ? JSON.stringify(finalUrls) : (finalUrls[0] || '');
 
     const dbUpdates = {
       title, category, parish, price,
@@ -1633,16 +1650,6 @@ async function saveEditAd() {
       negotiable: neg,
       image_url: imageUrl,
     };
-
-    // If the ad has multiple photos and we're only replacing the cover, preserve the rest
-    if (_editAdNewFile && ad.photos && ad.photos.length > 1) {
-      const updatedPhotos = [imageUrl, ...ad.photos.slice(1)];
-      dbUpdates.image_url = JSON.stringify(updatedPhotos);
-      ad.photos = updatedPhotos;
-    } else if (ad.photos && ad.photos.length > 1 && !_editAdNewFile) {
-      // Keep existing photos array intact
-      dbUpdates.image_url = JSON.stringify(ad.photos);
-    }
 
     await sbUpdateAd(_editAdId, dbUpdates);
 
@@ -1654,7 +1661,8 @@ async function saveEditAd() {
     ad.desc = desc;
     ad.phone = phone;
     ad.neg = neg;
-    ad.image = imageUrl;
+    ad.image = finalUrls[0] || '';
+    ad.photos = finalUrls;
 
     closeOverlay('ovEditAd');
     renderMyAds(); renderHome(); renderCats();
