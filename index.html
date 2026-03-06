@@ -2296,12 +2296,19 @@ function isFav(id) { return L.favs.includes(id); }
   </div>
 </div>
 
-<!-- ─── MY ADS PAGE ─── -->
+<!-- ─── ACCOUNT PAGE ─── -->
 <div id="page-myads" class="page">
   <div class="page-wrap">
-    <div class="page-h">My Listings</div>
-    <div class="page-sub">Manage your active classified ads</div>
-    <div id="myAdsBox"></div>
+    <!-- Profile Card -->
+    <div id="profileCard"></div>
+    <!-- My Listings -->
+    <div style="margin-top:28px">
+      <div class="section-hd" style="margin-bottom:16px">
+        <h2 class="section-title">My Listings</h2>
+        <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
+      </div>
+      <div id="myAdsBox"></div>
+    </div>
   </div>
 </div>
 
@@ -2574,6 +2581,98 @@ function isFav(id) { return L.favs.includes(id); }
   </div>
 </div>
 
+<!-- EDIT PROFILE MODAL -->
+<div class="overlay" id="ovEditProfile">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-drag-handle"></div>
+    <button class="m-close" onclick="closeOverlay('ovEditProfile')">✕</button>
+    <div style="font-size:32px;margin-bottom:6px">👤</div>
+    <h3 style="font-family:var(--font-d);font-size:22px;font-weight:800;margin-bottom:4px">Edit Profile</h3>
+    <p style="color:var(--text-3);font-size:13px;margin-bottom:20px">Update your account details</p>
+    <div id="editProfileAlert" class="alert-box"></div>
+    <div class="form-grp">
+      <label class="form-lbl">Name *</label>
+      <input class="form-inp" id="epName" type="text" placeholder="Your full name">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Email <span>(cannot be changed)</span></label>
+      <input class="form-inp" id="epEmail" type="email" disabled style="opacity:.6;cursor:not-allowed">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Phone</label>
+      <input class="form-inp" id="epPhone" type="tel" placeholder="876-XXX-XXXX">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Parish</label>
+      <select class="form-inp" id="epParish"></select>
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">New Password <span>(leave blank to keep current)</span></label>
+      <input class="form-inp" id="epPassword" type="password" placeholder="Enter new password">
+    </div>
+    <button class="btn btn-green btn-block btn-lg" onclick="saveProfile()" id="saveProfileBtn">Save Changes</button>
+  </div>
+</div>
+
+<!-- EDIT AD MODAL -->
+<div class="overlay" id="ovEditAd">
+  <div class="modal modal-wide" style="max-width:560px">
+    <div class="modal-drag-handle"></div>
+    <button class="m-close" onclick="closeOverlay('ovEditAd')">✕</button>
+    <h3 style="font-family:var(--font-d);font-size:22px;font-weight:800;margin-bottom:4px">Edit Listing</h3>
+    <p style="color:var(--text-3);font-size:13px;margin-bottom:20px">Update your ad details</p>
+    <div id="editAdAlert" class="alert-box"></div>
+    <div class="form-grp">
+      <label class="form-lbl">Title *</label>
+      <input class="form-inp" id="eaTitle" type="text">
+    </div>
+    <div class="form-row">
+      <div class="form-grp">
+        <label class="form-lbl">Category</label>
+        <select class="form-inp" id="eaCat"></select>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Parish</label>
+        <select class="form-inp" id="eaParish"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp">
+        <label class="form-lbl">Price (J$) *</label>
+        <input class="form-inp" id="eaPrice" type="number" min="0">
+      </div>
+      <div class="form-grp" style="display:flex;align-items:flex-end;padding-bottom:16px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="eaNeg"> Negotiable
+        </label>
+      </div>
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Description</label>
+      <textarea class="form-inp" id="eaDesc" rows="4"></textarea>
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Contact Phone</label>
+      <input class="form-inp" id="eaPhone" type="tel" placeholder="876-XXX-XXXX">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Current Photo</label>
+      <div id="eaCurrentPhoto" style="margin-bottom:8px"></div>
+      <label class="form-lbl" style="margin-top:8px">Replace Photo <span>(optional)</span></label>
+      <div class="img-upload-area" style="padding:16px" onclick="document.getElementById('eaImgFile').click()">
+        <div class="img-upload-icon">📸</div>
+        <p><strong>Choose new photo</strong> — or keep current</p>
+        <input type="file" accept="image/*" id="eaImgFile" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="handleEditAdImg(this)">
+      </div>
+      <div id="eaNewPhotoPreview" style="display:none;margin-top:8px;position:relative;border-radius:12px;overflow:hidden;height:160px">
+        <img id="eaNewPhotoImg" style="width:100%;height:100%;object-fit:cover">
+        <button onclick="clearEditAdImg()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+    </div>
+    <button class="btn btn-green btn-block btn-lg" onclick="saveEditAd()" id="saveEditAdBtn">Save Changes</button>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════
    ⚙️  CONFIG — Production credentials
@@ -2767,6 +2866,18 @@ async function sbDeleteAd(id) {
   const { error } = await _db.from('ads').delete().eq('id', id);
   if (error) throw error;
   _ads = _ads.filter(a => a.id !== id);
+}
+
+// Update user profile
+async function sbUpdateUser(id, fields) {
+  const { error } = await _db.from('users').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+// Update ad fields
+async function sbUpdateAd(id, fields) {
+  const { error } = await _db.from('ads').update(fields).eq('id', id);
+  if (error) throw error;
 }
 
 // Increment views
@@ -3177,7 +3288,51 @@ async function openChatFromInbox(key) {
 /* ═══════════════════════════════════════════════════════════
    MY ADS
 ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   ACCOUNT PAGE — Profile Card + My Ads
+═══════════════════════════════════════════════════════════ */
+function renderProfileCard() {
+  const el = document.getElementById('profileCard');
+  if (!el || !CU) { if(el) el.innerHTML=''; return; }
+  const clr = avatarColor(CU.name);
+  const ini = initials(CU.name);
+  const myAds = _ads.filter(a => a.sellerId === CU.id);
+  const activeCount = myAds.filter(a => a.status !== 'sold').length;
+  const soldCount = myAds.filter(a => a.status === 'sold').length;
+  el.innerHTML =
+    '<div style="background:var(--nav-bg);border-radius:var(--r-lg);overflow:hidden">' +
+      '<div style="padding:28px 24px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">' +
+        '<div class="s-avatar" style="background:'+clr.bg+';color:'+clr.fg+';width:64px;height:64px;font-size:24px;flex-shrink:0">'+ini+'</div>' +
+        '<div style="flex:1;min-width:160px">' +
+          '<div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:#fff">'+escHtml(CU.name)+'</div>' +
+          '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:2px">'+escHtml(CU.email)+'</div>' +
+          (CU.phone ? '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:1px">📱 '+escHtml(CU.phone)+'</div>' : '') +
+          (CU.parish ? '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:1px">📍 '+escHtml(CU.parish)+'</div>' : '') +
+        '</div>' +
+        '<button class="btn btn-outline btn-sm" onclick="openEditProfile()">✏️ Edit Profile</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:0;border-top:1px solid rgba(255,255,255,.08)">' +
+        '<div style="flex:1;text-align:center;padding:14px 0">' +
+          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--gold)">'+myAds.length+'</div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Total Ads</div>' +
+        '</div>' +
+        '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
+          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:#4ade80">'+activeCount+'</div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Active</div>' +
+        '</div>' +
+        '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
+          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:rgba(255,255,255,.5)">'+soldCount+'</div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Sold</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+      '<button class="btn btn-ghost btn-sm" onclick="doLogout()">🚪 Log Out</button>' +
+    '</div>';
+}
+
 function renderMyAds() {
+  renderProfileCard();
   const el = document.getElementById('myAdsBox');
   if (!CU) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">🔐</div><h3>Please log in</h3><p>You need an account to manage your listings.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>';
@@ -3200,12 +3355,201 @@ function renderMyAds() {
       '</div>' +
       '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
       '<div class="my-ad-acts">' +
+        '<button class="btn btn-ghost btn-sm" onclick="openEditAd(\'' + ad.id + '\')">✏️ Edit</button>' +
         '<button class="btn btn-ghost btn-sm" onclick="openDetail(\'' + ad.id + '\')">View</button>' +
-        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + ad.id + '\');renderMyAds()">' + (ad.status==='sold'?'Relist':'Mark Sold') + '</button>' +
-        '<button class="btn btn-red btn-sm" onclick="delAd(\'' + ad.id + '\')">Delete</button>' +
+        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + ad.id + '\');setTimeout(renderMyAds,200)">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
+        '<button class="btn btn-red btn-sm" onclick="delAd(\'' + ad.id + '\')">🗑️</button>' +
       '</div>' +
     '</div>';
   }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EDIT PROFILE
+═══════════════════════════════════════════════════════════ */
+function openEditProfile() {
+  if (!CU) return openAuth('login');
+  document.getElementById('epName').value = CU.name || '';
+  document.getElementById('epEmail').value = CU.email || '';
+  document.getElementById('epPhone').value = CU.phone || '';
+  document.getElementById('epPassword').value = '';
+  // Fill parish select
+  const epParish = document.getElementById('epParish');
+  epParish.innerHTML = '<option value="">Select parish…</option>' + PARISHES.map(p => '<option' + (p===CU.parish?' selected':'') + '>' + p + '</option>').join('');
+  document.getElementById('editProfileAlert').className = 'alert-box';
+  openOverlay('ovEditProfile');
+}
+
+async function saveProfile() {
+  const name = document.getElementById('epName').value.trim();
+  const phone = document.getElementById('epPhone').value.trim();
+  const parish = document.getElementById('epParish').value;
+  const password = document.getElementById('epPassword').value;
+  const alertEl = document.getElementById('editProfileAlert');
+
+  if (!name) { alertEl.textContent='Name is required.'; alertEl.className='alert-box alert-err show'; return; }
+
+  const btn = document.getElementById('saveProfileBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+    const updates = { name, phone, parish };
+    if (password && password.length >= 6) updates.password = password;
+    else if (password && password.length > 0) {
+      alertEl.textContent='Password must be at least 6 characters.'; alertEl.className='alert-box alert-err show';
+      btn.textContent='Save Changes'; btn.disabled=false; return;
+    }
+
+    await sbUpdateUser(CU.id, updates);
+
+    // Update local session
+    CU.name = name;
+    CU.phone = phone;
+    CU.parish = parish;
+    L.sess = CU;
+
+    // Update seller name on all user's ads in DB and cache
+    const myAds = _ads.filter(a => a.sellerId === CU.id);
+    const newInit = initials(name);
+    for (const ad of myAds) {
+      ad.seller = name;
+      ad.sellerInit = newInit;
+    }
+    if (myAds.length) {
+      _db.from('ads').update({ seller_name: name, seller_init: newInit }).eq('seller_id', CU.id);
+    }
+
+    renderNav(); renderProfileCard(); renderMyAds();
+    closeOverlay('ovEditProfile');
+    showToast('Profile updated! ✅', '✅');
+  } catch(e) {
+    alertEl.textContent = 'Update failed: ' + (e.message||'try again');
+    alertEl.className = 'alert-box alert-err show';
+  } finally {
+    btn.textContent = 'Save Changes'; btn.disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EDIT AD
+═══════════════════════════════════════════════════════════ */
+let _editAdId = null;
+let _editAdNewFile = null;
+
+function openEditAd(id) {
+  const ad = _ads.find(a => a.id === id);
+  if (!ad) return;
+  _editAdId = id;
+  _editAdNewFile = null;
+
+  document.getElementById('eaTitle').value = ad.title || '';
+  document.getElementById('eaPrice').value = ad.price || '';
+  document.getElementById('eaDesc').value = ad.desc || '';
+  document.getElementById('eaPhone').value = ad.phone || '';
+  document.getElementById('eaNeg').checked = ad.neg || false;
+
+  // Fill category select
+  const eaCat = document.getElementById('eaCat');
+  eaCat.innerHTML = CATS.map(c => '<option value="'+c.id+'"'+(c.id===ad.category?' selected':'')+'>'+c.icon+' '+c.name+'</option>').join('');
+
+  // Fill parish select
+  const eaParish = document.getElementById('eaParish');
+  eaParish.innerHTML = '<option value="">Select…</option>' + PARISHES.map(p => '<option'+(p===ad.parish?' selected':'')+'>'+p+'</option>').join('');
+
+  // Show current photo
+  const photoEl = document.getElementById('eaCurrentPhoto');
+  if (ad.image) {
+    photoEl.innerHTML = '<div style="border-radius:12px;overflow:hidden;height:140px"><img src="'+ad.image+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML=\'<div style=padding:20px;text-align:center;color:var(--text-3)>No photo</div>\'"></div>';
+  } else {
+    photoEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-3);background:var(--surface-2);border-radius:12px">No photo uploaded</div>';
+  }
+
+  // Reset new photo preview
+  document.getElementById('eaNewPhotoPreview').style.display = 'none';
+  document.getElementById('eaImgFile').value = '';
+  document.getElementById('editAdAlert').className = 'alert-box';
+
+  openOverlay('ovEditAd');
+}
+
+function handleEditAdImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5000000) { showToast('Max 5MB','⚠️'); return; }
+  if (!file.type.startsWith('image/')) { showToast('Only images allowed','⚠️'); return; }
+  _editAdNewFile = file;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('eaNewPhotoImg').src = e.target.result;
+    document.getElementById('eaNewPhotoPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearEditAdImg() {
+  _editAdNewFile = null;
+  document.getElementById('eaNewPhotoPreview').style.display = 'none';
+  document.getElementById('eaImgFile').value = '';
+}
+
+async function saveEditAd() {
+  const ad = _ads.find(a => a.id === _editAdId);
+  if (!ad) return;
+  const alertEl = document.getElementById('editAdAlert');
+
+  const title = document.getElementById('eaTitle').value.trim();
+  const category = document.getElementById('eaCat').value;
+  const parish = document.getElementById('eaParish').value;
+  const price = parseFloat(document.getElementById('eaPrice').value) || 0;
+  const desc = document.getElementById('eaDesc').value.trim();
+  const phone = document.getElementById('eaPhone').value.trim();
+  const neg = document.getElementById('eaNeg').checked;
+
+  if (!title) { alertEl.textContent='Title is required.'; alertEl.className='alert-box alert-err show'; return; }
+  if (!parish) { alertEl.textContent='Please select a parish.'; alertEl.className='alert-box alert-err show'; return; }
+  if (!price) { alertEl.textContent='Please enter a price.'; alertEl.className='alert-box alert-err show'; return; }
+
+  const btn = document.getElementById('saveEditAdBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+    let imageUrl = ad.image;
+
+    // Upload new photo if one was selected
+    if (_editAdNewFile) {
+      btn.textContent = 'Uploading photo…';
+      const newUrl = await uploadToSupabase(_editAdNewFile);
+      if (newUrl) imageUrl = newUrl;
+    }
+
+    const dbUpdates = {
+      title, category, parish, price,
+      description: desc, phone,
+      negotiable: neg,
+      image_url: imageUrl,
+    };
+
+    await sbUpdateAd(_editAdId, dbUpdates);
+
+    // Update local cache
+    ad.title = title;
+    ad.category = category;
+    ad.parish = parish;
+    ad.price = price;
+    ad.desc = desc;
+    ad.phone = phone;
+    ad.neg = neg;
+    ad.image = imageUrl;
+
+    closeOverlay('ovEditAd');
+    renderMyAds(); renderHome(); renderCats();
+    showToast('Listing updated! ✅', '✅');
+  } catch(e) {
+    alertEl.textContent = 'Update failed: ' + (e.message||'try again');
+    alertEl.className = 'alert-box alert-err show';
+  } finally {
+    btn.textContent = 'Save Changes'; btn.disabled = false;
+  }
 }
 
 async function delAd(id) {
