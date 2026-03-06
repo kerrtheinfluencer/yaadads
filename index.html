@@ -3713,12 +3713,15 @@ function openDetail(id) {
   const totalViews = typeof getViews === 'function' ? getViews(id) : (ad.views||0);
   // Normalize phone for WhatsApp — ensure +1876 prefix
   const rawPhone = (ad.phone||'').replace(/\D/g,'');
-  const waPhone = rawPhone.length === 7 ? '1876' + rawPhone
-    : rawPhone.length === 10 && rawPhone.startsWith('876') ? '1' + rawPhone
-    : rawPhone.length === 11 && rawPhone.startsWith('1876') ? rawPhone
-    : rawPhone.length === 11 && rawPhone.startsWith('1') ? rawPhone
-    : '1876' + rawPhone;
-  const wa = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title + ' \u2014 yaadadz.com/?ad=' + id);
+  let waPhone = '';
+  if (rawPhone.length >= 7) {
+    waPhone = rawPhone.length === 7 ? '1876' + rawPhone
+      : rawPhone.length === 10 && rawPhone.startsWith('876') ? '1' + rawPhone
+      : rawPhone.length === 11 && rawPhone.startsWith('1') ? rawPhone
+      : '1876' + rawPhone;
+  }
+  const waText = encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title + ' - https://yaadadz.com/?ad=' + id);
+  const wa = waPhone ? ('https://wa.me/' + waPhone + '?text=' + waText) : '';
 
   // Gallery (multi-photo or single)
   const photos = (ad.photos && ad.photos.length > 0) ? ad.photos : (ad.image ? [ad.image] : []);
@@ -3763,7 +3766,8 @@ function openDetail(id) {
     : '';
 
   const contactBtns = !isMine
-    ? (ad.phone ? '<a class="btn btn-green btn-sm" href="tel:' + ad.phone + '">📞 Call</a><a class="btn btn-ghost btn-sm" href="' + wa + '" target="_blank">💬 WhatsApp</a>' : '') +
+    ? (ad.phone ? '<a class="btn btn-green btn-sm" href="tel:' + ad.phone + '">📞 Call</a>' : '') +
+      (wa ? '<a class="btn btn-ghost btn-sm" href="' + wa + '" target="_blank" rel="noopener">💬 WhatsApp</a>' : '') +
       (CU ? '<button class="btn btn-ghost btn-sm" onclick="openChat(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'') + '\',\'' + ini + '\')">✉️ Message</button>' : '<button class="btn btn-ghost btn-sm" onclick="openAuth(\'login\')">✉️ Message Seller</button>')
     : '';
 
@@ -3994,17 +3998,34 @@ async function sendOffer(adId, sellerId, sellerName, sellerInit) {
 ═══════════════════════════════════════════════════════════ */
 async function shareAd(id) {
   const ad = _ads.find(a => a.id === id); if (!ad) return;
-  const url = `${location.origin}${location.pathname}?ad=${id}`;
-  const shareData = { title: ad.title, text: `Check this out on Yaad Adz: ${ad.title} — J$${fmtN(ad.price)}`, url };
+  const url = 'https://yaadadz.com/?ad=' + id;
+  const text = ad.title + ' — J$' + fmtN(ad.price) + ' on Yaad Adz';
+  const shareData = { title: ad.title, text: text, url: url };
+
+  // Try native share (mobile)
   if (navigator.share) {
-    try { await navigator.share(shareData); return; } catch(e) { /* fallback */ }
+    try { await navigator.share(shareData); return; } catch(e) { /* user cancelled or failed — fall through */ }
   }
-  // Clipboard fallback
+
+  // Clipboard fallback — works on HTTPS
   try {
     await navigator.clipboard.writeText(url);
-    showToast('Link copied to clipboard!','🔗');
+    showToast('Link copied!', '🔗');
   } catch(e) {
-    showToast('Share: ' + url, '🔗');
+    // Final fallback — textarea copy method (works everywhere)
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Link copied!', '🔗');
+    } catch(e2) {
+      // Can't copy at all — show the URL so user can manually copy
+      showToast(url, '🔗');
+    }
   }
 }
 
