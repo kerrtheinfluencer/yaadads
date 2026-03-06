@@ -160,8 +160,6 @@ document.head.appendChild(l);
 
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Cloudinary Upload Widget -->
-<script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 
 <!-- ═══════════════════════════════════════════
      PERFORMANCE HINTS
@@ -1832,6 +1830,34 @@ function isFav(id) { return L.favs.includes(id); }
 }
 .photo-add-btn span { font-size: 11px; font-weight: 600; }
 .photo-add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+
+/* Photo thumb items in grid */
+.photo-thumb-wrap {
+  position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  border: 2px solid var(--border);
+}
+.photo-thumb-wrap img.photo-thumb {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.photo-rm {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,.65); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: background .15s;
+}
+.photo-rm:hover { background: var(--red); }
+.photo-cover-tag {
+  position: absolute; bottom: 4px; left: 4px;
+  background: var(--green); color: #fff;
+  font-size: 9px; font-weight: 800;
+  padding: 2px 6px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .3px;
+}
 /* Detail gallery */
 .gallery-wrap { position: relative; background: #111; overflow: hidden; }
 .gallery-track {
@@ -2390,7 +2416,7 @@ function isFav(id) { return L.favs.includes(id); }
           </div>
         </div>
         <input type="file" accept="image/*" multiple id="imgFile" style="display:none" onchange="handleImgFiles(this)">
-        <p style="font-size:11px;color:var(--text-3);margin-top:6px">JPG or PNG · max 2MB each · tap to reorder</p>
+        <p style="font-size:11px;color:var(--text-3);margin-top:6px">JPG or PNG · max 5MB each · images auto-compressed on upload</p>
       </div>
       <div class="form-grp"><label class="form-lbl">Contact Phone <span>(optional)</span></label><input class="form-inp" id="aPhone" type="tel" placeholder="876-XXX-XXXX"></div>
       <div class="step-nav">
@@ -2584,15 +2610,26 @@ function isFav(id) { return L.favs.includes(id); }
    create policy "Public read msgs"    on messages for select using (true);
    create policy "Public insert msgs"  on messages for insert with check (true);
    create policy "Public update msgs"  on messages for update using (true);
+
+   -- SUPABASE STORAGE SETUP (do this in the Storage tab):
+   -- 1. Create a bucket called "ad-images" 
+   -- 2. Set it to PUBLIC
+   -- 3. Add these RLS policies in SQL Editor:
+   
+   insert into storage.buckets (id, name, public) values ('ad-images', 'ad-images', true)
+     on conflict (id) do nothing;
+   create policy "Anyone can upload images" on storage.objects
+     for insert with check (bucket_id = 'ad-images');
+   create policy "Anyone can view images" on storage.objects
+     for select using (bucket_id = 'ad-images');
+   create policy "Anyone can delete own images" on storage.objects
+     for delete using (bucket_id = 'ad-images');
 ═══════════════════════════════════════════════════════════ */
 const CFG = {
   supabase: {
     url: 'https://cquwshpsfybvgqodbxsf.supabase.co',
     key: 'sb_publishable_j9j7NG5GhMeXqiiFnEAO-w_jeMnyY1n',
-  },
-  cloudinary: {
-    cloud:  '',   // optional: add Cloudinary cloud name for image hosting
-    preset: '',   // optional: unsigned upload preset
+    storageBucket: 'ad-images',  // Supabase Storage bucket name
   },
 };
 
@@ -3306,30 +3343,42 @@ async function doPostAd() {
   const parish= document.getElementById('aParish').value;
   const price = parseFloat(document.getElementById('aPrice').value)||0;
   if (!title || !parish || !price) return showPostErr('Please fill in all required fields.');
-  const ad = {
-    id:         'a' + Date.now(),
-    title,
-    category:   document.getElementById('aCat').value,
-    parish,
-    price,
-    desc:       document.getElementById('aDesc').value.trim(),
-    phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
-    image:      uploadUrl || (uploadPhotos && uploadPhotos.length ? uploadPhotos[0] : ''),
-    photos:     uploadPhotos && uploadPhotos.length ? [...uploadPhotos] : (uploadUrl ? [uploadUrl] : []),
-    neg:        document.getElementById('aNeg').checked,
-    icon:       cat ? cat.icon : '📦',
-    seller:     CU.name,
-    sellerInit: initials(CU.name),
-    sellerId:   CU.id,
-    date:       new Date().toISOString().split('T')[0],
-    status:     'active',
-    views:      0,
-  };
-  const btn = document.getElementById('postPublishBtn');
-  if (btn) { btn.textContent = 'Publishing...'; btn.disabled = true; }
+
+  const btn = document.querySelector('#sp3 .btn-gold');
+  if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
+
   try {
+    // Upload all photos to Supabase Storage and get public URLs
+    const imageUrls = [];
+    for (let i = 0; i < uploadPhotos.length; i++) {
+      if (btn) btn.textContent = `⏳ Uploading image ${i+1}/${uploadPhotos.length}…`;
+      const url = await uploadToSupabase(uploadPhotos[i].file);
+      if (url) imageUrls.push(url);
+    }
+
+    if (btn) btn.textContent = '⏳ Publishing…';
+
+    const ad = {
+      id:         'a' + Date.now(),
+      title,
+      category:   document.getElementById('aCat').value,
+      parish,
+      price,
+      desc:       document.getElementById('aDesc').value.trim(),
+      phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
+      image:      imageUrls[0] || '',
+      photos:     imageUrls,
+      neg:        document.getElementById('aNeg').checked,
+      icon:       cat ? cat.icon : '📦',
+      seller:     CU.name,
+      sellerInit: initials(CU.name),
+      sellerId:   CU.id,
+      date:       new Date().toISOString().split('T')[0],
+      status:     'active',
+      views:      0,
+    };
+
     await sbInsertAd(ad);
-    _ads.unshift(ad);
     closeOverlay('ovPost');
     renderCats(); renderHome(); updateStats();
     showToast('Your ad is live! 🎉', '🎉');
@@ -3337,30 +3386,92 @@ async function doPostAd() {
   } catch(e) {
     showPostErr('Failed to post: ' + (e.message||'please try again'));
   } finally {
-    if (btn) { btn.textContent = 'Publish Ad'; btn.disabled = false; }
+    if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
   }
 }
 
-/* Photo upload helpers */
-let uploadPhotos = [];
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE STORAGE — Image Upload + Compression
+═══════════════════════════════════════════════════════════ */
+
+// Compress image client-side before upload (target ≤ 800px wide, JPEG 0.8)
+function compressImage(file, maxWidth, quality) {
+  maxWidth = maxWidth || 1200;
+  quality = quality || 0.82;
+  return new Promise(function(resolve, reject) {
+    // If it's already small enough, skip compression
+    if (file.size < 150000) { resolve(file); return; }
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob) {
+        if (blob) resolve(new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' }));
+        else resolve(file);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = function() { resolve(file); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Upload a single file to Supabase Storage → returns public URL
+async function uploadToSupabase(file) {
+  const bucket = CFG.supabase.storageBucket;
+  try {
+    // Compress first
+    const compressed = await compressImage(file);
+    // Unique filename
+    const ext = compressed.type === 'image/png' ? 'png' : 'jpg';
+    const path = (CU ? CU.id : 'anon') + '/' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
+
+    const { data, error } = await _db.storage.from(bucket).upload(path, compressed, {
+      contentType: compressed.type || 'image/jpeg',
+      upsert: false,
+    });
+    if (error) throw error;
+
+    // Get public URL
+    const { data: urlData } = _db.storage.from(bucket).getPublicUrl(data.path);
+    return urlData.publicUrl;
+  } catch(e) {
+    console.error('Upload error:', e);
+    showToast('Image upload failed: ' + (e.message || 'check storage setup'), '⚠️');
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PHOTO PICKER — local preview + file references
+═══════════════════════════════════════════════════════════ */
+let uploadPhotos = []; // Array of { file: File, preview: dataURL }
+
 function handleImgFiles(input) {
   var files = Array.from(input.files||[]);
-  files.forEach(function(file) {
-    if (uploadPhotos.length >= 6) return;
-    if (file.size > 2000000) { showToast('Max 2MB per image','⚠️'); return; }
+  var remaining = 6 - uploadPhotos.length;
+  files.slice(0, remaining).forEach(function(file) {
+    if (file.size > 5000000) { showToast('Max 5MB per image','⚠️'); return; }
+    if (!file.type.startsWith('image/')) { showToast('Only image files allowed','⚠️'); return; }
     var reader = new FileReader();
     reader.onload = function(e) {
-      uploadPhotos.push(e.target.result);
-      uploadUrl = uploadPhotos[0];
+      uploadPhotos.push({ file: file, preview: e.target.result });
+      uploadUrl = uploadPhotos[0].preview;
       renderPhotoGrid();
     };
     reader.readAsDataURL(file);
   });
+  // Reset file input so the same file can be re-selected
+  input.value = '';
 }
 function handleImgFile(input) { handleImgFiles(input); }
+
 function removePhoto(i) {
   uploadPhotos.splice(i, 1);
-  uploadUrl = uploadPhotos[0] || '';
+  uploadUrl = uploadPhotos.length ? uploadPhotos[0].preview : '';
   renderPhotoGrid();
 }
 function clearImg() {
@@ -3375,14 +3486,19 @@ function renderPhotoGrid() {
   var grid = document.getElementById('photoGrid');
   var ua   = document.getElementById('imgUploadArea');
   if (!grid) return;
-  grid.innerHTML = uploadPhotos.map(function(src, i) {
+  // Render thumbnails from local previews
+  var thumbs = uploadPhotos.map(function(item, i) {
     return '<div class="photo-thumb-wrap">' +
-      '<img src="' + src + '" class="photo-thumb">' +
-      '<button class="photo-rm" onclick="removePhoto(' + i + ')">x</button>' +
+      '<img src="' + item.preview + '" class="photo-thumb">' +
+      '<button class="photo-rm" onclick="removePhoto(' + i + ')">✕</button>' +
       (i===0 ? '<span class="photo-cover-tag">Cover</span>' : '') +
     '</div>';
   }).join('');
-  if (ua) ua.style.display = uploadPhotos.length >= 6 ? 'none' : '';
+  // Re-add the "Add Photo" button if under limit
+  var addBtn = uploadPhotos.length < 6
+    ? '<div class="photo-add-btn" onclick="document.getElementById(\'imgFile\').click()"><span>📸</span><span>Add Photo</span></div>'
+    : '';
+  grid.innerHTML = thumbs + addBtn;
 }
 
 
