@@ -2984,25 +2984,62 @@ const YaadBrain = (() => {
   }
 
   /* ══════════════════════════════════════════
-     6. INTENT CLASSIFIER (deep)
+     6. INTENT CLASSIFIER (deep site knowledge)
   ══════════════════════════════════════════ */
   const INTENT_PATTERNS = [
-    // FAQ / info
-    [/how.*(post|sell|list|put up|advertise|upload|create)/i, 'how_to_post'],
-    [/(is it|it is|is yaad adz|cost|fee|charge|paid|free)\b/i, 'is_free'],
-    [/how.*(contact|reach|message|talk|call|whatsapp|chat with)/i, 'how_contact'],
+    // ── POSTING & SELLING ──
+    [/how.*(post|sell|list|put up|advertise|upload|create|add).*(ad|listing|item|product|thing)?/i, 'how_to_post'],
+    [/how.*(add|upload|take|change).*(photo|picture|image|pic)/i, 'add_photos'],
+    [/how many.*(photo|picture|image|pic)/i, 'add_photos'],
+    [/(what|which).*(category|categories)/i, 'categories'],
+    [/what.*(can i|should i|am i allowed).*(sell|post|list)/i, 'what_to_sell'],
+    [/(can.t|cannot|cant|unable|won.t let me).*(post|sell|list|upload)/i, 'cant_post'],
+
+    // ── ACCOUNT & PROFILE ──
+    [/how.*(create|make|register|sign.?up|open).*(account|profile)/i, 'create_account'],
+    [/how.*(edit|change|update).*(profile|name|phone|number|parish|password|email|account|detail)/i, 'edit_profile'],
+    [/how.*(delete|remove|deactivate|close).*(account|profile)/i, 'delete_account'],
+    [/how.*(log.?in|sign.?in|login)/i, 'login'],
+    [/how.*(log.?out|sign.?out|logout)/i, 'logout'],
+    [/(forgot|reset|lost|change).*(password)/i, 'reset_password'],
+
+    // ── MANAGING LISTINGS ──
+    [/how.*(edit|change|update|modify).*(ad|listing|post|price|title|description)/i, 'edit_ad'],
+    [/how.*(delete|remove).*(ad|listing|post)/i, 'delete_ad'],
+    [/how.*(mark|set).*(sold|inactive|unavailable)/i, 'mark_sold'],
+    [/how.*(relist|reactivate|repost|bring back)/i, 'relist'],
+    [/(manage|view|see|find).*(my|own).*(ad|listing|post)/i, 'my_ads'],
+
+    // ── BUYING & CONTACTING ──
+    [/how.*(contact|reach|message|talk|call|whatsapp|chat with|get in touch)/i, 'how_contact'],
+    [/how.*(buy|purchase|order|get)/i, 'how_to_buy'],
+    [/how.*(make|send|submit).*(offer|bid)/i, 'make_offer'],
+    [/how.*(save|favourite|favorite|bookmark|like)/i, 'favourites'],
+    [/how.*(share|send|forward).*(ad|listing|link)/i, 'share_ad'],
+    [/how.*(report|flag).*(ad|listing|seller|scam)/i, 'report'],
+    [/how.*(rate|review|feedback).*(seller|buyer)/i, 'rate_seller'],
+
+    // ── SEARCH & NAVIGATION ──
+    [/how.*(search|find|look|browse|filter|sort)/i, 'how_to_search'],
+    [/how.*(use|work).*(ai|search|chat|bot|assistant)/i, 'ai_search'],
+    [/what.*(parish|location|area|region).*(cover|available|supported)/i, 'parishes'],
+    [/(where|which).*(parish|location|area)/i, 'parishes'],
+
+    // ── GENERAL SITE INFO ──
+    [/(is it|it is|is yaad|cost|fee|charge|paid|free)\b/i, 'is_free'],
     [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],
-    [/(how.*(work|use)|what is yaad adz|about yaad adz|explain|tell me about)/i, 'how_it_works'],
-    [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
+    [/(how.*(work|use)|what is yaad|about yaad|explain|tell me about yaad)/i, 'how_it_works'],
     [/(pay|payment|accept|transfer|method)/i, 'payment'],
     [/(deliver|ship|shipping|pick.?up|drop.?off|meet)/i, 'delivery'],
+    [/(install|app|download|home.?screen|pwa|offline)/i, 'install_app'],
+    [/(rule|guideline|prohibited|banned|not allowed|illegal)/i, 'rules'],
 
-    // Greetings / social
+    // ── GREETINGS / SOCIAL ──
     [/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening|night)|wah\s*gwaan|whaapen|whappen|ello|hail|greetings|sup)\b/i, 'greeting'],
     [/^(thank|thanks|tanx|bless up|nuff respect|respect|big up|good looking|appreciate|nice|great|good job)/i, 'thanks'],
-    [/(help|assist|what can you|what do you)/i, 'help'],
+    [/(help|assist|what can you|what do you|what.*you.*do)/i, 'help'],
 
-    // Comparison / analytics
+    // ── COMPARISON / ANALYTICS ──
     [/(cheapest|lowest price|most affordable|best deal|best value|best price)/i, 'compare_cheapest'],
     [/(most expensive|highest price|priciest|top dollar|premium)/i, 'compare_expensive'],
     [/(most popular|trending|hot|most viewed|top listing|most wanted)/i, 'compare_popular'],
@@ -3010,23 +3047,92 @@ const YaadBrain = (() => {
     [/(how much|what.*price|average price|price range|going rate|market price|worth)/i, 'price_check'],
     [/(compare|versus|vs|or|better|which one|difference|recommendation|recommend|suggest)/i, 'compare_general'],
 
-    // Stats
+    // ── STATS ──
     [/(how many|count|total|number of|stats|statistics|data)/i, 'stats'],
     [/(who|which).*(seller|top seller|best seller|most listings)/i, 'top_sellers'],
   ];
 
   const INTENT_ANSWERS = {
-    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details — title, price, parish, description — add up to 6 photos, and you're live in under 2 minutes. 🚀 Completely free, always!`,
-    is_free: () => `Yaad Adz is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. We mek it fi everybody. 🇯🇲`,
-    how_contact: () => `Open any listing and you'll see three options: Call 📞 (direct), WhatsApp 💬 (opens chat with a pre-written message), and Message ✉️ (in-app chat — needs a free account). Pro tip: WhatsApp usually gets the fastest reply!`,
-    safety: () => `Good question! Safety tips for buying on Yaad Adz:\n🛡️ Meet in public — Half Way Tree, a busy mall, or a police station\n👀 Check the seller's profile and ratings\n🤝 Bring a friend for expensive items\n💵 Never send money before seeing the item\n📱 Use in-app chat so there's a record\nStay safe out there! 🇯🇲`,
-    how_it_works: () => `Yaad Adz is Jamaica's free marketplace. Here's the flow:\n1️⃣ Browse or search listings across all 14 parishes\n2️⃣ Found something? Contact the seller (call, WhatsApp, or message)\n3️⃣ Arrange meetup & payment directly\n4️⃣ Want to sell? Post a free ad in under 2 minutes!\nNo middleman, no commission, no fees. Just Jamaicans buying and selling directly. 🇯🇲`,
-    manage_ads: () => `To manage your ads:\n1. Tap your name/avatar at the top (or "Account" in the bottom menu)\n2. You'll see all your listings with options to:\n   • Mark as Sold (shows "SOLD" badge)\n   • Delete (permanent)\n3. Buyers will still see sold items but can't make offers on them.\nEasy!`,
-    payment: () => `Yaad Adz doesn't handle payments — you deal directly with the seller. Common methods in Jamaica:\n💵 Cash on meetup (most common)\n📱 Bank transfer\n💳 NCB/Scotiabank transfer\n📲 Lynk or other mobile wallets\nAlways meet first, pay after you see the item!`,
-    delivery: () => `Delivery is arranged between buyer and seller. Most items are pickup, but many sellers offer:\n🚗 Local delivery (sometimes free)\n📦 Knutsford Express for cross-parish\n🏪 Meet at a safe public spot\nTip: Check the listing description — sellers usually mention if they deliver.`,
-    greeting: () => { const g=['Wah gwaan! 👋 What yuh looking for today?','Big up! 🇯🇲 How can I help?','Hey! Ask me anything — search for items, get price advice, or just chat.','Respect! 🤝 Ready to help you find exactly what you need.','Yow! Welcome to Yaad Adz AI. Search, compare, or ask me anything!']; return g[Math.floor(Math.random()*g.length)]; },
+    // ── POSTING & SELLING ──
+    how_to_post: () => `Here's how to post a free ad:\n\n1️⃣ Tap the green ＋ button at the bottom of the screen (or "+ Post Ad" at the top)\n2️⃣ Step 1 — Fill in your details: title, category, parish, price, and description\n3️⃣ Step 2 — Add up to 6 photos (first one becomes the cover) and your contact number\n4️⃣ Step 3 — Preview your listing, then tap "🚀 Publish Ad Free"\n\nYour ad goes live instantly! Completely free, always. 🇯🇲\n\n💡 Tips for a great listing:\n• Use a clear, descriptive title\n• Set a fair price (check similar listings)\n• Add multiple photos from different angles\n• Write a detailed description with condition, features, and reason for selling`,
+
+    add_photos: () => `You can add up to 6 photos per listing:\n\n📸 When posting a new ad:\n• On Step 2, tap the "📸 Add Photo" button\n• Select multiple photos at once, or add them one by one\n• The first photo becomes your cover image\n• Tap ✕ on any photo to remove it\n\n📸 When editing an existing ad:\n• Go to Account → find your listing → tap "✏️ Edit"\n• You'll see your current photos with ✕ buttons to remove\n• Tap "📸 Add" to upload new ones\n• Photos are automatically compressed for fast loading\n\nMax 5MB per photo. JPG and PNG supported.`,
+
+    categories: () => `Yaad Adz has 12 categories:\n\n🚗 Vehicles — cars, trucks, bikes, motorcycles\n🏡 Property — houses, apartments, land, rooms for rent\n📱 Electronics — phones, laptops, TVs, cameras, gaming\n👗 Fashion — clothes, shoes, bags, jewelry, watches\n🛋️ Furniture — sofas, beds, fridges, stoves, appliances\n💼 Jobs — vacancies, hiring, freelance work\n🔧 Services — repairs, cleaning, plumbing, tutoring\n🥭 Food & Farm — produce, farm goods, prepared food\n🎵 Music & Arts — instruments, DJ gear, art supplies\n⚽ Sports — gym equipment, bicycles, sporting goods\n🧸 Kids & Baby — toys, strollers, school supplies, baby items\n📦 Other — anything that doesn't fit above\n\nChoose the most relevant category when posting — it helps buyers find your item!`,
+
+    what_to_sell: () => `You can sell almost anything on Yaad Adz! Popular categories include:\n\n✅ Cars, bikes, and vehicles\n✅ Houses, land, and rooms for rent\n✅ Phones, laptops, and electronics\n✅ Clothes, shoes, and accessories\n✅ Furniture and home appliances\n✅ Farm produce and food\n✅ Musical instruments\n✅ Job listings and services\n\n🚫 Not allowed: weapons, drugs, stolen goods, counterfeit items, adult services, or anything illegal in Jamaica.\n\nEverything is free to post!`,
+
+    cant_post: () => `Having trouble posting? Here are common fixes:\n\n🔐 Not logged in — You need a free account to post. Tap "Join Free" to create one in 30 seconds.\n\n📝 Missing fields — Title, category, parish, price, and description are all required. Make sure none are blank.\n\n📸 Photo too large — Max 5MB per image. Try taking a lower resolution photo, or the app will auto-compress it.\n\n🌐 Connection issue — Check your internet connection. The app needs to reach our servers to publish.\n\nStill stuck? Try closing and reopening the post form, or refresh the page.`,
+
+    // ── ACCOUNT & PROFILE ──
+    create_account: () => `Creating an account is free and takes 30 seconds:\n\n1️⃣ Tap "Join Free" (top right) or "Log In" → "Create Account"\n2️⃣ Enter your name, email, and a password (6+ characters)\n3️⃣ Optionally add your phone number and parish\n4️⃣ Tap "Create Free Account"\n\nThat's it! You can now post ads, message sellers, save favourites, make offers, and rate sellers. 🎉`,
+
+    edit_profile: () => `To edit your profile:\n\n1️⃣ Tap "Account" in the bottom menu (or your name at the top)\n2️⃣ On your profile card, tap "✏️ Edit Profile"\n3️⃣ You can change:\n   • Your name\n   • Phone number\n   • Parish\n   • Password (leave blank to keep current)\n4️⃣ Tap "Save Changes"\n\n📧 Note: Your email address cannot be changed since it's your login identifier.\n\n💡 When you change your name, it automatically updates on all your existing listings too!`,
+
+    delete_account: () => `To delete your account, contact us at support@yaadadz.com with the email address on your account. We'll remove your profile and all associated data.\n\nNote: You can delete individual listings yourself from the Account page without deleting your whole account.`,
+
+    login: () => `To log in:\n\n1️⃣ Tap "Log In" at the top right\n2️⃣ Enter your email and password\n3️⃣ Tap "Log In"\n\nDon't have an account? Tap "Join Free" — it's completely free and takes 30 seconds.\n\nForgot your password? Unfortunately we don't have password reset yet — contact support@yaadadz.com for help.`,
+
+    logout: () => `To log out:\n\n• On desktop: Tap "Log out" button in the top navigation bar\n• On mobile: Go to "Account" in the bottom menu, then tap "🚪 Log Out"\n\nYour favourites and search history are saved on your device, so they'll still be there when you log back in.`,
+
+    reset_password: () => `Password reset isn't available yet through the app. Here's what you can do:\n\n🔑 If you're logged in: Go to Account → Edit Profile → enter a new password and save.\n\n📧 If you're locked out: Contact support@yaadadz.com with your account email and we'll help you reset it.\n\nTip: Use a password you'll remember — at least 6 characters!`,
+
+    // ── MANAGING LISTINGS ──
+    edit_ad: () => `To edit a listing:\n\n1️⃣ Go to "Account" (bottom menu or top nav)\n2️⃣ Find the listing you want to change\n3️⃣ Tap "✏️ Edit"\n4️⃣ Update anything you need:\n   • Title, price, category, parish\n   • Description and contact phone\n   • Negotiable toggle\n   • Add or remove photos (up to 6)\n5️⃣ Tap "Save Changes"\n\nChanges go live immediately — no waiting for approval! 🚀`,
+
+    delete_ad: () => `To delete a listing:\n\n1️⃣ Go to "Account" in the bottom menu\n2️⃣ Find the listing you want to remove\n3️⃣ Tap the "🗑️" delete button\n4️⃣ Confirm the deletion\n\n⚠️ This is permanent and cannot be undone. If the item just sold, consider marking it as "Sold" instead — this keeps your seller history visible.`,
+
+    mark_sold: () => `To mark a listing as sold:\n\n1️⃣ Go to "Account" → find the listing\n2️⃣ Tap "Sold"\n\nThe listing stays visible with a "SOLD" badge but buyers can't make offers on it. This is better than deleting because it shows you're an active seller.\n\nChanged your mind? Tap "Relist" to make it active again.`,
+
+    relist: () => `To relist a sold item:\n\n1️⃣ Go to "Account" → find the listing marked as sold\n2️⃣ Tap "Relist"\n\nThe listing becomes active again and shows up in search results. You can also edit the price or details before relisting by tapping "✏️ Edit" first.`,
+
+    my_ads: () => `To see all your listings:\n\n📱 Mobile: Tap "Account" in the bottom navigation\n💻 Desktop: Tap your name/avatar at the top right\n\nYou'll see your profile card with stats (total ads, active, sold) and all your listings below with options to View, Edit, mark Sold, or Delete each one.`,
+
+    // ── BUYING & CONTACTING ──
+    how_contact: () => `Three ways to contact a seller:\n\n📞 Call — Tap the green "Call" button to dial their number directly\n💬 WhatsApp — Opens WhatsApp with a pre-written message including the listing link\n✉️ Message — In-app chat (requires a free account)\n\nCall and WhatsApp work without an account. In-app messaging keeps a record of your conversation.\n\n💡 Pro tip: WhatsApp usually gets the fastest reply!`,
+
+    how_to_buy: () => `Buying on Yaad Adz is simple:\n\n1️⃣ Search or browse for what you want\n2️⃣ Tap a listing to see full details, photos, and seller info\n3️⃣ Contact the seller via Call, WhatsApp, or Message\n4️⃣ Ask questions, negotiate if it's marked "negotiable"\n5️⃣ Arrange a meetup in a safe public place\n6️⃣ Inspect the item, then pay the seller directly\n\nNo fees from Yaad Adz — ever! 🇯🇲\n\n🛡️ Safety tip: Always meet in public and bring a friend for expensive items.`,
+
+    make_offer: () => `To make an offer on a listing:\n\n1️⃣ Open the listing detail\n2️⃣ Tap "💰 Make an Offer"\n3️⃣ Enter your offer amount in J$\n4️⃣ Tap "Send Offer"\n\nYour offer is sent as a message to the seller with the amount and listing name. The seller can accept, reject, or counter-offer through the chat.\n\n💡 Works best on listings marked "Negotiable" — but you can try on any listing!`,
+
+    favourites: () => `To save a listing to your favourites:\n\n❤️ Tap the heart icon on any listing card or in the detail view\n\nTo view your saved items:\n• Your favourites are stored on your device\n• They persist even if you log out\n\nTap the heart again to remove from favourites.`,
+
+    share_ad: () => `To share a listing:\n\n1️⃣ Open the listing detail\n2️⃣ Tap "🔗 Share"\n3️⃣ On mobile: Your phone's share menu opens (WhatsApp, Instagram, text, etc.)\n3️⃣ On desktop: The link is copied to your clipboard\n\nThe shared link goes directly to that listing: yaadadz.com/?ad=xxx\n\nWhen shared on WhatsApp or social media, it shows a preview card with the title, price, and image!`,
+
+    report: () => `To report a suspicious listing:\n\n1️⃣ Open the listing\n2️⃣ Tap "⚑ Report" at the bottom\n3️⃣ Select the reason:\n   • Scam / Fraud\n   • Wrong category\n   • Duplicate listing\n   • Already sold / unavailable\n   • Offensive content\n4️⃣ Tap "Submit Report"\n\nWe review every report. Fraudulent listings and accounts get removed.`,
+
+    rate_seller: () => `To rate a seller:\n\n1️⃣ Open any of their listings\n2️⃣ Tap "⭐ Rate Seller"\n3️⃣ Give 1-5 stars\n4️⃣ Optionally write a comment about your experience\n5️⃣ Tap "Submit Rating"\n\nRatings help other buyers make informed decisions and reward trustworthy sellers. You need to be logged in to rate.`,
+
+    // ── SEARCH & NAVIGATION ──
+    how_to_search: () => `Multiple ways to find what you need:\n\n🤖 AI Search (recommended):\n• Type naturally: "cheap phone in Kingston" or "house under 15M"\n• Works with Jamaican Patois too!\n• Tap the search bar on the hero or the 🤖 Search button\n\n📂 Category filter:\n• Tap any category pill (Vehicles, Property, Electronics, etc.)\n\n🔽 Sort options:\n• Newest First, Price Low→High, Price High→Low\n\n🔘 Hide Sold toggle:\n• Filters out sold items to show only available listings\n\n💡 Pro tips:\n• "cheapest car" → sorts by lowest price\n• "most popular phone" → sorts by views\n• "car 2 million" → finds cars around J$2M\n• "show more" → loads the next batch of results`,
+
+    ai_search: () => `The AI assistant understands natural language! Try:\n\n🔍 Product searches: "iPhone under 100k" or "cheap car in Kingston"\n💰 Price queries: "average price for laptop" or "car 2 million"\n📊 Comparisons: "cheapest phone" or "most popular listings"\n🏘️ Location: "furniture in Portmore" or "jobs in Montego Bay"\n❓ Questions: "how do I post?" or "is it free?"\n🇯🇲 Patois: "mi waan a criss phone fi likkle money"\n\nIt also understands follow-ups:\n• "cheaper" → lowers the price range\n• "show more" → loads more results\n• "in Kingston" → filters to that parish\n• "negotiable only" → shows only negotiable items\n\nThe AI gets smarter as more listings are added! 🧠`,
+
+    parishes: () => `Yaad Adz covers all 14 parishes of Jamaica:\n\n🏙️ Kingston · St. Andrew\n🏘️ St. Catherine (Portmore, Spanish Town)\n🌴 St. James (Montego Bay)\n🏖️ St. Ann (Ocho Rios)\n⛰️ Manchester (Mandeville)\n🌾 Clarendon (May Pen)\n🌊 St. Elizabeth (Black River)\n🏝️ Westmoreland (Negril)\n🌿 Portland (Port Antonio)\n🏔️ St. Mary · St. Thomas\n🌳 Trelawny (Falmouth) · Hanover\n\nWhen posting, select your parish so buyers near you can find your listing. When searching, mention a parish or area name and the AI will filter by location.`,
+
+    // ── GENERAL SITE INFO ──
+    is_free: () => `Yaad Adz is 100% free — always! 🇯🇲\n\n✅ Free to create an account\n✅ Free to post ads (unlimited)\n✅ Free to upload photos (up to 6 per ad)\n✅ Free to message sellers\n✅ Free to search and browse\n✅ Free to make offers\n✅ No commission on sales\n\nWe make money through ads on the site, not from our users. Your marketplace experience will always be free.`,
+
+    safety: () => `Stay safe on Yaad Adz:\n\n🤝 Meet in public — Half Way Tree, Constant Spring Plaza, Portmore Mall, or your local police station\n👥 Bring a friend for expensive items (cars, electronics, property viewings)\n💵 Never send money before seeing the item in person\n📱 Use in-app messaging so there's a record of your conversation\n⭐ Check the seller's profile, ratings, and how long they've been a member\n🚩 Report anything suspicious — tap ⚑ Report on any listing\n📞 Verify the seller's phone number before meeting\n🔍 If a deal seems too good to be true, it probably is\n\n🛡️ Safe meetup spots by parish:\n• Kingston: Half Way Tree, Constant Spring Plaza\n• St. Catherine: Portmore Mall, Spanish Town Market\n• St. James: Montego Bay Shopping Centre\n• St. Ann: Ocho Rios Craft Market`,
+
+    how_it_works: () => `Yaad Adz is Jamaica's free marketplace. Here's the full flow:\n\n📝 SELLING:\n1. Create a free account (30 seconds)\n2. Tap ＋ → fill in details → add photos → publish\n3. Your ad goes live instantly across all of Jamaica\n4. Buyers contact you via call, WhatsApp, or message\n5. Arrange meetup and complete the sale\n\n🛒 BUYING:\n1. Search or browse listings (no account needed)\n2. Use AI search — just type what you want naturally\n3. Contact the seller directly\n4. Meet up, inspect, and pay\n\n🤖 AI ASSISTANT:\n• Understands natural language and Jamaican Patois\n• Compares prices, finds deals, answers questions\n• Gets smarter as the marketplace grows\n\nNo fees. No middleman. No commission. Just Jamaicans connecting directly. 🇯🇲`,
+
+    manage_ads: () => `To manage your listings:\n\n1️⃣ Tap "Account" in the bottom menu\n2️⃣ You'll see all your ads with these options:\n\n✏️ Edit — Change title, price, photos, description, everything\n👁️ View — See how your listing looks to buyers\n🏷️ Sold — Mark as sold (keeps the listing visible with a badge)\n🔄 Relist — Make a sold item active again\n🗑️ Delete — Permanently remove (cannot be undone)\n\nYour profile card at the top shows your total ads, active count, and sold count.`,
+
+    payment: () => `Yaad Adz doesn't handle payments — you deal directly with the seller. Common methods in Jamaica:\n\n💵 Cash on meetup (most popular — inspect first, then pay)\n📱 Bank transfer (NCB, Scotiabank, JN)\n📲 Mobile wallet (Lynk, NCB Quisk)\n💳 Direct deposit\n\n⚠️ Important:\n• Never send money before seeing the item\n• Meet in a public place for the exchange\n• Get a receipt for expensive items\n• If paying by transfer, verify the item first`,
+
+    delivery: () => `Delivery is arranged between buyer and seller. Options:\n\n🚗 Seller delivers locally (sometimes free, sometimes a small fee)\n📦 Knutsford Express — great for cross-parish shipping\n🏪 Meet at a central public location\n🚐 Hire a courier service\n\n💡 Tips:\n• Check the listing description — sellers usually mention delivery options\n• Agree on delivery cost BEFORE finalizing the sale\n• For pickup, choose a safe public meetup spot\n• Larger items (furniture, appliances) may require a truck`,
+
+    install_app: () => `Yaad Adz works as an app on your phone!\n\n📱 iPhone (Safari):\n1. Open yaadadz.com in Safari\n2. Tap the share button (square with arrow)\n3. Scroll down and tap "Add to Home Screen"\n4. Tap "Add"\n\n📱 Android (Chrome):\n1. Open yaadadz.com in Chrome\n2. Tap the three dots menu\n3. Tap "Add to Home Screen" or "Install App"\n4. Tap "Install"\n\nThe app icon appears on your home screen and works like a regular app — full screen, fast loading, and works offline for browsing cached listings! 🚀`,
+
+    rules: () => `Yaad Adz community guidelines:\n\n✅ ALLOWED:\n• Real items in good faith\n• Accurate descriptions and photos\n• Fair pricing\n• Services and job listings\n• Farm produce and food\n\n🚫 PROHIBITED:\n• Weapons or ammunition\n• Drugs or controlled substances\n• Stolen goods\n• Counterfeit/fake items\n• Adult services\n• Misleading descriptions or fake photos\n• Spam or duplicate listings\n\n⚖️ CONSEQUENCES:\n• First violation: Listing removed + warning\n• Repeat violations: Account suspended\n• Serious offenses: Immediate ban + reported to authorities\n\nHelp keep the community safe — report anything suspicious! 🛡️`,
+
+    // ── GREETINGS / SOCIAL ──
+    greeting: () => { const g=['Wah gwaan! 👋 What yuh looking for today?','Big up! 🇯🇲 How can I help?','Hey! Ask me anything — search for items, get price advice, or ask how to use the site.','Respect! 🤝 Ready to help you find exactly what you need.','Yow! Welcome to Yaad Adz AI. Search, compare, or ask me anything about the site!']; return g[Math.floor(Math.random()*g.length)]; },
     thanks: () => { const g=['No problem! Anything else? 😊','Anytime! That\'s what I\'m here for. 🤝','Bless up! Hit me if you need anything else. 🇯🇲','You\'re welcome! Happy searching! 🔍']; return g[Math.floor(Math.random()*g.length)]; },
-    help: () => `I'm your Yaad Adz AI assistant! Here's what I can do:\n\n🔍 **Search** — "cheap car under 2M" or "phone in Kingston"\n💰 **Price check** — "average price for iPhone 14"\n📊 **Compare** — "cheapest laptop" or "most popular listings"\n🏘️ **Filter by parish** — "furniture in Portmore"\n💬 **Answer questions** — "how do I post an ad?"\n🇯🇲 **Speak Jamaican** — "mi waan a criss phone fi likkle money"\n\nJust type naturally — I'll figure out what you mean!`,
+    help: () => `I'm your Yaad Adz AI assistant! Here's everything I can help with:\n\n🔍 Search — "cheap car under 2M" or "phone in Kingston"\n💰 Price check — "average price for iPhone"\n📊 Compare — "cheapest laptop" or "most popular listings"\n🏘️ Filter — "furniture in Portmore"\n🇯🇲 Patois — "mi waan a criss phone fi likkle money"\n\n📝 Site help — ask me:\n• "How do I post an ad?"\n• "How to edit my profile"\n• "How to add photos"\n• "How to mark as sold"\n• "How to change my password"\n• "Is it safe?"\n• "What can I sell?"\n• "How to install the app"\n\nJust type naturally — I understand! 🤖`,
+
+    // ── STATS (dynamic) ──
     stats: () => {
       const active = _ads.filter(a=>a.status!=='sold');
       const cats = {};
@@ -3034,7 +3140,8 @@ const YaadBrain = (() => {
       const topCat = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
       const topCatName = topCat ? (CATS.find(c=>c.id===topCat[0])?.name||topCat[0]) : 'N/A';
       const totalValue = active.reduce((s,a)=>s+a.price,0);
-      return `📊 Yaad Adz right now:\n• ${active.length} active listings\n• ${_ads.filter(a=>a.status==='sold').length} sold\n• Top category: ${topCatName} (${topCat?topCat[1]:0} listings)\n• Total marketplace value: J$${fmtN(totalValue)}\n• Covering all 14 parishes\nGrowing every day! 🚀`;
+      const parishes = new Set(active.map(a=>a.parish));
+      return `📊 Yaad Adz right now:\n• ${active.length} active listings\n• ${_ads.filter(a=>a.status==='sold').length} sold\n• Top category: ${topCatName} (${topCat?topCat[1]:0} listings)\n• Active in ${parishes.size} parishes\n• Total marketplace value: J$${fmtN(totalValue)}\nGrowing every day! 🚀`;
     },
     top_sellers: () => {
       const counts = {};
