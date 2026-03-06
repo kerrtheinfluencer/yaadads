@@ -532,10 +532,10 @@ nav {
     /* Simplify gradient — radial gradients are expensive on mobile GPU */
     background: radial-gradient(ellipse 80% 70% at 30% 90%, rgba(0,112,63,.35) 0%, transparent 65%);
   }
-  /* Simplify card hover on touch — no translateY which causes repaints */
-  .ad-card:hover { transform: none; box-shadow: var(--shadow-md); }
-  /* Disable card entrance stagger beyond 4 (not visible anyway) */
-  .ad-card:nth-child(n+5) { animation: none; opacity: 1; transform: none; }
+  /* Simplify card hover on touch */
+  .ad-card:hover { transform: none; box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+  /* Disable card entrance stagger beyond 6 */
+  .ad-card:nth-child(n+7) { animation: none; opacity: 1; transform: none; }
   /* Disable skeleton shimmer animation — use simple pulse instead */
   .skeleton-card { animation: skelPulse 1.4s ease-in-out infinite; }
   @keyframes skelPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
@@ -745,112 +745,169 @@ nav {
 .section-link:hover { text-decoration: underline; }
 
 /* ═══════════════════════════════════════════════════════════
-   LISTING CARDS
+   LISTING CARDS — Premium Redesign
 ═══════════════════════════════════════════════════════════ */
 .listings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
-  gap: 18px;
-  /* Prevent layout thrash during render */
+  gap: 16px;
   contain: layout;
 }
 .ad-card {
   background: var(--surface);
-  border-radius: var(--r);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   cursor: pointer;
-  transition: transform .22s cubic-bezier(.175,.885,.32,1.275),
-              box-shadow .22s ease,
-              border-color .2s;
-  border: 1px solid var(--border);
+  transition: transform .28s cubic-bezier(.22,1,.36,1),
+              box-shadow .28s ease;
+  border: 1px solid rgba(0,0,0,.06);
   position: relative;
-  /* Promote to compositor layer only on hover, not always */
   contain: layout style;
   -webkit-tap-highlight-color: transparent;
 }
-/* Only promote to GPU layer on devices that can hover */
 @media (hover: hover) {
   .ad-card:hover { will-change: transform; }
 }
 .ad-card:hover {
-  transform: translateY(-6px) scale(1.012);
-  box-shadow: 0 20px 48px rgba(0,0,0,.16), 0 4px 12px rgba(0,0,0,.08);
-  border-color: transparent;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
+  border-color: rgba(0,0,0,.03);
 }
-.ad-card:hover .ad-card-img img,
-.ad-card:hover .ad-card-img span { transform: scale(1.05); }
+.ad-card:hover .ad-card-img img { transform: scale(1.04); }
 .ad-card-img img,
-.ad-card-img span { transition: transform .4s cubic-bezier(.175,.885,.32,1.1); display: block; }
-.ad-card.sold { opacity: .65; }
-/* Staggered entrance when grid is rendered */
-.ad-card { animation: cardIn .45s cubic-bezier(.34,1.2,.64,1) both; }
-.ad-card:nth-child(1){animation-delay:.03s} .ad-card:nth-child(2){animation-delay:.07s}
-.ad-card:nth-child(3){animation-delay:.11s} .ad-card:nth-child(4){animation-delay:.15s}
-.ad-card:nth-child(5){animation-delay:.19s} .ad-card:nth-child(6){animation-delay:.23s}
-.ad-card:nth-child(7){animation-delay:.27s} .ad-card:nth-child(8){animation-delay:.31s}
-.ad-card:nth-child(n+9){animation-delay:.35s}
+.ad-card-img .img-placeholder { transition: transform .5s cubic-bezier(.22,1,.36,1); display: block; }
+.ad-card.sold { opacity: .55; filter: saturate(.6); }
+
+/* Staggered entrance */
+.ad-card { animation: cardIn .4s cubic-bezier(.22,1,.36,1) both; }
+.ad-card:nth-child(1){animation-delay:.02s} .ad-card:nth-child(2){animation-delay:.05s}
+.ad-card:nth-child(3){animation-delay:.08s} .ad-card:nth-child(4){animation-delay:.11s}
+.ad-card:nth-child(5){animation-delay:.14s} .ad-card:nth-child(6){animation-delay:.17s}
+.ad-card:nth-child(7){animation-delay:.20s} .ad-card:nth-child(8){animation-delay:.23s}
+.ad-card:nth-child(n+9){animation-delay:.26s}
 @keyframes cardIn {
-  from { opacity:0; transform:translateY(22px) scale(.96); }
+  from { opacity:0; transform:translateY(16px) scale(.98); }
   to   { opacity:1; transform:none; }
 }
+
+/* ── Image container ── */
 .ad-card-img {
-  height: 196px;
+  height: 200px;
   background: var(--surface-2);
   display: flex; align-items: center; justify-content: center;
   font-size: 56px;
   overflow: hidden;
   position: relative;
-  /* Prevent layout shift */
   contain: strict;
+}
+/* Subtle gradient overlay at bottom of image for text readability */
+.ad-card-img::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 48px;
+  background: linear-gradient(transparent, rgba(0,0,0,.08));
+  pointer-events: none; z-index: 1;
 }
 .ad-card-img img {
   width: 100%; height: 100%; object-fit: cover;
-  /* Smooth image load */
-  transition: opacity .2s;
+  transition: opacity .25s;
 }
 .ad-card-img img[loading] { opacity: 0; }
 .ad-card-img img.loaded { opacity: 1; }
+
+/* Category-colored placeholder */
+.ad-card-img .img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+  background: linear-gradient(145deg, var(--cat-bg, var(--surface-2)), rgba(255,255,255,.4));
+}
+
+/* ── Category tag — small, clean pill ── */
 .ad-cat-tag {
-  position: absolute; top: 12px; left: 12px;
-  background: var(--gold); color: #000;
-  font-size: 10px; font-weight: 700;
-  padding: 4px 10px; border-radius: 20px;
-  text-transform: uppercase; letter-spacing: .5px;
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  background: rgba(0,0,0,.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 9px; font-weight: 700;
+  padding: 4px 9px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .6px;
 }
 .sold-tag {
-  position: absolute; top: 12px; left: 12px;
-  background: var(--text-1); color: #fff;
-  font-size: 10px; font-weight: 700;
-  padding: 4px 10px; border-radius: 20px;
-  text-transform: uppercase;
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  background: rgba(0,0,0,.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 9px; font-weight: 700;
+  padding: 4px 9px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .4px;
 }
+
+/* ── Fav button — smaller, frosted ── */
 .fav-btn {
-  position: absolute; top: 10px; right: 10px;
-  background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
-  border: none; border-radius: 50%; width: 34px; height: 34px;
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: rgba(255,255,255,.85);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: none; border-radius: 50%; width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,.15); transition: transform .2s;
+  font-size: 14px; cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0,0,0,.1);
+  transition: transform .2s, background .15s;
 }
-.fav-btn:hover { transform: scale(1.18); }
-.ad-card-body { padding: 16px 18px 18px; }
-.ad-price { font-family: var(--font-d); font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
-.ad-price.negotiable::after { content: ' · neg.'; font-size: 13px; font-weight: 400; color: var(--text-3); }
-.ad-title { font-weight: 600; font-size: 14px; color: var(--text-1); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ad-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-3); align-items: center; flex-wrap: wrap; }
-.ad-views { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; font-size: 11px; color: var(--text-3); }
-.ad-views svg { width: 12px; height: 12px; opacity: .55; }
-/* Trending badge — shown when views > 80 */
+.fav-btn:hover { transform: scale(1.15); background: #fff; }
+
+/* ── Fresh badge — subtle, bottom-right of image ── */
+.fresh-badge {
+  position: absolute; bottom: 8px; right: 10px; z-index: 2;
+  background: rgba(0,92,53,.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 9px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+
+/* ── Trending badge — bottom-left of image ── */
 .trending-badge {
-  position: absolute; bottom: 10px; left: 10px;
-  background: linear-gradient(135deg, #ff6b35, #f7c59f);
-  color: #fff; font-size: 9px; font-weight: 800;
-  padding: 3px 8px; border-radius: 10px;
-  text-transform: uppercase; letter-spacing: .6px;
-  animation: trendPulse 2s ease-in-out infinite;
+  position: absolute; bottom: 8px; left: 10px; z-index: 2;
+  background: rgba(230,57,70,.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff; font-size: 9px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .4px;
 }
-@keyframes trendPulse { 0%,100%{opacity:1} 50%{opacity:.75} }
+
+/* ── Card body — refined spacing ── */
+.ad-card-body { padding: 14px 16px 16px; }
+.ad-price {
+  font-family: var(--font-d); font-size: 20px; font-weight: 700;
+  color: var(--green); margin-bottom: 3px; line-height: 1.2;
+}
+.ad-price.negotiable::after {
+  content: ' · neg.'; font-size: 11px; font-weight: 500;
+  color: var(--text-3); font-family: var(--font-b);
+}
+.ad-title {
+  font-weight: 600; font-size: 13.5px; color: var(--text-1);
+  margin-bottom: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.ad-meta {
+  display: flex; gap: 10px; font-size: 11.5px; color: var(--text-3);
+  align-items: center; flex-wrap: wrap;
+}
+.ad-views {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-left: auto; font-size: 11px; color: var(--text-3);
+}
+.ad-views svg { width: 11px; height: 11px; opacity: .45; }
 
 /* ═══════════════════════════════════════════════════════════
    FILTERS BAR
@@ -1261,12 +1318,19 @@ footer {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
-  .ad-card-img { height: 148px; }
-  .ad-card-body { padding: 10px 12px 12px; }
-  .ad-price { font-size: 17px; }
-  .ad-title { font-size: 12px; }
-  .ad-meta { font-size: 11px; gap: 6px; }
-  .ad-views { display: none; } /* Save space on mobile */
+  .ad-card { border-radius: 12px; }
+  .ad-card-img { height: 156px; }
+  .ad-card-img::after { height: 32px; }
+  .ad-card-body { padding: 10px 12px 13px; }
+  .ad-price { font-size: 16px; }
+  .ad-title { font-size: 12px; margin-bottom: 6px; }
+  .ad-meta { font-size: 10.5px; gap: 6px; }
+  .ad-views { display: none; }
+  .ad-cat-tag { font-size: 8px; padding: 3px 7px; top: 8px; left: 8px; }
+  .sold-tag { font-size: 8px; padding: 3px 7px; top: 8px; left: 8px; }
+  .fav-btn { width: 28px; height: 28px; font-size: 12px; top: 8px; right: 8px; }
+  .fresh-badge { font-size: 8px; padding: 2px 6px; bottom: 6px; right: 8px; }
+  .trending-badge { font-size: 8px; padding: 2px 6px; bottom: 6px; left: 8px; }
 
   /* ── Modals ── */
   .overlay { align-items: flex-end; }
@@ -1330,9 +1394,10 @@ footer {
 /* ── SMALL PHONES (≤390px) ── */
 @media (max-width: 390px) {
   .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .ad-card { border-radius: 10px; }
   .ad-card-img { height: 130px; }
   .ad-card-body { padding: 8px 10px 10px; }
-  .ad-price { font-size: 15px; }
+  .ad-price { font-size: 14px; }
   .ad-title { font-size: 11px; }
   .hero h1 { font-size: 26px; }
   .results-area { padding: 0 10px 48px; }
@@ -3678,22 +3743,22 @@ function cardHTML(ad, idx) {
   const cat   = CATS.find(c => c.id === ad.category);
   const catColor = cat?.color || '#f5f5f5';
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="196" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
+    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
-    ? `<span class="sold-tag">SOLD</span>`
+    ? `<span class="sold-tag">Sold</span>`
     : `<span class="ad-cat-tag">${cat?.name||'Other'}</span>`;
   const views = getViews(ad.id);
   const trending = views >= 80 && ad.status !== 'sold'
-    ? `<span class="trending-badge">🔥 Hot</span>` : '';
+    ? `<span class="trending-badge">Trending</span>` : '';
   const ageDays = (Date.now() - new Date(ad.date||0)) / 86400000;
   const freshBadge = ageDays < 2 && ad.status !== 'sold'
-    ? `<span class="fresh-badge">✨ New</span>` : '';
-  const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.06,0.5)}s` : '';
+    ? `<span class="fresh-badge">New</span>` : '';
+  const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.04,0.3)}s` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
-    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${trending}${freshBadge}
+    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
@@ -3701,7 +3766,7 @@ function cardHTML(ad, idx) {
       <div class="ad-title">${ad.title}</div>
       <div class="ad-meta">
         <span>📍 ${ad.parish}</span>
-        <span>🕐 ${ago(ad.date)}</span>
+        <span>${ago(ad.date)}</span>
         <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
       </div>
     </div>
