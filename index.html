@@ -1898,6 +1898,61 @@ function isFav(id) { return L.favs.includes(id); }
 }
 @media (max-width: 640px) { .gallery-slide { height: 220px; } }
 
+/* ── FULLSCREEN LIGHTBOX ── */
+.lightbox {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.95);
+  z-index: 500;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.lightbox.open { display: flex; }
+.lightbox-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,.12); border: none; border-radius: 50%;
+  color: #fff; font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 3; transition: background .15s;
+  touch-action: manipulation;
+}
+.lightbox-close:hover { background: rgba(255,255,255,.25); }
+.lightbox-img {
+  max-width: 94vw; max-height: 80vh;
+  object-fit: contain; border-radius: 4px;
+  user-select: none; -webkit-user-drag: none;
+  animation: lbIn .25s ease both;
+}
+@keyframes lbIn { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:none; } }
+.lightbox-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,.12); border: none; border-radius: 50%;
+  color: #fff; font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s; z-index: 3;
+}
+.lightbox-nav:hover { background: rgba(255,255,255,.25); }
+.lightbox-prev { left: 12px; }
+.lightbox-next { right: 12px; }
+.lightbox-counter {
+  position: absolute; bottom: 20px;
+  color: rgba(255,255,255,.6); font-size: 14px; font-weight: 600;
+  background: rgba(0,0,0,.4); padding: 4px 14px; border-radius: 20px;
+}
+.lightbox-dots {
+  position: absolute; bottom: 56px;
+  display: flex; gap: 8px;
+}
+.lightbox-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.3); cursor: pointer;
+  transition: all .2s;
+}
+.lightbox-dot.active { background: #fff; transform: scale(1.3); }
+
 /* ── 5. MAKE AN OFFER ── */
 .offer-panel {
   background: var(--gold-pale); border: 1.5px solid var(--gold);
@@ -2169,23 +2224,6 @@ function isFav(id) { return L.favs.includes(id); }
 </div>
 
 <!-- ACTIVITY TICKER -->
-<div class="activity-ticker" id="activityTicker">
-  <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item"><span class="ticker-dot"></span>🇯🇲 Jamaica's #1 free marketplace</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>📱 New: iPhones listed in Kingston</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>🚗 Cars, bikes &amp; trucks across all parishes</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>🏡 Rent &amp; sale properties — no agent fees</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>✅ 100% free to post — always</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>💼 Jobs &amp; services — find work today</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>🇯🇲 Jamaica's #1 free marketplace</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>📱 New: iPhones listed in Kingston</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>🚗 Cars, bikes &amp; trucks across all parishes</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>🏡 Rent &amp; sale properties — no agent fees</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>✅ 100% free to post — always</span>
-    <span class="ticker-item"><span class="ticker-dot"></span>💼 Jobs &amp; services — find work today</span>
-  </div>
-</div>
-
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="goHome()">
@@ -2673,6 +2711,16 @@ function isFav(id) { return L.favs.includes(id); }
   </div>
 </div>
 
+<!-- FULLSCREEN LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <button class="lightbox-nav lightbox-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
+  <img class="lightbox-img" id="lbImg" src="" alt="">
+  <button class="lightbox-nav lightbox-next" id="lbNext" onclick="lbNav(1)">›</button>
+  <div class="lightbox-dots" id="lbDots"></div>
+  <div class="lightbox-counter" id="lbCounter"></div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════
    ⚙️  CONFIG — Production credentials
@@ -2807,6 +2855,20 @@ async function loadAds() {
 
 // Map DB row → app ad object
 function dbToAd(row) {
+  // image_url can be: a single URL string, or a JSON array of URLs
+  let image = '', photos = [];
+  try {
+    if (row.image_url && row.image_url.startsWith('[')) {
+      photos = JSON.parse(row.image_url);
+      image = photos[0] || '';
+    } else {
+      image = row.image_url || '';
+      if (image) photos = [image];
+    }
+  } catch(e) {
+    image = row.image_url || '';
+    if (image) photos = [image];
+  }
   return {
     id:         row.id,
     title:      row.title,
@@ -2815,7 +2877,8 @@ function dbToAd(row) {
     price:      row.price,
     desc:       row.description,
     phone:      row.phone,
-    image:      row.image_url || '',
+    image:      image,
+    photos:     photos,
     neg:        row.negotiable,
     seller:     row.seller_name,
     sellerInit: row.seller_init,
@@ -2828,6 +2891,13 @@ function dbToAd(row) {
 
 // Map app ad object → DB row
 function adToDb(ad) {
+  // Store photos as JSON array if multiple, single URL if one
+  let imageUrl = ad.image || '';
+  if (ad.photos && ad.photos.length > 1) {
+    imageUrl = JSON.stringify(ad.photos);
+  } else if (ad.photos && ad.photos.length === 1) {
+    imageUrl = ad.photos[0];
+  }
   return {
     id:          ad.id,
     title:       ad.title,
@@ -2836,7 +2906,7 @@ function adToDb(ad) {
     price:       ad.price,
     description: ad.desc,
     phone:       ad.phone,
-    image_url:   ad.image || '',
+    image_url:   imageUrl,
     negotiable:  ad.neg || false,
     seller_name: ad.seller,
     seller_init: ad.sellerInit,
@@ -3528,6 +3598,16 @@ async function saveEditAd() {
       negotiable: neg,
       image_url: imageUrl,
     };
+
+    // If the ad has multiple photos and we're only replacing the cover, preserve the rest
+    if (_editAdNewFile && ad.photos && ad.photos.length > 1) {
+      const updatedPhotos = [imageUrl, ...ad.photos.slice(1)];
+      dbUpdates.image_url = JSON.stringify(updatedPhotos);
+      ad.photos = updatedPhotos;
+    } else if (ad.photos && ad.photos.length > 1 && !_editAdNewFile) {
+      // Keep existing photos array intact
+      dbUpdates.image_url = JSON.stringify(ad.photos);
+    }
 
     await sbUpdateAd(_editAdId, dbUpdates);
 
@@ -5551,20 +5631,22 @@ function openDetail(id) {
 
   // Gallery (multi-photo or single)
   const photos = (ad.photos && ad.photos.length > 0) ? ad.photos : (ad.image ? [ad.image] : []);
+  // Store photos globally so lightbox can access them
+  window._detailPhotos = photos;
   let galleryHtml;
   if (photos.length > 1) {
     galleryHtml =
       '<div class="gallery-wrap">' +
         '<div class="gallery-track" id="galleryTrack">' +
-          photos.map(function(p){ return '<div class="gallery-slide"><img src="' + p + '" alt="' + escHtml(ad.title) + '" loading="lazy"></div>'; }).join('') +
+          photos.map(function(p, i){ return '<div class="gallery-slide" onclick="openLightbox(window._detailPhotos,'+i+')" style="cursor:zoom-in"><img src="' + p + '" alt="' + escHtml(ad.title) + '" loading="lazy"></div>'; }).join('') +
         '</div>' +
-        '<button class="gallery-prev" onclick="galleryPrev()">‹</button>' +
-        '<button class="gallery-next" onclick="galleryNext()">›</button>' +
+        '<button class="gallery-prev" onclick="event.stopPropagation();galleryPrev()">‹</button>' +
+        '<button class="gallery-next" onclick="event.stopPropagation();galleryNext()">›</button>' +
         '<div class="gallery-dots">' + photos.map(function(_,i){ return '<span class="gd' + (i===0?' active':'') + '" onclick="galleryGoTo(' + i + ')"></span>'; }).join('') + '</div>' +
         '<span class="gallery-counter" id="galleryCounter">1 / ' + photos.length + '</span>' +
       '</div>';
   } else if (photos.length === 1) {
-    galleryHtml = '<div class="detail-img' + (ad.status==='sold'?' sold':'') + '"><img src="' + photos[0] + '" alt="' + escHtml(ad.title) + '" loading="lazy"></div>';
+    galleryHtml = '<div class="detail-img' + (ad.status==='sold'?' sold':'') + '" onclick="openLightbox(window._detailPhotos,0)" style="cursor:zoom-in"><img src="' + photos[0] + '" alt="' + escHtml(ad.title) + '" loading="lazy"></div>';
   } else {
     galleryHtml = '<div class="detail-img" style="display:flex;align-items:center;justify-content:center;background:#f5f5f5;min-height:200px"><span style="font-size:80px">' + (cat?cat.icon:'📦') + '</span></div>';
   }
@@ -5871,25 +5953,79 @@ if (!document.getElementById('confettiStyles')) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ACTIVITY TICKER — live updates from _ads
+   ACTIVITY TICKER (removed — stub for compatibility)
 ═══════════════════════════════════════════════════════════ */
-function updateTicker() {
-  const recent = [..._ads].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
-  if (!recent.length) return;
-  const base = [
-    '🇯🇲 Jamaica\'s #1 free marketplace',
-    '✅ 100% free to post — always',
-    `📊 ${_ads.length} listings across all parishes`,
-    '💬 Chat directly with sellers',
-  ];
-  const live = recent.map(a => {
-    const cat = CATS.find(c=>c.id===a.category);
-    return `${cat?.icon||'📦'} New: ${a.title} — J$${fmtN(a.price)} · ${a.parish}`;
-  });
-  const items = [...live, ...base, ...live, ...base];
-  const track = document.getElementById('tickerTrack'); if (!track) return;
-  track.innerHTML = items.map(t => `<span class="ticker-item"><span class="ticker-dot"></span>${t}</span>`).join('');
+function updateTicker() {}
+
+/* ═══════════════════════════════════════════════════════════
+   FULLSCREEN LIGHTBOX
+═══════════════════════════════════════════════════════════ */
+let _lbPhotos = [];
+let _lbIndex = 0;
+
+function openLightbox(photos, startIndex) {
+  _lbPhotos = photos || [];
+  _lbIndex = startIndex || 0;
+  if (!_lbPhotos.length) return;
+  const lb = document.getElementById('lightbox');
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderLightbox();
 }
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+  if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+}
+
+function lbNav(dir) {
+  _lbIndex = (_lbIndex + dir + _lbPhotos.length) % _lbPhotos.length;
+  renderLightbox();
+}
+
+function renderLightbox() {
+  const img = document.getElementById('lbImg');
+  img.src = _lbPhotos[_lbIndex];
+  img.style.animation = 'none'; img.offsetHeight; img.style.animation = '';
+
+  document.getElementById('lbCounter').textContent = (_lbIndex+1) + ' / ' + _lbPhotos.length;
+
+  // Nav buttons
+  document.getElementById('lbPrev').style.display = _lbPhotos.length > 1 ? '' : 'none';
+  document.getElementById('lbNext').style.display = _lbPhotos.length > 1 ? '' : 'none';
+
+  // Dots
+  const dots = document.getElementById('lbDots');
+  if (_lbPhotos.length > 1 && _lbPhotos.length <= 10) {
+    dots.innerHTML = _lbPhotos.map(function(_, i) {
+      return '<span class="lightbox-dot' + (i===_lbIndex?' active':'') + '" onclick="lbGoTo('+i+')"></span>';
+    }).join('');
+    dots.style.display = 'flex';
+  } else { dots.style.display = 'none'; }
+}
+
+function lbGoTo(i) { _lbIndex = i; renderLightbox(); }
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lbNav(-1);
+  if (e.key === 'ArrowRight') lbNav(1);
+});
+
+// Swipe support for lightbox
+(function() {
+  let sx=0;
+  const lb = document.getElementById('lightbox');
+  if (!lb) return;
+  lb.addEventListener('touchstart', function(e) { sx=e.touches[0].clientX; }, {passive:true});
+  lb.addEventListener('touchend', function(e) {
+    const dx = e.changedTouches[0].clientX - sx;
+    if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+  }, {passive:true});
+})();
 
 /* ═══════════════════════════════════════════════════════════
    PWA INSTALL PROMPT
