@@ -1397,34 +1397,37 @@ function renderProfileCard() {
   const activeCount = myAds.filter(a => a.status !== 'sold').length;
   const soldCount = myAds.filter(a => a.status === 'sold').length;
   el.innerHTML =
-    '<div style="background:var(--nav-bg);border-radius:var(--r-lg);overflow:hidden">' +
-      '<div style="padding:28px 24px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">' +
-        '<div class="s-avatar" style="background:'+clr.bg+';color:'+clr.fg+';width:64px;height:64px;font-size:24px;flex-shrink:0">'+ini+'</div>' +
-        '<div style="flex:1;min-width:160px">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:#fff">'+escHtml(CU.name)+'</div>' +
-          '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:2px">'+escHtml(CU.email)+'</div>' +
-          (CU.phone ? '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:1px">📱 '+escHtml(CU.phone)+'</div>' : '') +
-          (CU.parish ? '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:1px">📍 '+escHtml(CU.parish)+'</div>' : '') +
+    '<div style="background:var(--nav-bg);border-radius:16px;overflow:hidden">' +
+      // Header section
+      '<div style="padding:24px 20px 18px;display:flex;align-items:center;gap:14px">' +
+        '<div class="s-avatar" style="background:'+clr.bg+';color:'+clr.fg+';width:56px;height:56px;font-size:22px;flex-shrink:0">'+ini+'</div>' +
+        '<div style="flex:1;min-width:0;overflow:hidden">' +
+          '<div style="font-family:var(--font-d);font-size:20px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(CU.name)+'</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(CU.email)+'</div>' +
+          (CU.phone ? '<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:1px">'+escHtml(CU.phone)+'</div>' : '') +
+          (CU.parish ? '<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:1px">'+escHtml(CU.parish)+'</div>' : '') +
         '</div>' +
-        '<button class="btn btn-outline btn-sm" onclick="openEditProfile()">✏️ Edit Profile</button>' +
       '</div>' +
-      '<div style="display:flex;gap:0;border-top:1px solid rgba(255,255,255,.08)">' +
-        '<div style="flex:1;text-align:center;padding:14px 0">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--gold)">'+myAds.length+'</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Total Ads</div>' +
+      // Stats row
+      '<div style="display:flex;border-top:1px solid rgba(255,255,255,.08)">' +
+        '<div style="flex:1;text-align:center;padding:12px 0">' +
+          '<div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--gold)">'+myAds.length+'</div>' +
+          '<div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px">Total</div>' +
         '</div>' +
-        '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:#4ade80">'+activeCount+'</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Active</div>' +
+        '<div style="flex:1;text-align:center;padding:12px 0;border-left:1px solid rgba(255,255,255,.08)">' +
+          '<div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:#4ade80">'+activeCount+'</div>' +
+          '<div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px">Active</div>' +
         '</div>' +
-        '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:rgba(255,255,255,.5)">'+soldCount+'</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Sold</div>' +
+        '<div style="flex:1;text-align:center;padding:12px 0;border-left:1px solid rgba(255,255,255,.08)">' +
+          '<div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:rgba(255,255,255,.45)">'+soldCount+'</div>' +
+          '<div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px">Sold</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
-    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
-      '<button class="btn btn-ghost btn-sm" onclick="doLogout()">🚪 Log Out</button>' +
+    // Action buttons below card
+    '<div style="display:flex;gap:8px;margin-top:10px">' +
+      '<button class="btn btn-outline btn-sm" onclick="openEditProfile()" style="border-color:var(--border);color:var(--text-2)">Edit Profile</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="doLogout()">Log Out</button>' +
     '</div>';
 }
 
