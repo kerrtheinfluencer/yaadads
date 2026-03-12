@@ -1447,6 +1447,8 @@ async function doRegister() {
   }
 }
 function doLogout() {
+  // Clean up realtime subscription
+  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
   CU = null; L.sess = null; _msgs = {};
   renderNav(); updateMsgBadge(); goHome();
   showToast('Logged out successfully.', '👋');
@@ -2232,8 +2234,11 @@ async function init() {
   setTimeout(pushAds, 1000);
 }
 
+let _msgChannel = null;
 function subscribeMessages() {
-  _db.channel('msg-changes')
+  // Remove existing channel before creating a new one — prevents duplicate listeners
+  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
+  _msgChannel = _db.channel('msg-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
       const row = payload.new;
       // Only process messages relevant to current user
@@ -2429,7 +2434,7 @@ function cardHTML(ad, idx) {
   const cat   = CATS.find(c => c.id === ad.category);
   const catColor = cat?.color || '#f5f5f5';
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
+    ? `<img src="${ad.image}" alt="${escHtml(ad.title)}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
