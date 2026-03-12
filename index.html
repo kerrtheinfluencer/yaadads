@@ -242,6 +242,15 @@ if ('serviceWorker' in navigator) {
 
 <link rel="stylesheet" href="style.css">
 <style>
+/* Force-hide AI chat panels on load — JS opens them */
+#aiFloatChat        { display:none !important; }
+#aiFloatChat.open   { display:flex !important; }
+#aiSheet            { display:none; }
+#aiSheetOverlay     { display:none; }
+/* Faster mobile tap — removes 300ms delay */
+* { touch-action: manipulation; }
+</style>
+<style>
 /* ── SEO ABOUT SECTION (above footer) ── */
 .seo-about {
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -1399,6 +1408,7 @@ async function doRegister() {
   }
 }
 function doLogout() {
+  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
   CU = null; L.sess = null; _msgs = {};
   renderNav(); updateMsgBadge(); goHome();
   showToast('Logged out successfully.', '👋');
@@ -2179,13 +2189,14 @@ async function init() {
   setTimeout(pushAds, 1000);
 }
 
+let _msgChannel = null;
 function subscribeMessages() {
-  _db.channel('msg-changes')
+  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
+  _msgChannel = _db.channel('msg-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
       const row = payload.new;
-      // Only process messages relevant to current user
       if (row.seller_id !== CU.id && row.buyer_id !== CU.id) return;
-      if (row.from_user_id === CU.id) return; // own messages
+      if (row.from_user_id === CU.id) return;
       const key = row.conversation_key;
       if (!_msgs[key]) {
         _msgs[key] = {
@@ -3653,8 +3664,14 @@ function updateSheetSugs() {
 }
 
 function openAiSheet() {
-  document.getElementById('aiSheet').classList.add('open');
-  document.getElementById('aiSheetOverlay').classList.add('open');
+  if (sheetOpen) return;
+  const sheet = document.getElementById('aiSheet');
+  const overlay = document.getElementById('aiSheetOverlay');
+  sheet.style.display = '';
+  overlay.style.display = '';
+  sheet.offsetHeight; // force reflow so transition fires
+  sheet.classList.add('open');
+  overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   sheetOpen = true;
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
@@ -3665,10 +3682,14 @@ function openAiSheet() {
 }
 
 function closeAiSheet() {
-  document.getElementById('aiSheet').classList.remove('open');
-  document.getElementById('aiSheetOverlay').classList.remove('open');
+  const sheet = document.getElementById('aiSheet');
+  const overlay = document.getElementById('aiSheetOverlay');
+  sheet.classList.remove('open');
+  overlay.classList.remove('open');
+  setTimeout(() => { sheet.style.display = 'none'; overlay.style.display = 'none'; }, 300);
   document.body.style.overflow = '';
   sheetOpen = false;
+  if (document.activeElement) document.activeElement.blur();
 }
 
 function sheetSearch(query) {
@@ -4316,6 +4337,14 @@ let _floatOpen = false;
 let _floatHistory = [];
 
 function toggleFloatChat() {
+  // On mobile — use the bottom sheet instead
+  if (window.innerWidth <= 640) {
+    _floatOpen = false;
+    document.getElementById('aiFloatChat').classList.remove('open');
+    document.getElementById('aiFab').style.display = '';
+    openAiSheet();
+    return;
+  }
   _floatOpen = !_floatOpen;
   document.getElementById('aiFloatChat').classList.toggle('open', _floatOpen);
   document.getElementById('aiFab').style.display = _floatOpen ? 'none' : '';
