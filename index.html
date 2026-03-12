@@ -1049,12 +1049,12 @@ const L = {
 // Load all active ads into cache
 async function loadAds() {
   const { data, error } = await _db.from('ads')
-    .select('id,title,category,parish,price,description,phone,image_url,negotiable,seller_name,seller_init,seller_id,status,views,created_at')
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
   _ads = (data || []).map(dbToAd);
-  if (!_ads.length) _ads = DEMO; // fallback to demo if DB empty
+  if (!_ads.length) _ads = DEMO;
 }
 
 // Map DB row → app ad object
