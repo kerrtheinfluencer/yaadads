@@ -199,6 +199,7 @@
     grid-template-columns: 1fr 340px;
     gap: 28px;
     align-items: start;
+    align-content: start;
     margin-top: 20px;
   }
 
@@ -343,10 +344,15 @@
   /* ── AD SLOT ── */
   .ad-slot-wrap {
     margin: 8px 0;
-    min-height: 90px;
-    background: rgba(255,255,255,0.02);
+    min-height: 0;
+    background: transparent;
     border-radius: var(--radius);
     overflow: hidden;
+  }
+  /* Only show background when ad actually loads */
+  .ad-slot-wrap:has(ins[data-adsbygoogle-status]) {
+    min-height: 90px;
+    background: rgba(255,255,255,0.02);
   }
 
   /* ── FOOTER ── */
