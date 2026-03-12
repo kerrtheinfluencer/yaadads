@@ -237,11 +237,59 @@ if ('serviceWorker' in navigator) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cquwshpsfybvgqodbxsf.supabase.co">
+<link rel="preconnect" href="https://www.googletagmanager.com">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+<!-- Load fonts async so they never block render -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
 <link rel="stylesheet" href="style.css">
 <style>
+/* ── PERFORMANCE ── */
+/* Avoid layout shift while fonts load */
+:root { font-synthesis: none; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeSpeed; }
+
+/* GPU-accelerate overlays and modals */
+.overlay, .modal, .ai-sheet, .toast, .pwa-banner {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Defer off-screen card rendering */
+.listings-grid {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+/* Prevent image layout shift — reserve space */
+.ad-card-img {
+  aspect-ratio: 4/3;
+  contain: layout style;
+}
+
+/* Smooth scrolling only when user hasn't opted out */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Faster tap response on mobile — removes 300ms delay */
+* { touch-action: manipulation; }
+
+/* Optimize image rendering */
+img { image-rendering: auto; content-visibility: auto; }
+
+/* Prevent invisible text during font load */
+body { font-display: swap; }
+
 /* ── SEO ABOUT SECTION (above footer) ── */
 .seo-about {
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -995,7 +1043,7 @@ const L = {
 // Load all active ads into cache
 async function loadAds() {
   const { data, error } = await _db.from('ads')
-    .select('*')
+    .select('id,title,category,parish,price,description,phone,image_url,negotiable,seller_name,seller_init,seller_id,status,views,created_at')
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
@@ -1986,8 +2034,8 @@ async function doPostAd() {
 
 // Compress image client-side before upload (target ≤ 800px wide, JPEG 0.8)
 function compressImage(file, maxWidth, quality) {
-  maxWidth = maxWidth || 1200;
-  quality = quality || 0.82;
+  maxWidth = maxWidth || 900;   // was 1200 — smaller = faster upload & load
+  quality = quality || 0.78;    // was 0.82 — good quality, meaningfully smaller files
   return new Promise(function(resolve, reject) {
     // If it's already small enough, skip compression
     if (file.size < 150000) { resolve(file); return; }
@@ -2142,15 +2190,20 @@ async function init() {
     window._pendingSlug = null;
   }
 
-  // SEO + AI Discovery — inject after ads loaded
-  SEO.injectListingsSchema(_ads);
-  SEO.injectFAQSchema();
-  SEO.serveLlmsTxt(_ads);
+  // SEO + AI Discovery — defer until browser is idle (non-critical)
+  const idleOrTimeout = window.requestIdleCallback || (fn => setTimeout(fn, 200));
+  idleOrTimeout(function() {
+    SEO.injectListingsSchema(_ads);
+    SEO.injectFAQSchema();
+    SEO.serveLlmsTxt(_ads);
+  });
 
   // Update llms.txt whenever new ads arrive (handled in realtime subscription)
   window._seoRefresh = function() {
-    SEO.injectListingsSchema(_ads);
-    SEO.serveLlmsTxt(_ads);
+    idleOrTimeout(function() {
+      SEO.injectListingsSchema(_ads);
+      SEO.serveLlmsTxt(_ads);
+    });
   };
 
   // Real-time: new ads
@@ -2369,6 +2422,9 @@ function getViews(id) {
   return ad ? (ad.views || 0) : 0;
 }
 
+// ── Cached SVG constants (built once, reused per card) ──
+const _EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+
 function cardHTML(ad, idx) {
   const cat   = CATS.find(c => c.id === ad.category);
   const catColor = cat?.color || '#f5f5f5';
@@ -2388,7 +2444,7 @@ function cardHTML(ad, idx) {
   const photoCount = (ad.photos && ad.photos.length > 1)
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.04,0.3)}s` : '';
-  const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeSvg = _EYE_SVG;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
@@ -2422,6 +2478,13 @@ function toggleHideSold() {
   if (tog) tog.classList.toggle('on', _hideSold);
   _homeShowCount = _homePageSize;
   renderHome();
+}
+
+// ── Debounced render — prevents thrashing during rapid filter changes ──
+let _renderHomeTimer = null;
+function renderHomeDebounced() {
+  clearTimeout(_renderHomeTimer);
+  _renderHomeTimer = setTimeout(renderHome, 60);
 }
 
 function loadMoreHome() {
@@ -4727,6 +4790,38 @@ document.addEventListener('keydown', function(e) {
    BOOT
 ═══════════════════════════════════════════════════════════ */
 init();
+
+/* ═══════════════════════════════════════════════════════════
+   PERFORMANCE: Passive scroll + IntersectionObserver auto load-more
+═══════════════════════════════════════════════════════════ */
+(function() {
+  // Passive scroll listener for sticky nav shadow
+  let _lastScroll = 0;
+  const nav = document.querySelector('.nav');
+  window.addEventListener('scroll', function() {
+    const y = window.scrollY;
+    if (nav) nav.classList.toggle('scrolled', y > 10);
+    _lastScroll = y;
+  }, { passive: true });
+
+  // IntersectionObserver: auto-trigger "Load More" when user reaches bottom
+  const ioLoadMore = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        const btn = document.querySelector('.load-more-btn');
+        if (btn) btn.click();
+      }
+    });
+  }, { rootMargin: '200px' });
+
+  // Observe the load-more sentinel whenever it appears
+  const gridObserver = new MutationObserver(function() {
+    const wrap = document.querySelector('.load-more-wrap');
+    if (wrap) ioLoadMore.observe(wrap);
+  });
+  const homeGrid = document.getElementById('homeGrid');
+  if (homeGrid) gridObserver.observe(homeGrid, { childList: true });
+})();
 </script>
 </body>
 </html>
