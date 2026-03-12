@@ -885,7 +885,7 @@ body { font-display: swap; }
 
 <!-- FLOATING AI CHAT (desktop) -->
 <button class="ai-fab" id="aiFab" onclick="toggleFloatChat()">🤖</button>
-<div class="ai-float-chat" id="aiFloatChat">
+<div class="ai-float-chat" id="aiFloatChat" style="display:none;opacity:0;pointer-events:none">
   <div class="ai-float-header">
     <span class="ai-float-header-icon">🤖</span>
     <div class="ai-float-header-info">
@@ -4387,17 +4387,34 @@ let _floatOpen = false;
 let _floatHistory = [];
 
 function toggleFloatChat() {
-  // On mobile, use the sheet instead of the float popup
+  const chat = document.getElementById('aiFloatChat');
+  const fab  = document.getElementById('aiFab');
+
+  // On mobile — route to sheet instead
   if (window.innerWidth <= 640) {
-    if (_floatOpen) { _floatOpen = false; document.getElementById('aiFloatChat').classList.remove('open'); document.getElementById('aiFab').style.display = ''; }
+    // Make sure float is fully hidden first
+    if (chat) { chat.style.display = 'none'; chat.style.opacity = '0'; chat.style.pointerEvents = 'none'; chat.classList.remove('open'); }
+    _floatOpen = false;
     openAiSheet();
     return;
   }
+
   _floatOpen = !_floatOpen;
-  document.getElementById('aiFloatChat').classList.toggle('open', _floatOpen);
-  document.getElementById('aiFab').classList.toggle('open', _floatOpen);
-  document.getElementById('aiFab').style.display = _floatOpen ? 'none' : '';
-  if (_floatOpen) setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
+
+  if (_floatOpen) {
+    // Open
+    chat.style.display = 'flex';
+    chat.style.pointerEvents = 'auto';
+    requestAnimationFrame(() => { chat.style.opacity = '1'; chat.classList.add('open'); });
+    fab.style.display = 'none';
+    setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
+  } else {
+    // Close
+    chat.style.opacity = '0';
+    chat.classList.remove('open');
+    setTimeout(() => { chat.style.display = 'none'; chat.style.pointerEvents = 'none'; }, 250);
+    fab.style.display = '';
+  }
 }
 
 function floatSubmit() {
@@ -4705,8 +4722,10 @@ window.addEventListener('resize', () => {
     // If float chat is open and we're now on mobile, close it
     if (_floatOpen && window.innerWidth <= 640) {
       _floatOpen = false;
-      document.getElementById('aiFloatChat').classList.remove('open');
+      const chat = document.getElementById('aiFloatChat');
+      if (chat) { chat.style.display = 'none'; chat.style.opacity = '0'; chat.style.pointerEvents = 'none'; chat.classList.remove('open'); }
       document.getElementById('aiFab').style.display = '';
+    }
     }
     renderHome();
     renderCats();
