@@ -222,6 +222,15 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <script type="application/ld+json">${JSON.stringify(schemas[0], null, 2)}</script>
 <script type="application/ld+json">${JSON.stringify(schemas[1], null, 2)}</script>
 
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-75GV5WH64P"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-75GV5WH64P');
+</script>
+
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9656521698490533" crossorigin="anonymous"></script>
 
