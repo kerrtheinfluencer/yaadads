@@ -1,0 +1,12 @@
+{
+  "name": "yaadadz-page-generator",
+  "version": "1.0.0",
+  "description": "Static ad page generator for Yaad Adz",
+  "private": true,
+  "scripts": {
+    "generate": "node generate-pages.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
