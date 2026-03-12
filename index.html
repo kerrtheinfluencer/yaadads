@@ -360,7 +360,7 @@ body { font-display: swap; }
             placeholder="e.g. cheap phone under 80k in Kingston, or house under 15 million…"
             onkeydown="if(event.key==='Enter'){clearTimeout(window._aiDebounce);runAiSearch();}"
             oninput="clearTimeout(window._aiDebounce);if(this.value.length>4){window._aiDebounce=setTimeout(runAiSearch,700);}"
-            onfocus="if(window.innerWidth<=640){this.blur();openAiSheet();}">
+            onfocus="if(window.innerWidth<=640&&!sheetOpen){this.blur();openAiSheet();}">
           <button class="ai-search-btn" id="aiBtn" onclick="runAiSearch()">
             <span id="aiBtnLabel">Ask AI</span>
           </button>
@@ -4387,8 +4387,15 @@ let _floatOpen = false;
 let _floatHistory = [];
 
 function toggleFloatChat() {
+  // On mobile, use the sheet instead of the float popup
+  if (window.innerWidth <= 640) {
+    if (_floatOpen) { _floatOpen = false; document.getElementById('aiFloatChat').classList.remove('open'); document.getElementById('aiFab').style.display = ''; }
+    openAiSheet();
+    return;
+  }
   _floatOpen = !_floatOpen;
   document.getElementById('aiFloatChat').classList.toggle('open', _floatOpen);
+  document.getElementById('aiFab').classList.toggle('open', _floatOpen);
   document.getElementById('aiFab').style.display = _floatOpen ? 'none' : '';
   if (_floatOpen) setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
 }
@@ -4695,6 +4702,12 @@ let _resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
+    // If float chat is open and we're now on mobile, close it
+    if (_floatOpen && window.innerWidth <= 640) {
+      _floatOpen = false;
+      document.getElementById('aiFloatChat').classList.remove('open');
+      document.getElementById('aiFab').style.display = '';
+    }
     renderHome();
     renderCats();
   }, 250);
