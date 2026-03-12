@@ -246,6 +246,12 @@ if ('serviceWorker' in navigator) {
 
 <link rel="stylesheet" href="style.css">
 <style>
+/* Force-hide AI chat panels on load — JS controls visibility */
+#aiFloatChat { display: none !important; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+#aiFloatChat.open { display: flex !important; opacity: 1; pointer-events: auto; }
+#aiSheet { display: none; }
+#aiSheetOverlay { display: none; }
+
 /* ── PERFORMANCE ── */
 /* Avoid layout shift while fonts load */
 :root { font-synthesis: none; }
@@ -631,8 +637,8 @@ body { font-display: swap; }
 </div>
 
 <!-- ─── AI SEARCH SHEET (full-screen slide-up) ─── -->
-<div class="ai-sheet-overlay" id="aiSheetOverlay" onclick="closeAiSheet()"></div>
-<div class="ai-sheet" id="aiSheet">
+<div class="ai-sheet-overlay" id="aiSheetOverlay" onclick="closeAiSheet()" style="display:none"></div>
+<div class="ai-sheet" id="aiSheet" style="display:none">
   <div class="ai-sheet-handle"></div>
   <div class="ai-sheet-header">
     <div class="ai-sheet-title">
@@ -885,7 +891,7 @@ body { font-display: swap; }
 
 <!-- FLOATING AI CHAT (desktop) -->
 <button class="ai-fab" id="aiFab" onclick="toggleFloatChat()">🤖</button>
-<div class="ai-float-chat" id="aiFloatChat" style="display:none;opacity:0;pointer-events:none">
+<div class="ai-float-chat" id="aiFloatChat">
   <div class="ai-float-header">
     <span class="ai-float-header-icon">🤖</span>
     <div class="ai-float-header-info">
@@ -3721,9 +3727,15 @@ function updateSheetSugs() {
 }
 
 function openAiSheet() {
-  if (sheetOpen) return; // already open — don't re-trigger
-  document.getElementById('aiSheet').classList.add('open');
-  document.getElementById('aiSheetOverlay').classList.add('open');
+  if (sheetOpen) return;
+  const sheet = document.getElementById('aiSheet');
+  const overlay = document.getElementById('aiSheetOverlay');
+  sheet.style.display = '';
+  overlay.style.display = '';
+  // Force reflow so transition fires
+  sheet.offsetHeight;
+  sheet.classList.add('open');
+  overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   sheetOpen = true;
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
@@ -3734,12 +3746,16 @@ function openAiSheet() {
 }
 
 function closeAiSheet() {
-  document.getElementById('aiSheet').classList.remove('open');
-  document.getElementById('aiSheetOverlay').classList.remove('open');
+  const sheet = document.getElementById('aiSheet');
+  const overlay = document.getElementById('aiSheetOverlay');
+  sheet.classList.remove('open');
+  overlay.classList.remove('open');
+  // Hide after CSS transition completes
+  setTimeout(() => { sheet.style.display = 'none'; overlay.style.display = 'none'; }, 300);
   document.body.style.overflow = '';
   sheetOpen = false;
-  // Blur any focused input inside the sheet so re-focus doesn't re-trigger open
   if (document.activeElement) document.activeElement.blur();
+}
 }
 
 function sheetSearch(query) {
@@ -4392,29 +4408,17 @@ function toggleFloatChat() {
 
   // On mobile — route to sheet instead
   if (window.innerWidth <= 640) {
-    // Make sure float is fully hidden first
-    if (chat) { chat.style.display = 'none'; chat.style.opacity = '0'; chat.style.pointerEvents = 'none'; chat.classList.remove('open'); }
     _floatOpen = false;
+    chat.classList.remove('open');
+    fab.style.display = '';
     openAiSheet();
     return;
   }
 
   _floatOpen = !_floatOpen;
-
-  if (_floatOpen) {
-    // Open
-    chat.style.display = 'flex';
-    chat.style.pointerEvents = 'auto';
-    requestAnimationFrame(() => { chat.style.opacity = '1'; chat.classList.add('open'); });
-    fab.style.display = 'none';
-    setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
-  } else {
-    // Close
-    chat.style.opacity = '0';
-    chat.classList.remove('open');
-    setTimeout(() => { chat.style.display = 'none'; chat.style.pointerEvents = 'none'; }, 250);
-    fab.style.display = '';
-  }
+  chat.classList.toggle('open', _floatOpen);
+  fab.style.display = _floatOpen ? 'none' : '';
+  if (_floatOpen) setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
 }
 
 function floatSubmit() {
