@@ -3716,6 +3716,7 @@ function updateSheetSugs() {
 }
 
 function openAiSheet() {
+  if (sheetOpen) return; // already open — don't re-trigger
   document.getElementById('aiSheet').classList.add('open');
   document.getElementById('aiSheetOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -3732,6 +3733,8 @@ function closeAiSheet() {
   document.getElementById('aiSheetOverlay').classList.remove('open');
   document.body.style.overflow = '';
   sheetOpen = false;
+  // Blur any focused input inside the sheet so re-focus doesn't re-trigger open
+  if (document.activeElement) document.activeElement.blur();
 }
 
 function sheetSearch(query) {
@@ -4805,14 +4808,15 @@ init();
   }, { passive: true });
 
   // IntersectionObserver: auto-trigger "Load More" when user reaches bottom
+  // Only on desktop — on mobile the click() can accidentally trigger other focus events
   const ioLoadMore = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
+      if (entry.isIntersecting && window.innerWidth > 640) {
         const btn = document.querySelector('.load-more-btn');
         if (btn) btn.click();
       }
     });
-  }, { rootMargin: '200px' });
+  }, { rootMargin: '0px' });
 
   // Observe the load-more sentinel whenever it appears
   const gridObserver = new MutationObserver(function() {
