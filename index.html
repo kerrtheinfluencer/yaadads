@@ -237,65 +237,11 @@ if ('serviceWorker' in navigator) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cquwshpsfybvgqodbxsf.supabase.co">
-<link rel="preconnect" href="https://www.googletagmanager.com">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
-<!-- Load fonts async so they never block render -->
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
 <style>
-/* Force-hide AI chat panels on load — JS controls visibility */
-#aiFloatChat { display: none !important; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
-#aiFloatChat.open { display: flex !important; opacity: 1; pointer-events: auto; }
-#aiSheet { display: none; }
-#aiSheetOverlay { display: none; }
-
-/* ── PERFORMANCE ── */
-/* Avoid layout shift while fonts load */
-:root { font-synthesis: none; }
-body { -webkit-font-smoothing: antialiased; text-rendering: optimizeSpeed; }
-
-/* GPU-accelerate overlays and modals */
-.overlay, .modal, .ai-sheet, .toast, .pwa-banner {
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Defer off-screen card rendering */
-.listings-grid {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 400px;
-}
-
-/* Prevent image layout shift — reserve space */
-.ad-card-img {
-  aspect-ratio: 4/3;
-  contain: layout style;
-}
-
-/* Smooth scrolling only when user hasn't opted out */
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Faster tap response on mobile — removes 300ms delay */
-* { touch-action: manipulation; }
-
-/* Optimize image rendering */
-img { image-rendering: auto; content-visibility: auto; }
-
-/* Prevent invisible text during font load */
-body { font-display: swap; }
-
 /* ── SEO ABOUT SECTION (above footer) ── */
 .seo-about {
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -366,7 +312,7 @@ body { font-display: swap; }
             placeholder="e.g. cheap phone under 80k in Kingston, or house under 15 million…"
             onkeydown="if(event.key==='Enter'){clearTimeout(window._aiDebounce);runAiSearch();}"
             oninput="clearTimeout(window._aiDebounce);if(this.value.length>4){window._aiDebounce=setTimeout(runAiSearch,700);}"
-            onfocus="if(window.innerWidth<=640&&!sheetOpen){this.blur();openAiSheet();}">
+            onfocus="if(window.innerWidth<=640){this.blur();openAiSheet();}">
           <button class="ai-search-btn" id="aiBtn" onclick="runAiSearch()">
             <span id="aiBtnLabel">Ask AI</span>
           </button>
@@ -637,8 +583,8 @@ body { font-display: swap; }
 </div>
 
 <!-- ─── AI SEARCH SHEET (full-screen slide-up) ─── -->
-<div class="ai-sheet-overlay" id="aiSheetOverlay" onclick="closeAiSheet()" style="display:none"></div>
-<div class="ai-sheet" id="aiSheet" style="display:none">
+<div class="ai-sheet-overlay" id="aiSheetOverlay" onclick="closeAiSheet()"></div>
+<div class="ai-sheet" id="aiSheet">
   <div class="ai-sheet-handle"></div>
   <div class="ai-sheet-header">
     <div class="ai-sheet-title">
@@ -1048,27 +994,13 @@ const L = {
 
 // Load all active ads into cache
 async function loadAds() {
-  try {
-    const { data, error } = await _db.from('ads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if (error) {
-      console.error('loadAds error:', error);
-      // Only fall back to DEMO if we have nothing
-      if (!_ads.length) _ads = DEMO;
-      return;
-    }
-    if (data && data.length) {
-      _ads = data.map(dbToAd);
-    } else {
-      // DB is genuinely empty — show demo
-      _ads = DEMO;
-    }
-  } catch(e) {
-    console.error('loadAds exception:', e);
-    if (!_ads.length) _ads = DEMO;
-  }
+  const { data, error } = await _db.from('ads')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
+  _ads = (data || []).map(dbToAd);
+  if (!_ads.length) _ads = DEMO; // fallback to demo if DB empty
 }
 
 // Map DB row → app ad object
@@ -1467,8 +1399,6 @@ async function doRegister() {
   }
 }
 function doLogout() {
-  // Clean up realtime subscription
-  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
   CU = null; L.sess = null; _msgs = {};
   renderNav(); updateMsgBadge(); goHome();
   showToast('Logged out successfully.', '👋');
@@ -2056,8 +1986,8 @@ async function doPostAd() {
 
 // Compress image client-side before upload (target ≤ 800px wide, JPEG 0.8)
 function compressImage(file, maxWidth, quality) {
-  maxWidth = maxWidth || 900;   // was 1200 — smaller = faster upload & load
-  quality = quality || 0.78;    // was 0.82 — good quality, meaningfully smaller files
+  maxWidth = maxWidth || 1200;
+  quality = quality || 0.82;
   return new Promise(function(resolve, reject) {
     // If it's already small enough, skip compression
     if (file.size < 150000) { resolve(file); return; }
@@ -2212,20 +2142,15 @@ async function init() {
     window._pendingSlug = null;
   }
 
-  // SEO + AI Discovery — defer until browser is idle (non-critical)
-  const idleOrTimeout = window.requestIdleCallback || (fn => setTimeout(fn, 200));
-  idleOrTimeout(function() {
-    SEO.injectListingsSchema(_ads);
-    SEO.injectFAQSchema();
-    SEO.serveLlmsTxt(_ads);
-  });
+  // SEO + AI Discovery — inject after ads loaded
+  SEO.injectListingsSchema(_ads);
+  SEO.injectFAQSchema();
+  SEO.serveLlmsTxt(_ads);
 
   // Update llms.txt whenever new ads arrive (handled in realtime subscription)
   window._seoRefresh = function() {
-    idleOrTimeout(function() {
-      SEO.injectListingsSchema(_ads);
-      SEO.serveLlmsTxt(_ads);
-    });
+    SEO.injectListingsSchema(_ads);
+    SEO.serveLlmsTxt(_ads);
   };
 
   // Real-time: new ads
@@ -2254,11 +2179,8 @@ async function init() {
   setTimeout(pushAds, 1000);
 }
 
-let _msgChannel = null;
 function subscribeMessages() {
-  // Remove existing channel before creating a new one — prevents duplicate listeners
-  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
-  _msgChannel = _db.channel('msg-changes')
+  _db.channel('msg-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
       const row = payload.new;
       // Only process messages relevant to current user
@@ -2447,14 +2369,11 @@ function getViews(id) {
   return ad ? (ad.views || 0) : 0;
 }
 
-// ── Cached SVG constants (built once, reused per card) ──
-const _EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-
 function cardHTML(ad, idx) {
   const cat   = CATS.find(c => c.id === ad.category);
   const catColor = cat?.color || '#f5f5f5';
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${escHtml(ad.title)}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
+    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
@@ -2469,7 +2388,7 @@ function cardHTML(ad, idx) {
   const photoCount = (ad.photos && ad.photos.length > 1)
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.04,0.3)}s` : '';
-  const eyeSvg = _EYE_SVG;
+  const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
@@ -2503,13 +2422,6 @@ function toggleHideSold() {
   if (tog) tog.classList.toggle('on', _hideSold);
   _homeShowCount = _homePageSize;
   renderHome();
-}
-
-// ── Debounced render — prevents thrashing during rapid filter changes ──
-let _renderHomeTimer = null;
-function renderHomeDebounced() {
-  clearTimeout(_renderHomeTimer);
-  _renderHomeTimer = setTimeout(renderHome, 60);
 }
 
 function loadMoreHome() {
@@ -3741,15 +3653,8 @@ function updateSheetSugs() {
 }
 
 function openAiSheet() {
-  if (sheetOpen) return;
-  const sheet = document.getElementById('aiSheet');
-  const overlay = document.getElementById('aiSheetOverlay');
-  sheet.style.display = '';
-  overlay.style.display = '';
-  // Force reflow so transition fires
-  sheet.offsetHeight;
-  sheet.classList.add('open');
-  overlay.classList.add('open');
+  document.getElementById('aiSheet').classList.add('open');
+  document.getElementById('aiSheetOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   sheetOpen = true;
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
@@ -3760,16 +3665,10 @@ function openAiSheet() {
 }
 
 function closeAiSheet() {
-  const sheet = document.getElementById('aiSheet');
-  const overlay = document.getElementById('aiSheetOverlay');
-  sheet.classList.remove('open');
-  overlay.classList.remove('open');
-  // Hide after CSS transition completes
-  setTimeout(() => { sheet.style.display = 'none'; overlay.style.display = 'none'; }, 300);
+  document.getElementById('aiSheet').classList.remove('open');
+  document.getElementById('aiSheetOverlay').classList.remove('open');
   document.body.style.overflow = '';
   sheetOpen = false;
-  if (document.activeElement) document.activeElement.blur();
-}
 }
 
 function sheetSearch(query) {
@@ -4417,21 +4316,9 @@ let _floatOpen = false;
 let _floatHistory = [];
 
 function toggleFloatChat() {
-  const chat = document.getElementById('aiFloatChat');
-  const fab  = document.getElementById('aiFab');
-
-  // On mobile — route to sheet instead
-  if (window.innerWidth <= 640) {
-    _floatOpen = false;
-    chat.classList.remove('open');
-    fab.style.display = '';
-    openAiSheet();
-    return;
-  }
-
   _floatOpen = !_floatOpen;
-  chat.classList.toggle('open', _floatOpen);
-  fab.style.display = _floatOpen ? 'none' : '';
+  document.getElementById('aiFloatChat').classList.toggle('open', _floatOpen);
+  document.getElementById('aiFab').style.display = _floatOpen ? 'none' : '';
   if (_floatOpen) setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
 }
 
@@ -4737,14 +4624,6 @@ let _resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
-    // If float chat is open and we're now on mobile, close it
-    if (_floatOpen && window.innerWidth <= 640) {
-      _floatOpen = false;
-      const chat = document.getElementById('aiFloatChat');
-      if (chat) { chat.style.display = 'none'; chat.style.opacity = '0'; chat.style.pointerEvents = 'none'; chat.classList.remove('open'); }
-      document.getElementById('aiFab').style.display = '';
-    }
-    }
     renderHome();
     renderCats();
   }, 250);
@@ -4848,39 +4727,6 @@ document.addEventListener('keydown', function(e) {
    BOOT
 ═══════════════════════════════════════════════════════════ */
 init();
-
-/* ═══════════════════════════════════════════════════════════
-   PERFORMANCE: Passive scroll + IntersectionObserver auto load-more
-═══════════════════════════════════════════════════════════ */
-(function() {
-  // Passive scroll listener for sticky nav shadow
-  let _lastScroll = 0;
-  const nav = document.querySelector('.nav');
-  window.addEventListener('scroll', function() {
-    const y = window.scrollY;
-    if (nav) nav.classList.toggle('scrolled', y > 10);
-    _lastScroll = y;
-  }, { passive: true });
-
-  // IntersectionObserver: auto-trigger "Load More" when user reaches bottom
-  // Only on desktop — on mobile the click() can accidentally trigger other focus events
-  const ioLoadMore = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting && window.innerWidth > 640) {
-        const btn = document.querySelector('.load-more-btn');
-        if (btn) btn.click();
-      }
-    });
-  }, { rootMargin: '0px' });
-
-  // Observe the load-more sentinel whenever it appears
-  const gridObserver = new MutationObserver(function() {
-    const wrap = document.querySelector('.load-more-wrap');
-    if (wrap) ioLoadMore.observe(wrap);
-  });
-  const homeGrid = document.getElementById('homeGrid');
-  if (homeGrid) gridObserver.observe(homeGrid, { childList: true });
-})();
 </script>
 </body>
 </html>
