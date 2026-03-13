@@ -254,8 +254,7 @@ if ('serviceWorker' in navigator) {
 * { touch-action: manipulation; }
 
 /* ── Prevent layout flash on initial load ── */
-#homeGrid, #catRow { contain: layout style; }
-#scrollProgress { transform-origin:left center; will-change:transform; }
+#homeGrid, #catRow { will-change: contents; }
 
 /* ── Card enter animation — only fires when .animate is added by JS ── */
 @keyframes cardIn {
@@ -323,9 +322,6 @@ html { scroll-behavior: smooth; }
 
 /* ── No tap flash on result cards ── */
 .sheet-result-card { -webkit-tap-highlight-color: transparent; }
-
-/* pill fix */
-#sheetSugs .sheet-sug{flex:0 0 auto!important;width:auto!important;height:auto!important;min-width:0!important;aspect-ratio:unset!important;padding:7px 14px!important;border-radius:20px!important;font-size:13px!important;white-space:nowrap!important;line-height:1.4!important}#sheetSugs::-webkit-scrollbar{display:none}#sheetSugs{scrollbar-width:none}.ai-sheet-chat{flex:1 1 0!important;min-height:0!important;overflow-y:auto}.ai-sheet-input-wrap{flex-shrink:0!important}
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -358,7 +354,7 @@ html { scroll-behavior: smooth; }
 <body>
 
 <!-- SCROLL PROGRESS BAR -->
-<div class="scroll-progress" id="scrollProgress" style="transform:scaleX(0)"></div>
+<div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- BACK TO TOP FAB -->
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
@@ -4944,7 +4940,7 @@ window.addEventListener('resize', () => {
         // Scroll progress bar
         const bar = document.getElementById('scrollProgress');
         if (bar && docHeight > 0) {
-          bar.style.transform = 'scaleX(' + Math.min(scrollY / docHeight, 1) + ')';
+          bar.style.width = Math.min((scrollY / docHeight) * 100, 100) + '%';
         }
         
         ticking = false;
