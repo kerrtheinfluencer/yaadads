@@ -301,27 +301,6 @@ body { overscroll-behavior-y:contain; }
 
 /* ── Smooth scroll for the whole page ── */
 html { scroll-behavior: smooth; }
-
-/* ── Chat message pop-in ── */
-@keyframes msgIn {
-  from { opacity:0; transform:translateY(5px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.msg { animation: msgIn 0.16s ease both; }
-
-/* ── Chat scroll containers ── */
-.ai-sheet-chat, .ai-float-msgs, .chat-messages {
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  overflow-anchor: auto;
-  transform: translateZ(0);
-}
-
-/* ── Sheet input bar clears iOS home indicator ── */
-.ai-sheet-input-wrap { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
-
-/* ── No tap flash on result cards ── */
-.sheet-result-card { -webkit-tap-highlight-color: transparent; }
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -710,8 +689,7 @@ html { scroll-behavior: smooth; }
     <div class="ai-sheet-input-bar">
       <input class="ai-sheet-input" id="sheetInput" type="text"
         placeholder="cheap phone, house in Kingston, how do I post…"
-        inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();sheetSubmit();}">
+        onkeydown="if(event.key==='Enter')sheetSubmit()">
       <button class="ai-sheet-send" id="sheetSendBtn" onclick="sheetSubmit()">
         <span id="sheetSendLabel">↑</span>
       </button>
@@ -945,8 +923,7 @@ html { scroll-behavior: smooth; }
     <div class="ai-float-input-bar">
       <input class="ai-float-input" id="floatInput" type="text"
         placeholder="Search listings or ask a question…"
-        inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();floatSubmit();}">
+        onkeydown="if(event.key==='Enter')floatSubmit()">
       <button class="ai-float-send" onclick="floatSubmit()">↑</button>
     </div>
   </div>
@@ -1528,52 +1505,25 @@ function renderChat(key) {
   const otherName = isbuyer ? conv.sellerName : conv.buyerName;
   const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
   const clr = avatarColor(otherName);
-  const inner = document.getElementById('chatInner');
-
-  // Build scaffold once per conversation — never wipe the input row
-  if (inner._chatKey !== key) {
-    inner._chatKey = key;
-    inner.innerHTML =
-      '<div class="chat-header">' +
-        '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + otherInit + '</div>' +
-        '<div class="chat-info"><div class="chat-name">' + otherName + '</div><div class="chat-ad-ref">Re: ' + (conv.adTitle||'') + '</div></div>' +
-      '</div>' +
-      '<div class="chat-messages" id="chatMsgs"></div>' +
-      '<div class="chat-input-row">' +
-        '<input class="chat-input" id="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off" autocorrect="off" placeholder="Type a message\u2026" onkeydown="if(event.key===\'Enter\'){event.preventDefault();sendMsg();}">' +
-        '<button class="chat-send" onclick="sendMsg()">\u27a4</button>' +
-      '</div>';
-  }
-
-  const msgEl = document.getElementById('chatMsgs');
-  const rendered = msgEl.querySelectorAll('.msg').length;
-  const allMsgs = conv.messages;
-
-  // Empty state
-  if (rendered === 0 && allMsgs.length === 0) {
-    if (!msgEl.querySelector('.chat-empty')) {
-      const e = document.createElement('div');
-      e.className = 'chat-empty';
-      e.style.cssText = 'text-align:center;padding:40px 0;color:var(--text-3);font-size:14px';
-      e.textContent = 'Start the conversation!';
-      msgEl.appendChild(e);
-    }
-    return;
-  }
-  const emptyEl = msgEl.querySelector('.chat-empty');
-  if (emptyEl) emptyEl.remove();
-
-  // Append only messages not yet in DOM
-  allMsgs.slice(rendered).forEach(function(m) {
-    const out = m.from === CU.id;
-    const wrap = document.createElement('div');
-    wrap.className = 'msg ' + (out ? 'msg-out' : 'msg-in');
-    wrap.innerHTML = '<div class="msg-bubble">' + escHtml(m.text||'') + '</div>' +
-      '<div class="msg-time">' + fmtTime(m.ts) + '</div>';
-    msgEl.appendChild(wrap);
-  });
-
-  requestAnimationFrame(function() { msgEl.scrollTop = msgEl.scrollHeight; });
+  document.getElementById('chatInner').innerHTML =
+    '<div class="chat-header">' +
+      '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + otherInit + '</div>' +
+      '<div class="chat-info"><div class="chat-name">' + otherName + '</div><div class="chat-ad-ref">Re: ' + (conv.adTitle||'') + '</div></div>' +
+    '</div>' +
+    '<div class="chat-messages" id="chatMsgs">' +
+      (!conv.messages.length ? '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!</div>' : '') +
+      conv.messages.map(function(m) {
+        const out = m.from === CU.id;
+        return '<div class="msg ' + (out?'msg-out':'msg-in') + '">' +
+          '<div class="msg-bubble">' + escHtml(m.text||'') + '</div>' +
+          '<div class="msg-time">' + fmtTime(m.ts) + '</div></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="chat-input-row">' +
+      '<input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\')sendMsg()">' +
+      '<button class="chat-send" onclick="sendMsg()">➤</button>' +
+    '</div>';
+  setTimeout(function(){ const el = document.getElementById('chatMsgs'); if(el) el.scrollTop = el.scrollHeight; }, 50);
 }
 
 function renderInbox() {
@@ -1608,23 +1558,10 @@ async function sendMsg() {
   if (!text || !currentConv || !CU) return;
   const conv = _msgs[currentConv]; if (!conv) return;
   input.value = '';
-
-  // Optimistic — show message instantly
-  const optimistic = { id: 'tmp_' + Date.now(), from: CU.id, text: text, ts: Date.now(), read: false };
-  conv.messages.push(optimistic);
-  renderChat(currentConv);
-  // Keep keyboard open — refocus after DOM update
-  requestAnimationFrame(function() { input.focus(); });
-
   try {
     await sbSendMessage(currentConv, conv, text);
-    updateMsgBadge();
-  } catch(e) {
-    // Rollback
-    conv.messages = conv.messages.filter(function(m){ return m.id !== optimistic.id; });
-    renderChat(currentConv);
-    showToast('Message failed. Try again.', '⚠️');
-  }
+    renderChat(currentConv); updateMsgBadge();
+  } catch(e) { showToast('Message failed. Try again.', '⚠️'); }
 }
 
 function openChat(adId, sellerId, sellerName, sellerInit) {
@@ -3875,22 +3812,16 @@ function openAiSheet() {
   // Show elements first, then add open class on next frame so CSS transition fires
   sheet.style.display = '';
   overlay.style.display = '';
-  // Double rAF: first frame paints, second fires the CSS transition
   requestAnimationFrame(function() {
-    requestAnimationFrame(function() {
-      sheet.classList.add('open');
-      overlay.classList.add('open');
-    });
+    sheet.classList.add('open');
+    overlay.classList.add('open');
   });
   document.body.style.overflow = 'hidden';
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
   renderRecentSearches();
   updateSheetSugs();
-  // Focus after slide animation — avoids keyboard appearing mid-animation
-  setTimeout(function() {
-    if (sheetOpen) document.getElementById('sheetInput')?.focus();
-  }, 340);
+  setTimeout(()=>document.getElementById('sheetInput')?.focus(), 380);
 }
 
 function closeAiSheet() {
@@ -4081,13 +4012,6 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
   chat.appendChild(el);
   chat.scrollTop = chat.scrollHeight;
   return el;
-}
-
-function scrollChatToBottom(chat, force) {
-  if (!chat) return;
-  const nearBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
-  if (!nearBottom && !force) return;
-  requestAnimationFrame(function() { chat.scrollTop = chat.scrollHeight; });
 }
 
 function addTyping() {
