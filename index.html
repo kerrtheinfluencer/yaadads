@@ -284,103 +284,6 @@ body { overscroll-behavior-y:contain; }
 /* ── Hero compact transition ── */
 .hero { transition:padding 0.2s ease, min-height 0.2s ease; }
 
-/* ── Real messaging chat area ── */
-.chat-messages {
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  overflow-anchor: auto;
-  scroll-behavior: smooth;
-  transform: translateZ(0);
-}
-/* Message bubble pop-in */
-.msg { animation: msgIn 0.16s ease both; }
-.msg-bubble { contain: content; }
-
-/* ── Float chat msgs area ── */
-.ai-float-msgs {
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  overflow-anchor: auto;
-  transform: translateZ(0);
-  will-change: scroll-position;
-}
-
-/* ═══════════════════════════════════════
-   AI CHAT SHEET — mobile performance fixes
-═══════════════════════════════════════ */
-
-/* Sheet itself: fixed height, no resize on keyboard open */
-#aiSheet {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  /* Use dvh so the sheet doesn't resize when iOS keyboard appears */
-  height: 92dvh;
-  height: 92vh; /* fallback */
-  max-height: 92dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  /* Smooth slide-up */
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: transform;
-  -webkit-overflow-scrolling: touch;
-}
-#aiSheet.open {
-  transform: translateY(0) !important;
-}
-
-/* Chat area: flex-grow, scrollable, anchored to bottom */
-.ai-sheet-chat {
-  flex: 1 1 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  /* Anchor scroll to bottom so new messages don't jump layout */
-  overflow-anchor: auto;
-  scroll-behavior: smooth;
-  padding: 12px 16px 8px;
-  /* GPU layer for smooth scrolling */
-  transform: translateZ(0);
-  will-change: scroll-position;
-}
-
-/* Input bar: always visible above keyboard */
-.ai-sheet-input-wrap {
-  flex-shrink: 0;
-  /* Safe area padding for iPhone home bar */
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
-  background: inherit;
-  position: relative;
-  z-index: 2;
-}
-
-/* Message bubbles: smooth pop-in */
-@keyframes msgIn {
-  from { opacity: 0; transform: translateY(6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.sheet-msg-user,
-.sheet-msg-ai {
-  animation: msgIn 0.18s ease both;
-  /* GPU composite — no layout thrash */
-  will-change: opacity, transform;
-  contain: content;
-}
-
-/* Typing dots — smooth pulse */
-.sheet-typing span {
-  display: inline-block;
-  will-change: transform, opacity;
-}
-
-/* Result cards — contain layout */
-.sheet-result-card {
-  contain: layout style;
-  -webkit-tap-highlight-color: transparent;
-}
-
 /* ── GPU-accelerated skeleton shimmer ── */
 @keyframes shimmer {
   0%   { background-position: -400px 0; }
@@ -398,6 +301,54 @@ body { overscroll-behavior-y:contain; }
 
 /* ── Smooth scroll for the whole page ── */
 html { scroll-behavior: smooth; }
+
+/* ── Overlay modal entrance / exit ── */
+@keyframes overlayIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+@keyframes modalUp {
+  from { transform:translateY(18px) scale(0.98); opacity:0; }
+  to   { transform:translateY(0)    scale(1);    opacity:1; }
+}
+@keyframes modalDown {
+  from { transform:translateY(0)    scale(1);    opacity:1; }
+  to   { transform:translateY(12px) scale(0.98); opacity:0; }
+}
+.overlay.open           { animation: overlayIn 0.18s ease both; }
+.overlay.open .modal    { animation: modalUp   0.22s cubic-bezier(0.34,1.2,0.64,1) both; }
+.overlay.closing        { animation: overlayIn 0.18s ease reverse both; pointer-events:none; }
+.overlay.closing .modal { animation: modalDown 0.18s ease both; }
+
+/* ── Inline delete confirm row ── */
+.del-confirm { border-top:1px solid var(--border,#eee); margin-top:6px; }
+
+/* ── Chat message pop-in animation ── */
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(5px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.sheet-msg-user,
+.sheet-msg-ai    { animation: msgIn 0.18s ease both; }
+.msg             { animation: msgIn 0.16s ease both; }
+
+/* ── Chat scroll containers — smooth & contained ── */
+.ai-sheet-chat,
+.ai-float-msgs,
+.chat-messages {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  overflow-anchor: auto;
+  transform: translateZ(0);
+}
+
+/* ── Input bar stays above iOS keyboard ── */
+.ai-sheet-input-wrap {
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+}
+
+/* ── Result cards — no tap flash ── */
+.sheet-result-card { -webkit-tap-highlight-color: transparent; }
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -785,8 +736,7 @@ html { scroll-behavior: smooth; }
   <div class="ai-sheet-input-wrap">
     <div class="ai-sheet-input-bar">
       <input class="ai-sheet-input" id="sheetInput" type="text"
-        inputmode="search"
-        enterkeyhint="search"
+        inputmode="search" enterkeyhint="search"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         placeholder="cheap phone, house in Kingston, how do I post…"
         onkeydown="if(event.key==='Enter'){event.preventDefault();sheetSubmit();}">
@@ -1423,12 +1373,17 @@ function avatarColor(name) {
 ═══════════════════════════════════════════════════════════ */
 function openOverlay(id)  {
   const el = document.getElementById(id); if (!el) return;
-  el.classList.add('open'); document.body.style.overflow = 'hidden';
+  el.classList.remove('closing');
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 function closeOverlay(id) {
   const el = document.getElementById(id); if (!el) return;
-  el.classList.remove('open');
-  if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+  el.classList.add('closing');
+  setTimeout(function() {
+    el.classList.remove('open', 'closing');
+    if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+  }, 200);
 }
 // Close overlay on backdrop click
 document.addEventListener('click', function(e) {
@@ -1609,7 +1564,7 @@ function renderChat(key) {
   const clr = avatarColor(otherName);
   const inner = document.getElementById('chatInner');
 
-  // Build structure once — don't rebuild if already rendered for this key
+  // Build scaffold once per conversation — never rebuild the input
   if (inner._chatKey !== key) {
     inner._chatKey = key;
     inner.innerHTML =
@@ -1617,35 +1572,31 @@ function renderChat(key) {
         '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + otherInit + '</div>' +
         '<div class="chat-info"><div class="chat-name">' + otherName + '</div><div class="chat-ad-ref">Re: ' + (conv.adTitle||'') + '</div></div>' +
       '</div>' +
-      '<div class="chat-messages" id="chatMsgs" style="overscroll-behavior:contain;-webkit-overflow-scrolling:touch"></div>' +
+      '<div class="chat-messages" id="chatMsgs"></div>' +
       '<div class="chat-input-row">' +
-        '<input class="chat-input" id="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off" autocorrect="off" placeholder="Type a message…" onkeydown="if(event.key==='Enter'){event.preventDefault();sendMsg();}">' +
-        '<button class="chat-send" onclick="sendMsg()">➤</button>' +
+        '<input class="chat-input" id="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off" autocorrect="off" placeholder="Type a message\u2026" onkeydown="if(event.key==='Enter'){event.preventDefault();sendMsg();}">' +
+        '<button class="chat-send" onclick="sendMsg()">\u27a4</button>' +
       '</div>';
   }
 
-  // Surgically sync messages — only append new ones
   const msgEl = document.getElementById('chatMsgs');
   const rendered = msgEl.querySelectorAll('.msg').length;
-  const msgs = conv.messages;
+  const allMsgs = conv.messages;
 
-  if (rendered === 0 && msgs.length === 0) {
+  if (rendered === 0 && allMsgs.length === 0) {
     if (!msgEl.querySelector('.chat-empty')) {
-      const empty = document.createElement('div');
-      empty.className = 'chat-empty';
-      empty.style.cssText = 'text-align:center;padding:40px 0;color:var(--text-3);font-size:14px';
-      empty.textContent = 'Start the conversation!';
-      msgEl.appendChild(empty);
+      const e = document.createElement('div');
+      e.className = 'chat-empty';
+      e.style.cssText = 'text-align:center;padding:40px 0;color:var(--text-3);font-size:14px';
+      e.textContent = 'Start the conversation!';
+      msgEl.appendChild(e);
     }
     return;
   }
-
-  // Remove empty state if present
   const emptyEl = msgEl.querySelector('.chat-empty');
   if (emptyEl) emptyEl.remove();
 
-  // Append only messages not yet rendered
-  msgs.slice(rendered).forEach(function(m) {
+  allMsgs.slice(rendered).forEach(function(m) {
     const out = m.from === CU.id;
     const wrap = document.createElement('div');
     wrap.className = 'msg ' + (out ? 'msg-out' : 'msg-in');
@@ -1654,10 +1605,7 @@ function renderChat(key) {
     msgEl.appendChild(wrap);
   });
 
-  // Scroll to bottom after paint
-  requestAnimationFrame(function() {
-    msgEl.scrollTop = msgEl.scrollHeight;
-  });
+  requestAnimationFrame(function() { msgEl.scrollTop = msgEl.scrollHeight; });
 }
 function renderInbox() {
   const el = document.getElementById('inboxList');
@@ -1692,21 +1640,17 @@ async function sendMsg() {
   const conv = _msgs[currentConv]; if (!conv) return;
   input.value = '';
 
-  // Optimistic append — show message instantly, don't wait for network
-  const optimistic = { id: 'tmp_' + Date.now(), from: CU.id, text, ts: Date.now(), read: false };
+  // Optimistic — show instantly, don't wait for network
+  const optimistic = { id: 'tmp_' + Date.now(), from: CU.id, text: text, ts: Date.now(), read: false };
   conv.messages.push(optimistic);
   renderChat(currentConv);
-
-  // Keep input focused — don't let DOM rebuild steal focus
   requestAnimationFrame(function() { input.focus(); });
 
   try {
     await sbSendMessage(currentConv, conv, text);
-    // Replace optimistic msg with real one (server may have different id/ts)
-    // renderChat will sync on next real-time event — nothing to do here
     updateMsgBadge();
   } catch(e) {
-    // Roll back optimistic message on failure
+    // Rollback on failure
     conv.messages = conv.messages.filter(function(m){ return m.id !== optimistic.id; });
     renderChat(currentConv);
     showToast('Message failed. Try again.', '⚠️');
@@ -1839,7 +1783,7 @@ function renderMyAds() {
       '<div class="my-ad-acts">' +
         '<button class="btn btn-ghost btn-sm" onclick="openEditAd(\'' + ad.id + '\')">✏️ Edit</button>' +
         '<button class="btn btn-ghost btn-sm" onclick="openDetail(\'' + ad.id + '\')">View</button>' +
-        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + ad.id + '\');setTimeout(renderMyAds,200)">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
+        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + ad.id + '\')">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
         '<button class="btn btn-red btn-sm" onclick="delAd(\'' + ad.id + '\')">🗑️</button>' +
       '</div>' +
     '</div>';
@@ -2011,57 +1955,71 @@ async function saveEditAd() {
   const btn = document.getElementById('saveEditAdBtn');
   btn.textContent = 'Saving…'; btn.disabled = true;
 
+  // Snapshot for rollback
+  const prev = { title:ad.title, category:ad.category, parish:ad.parish, price:ad.price,
+                 desc:ad.desc, phone:ad.phone, neg:ad.neg, image:ad.image, photos:[...(ad.photos||[])] };
+
+  // Optimistic — update local cache and close immediately
+  const previewUrls = _editAdPhotos.map(function(p){ return p.url || p.preview || ''; }).filter(Boolean);
+  ad.title = title; ad.category = category; ad.parish = parish;
+  ad.price = price; ad.desc = desc; ad.phone = phone; ad.neg = neg;
+  ad.image = previewUrls[0] || ad.image;
+  ad.photos = previewUrls.length ? previewUrls : ad.photos;
+
+  closeOverlay('ovEditAd');
+  renderMyAds(); renderHome(); renderCats();
+  showToast('Saving changes…', '⏳');
+
   try {
-    // Build final photo URLs — upload any new files, keep existing URLs
+    // Upload any new photos in background
     const finalUrls = [];
     for (let i = 0; i < _editAdPhotos.length; i++) {
       const item = _editAdPhotos[i];
       if (item.url && !item.file) {
-        // Existing photo — keep the URL
         finalUrls.push(item.url);
       } else if (item.file) {
-        // New photo — upload to Supabase
-        btn.textContent = 'Uploading ' + (i+1) + '/' + _editAdPhotos.length + '…';
         const url = await uploadToSupabase(item.file);
         if (url) finalUrls.push(url);
       }
     }
 
     const imageUrl = finalUrls.length > 1 ? JSON.stringify(finalUrls) : (finalUrls[0] || '');
+    await sbUpdateAd(_editAdId, { title, category, parish, price,
+      description: desc, phone, negotiable: neg, image_url: imageUrl });
 
-    const dbUpdates = {
-      title, category, parish, price,
-      description: desc, phone,
-      negotiable: neg,
-      image_url: imageUrl,
-    };
-
-    await sbUpdateAd(_editAdId, dbUpdates);
-
-    // Update local cache
-    ad.title = title;
-    ad.category = category;
-    ad.parish = parish;
-    ad.price = price;
-    ad.desc = desc;
-    ad.phone = phone;
-    ad.neg = neg;
-    ad.image = finalUrls[0] || '';
-    ad.photos = finalUrls;
-
-    closeOverlay('ovEditAd');
-    renderMyAds(); renderHome(); renderCats();
+    // Update with real URLs
+    ad.image = finalUrls[0] || previewUrls[0] || '';
+    ad.photos = finalUrls.length ? finalUrls : previewUrls;
+    renderMyAds(); renderHome();
     showToast('Listing updated! ✅', '✅');
   } catch(e) {
-    alertEl.textContent = 'Update failed: ' + (e.message||'try again');
-    alertEl.className = 'alert-box alert-err show';
+    // Rollback on failure
+    Object.assign(ad, prev);
+    renderMyAds(); renderHome(); renderCats();
+    showToast('Update failed — changes reverted.', '⚠️');
   } finally {
     btn.textContent = 'Save Changes'; btn.disabled = false;
   }
 }
 
-async function delAd(id) {
-  if (!confirm('Delete this listing? This cannot be undone.')) return;
+function delAd(id) {
+  // Show inline confirmation on the row — no blocking native dialog
+  const rows = document.querySelectorAll('.my-ad-row');
+  rows.forEach(function(row) {
+    const btn = row.querySelector('[onclick*="delAd(\'' + id + '\')"]');
+    if (!btn) return;
+    if (row.querySelector('.del-confirm')) return; // already showing
+    const conf = document.createElement('div');
+    conf.className = 'del-confirm';
+    conf.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0;animation:msgIn 0.15s ease both';
+    conf.innerHTML =
+      '<span style="font-size:13px;color:var(--text-2)">Delete this listing?</span>' +
+      '<button class="btn btn-red btn-sm" onclick="confirmDelAd('' + id + '')">Yes, delete</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="this.closest('.del-confirm').remove()">Cancel</button>';
+    row.appendChild(conf);
+  });
+}
+async function confirmDelAd(id) {
   try {
     await sbDeleteAd(id);
     _ads = _ads.filter(function(a){ return a.id !== id; });
@@ -2181,12 +2139,19 @@ let currentPostStep = 1;
 async function toggleSold(id) {
   const ad = _ads.find(function(a){ return a.id===id; }); if (!ad) return;
   const newStatus = ad.status === 'sold' ? 'active' : 'sold';
+  const prevStatus = ad.status;
+  // Optimistic — update immediately
+  ad.status = newStatus;
+  renderMyAds(); renderHome(); renderCats(); updateStats();
   try {
     await sbUpdateAdStatus(id, newStatus);
-    ad.status = newStatus;
-    renderHome(); renderCats(); updateStats();
     showToast(newStatus==='sold' ? 'Marked as sold' : 'Relisted as active', newStatus==='sold'?'🏷️':'✅');
-  } catch(e) { showToast('Update failed', '⚠️'); }
+  } catch(e) {
+    // Rollback
+    ad.status = prevStatus;
+    renderMyAds(); renderHome(); renderCats(); updateStats();
+    showToast('Update failed', '⚠️');
+  }
 }
 
 async function doPostAd() {
@@ -2199,44 +2164,56 @@ async function doPostAd() {
   const btn = document.querySelector('#sp3 .btn-gold');
   if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
 
+  // Build ad object immediately with local image previews for optimistic UI
+  const previewUrls = uploadPhotos.map(function(p){ return p.preview || ''; }).filter(Boolean);
+  const adId = 'a' + Date.now();
+  const optimisticAd = {
+    id: adId, title,
+    category: document.getElementById('aCat').value,
+    parish, price,
+    desc:       document.getElementById('aDesc').value.trim(),
+    phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
+    image:      previewUrls[0] || '',
+    photos:     previewUrls,
+    neg:        document.getElementById('aNeg').checked,
+    icon:       cat ? cat.icon : '📦',
+    seller:     CU.name,
+    sellerInit: initials(CU.name),
+    sellerId:   CU.id,
+    date:       new Date().toISOString().split('T')[0],
+    status:     'active',
+    views:      0,
+  };
+
+  // Optimistic — close modal and show in grid immediately
+  closeOverlay('ovPost');
+  _ads.unshift(optimisticAd);
+  renderCats(); renderHome(); updateStats();
+  showToast('Uploading your ad…', '⏳');
+
   try {
-    // Upload all photos to Supabase Storage and get public URLs
+    // Upload images in background
     const imageUrls = [];
     for (let i = 0; i < uploadPhotos.length; i++) {
-      if (btn) btn.textContent = `⏳ Uploading image ${i+1}/${uploadPhotos.length}…`;
+      if (btn) btn.textContent = `⏳ ${i+1}/${uploadPhotos.length}`;
       const url = await uploadToSupabase(uploadPhotos[i].file);
       if (url) imageUrls.push(url);
     }
 
-    if (btn) btn.textContent = '⏳ Publishing…';
+    // Update optimistic entry with real URLs
+    optimisticAd.image  = imageUrls[0] || previewUrls[0] || '';
+    optimisticAd.photos = imageUrls.length ? imageUrls : previewUrls;
 
-    const ad = {
-      id:         'a' + Date.now(),
-      title,
-      category:   document.getElementById('aCat').value,
-      parish,
-      price,
-      desc:       document.getElementById('aDesc').value.trim(),
-      phone:      document.getElementById('aPhone').value.trim() || CU.phone || '',
-      image:      imageUrls[0] || '',
-      photos:     imageUrls,
-      neg:        document.getElementById('aNeg').checked,
-      icon:       cat ? cat.icon : '📦',
-      seller:     CU.name,
-      sellerInit: initials(CU.name),
-      sellerId:   CU.id,
-      date:       new Date().toISOString().split('T')[0],
-      status:     'active',
-      views:      0,
-    };
-
-    await sbInsertAd(ad);
-    closeOverlay('ovPost');
-    renderCats(); renderHome(); updateStats();
+    await sbInsertAd(optimisticAd);
     showToast('Your ad is live! 🎉', '🎉');
     launchConfetti();
+    renderHome(); // refresh with real URLs
   } catch(e) {
+    // Rollback optimistic entry
+    _ads = _ads.filter(function(a){ return a.id !== adId; });
+    renderCats(); renderHome(); updateStats();
     showPostErr('Failed to post: ' + (e.message||'please try again'));
+    openOverlay('ovPost');
   } finally {
     if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
   }
@@ -3960,7 +3937,7 @@ function openAiSheet() {
   const overlay = document.getElementById('aiSheetOverlay');
   sheet.style.display = '';
   overlay.style.display = '';
-  // Two rAFs: first makes element visible, second triggers transition
+  // Double rAF: first frame makes element visible, second fires transition
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
       sheet.classList.add('open');
@@ -3972,11 +3949,10 @@ function openAiSheet() {
   document.getElementById('mnSearch')?.classList.add('active');
   renderRecentSearches();
   updateSheetSugs();
-  // Focus AFTER slide animation completes (300ms) — prevents keyboard from
-  // firing mid-animation which resizes the sheet and causes jank
+  // Focus after slide animation is done — prevents keyboard mid-animation
   setTimeout(function() {
     if (sheetOpen) document.getElementById('sheetInput')?.focus();
-  }, 350);
+  }, 340);
 }
 
 function closeAiSheet() {
@@ -4044,7 +4020,6 @@ function sheetSubmit() {
       } finally {
         sendBtn.disabled = false;
         sendBtn.classList.remove('sending');
-        // Scroll to bottom first, then focus — prevents layout jump on iOS
         const chat = document.getElementById('sheetChat');
         scrollChatToBottom(chat, true);
         requestAnimationFrame(function() {
@@ -4170,19 +4145,15 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
   }
 
   chat.appendChild(el);
-  scrollChatToBottom(chat, true);
+  chat.scrollTop = chat.scrollHeight;
   return el;
 }
 
-/* Reliable scroll-to-bottom: waits for paint then scrolls */
 function scrollChatToBottom(chat, force) {
   if (!chat) return;
-  // Only auto-scroll if user is near the bottom (within 120px) or force=true
   const nearBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
   if (!nearBottom && !force) return;
-  requestAnimationFrame(() => {
-    chat.scrollTop = chat.scrollHeight;
-  });
+  requestAnimationFrame(function() { chat.scrollTop = chat.scrollHeight; });
 }
 
 function addTyping() {
