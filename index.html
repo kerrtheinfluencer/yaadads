@@ -246,7 +246,7 @@ if ('serviceWorker' in navigator) {
 #aiFloatChat        { display:none !important; }
 #aiFloatChat.open   { display:flex !important; }
 #aiSheet            { display:none; }
-#aiSheet.open       { display:flex; }
+#aiSheet.open       { display:block; }
 #aiSheetOverlay     { display:none; }
 #aiSheetOverlay.open{ display:block; }
 
@@ -257,10 +257,8 @@ if ('serviceWorker' in navigator) {
 #homeGrid { contain: layout style; }
 #catRow   { contain: layout style; }
 
-/* ── Scroll progress bar — GPU composited via transform not width ── */
+/* ── Scroll progress bar — GPU composited ── */
 #scrollProgress { transform-origin: left center; will-change: transform; }
-
-/* ── Back-to-top button — GPU layer ── */
 #backToTop { will-change: opacity, transform; }
 
 /* ── Card enter animation — only fires when .animate is added by JS ── */
@@ -309,6 +307,28 @@ body { overscroll-behavior-y:contain; }
 /* ── Smooth scroll for the whole page ── */
 html { scroll-behavior: smooth; }
 
+/* ── Sheet suggestion pills — override card styles from style.css ── */
+#sheetSugs .sheet-sug,
+#sheetSugs button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  aspect-ratio: unset !important;
+  padding: 7px 14px !important;
+  border-radius: 20px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  line-height: 1.4 !important;
+}
+#sheetSugs { scrollbar-width: none; }
+#sheetSugs::-webkit-scrollbar { display: none; }
+
+/* ── Sheet flex column — chat area fills all space above input ── */
+.ai-sheet-chat   { flex: 1 1 0 !important; min-height: 0 !important; overflow-y: auto; }
+.ai-sheet-input-wrap { flex-shrink: 0 !important; }
+
 /* ── Chat message pop-in ── */
 @keyframes msgIn {
   from { opacity:0; transform:translateY(5px); }
@@ -326,20 +346,6 @@ html { scroll-behavior: smooth; }
 
 /* ── Sheet input bar clears iOS home indicator ── */
 .ai-sheet-input-wrap { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
-
-/* ── Sheet must be a flex column so chat fills all remaining space ── */
-#aiSheet.open {
-  display: flex !important;
-  flex-direction: column !important;
-}
-.ai-sheet-chat {
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-}
-.ai-sheet-input-wrap { flex-shrink: 0; }
-
-/* ── Hide scrollbar on pill row (WebKit) ── */
-#sheetSugs::-webkit-scrollbar { display: none; }
 
 /* ── No tap flash on result cards ── */
 .sheet-result-card { -webkit-tap-highlight-color: transparent; }
@@ -713,14 +719,14 @@ html { scroll-behavior: smooth; }
     <div class="sheet-recent-list" id="sheetRecentList"></div>
   </div>
 
-  <!-- Quick suggestions inside sheet — compact scrollable pill row -->
-  <div id="sheetSugs" style="display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:6px 16px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;-ms-overflow-style:none">
-    <button onclick="sheetSearch('cheap car under 2 million')" style="flex:0 0 auto;font-size:13px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;white-space:nowrap;min-width:0;width:auto;height:auto;aspect-ratio:unset;line-height:1.4">🚗 Cheap cars</button>
-    <button onclick="sheetSearch('phone Kingston')"            style="flex:0 0 auto;font-size:13px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;white-space:nowrap;min-width:0;width:auto;height:auto;aspect-ratio:unset;line-height:1.4">📱 Phones KGN</button>
-    <button onclick="sheetSearch('house for rent')"            style="flex:0 0 auto;font-size:13px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;white-space:nowrap;min-width:0;width:auto;height:auto;aspect-ratio:unset;line-height:1.4">🏡 Houses</button>
-    <button onclick="sheetSearch('jobs available')"            style="flex:0 0 auto;font-size:13px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;white-space:nowrap;min-width:0;width:auto;height:auto;aspect-ratio:unset;line-height:1.4">💼 Jobs</button>
-    <button onclick="sheetSearch('laptop under 100000')"       style="flex:0 0 auto;font-size:13px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;white-space:nowrap;min-width:0;width:auto;height:auto;aspect-ratio:unset;line-height:1.4">💻 Laptops</button>
-    <button onclick="sheetSearch('fresh food farm')"           style="flex:0 0 auto;font-size:13px;font-weight:500;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;white-space:nowrap;min-width:0;width:auto;height:auto;aspect-ratio:unset;line-height:1.4">🥭 Food</button>
+  <!-- Quick suggestions inside sheet — single scrollable row, no wrapping -->
+  <div class="ai-sheet-sugs" id="sheetSugs" style="display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:4px 16px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('phone Kingston')">📱 Phones KGN</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('house for rent')">🏡 Houses</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('jobs available')">💼 Jobs</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('fresh food farm')">🥭 Food</button>
   </div>
 
   <!-- Chat history area -->
@@ -4958,7 +4964,7 @@ window.addEventListener('resize', () => {
         const fab = document.getElementById('backToTop');
         if (fab) fab.classList.toggle('visible', scrollY > 400);
         
-        // Scroll progress bar — use scaleX (GPU composited, no layout recalc)
+        // Scroll progress bar — scaleX is GPU composited, no layout recalc
         const bar = document.getElementById('scrollProgress');
         if (bar && docHeight > 0) {
           bar.style.transform = 'scaleX(' + Math.min(scrollY / docHeight, 1) + ')';
