@@ -242,15 +242,65 @@ if ('serviceWorker' in navigator) {
 
 <link rel="stylesheet" href="style.css">
 <style>
-/* Force-hide AI chat panels on load — JS opens them */
+/* ── AI chat panels: force-hide on load ── */
 #aiFloatChat        { display:none !important; }
 #aiFloatChat.open   { display:flex !important; }
 #aiSheet            { display:none; }
 #aiSheet.open       { display:block; }
 #aiSheetOverlay     { display:none; }
 #aiSheetOverlay.open{ display:block; }
-/* Faster mobile tap — removes 300ms delay */
+
+/* ── Eliminate 300ms tap delay everywhere ── */
 * { touch-action: manipulation; }
+
+/* ── Prevent layout flash on initial load ── */
+#homeGrid, #catRow { will-change: contents; }
+
+/* ── Card enter animation — only fires when .animate is added by JS ── */
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.ad-card.animate { animation: cardIn 0.22s ease both; }
+
+/* ── Smooth page transitions ── */
+.page { opacity:0; transition:opacity 0.15s ease; pointer-events:none; }
+.page.active { opacity:1; pointer-events:auto; }
+
+/* ── Image fade-in instead of pop ── */
+.ad-card-img img { opacity:0; transition:opacity 0.2s ease; }
+.ad-card-img img.loaded { opacity:1; }
+
+/* ── Stabilise ad slots — no layout shift ── */
+.ad-slot-banner, .ad-slot-infeed { min-height:0 !important; overflow:hidden; }
+
+/* ── iOS overscroll — keep background consistent ── */
+html { background:#f5f3ee; }
+body { overscroll-behavior-y:contain; }
+
+/* ── GPU-composite the bottom nav — no flicker on scroll ── */
+.mob-nav { transform:translateZ(0); -webkit-transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+
+/* ── Hero compact transition ── */
+.hero { transition:padding 0.2s ease, min-height 0.2s ease; }
+
+/* ── GPU-accelerated skeleton shimmer ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.sk-card { opacity:1 !important; pointer-events:none; }
+.sk-img, .sk-line {
+  background: linear-gradient(90deg, #ececec 25%, #f8f8f8 50%, #ececec 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+.sk-img { width:100%; height:100%; min-height:160px; }
+.sk-line { margin-bottom:0; }
+
+/* ── Smooth scroll for the whole page ── */
+html { scroll-behavior: smooth; }
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -1304,8 +1354,15 @@ function showToast(msg, icon) {
 function showSkeletons() {
   const grid = document.getElementById('homeGrid');
   if (!grid) return;
-  grid.innerHTML = Array(8).fill(0).map(() =>
-    '<div class="ad-card skeleton" style="pointer-events:none"><div class="ad-card-img" style="background:#f0f0f0;animation:shimmer 1.2s infinite"></div><div class="ad-card-body"><div style="height:12px;background:#f0f0f0;border-radius:4px;margin-bottom:8px;animation:shimmer 1.2s infinite"></div><div style="height:16px;background:#f0f0f0;border-radius:4px;margin-bottom:6px;animation:shimmer 1.2s infinite"></div><div style="height:10px;background:#f0f0f0;border-radius:4px;width:60%;animation:shimmer 1.2s infinite"></div></div></div>'
+  grid.innerHTML = Array(8).fill(
+    '<div class="ad-card sk-card" style="pointer-events:none">' +
+      '<div class="ad-card-img sk-img"></div>' +
+      '<div class="ad-card-body">' +
+        '<div class="sk-line" style="height:12px;width:45%;margin-bottom:8px"></div>' +
+        '<div class="sk-line" style="height:16px;margin-bottom:6px"></div>' +
+        '<div class="sk-line" style="height:10px;width:60%"></div>' +
+      '</div>' +
+    '</div>'
   ).join('');
 }
 function scrollToResults() {
@@ -2334,12 +2391,19 @@ function goHome() {
 }
 
 function goPage(p) {
-  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
+  const current = document.querySelector('.page.active');
+  const next = document.getElementById('page-'+p);
+  if (!next || next === current) return;
+  // Fade out current, then swap
+  if (current) current.classList.remove('active');
+  // Use rAF so CSS transition has a frame to start from opacity:0
+  requestAnimationFrame(() => {
+    next.classList.add('active');
+    window.scrollTo({top:0, behavior:'instant'});
+  });
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   const map = {home:'mnHome',msgs:'mnMsgs',myads:'mnAccount'};
   if (map[p]) document.getElementById(map[p])?.classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
   if (p==='browse')  renderBrowse();
   if (p==='myads')   renderMyAds();
   if (p==='msgs')    renderInbox();
@@ -2358,6 +2422,19 @@ function renderCats() {
   const row = document.getElementById('catRow');
   if (!row) return;
   const allCount = ads.filter(a => a.status !== 'sold').length;
+  // If already rendered, just update active state and counts — no innerHTML wipe
+  const existing = row.querySelectorAll('.cat-pill-sm');
+  if (existing.length === CATS.length + 1) {
+    existing[0].classList.toggle('active', activeF === 'all');
+    existing[0].querySelector('span:last-child').textContent = allCount;
+    CATS.forEach((c, i) => {
+      const n = ads.filter(a => a.category===c.id && a.status!=='sold').length;
+      existing[i+1].classList.toggle('active', activeF === c.id);
+      existing[i+1].querySelector('span:last-child').textContent = n;
+    });
+    return;
+  }
+  // First render — build from scratch
   let html = `<button class="cat-pill-sm ${activeF==='all'?'active':''}" onclick="catFilter('all')"><span class="cp-icon">✨</span> All <span style="opacity:.6;font-size:11px">${allCount}</span></button>`;
   html += CATS.map(c => {
     const n = ads.filter(a => a.category===c.id && a.status!=='sold').length;
@@ -2369,15 +2446,16 @@ function renderCats() {
 function renderHomeFilters() {} // no-op — replaced by catRow
 
 function catFilter(id) {
+  if (activeF === id) return; // no-op if already selected
   activeF = id; searchQ = '';
   _homeShowCount = _homePageSize;
   hideAiResponse();
   document.querySelector('.hero')?.classList.remove('searched');
   const inp = document.getElementById('aiInput');
   if (inp) inp.value = '';
-  renderCats();
-  renderHome();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  renderCats();   // surgical update — fast
+  renderHome();   // grid swap
+  window.scrollTo({ top: 0, behavior: 'instant' }); // instant avoids animation conflict
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2451,9 +2529,8 @@ function cardHTML(ad, idx) {
     ? `<span class="fresh-badge">New</span>` : '';
   const photoCount = (ad.photos && ad.photos.length > 1)
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
-  const delay = idx !== undefined ? `animation-delay:${Math.min(idx*0.04,0.3)}s` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  return `<div class="ad-card ${ad.status==='sold'?'sold':''}" style="${delay}" onclick="openDetail('${ad.id}')">
+  return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
@@ -2545,10 +2622,21 @@ function renderHome() {
     </div>`;
   }
 
-  document.getElementById('homeGrid').innerHTML = html;
+  const grid = document.getElementById('homeGrid');
+  const prevCount = grid.querySelectorAll('.ad-card').length;
+  grid.innerHTML = html;
 
-  // Push all ad slots
-  pushAds();
+  // Animate only freshly rendered cards (first paint or count changed)
+  if (prevCount === 0) {
+    grid.querySelectorAll('.ad-card').forEach((c, i) => {
+      c.style.animationDelay = Math.min(i * 0.04, 0.28) + 's';
+      c.classList.add('animate');
+    });
+  }
+
+  // Debounced ad push — don't thrash layout on every filter change
+  clearTimeout(window._adPushTimer);
+  window._adPushTimer = setTimeout(pushAds, 600);
 
   // Persist search state in URL
   if (typeof pushSearchState === 'function') pushSearchState();
@@ -4561,14 +4649,14 @@ document.querySelectorAll('.overlay').forEach(o => {
   o.addEventListener('touchmove', e => { if (e.target === o) e.preventDefault(); }, { passive: false });
 });
 
-// Debounced resize handler — rerender grid on orientation change
-let _resizeTimer;
+// Resize: only re-render on actual orientation change, not keyboard show/hide
+let _resizeTimer, _lastOrientation = window.innerWidth > window.innerHeight;
 window.addEventListener('resize', () => {
+  const nowLandscape = window.innerWidth > window.innerHeight;
+  if (nowLandscape === _lastOrientation) return; // keyboard open/close — ignore
+  _lastOrientation = nowLandscape;
   clearTimeout(_resizeTimer);
-  _resizeTimer = setTimeout(() => {
-    renderHome();
-    renderCats();
-  }, 250);
+  _resizeTimer = setTimeout(() => { renderHome(); renderCats(); }, 300);
 }, { passive: true });
 
 /* ═══════════════════════════════════════════════════════════
