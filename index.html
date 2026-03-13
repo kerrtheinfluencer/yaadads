@@ -246,7 +246,7 @@ if ('serviceWorker' in navigator) {
 #aiFloatChat        { display:none !important; }
 #aiFloatChat.open   { display:flex !important; }
 #aiSheet            { display:none; }
-#aiSheet.open       { display:block; }
+#aiSheet.open       { display:flex; }
 #aiSheetOverlay     { display:none; }
 #aiSheetOverlay.open{ display:block; }
 
@@ -328,11 +328,10 @@ html { scroll-behavior: smooth; }
 .ai-sheet-input-wrap { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
 
 /* ── Sheet must be a flex column so chat fills all remaining space ── */
-#aiSheet {
+#aiSheet.open {
   display: flex !important;
   flex-direction: column !important;
 }
-#aiSheet.open { display: flex !important; }
 .ai-sheet-chat {
   flex: 1 1 0 !important;
   min-height: 0 !important;
