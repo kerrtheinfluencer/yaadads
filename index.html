@@ -254,12 +254,8 @@ if ('serviceWorker' in navigator) {
 * { touch-action: manipulation; }
 
 /* ── Prevent layout flash on initial load ── */
-#homeGrid { contain: layout style; }
-#catRow   { contain: layout style; }
-
-/* ── Scroll progress bar — GPU composited ── */
-#scrollProgress { transform-origin: left center; will-change: transform; }
-#backToTop { will-change: opacity, transform; }
+#homeGrid, #catRow { contain: layout style; }
+#scrollProgress { transform-origin:left center; will-change:transform; }
 
 /* ── Card enter animation — only fires when .animate is added by JS ── */
 @keyframes cardIn {
@@ -307,28 +303,6 @@ body { overscroll-behavior-y:contain; }
 /* ── Smooth scroll for the whole page ── */
 html { scroll-behavior: smooth; }
 
-/* ── Sheet suggestion pills — override card styles from style.css ── */
-#sheetSugs .sheet-sug,
-#sheetSugs button {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  height: auto !important;
-  min-width: 0 !important;
-  aspect-ratio: unset !important;
-  padding: 7px 14px !important;
-  border-radius: 20px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  white-space: nowrap !important;
-  line-height: 1.4 !important;
-}
-#sheetSugs { scrollbar-width: none; }
-#sheetSugs::-webkit-scrollbar { display: none; }
-
-/* ── Sheet flex column — chat area fills all space above input ── */
-.ai-sheet-chat   { flex: 1 1 0 !important; min-height: 0 !important; overflow-y: auto; }
-.ai-sheet-input-wrap { flex-shrink: 0 !important; }
-
 /* ── Chat message pop-in ── */
 @keyframes msgIn {
   from { opacity:0; transform:translateY(5px); }
@@ -349,6 +323,19 @@ html { scroll-behavior: smooth; }
 
 /* ── No tap flash on result cards ── */
 .sheet-result-card { -webkit-tap-highlight-color: transparent; }
+
+/* ── Sheet suggestion pills — compact chips ── */
+#sheetSugs .sheet-sug {
+  flex:0 0 auto !important; width:auto !important; height:auto !important;
+  min-width:0 !important; aspect-ratio:unset !important;
+  padding:7px 14px !important; border-radius:20px !important;
+  font-size:13px !important; white-space:nowrap !important; line-height:1.4 !important;
+}
+#sheetSugs::-webkit-scrollbar { display:none; }
+#sheetSugs { scrollbar-width:none; }
+/* ── Sheet chat fills remaining height ── */
+.ai-sheet-chat { flex:1 1 0 !important; min-height:0 !important; overflow-y:auto; }
+.ai-sheet-input-wrap { flex-shrink:0 !important; }
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -4964,7 +4951,7 @@ window.addEventListener('resize', () => {
         const fab = document.getElementById('backToTop');
         if (fab) fab.classList.toggle('visible', scrollY > 400);
         
-        // Scroll progress bar — scaleX is GPU composited, no layout recalc
+        // Scroll progress bar
         const bar = document.getElementById('scrollProgress');
         if (bar && docHeight > 0) {
           bar.style.transform = 'scaleX(' + Math.min(scrollY / docHeight, 1) + ')';
