@@ -135,8 +135,59 @@ function adSchema(ad, adUrl) {
   return [base, breadcrumb];
 }
 
+// ── Similar listings HTML ─────────────────────────────────────
+function buildSimilarHTML(ad, allAds) {
+  // Score: same parish + same category = best, then same category only
+  const others = allAds.filter(a => a.id !== ad.id && a.status !== 'sold');
+
+  const scored = others.map(a => {
+    let score = 0;
+    if (a.category === ad.category) score += 10;
+    if (a.parish   === ad.parish)   score += 5;
+    // Boost recent listings
+    const ageDays = (Date.now() - new Date(a.date||0)) / 86400000;
+    if (ageDays < 7)  score += 3;
+    if (ageDays < 30) score += 1;
+    return { ad: a, score };
+  });
+
+  const similar = scored
+    .filter(s => s.score >= 10)   // must at least share the category
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map(s => s.ad);
+
+  if (!similar.length) return '';
+
+  const cards = similar.map(a => {
+    const slug     = slugify(a);
+    const catIcon  = CAT_ICONS[a.category] || '📦';
+    const imgHtml  = a.image
+      ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
+      : `<div class="sim-placeholder">${catIcon}</div>`;
+    return `
+      <a class="sim-card" href="${BASE_URL}/ad/${slug}.html">
+        <div class="sim-img">${imgHtml}</div>
+        <div class="sim-body">
+          <div class="sim-price">${fmtPrice(a.price)}</div>
+          <div class="sim-title">${esc(a.title)}</div>
+          <div class="sim-meta">📍 ${esc(a.parish)} · ${ago(a.date)}</div>
+        </div>
+      </a>`;
+  }).join('');
+
+  return `
+  <div class="similar-section">
+    <h2 class="similar-heading">Similar Listings</h2>
+    <div class="similar-grid">${cards}</div>
+    <div style="text-align:center;margin-top:20px">
+      <a class="see-more-btn" href="${BASE_URL}/?cat=${ad.category}">See all ${CAT_NAMES[ad.category] || 'listings'} →</a>
+    </div>
+  </div>`;
+}
+
 // ── HTML template for one ad page ─────────────────────────────
-function buildPage(ad) {
+function buildPage(ad, allAds) {
   const slug   = slugify(ad);
   const adUrl  = BASE_URL + '/ad/' + slug;
   const catIcon = CAT_ICONS[ad.category] || '📦';
@@ -161,12 +212,13 @@ function buildPage(ad) {
     galleryHtml = `
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="${esc(photos[0])}" alt="${esc(ad.title)}" id="featuredImg" loading="eager">
+        <img src="${esc(photos[0])}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" onclick="openLightbox(0)" style="cursor:zoom-in">
+        <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 ${photos.length > 1 ? photos.length + ' photos · tap to expand' : 'Tap to view fullscreen'}</div>
         ${ad.status === 'sold' ? '<div class="sold-ribbon">SOLD</div>' : ''}
       </div>
       ${photos.length > 1 ? `
       <div class="gallery-thumbs">
-        ${photos.map((p,i) => `<img src="${esc(p)}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" onclick="setFeatured(this,'${esc(p)}')" loading="lazy">`).join('')}
+        ${photos.map((p,i) => `<img src="${esc(p)}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" onclick="setFeatured(this,'${esc(p)}',${i})" loading="lazy">`).join('')}
       </div>` : ''}
     </div>`;
   } else {
@@ -184,6 +236,8 @@ function buildPage(ad) {
       ${waLink ? `<a class="cta-btn cta-wa" href="${waLink}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
       <a class="cta-btn cta-site" href="${BASE_URL}/?ad=${ad.id}">✉️ Message on Yaad Adz</a>
     </div>` : `<div class="contact-box sold-msg">This item has been sold. <a href="${BASE_URL}/?cat=${ad.category}">Browse similar listings →</a></div>`;
+
+  const similarHTML = buildSimilarHTML(ad, allAds);
 
   return `<!DOCTYPE html>
 <html lang="en-JM" prefix="og: https://ogp.me/ns#">
@@ -347,6 +401,16 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     display: block;
     transition: opacity 0.2s;
   }
+  .gallery-zoom-hint {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,0.55);
+    color: #fff; font-size: 11px;
+    padding: 5px 10px; border-radius: 20px;
+    cursor: zoom-in;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.2s;
+  }
+  .gallery-zoom-hint:hover { opacity: 0.8; }
   .gallery-thumbs {
     display: flex; gap: 8px;
     margin-top: 10px; flex-wrap: wrap;
@@ -478,11 +542,124 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     border-radius: var(--radius);
     overflow: hidden;
   }
-  /* Only show background when ad actually loads */
   .ad-slot-wrap:has(ins[data-adsbygoogle-status]) {
     min-height: 90px;
     background: rgba(255,255,255,0.02);
   }
+
+  /* ── SIMILAR LISTINGS ── */
+  .similar-section {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .similar-heading {
+    font-family: var(--font-d);
+    font-size: 22px; font-weight: 800;
+    color: var(--text-1);
+    margin-bottom: 18px;
+  }
+  .similar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .sim-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    display: flex; flex-direction: column;
+  }
+  .sim-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--green);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .sim-img {
+    width: 100%; aspect-ratio: 4/3;
+    overflow: hidden; background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sim-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; transition: transform 0.2s;
+  }
+  .sim-card:hover .sim-img img { transform: scale(1.04); }
+  .sim-placeholder { font-size: 36px; }
+  .sim-body { padding: 12px; flex: 1; }
+  .sim-price {
+    font-family: var(--font-d);
+    font-size: 16px; font-weight: 800;
+    color: var(--green); margin-bottom: 4px;
+  }
+  .sim-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-1); line-height: 1.4;
+    margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .sim-meta { font-size: 11px; color: var(--text-3); }
+  .see-more-btn {
+    display: inline-block;
+    padding: 10px 24px; border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .see-more-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.96);
+    z-index: 9999;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .lightbox.open { display: flex; }
+  .lb-img {
+    max-width: 95vw; max-height: 85vh;
+    object-fit: contain; border-radius: 6px;
+    user-select: none; display: block;
+  }
+  .lb-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; border-radius: 50%;
+    width: 40px; height: 40px; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-close:hover { background: rgba(255,255,255,0.3); }
+  .lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; border-radius: 50%;
+    width: 48px; height: 48px; font-size: 26px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-nav:hover { background: rgba(255,255,255,0.3); }
+  .lb-prev { left: 16px; }
+  .lb-next { right: 16px; }
+  .lb-counter {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.65); font-size: 13px;
+  }
+  .lb-dots {
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px;
+  }
+  .lb-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s;
+  }
+  .lb-dot.active { background: #fff; }
 
   /* ── FOOTER ── */
   footer {
@@ -505,6 +682,9 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     nav { padding: 0 16px; }
     .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
+    .similar-section { padding: 0 16px 48px; }
+    .similar-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
   }
 </style>
 </head>
@@ -591,6 +771,9 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   </div>
 </div>
 
+<!-- SIMILAR LISTINGS -->
+${similarHTML}
+
 <footer>
   <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
   <p>Jamaica's free classifieds marketplace</p>
@@ -604,14 +787,93 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
 
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
+  <img class="lb-img" id="lbImg" src="" alt="${esc(ad.title)}">
+  <button class="lb-nav lb-next" id="lbNext" onclick="lbNav(1)">›</button>
+  <div class="lb-dots" id="lbDots"></div>
+  <div class="lb-counter" id="lbCounter"></div>
+</div>
+
 <script>
-  // Thumbnail switcher
-  function setFeatured(thumb, src) {
-    document.getElementById('featuredImg').src = src;
-    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+  // ── Photos array ─────────────────────────────────────────────
+  var PHOTOS = ${JSON.stringify(photos)};
+  var lbIndex = 0;
+
+  // ── Thumbnail switcher ────────────────────────────────────────
+  function setFeatured(thumb, src, idx) {
+    var img = document.getElementById('featuredImg');
+    img.style.opacity = '0';
+    setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 150);
+    document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
     thumb.classList.add('active');
+    lbIndex = idx;
   }
-  // Push AdSense
+
+  // ── Lightbox ──────────────────────────────────────────────────
+  function openLightbox(startIndex) {
+    if (!PHOTOS.length) return;
+    lbIndex = startIndex || 0;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    renderLightbox();
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function lbNav(dir) {
+    lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
+    renderLightbox();
+  }
+  function lbGoTo(i) { lbIndex = i; renderLightbox(); }
+  function renderLightbox() {
+    var img = document.getElementById('lbImg');
+    img.src = PHOTOS[lbIndex];
+
+    // Counter
+    document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
+
+    // Nav arrows
+    var showNav = PHOTOS.length > 1;
+    document.getElementById('lbPrev').style.display = showNav ? '' : 'none';
+    document.getElementById('lbNext').style.display = showNav ? '' : 'none';
+
+    // Dots
+    var dotsEl = document.getElementById('lbDots');
+    if (PHOTOS.length > 1 && PHOTOS.length <= 10) {
+      dotsEl.innerHTML = PHOTOS.map(function(_, i) {
+        return '<span class="lb-dot' + (i === lbIndex ? ' active' : '') + '" onclick="lbGoTo(' + i + ')"></span>';
+      }).join('');
+      dotsEl.style.display = 'flex';
+    } else {
+      dotsEl.style.display = 'none';
+    }
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById('lightbox');
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape')      closeLightbox();
+    if (e.key === 'ArrowLeft')   lbNav(-1);
+    if (e.key === 'ArrowRight')  lbNav(1);
+  });
+
+  // Touch swipe
+  (function() {
+    var sx = 0;
+    var lb = document.getElementById('lightbox');
+    lb.addEventListener('touchstart', function(e) { sx = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend',   function(e) {
+      var dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+
+  // ── Push AdSense ──────────────────────────────────────────────
   window.addEventListener('load', function() {
     try {
       var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
@@ -628,17 +890,14 @@ async function main() {
   console.log('🇯🇲 Yaad Adz — Ad Page Generator');
   console.log('──────────────────────────────────');
 
-  // Ensure output dir exists
   if (!fs.existsSync(OUT_DIR)) {
     fs.mkdirSync(OUT_DIR, { recursive: true });
     console.log('📁 Created ./ad/ directory');
   }
 
-  // Connect to Supabase
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
   console.log('🔌 Connecting to Supabase…');
 
-  // Fetch all ads (paginate if needed — 1000 per call)
   let allRows = [];
   let from = 0;
   const PAGE = 1000;
@@ -655,9 +914,10 @@ async function main() {
     from += PAGE;
   }
 
-  console.log(`📋 Found ${allRows.length} ads`);
+  console.log(\`📋 Found \${allRows.length} ads\`);
 
-  // Track existing files so we can delete stale ones
+  const allAds = allRows.map(dbToAd);
+
   const existingFiles = new Set(
     fs.existsSync(OUT_DIR)
       ? fs.readdirSync(OUT_DIR).filter(f => f.endsWith('.html'))
@@ -665,23 +925,19 @@ async function main() {
   );
   const generatedFiles = new Set();
 
-  let created = 0, skipped = 0, deleted = 0;
+  let created = 0, deleted = 0;
 
-  for (const row of allRows) {
-    const ad   = dbToAd(row);
+  for (const ad of allAds) {
     const slug = slugify(ad);
     const file = slug + '.html';
     const dest = path.join(OUT_DIR, file);
     generatedFiles.add(file);
-
-    // Skip if file already up-to-date (same modified time check skipped for simplicity — always regenerate)
-    const html = buildPage(ad);
+    const html = buildPage(ad, allAds);
     fs.writeFileSync(dest, html, 'utf8');
     created++;
-    if (created % 50 === 0) console.log(`  ✅ ${created} pages written…`);
+    if (created % 50 === 0) console.log(\`  ✅ \${created} pages written…\`);
   }
 
-  // Delete HTML files for ads that no longer exist
   for (const file of existingFiles) {
     if (!generatedFiles.has(file)) {
       fs.unlinkSync(path.join(OUT_DIR, file));
@@ -689,12 +945,10 @@ async function main() {
     }
   }
 
-  // ── Generate dynamic sitemap.xml ─────────────────────────────
+  // ── Generate sitemap.xml ──────────────────────────────────────
   console.log('🗺️  Generating sitemap.xml…');
-
   const today = new Date().toISOString().split('T')[0];
 
-  // Static pages — always included
   const staticPages = [
     { url: BASE_URL + '/',                    priority: '1.0', changefreq: 'hourly'  },
     { url: BASE_URL + '/?cat=vehicles',       priority: '0.9', changefreq: 'hourly'  },
@@ -708,7 +962,6 @@ async function main() {
     { url: BASE_URL + '/?cat=music',          priority: '0.7', changefreq: 'daily'   },
     { url: BASE_URL + '/?cat=sports',         priority: '0.7', changefreq: 'daily'   },
     { url: BASE_URL + '/?cat=kids',           priority: '0.7', changefreq: 'daily'   },
-    // Parish pages
     { url: BASE_URL + '/?parish=Kingston',          priority: '0.8', changefreq: 'hourly' },
     { url: BASE_URL + '/?parish=St.%20Andrew',      priority: '0.8', changefreq: 'hourly' },
     { url: BASE_URL + '/?parish=St.%20Catherine',   priority: '0.8', changefreq: 'hourly' },
@@ -725,75 +978,59 @@ async function main() {
     { url: BASE_URL + '/?parish=Hanover',           priority: '0.6', changefreq: 'daily'  },
   ];
 
-  // Active ad pages — one entry per listing
-  const activeAds = allRows
-    .map(dbToAd)
-    .filter(ad => ad.status !== 'sold');
-
+  const activeAds = allAds.filter(ad => ad.status !== 'sold');
   const adEntries = activeAds.map(ad => {
-    const lastmod = ad.date
-      ? new Date(ad.date).toISOString().split('T')[0]
-      : today;
-    return {
-      url:        BASE_URL + '/ad/' + slugify(ad) + '.html',
-      lastmod,
-      priority:   '0.8',
-      changefreq: 'weekly',
-      image:      ad.image || null,
-      title:      ad.title,
-    };
+    const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
+    return { url: BASE_URL + '/ad/' + slugify(ad) + '.html', lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
   });
 
-  // Build XML
-  const staticXml = staticPages.map(p => `
+  const staticXml = staticPages.map(p => \`
   <url>
-    <loc>${p.url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${p.changefreq}</changefreq>
-    <priority>${p.priority}</priority>
-  </url>`).join('');
+    <loc>\${p.url}</loc>
+    <lastmod>\${today}</lastmod>
+    <changefreq>\${p.changefreq}</changefreq>
+    <priority>\${p.priority}</priority>
+  </url>\`).join('');
 
-  const adXml = adEntries.map(p => `
+  const adXml = adEntries.map(p => \`
   <url>
-    <loc>${p.url}</loc>
-    <lastmod>${p.lastmod}</lastmod>
-    <changefreq>${p.changefreq}</changefreq>
-    <priority>${p.priority}</priority>${p.image ? `
+    <loc>\${p.url}</loc>
+    <lastmod>\${p.lastmod}</lastmod>
+    <changefreq>\${p.changefreq}</changefreq>
+    <priority>\${p.priority}</priority>\${p.image ? \`
     <image:image>
-      <image:loc>${p.image}</image:loc>
-      <image:title>${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
-    </image:image>` : ''}
-  </url>`).join('');
+      <image:loc>\${p.image}</image:loc>
+      <image:title>\${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
+    </image:image>\` : ''}
+  </url>\`).join('');
 
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+  const sitemap = \`<?xml version="1.0" encoding="UTF-8"?>
 <urlset
   xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <!-- Generated by Yaad Adz on ${new Date().toISOString()} -->
-  <!-- ${staticPages.length} static pages + ${adEntries.length} active listings -->
-${staticXml}
-${adXml}
-</urlset>`;
+  <!-- Generated by Yaad Adz on \${new Date().toISOString()} -->
+  <!-- \${staticPages.length} static pages + \${adEntries.length} active listings -->
+\${staticXml}
+\${adXml}
+</urlset>\`;
 
   fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
-  console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
+  console.log(\`   ✅ sitemap.xml written — \${staticPages.length} static + \${adEntries.length} ad pages\`);
 
-  // Also update robots.txt to point to the new sitemap (in case it doesn't already)
   const robotsPath = path.join(__dirname, 'robots.txt');
   let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
   if (!robots.includes('Sitemap:')) {
-    robots += `\nSitemap: ${BASE_URL}/sitemap.xml\n`;
+    robots += \`\nSitemap: \${BASE_URL}/sitemap.xml\n\`;
     fs.writeFileSync(robotsPath, robots, 'utf8');
     console.log('   ✅ robots.txt updated with Sitemap link');
   }
 
-  // ── Final summary ─────────────────────────────────────────────
   console.log('');
-  console.log(`✅ Done!`);
-  console.log(`   📄 ${created} ad pages written to ./ad/`);
-  if (deleted) console.log(`   🗑️  ${deleted} stale pages deleted`);
-  console.log(`   🗺️  sitemap.xml updated (${staticPages.length + adEntries.length} URLs total)`);
-  if (allRows.length > 0) console.log(`   🌐 Example: ${BASE_URL}/ad/${slugify(dbToAd(allRows[0]))}.html`);
+  console.log(\`✅ Done!\`);
+  console.log(\`   📄 \${created} ad pages written to ./ad/\`);
+  if (deleted) console.log(\`   🗑️  \${deleted} stale pages deleted\`);
+  console.log(\`   🗺️  sitemap.xml updated (\${staticPages.length + adEntries.length} URLs total)\`);
+  if (allRows.length > 0) console.log(\`   🌐 Example: \${BASE_URL}/ad/\${slugify(dbToAd(allRows[0]))}.html\`);
 }
 
 main().catch(err => {
