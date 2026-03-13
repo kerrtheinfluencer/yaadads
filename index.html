@@ -523,11 +523,6 @@ html { scroll-behavior: smooth; }
   </div>
 </div>
 
-<!-- ─── AD DETAIL PAGE ─── -->
-<div id="page-detail" class="page">
-  <div id="detailPage"></div>
-</div>
-
 <!-- ─── MOBILE BOTTOM NAV ─── -->
 <div class="mob-nav">
   <button class="mob-nav-item active" id="mnHome" onclick="goHome()">
@@ -3546,27 +3541,56 @@ const YaadBrain = (() => {
   function detectFollowUp(q, lastCtx) {
     if (!lastCtx) return null;
     const s = q.toLowerCase();
-    // Price refinements
-    if (/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less)\b/.test(s) && lastCtx.hi)
-      return { ...lastCtx, hi: Math.floor(lastCtx.hi * 0.6), offset:0 };
-    if (/\b(more expensive|higher|pricier|bigger budget|spend more|willing to pay more)\b/.test(s) && (lastCtx.hi || lastCtx.lo))
-      return { ...lastCtx, hi: lastCtx.hi ? Math.floor(lastCtx.hi * 1.5) : null, lo: lastCtx.lo ? Math.floor(lastCtx.lo * 1.5) : null, offset:0 };
-    // Pagination
-    if (/\b(more|show more|other|different|else|anything else|next|continue|keep going)\b/.test(s))
+
+    // ── Compare two listings ───────────────────────────────────
+    if (/\b(compare|which (is|one|better)|better value|best deal|between them|difference|vs\.?|versus)\b/.test(s)) {
+      return { ...lastCtx, _compare: true, offset:0 };
+    }
+
+    // ── Price refinements — works from hi OR target ────────────
+    const priceBase = lastCtx.hi || lastCtx.target || null;
+    if (/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less|bring it down|too expensive|too dear)\b/.test(s) && priceBase)
+      return { ...lastCtx, hi: Math.floor(priceBase * 0.65), target: null, offset:0 };
+    if (/\b(more expensive|higher|pricier|bigger budget|spend more|willing to pay more|push up di budget)\b/.test(s) && priceBase)
+      return { ...lastCtx, hi: Math.floor(priceBase * 1.5), target: null, lo: lastCtx.lo, offset:0 };
+
+    // ── Re-price: "around 2 million" / "under 500k" in follow-up ──
+    const newPrice = parsePrice(s);
+    if ((newPrice.hi || newPrice.lo || newPrice.target) && !newPrice.cheap && !newPrice.expensive) {
+      // Only treat as follow-up if there's no new category/parish (those get a fresh search)
+      const newCatsCheck = detectCategories(normalizePatois(q));
+      const newParishCheck = detectParish(q);
+      if (!newCatsCheck.length && !newParishCheck) {
+        return { ...lastCtx, hi: newPrice.hi||null, lo: newPrice.lo||null, target: newPrice.target||null, offset:0 };
+      }
+    }
+
+    // ── Negotiable filter ──────────────────────────────────────
+    if (/\b(negotiable|nego|haggle|bargain|can talk price|price flexible|flex)\b/.test(s))
+      return { ...lastCtx, negoOnly: true, offset:0 };
+
+    // ── Pagination ─────────────────────────────────────────────
+    if (/\b(more|show more|other|different|else|anything else|next|continue|keep going|nuh deh|wah else)\b/.test(s))
       return { ...lastCtx, offset: (lastCtx.offset||0) + 6 };
-    // Sort changes
-    if (/\b(newer|recent|latest|fresh|just posted)\b/.test(s)) return { ...lastCtx, sort:'newest', offset:0 };
-    if (/\b(cheapest first|price low|lowest first|sort by price)\b/.test(s)) return { ...lastCtx, sort:'price_lo', offset:0 };
-    // Location refinement
+
+    // ── Sort changes ───────────────────────────────────────────
+    if (/\b(newer|recent|latest|fresh|just posted|new ones)\b/.test(s)) return { ...lastCtx, sort:'newest', offset:0 };
+    if (/\b(cheapest first|price low|lowest first|sort by price|lowest price|start from low)\b/.test(s)) return { ...lastCtx, sort:'price_lo', offset:0 };
+    if (/\b(most expensive|price high|highest first|sort by high)\b/.test(s)) return { ...lastCtx, sort:'price_hi', offset:0 };
+
+    // ── Location refinement ────────────────────────────────────
     const parish = detectParish(q);
     if (parish && parish !== lastCtx.parish) return { ...lastCtx, parish, offset:0 };
-    // Category pivot
+
+    // ── Remove location filter ─────────────────────────────────
+    if (/\b(any parish|all parish|everywhere|whole jamaica|nuh matter where|anywhere)\b/.test(s) && lastCtx.parish)
+      return { ...lastCtx, parish: null, offset:0 };
+
+    // ── Category pivot ─────────────────────────────────────────
     const newCats = detectCategories(normalizePatois(q));
     if (newCats.length && JSON.stringify(newCats) !== JSON.stringify(lastCtx.cats))
       return { ...lastCtx, cats: newCats, offset:0 };
-    // "negotiable only" / "nego only"
-    if (/\b(negotiable|nego|haggle|bargain)\b/.test(s))
-      return { ...lastCtx, negoOnly: true, offset:0 };
+
     return null;
   }
 
@@ -3608,19 +3632,41 @@ const YaadBrain = (() => {
     const catStr = catNames.length ? catNames.join('/') : 'listings';
     const price = ctx.target ? ` around J$${fmtN(ctx.target)}` : ctx.hi ? ` under J$${fmtN(ctx.hi)}` : ctx.lo ? ` from J$${fmtN(ctx.lo)}` : '';
 
+    // ── Compare mode ──────────────────────────────────────────
+    if (ctx._compare && results.length >= 2) {
+      const a = results[0], b = results[1];
+      const cheaper = a.price < b.price ? a : b;
+      const pricier  = a.price < b.price ? b : a;
+      const diff = Math.abs(a.price - b.price);
+      return `Here's a quick compare 👇\n\n` +
+        `💰 **${cheaper.title}** — J$${fmtN(cheaper.price)}${cheaper.neg?' (neg.)':''} · ${cheaper.parish}\n` +
+        `💎 **${pricier.title}** — J$${fmtN(pricier.price)}${pricier.neg?' (neg.)':''} · ${pricier.parish}\n\n` +
+        `The ${cheaper.title.split(' ').slice(0,3).join(' ')} is J$${fmtN(diff)} cheaper. ` +
+        (cheaper.neg ? `And it's negotiable — you might get it even lower! 🤝` : `Check both out and see which suits you best! 👇`);
+    }
+
+    // ── Sort feedback ─────────────────────────────────────────
+    if (ctx.sort === 'price_hi' && n > 0) return `💎 Showing ${catStr}${loc} highest price first — ${n} listing${n!==1?'s':''}:`;
+    if (ctx.sort === 'price_lo' && n > 0) return `💰 Cheapest ${catStr}${loc} first — ${n} listing${n!==1?'s':''}:`;
+    if (ctx.sort === 'newest'   && n > 0) return `🆕 Freshest ${catStr}${loc} — ${n} just posted:`;
+
+    // ── Empty state ───────────────────────────────────────────
     if (n===0) {
-      // Smart empty state — suggest alternatives
       const allCat = ctx.cats.length ? _ads.filter(a=>a.status!=='sold'&&ctx.cats.includes(a.category)) : [];
-      if (allCat.length && ctx.hi) return `No ${catStr}${price}${loc} right now — but there are ${allCat.length} ${catStr} at other prices. Try raising your budget or removing the location filter! 💡`;
-      if (allCat.length && ctx.parish) return `No ${catStr} found${loc} — but ${allCat.length} available in other parishes. Try "show all ${catStr}" to see them! 🔍`;
+      if (allCat.length && ctx.hi) return `No ${catStr}${price}${loc} right now — but ${allCat.length} ${catStr} exist at other prices. Try "show me cheaper ones" or remove the price filter! 💡`;
+      if (allCat.length && ctx.parish) return `No ${catStr} in ${ctx.parish} right now — ${allCat.length} available island-wide. Try "show all ${catStr}" to see them! 🔍`;
       return `No ${catStr} found${loc}${price} right now. New listings drop daily — check back soon or try different keywords! 🔍`;
     }
 
-    // Context-aware responses
-    if (ctx.cheap) return `💰 Here are the budget-friendly ${catStr}${loc} — straight bargains! ${n > 5 ? 'Showing the best deals first.' : ''}`;
-    if (ctx.expensive) return `💎 Here's the premium ${catStr}${loc} — top shelf quality:`;
+    // ── Context-aware responses ───────────────────────────────
+    if (ctx.cheap)     return `💰 Budget-friendly ${catStr}${loc} — best deals first! ${n > 5 ? 'Showing top matches.' : ''}`;
+    if (ctx.expensive) return `💎 Premium ${catStr}${loc} — top shelf picks:`;
+    if (ctx.negoOnly)  return `🤝 Negotiable ${catStr}${loc} — ${n} listing${n!==1?'s':''} with flexible pricing:`;
 
-    // Variety based on count
+    // ── Follow-up price refinement feedback ───────────────────
+    if (ctx._isFollowUp && ctx.hi) return `Got it — narrowing to ${catStr}${price}${loc}. ${n} listing${n!==1?'s':''} found 👇`;
+
+    // ── Standard variety ──────────────────────────────────────
     const templates = n === 1
       ? [`Only 1 ${catStr} match${loc}${price} — but it looks solid! Check it out 👇`]
       : n <= 3
@@ -3630,8 +3676,8 @@ const YaadBrain = (() => {
       ? [`Found ${n} ${catStr}${price}${loc}! 🔥 Best matches first.`,
          `${n} ${catStr}${loc}${price} — nice selection! 🇯🇲`,
          `Here ${n===1?'is':'are'} ${n} ${catStr}${loc}${price}. Check them! 👀`]
-      : [`Nuff options! ${n} ${catStr}${price}${loc} available. Showing top matches first. 🔥`,
-         `${n} ${catStr}${loc}${price} — I'm showing the most relevant first. Use "cheapest" or "newest" to re-sort! 📊`];
+      : [`Nuff options! ${n} ${catStr}${price}${loc} available. Top matches first. 🔥`,
+         `${n} ${catStr}${loc}${price} — showing most relevant first. Say "cheapest" or "newest" to re-sort! 📊`];
 
     return templates[Math.floor(Math.random()*templates.length)];
   }
@@ -3723,8 +3769,9 @@ const YaadBrain = (() => {
     }
 
     // Apply sort override from follow-up
-    if (ctx.sort === 'newest') scored.sort((a,b)=>new Date(b.ad.date||0)-new Date(a.ad.date||0));
+    if (ctx.sort === 'newest')   scored.sort((a,b)=>new Date(b.ad.date||0)-new Date(a.ad.date||0));
     if (ctx.sort === 'price_lo') scored.sort((a,b)=>a.ad.price-b.ad.price);
+    if (ctx.sort === 'price_hi') scored.sort((a,b)=>b.ad.price-a.ad.price);
 
     const offset = ctx.offset||0;
     const results = scored.slice(offset, offset+6).map(s=>s.ad);
@@ -4073,154 +4120,157 @@ function openDetail(id) {
   const isMine = CU && CU.id === ad.sellerId;
   const slug   = slugify(ad);
   const adUrl  = 'https://yaadadz.com/ad/' + slug;
-  const verified = typeof isSellerVerified === 'function' && isSellerVerified(ad.sellerId);
 
   // ── Store photos globally so onclick attrs can reference safely ─
   window._detailPhotos = photos;
 
-  // ── Main photo ────────────────────────────────────────────────
-  const mainPhoto = photos.length
-    ? '<img id="detailMainImg" src="' + photos[0] + '" alt="' + escHtml(ad.title) + '" onclick="openLightbox(window._detailPhotos,window._detailActivePhoto||0)" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block">'
-    : '<div style="width:100%;height:100%;background:' + (cat?.color||'#2a3f2e') + ';display:flex;align-items:center;justify-content:center;font-size:80px">' + (cat?.icon||'📦') + '</div>';
+  // ── Photo gallery ────────────────────────────────────────────
+  let galleryHTML = '';
+  if (photos.length > 0) {
+    const thumbs = photos.map(function(url, i) {
+      return '<div class="gallery-slide" onclick="openLightbox(window._detailPhotos,' + i + ')" style="cursor:zoom-in">' +
+        '<img src="' + url + '" alt="' + escHtml(ad.title) + ' photo ' + (i+1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">' +
+      '</div>';
+    }).join('');
 
-  // ── Thumbnail strip ───────────────────────────────────────────
-  const thumbStrip = photos.length > 1
-    ? '<div style="display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px">' +
-        photos.map(function(url, i) {
-          return '<div class="detail-thumb' + (i===0?' active':'') + '" id="dthumb' + i + '" onclick="detailThumbClick(' + i + ')" style="flex:0 0 72px;height:56px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid ' + (i===0?'var(--green,#00703f)':'transparent') + ';transition:border-color .2s">' +
-            '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover">' +
-          '</div>';
-        }).join('') +
+    const dots = photos.length > 1
+      ? '<div class="gallery-dots" id="galleryDots">' +
+          photos.map(function(_, i){ return '<span class="gallery-dot' + (i===0?' active':'') + '" onclick="galleryGoTo(' + i + ')"></span>'; }).join('') +
+        '</div>'
+      : '';
+
+    const navBtns = photos.length > 1
+      ? '<button class="gallery-nav gallery-prev" onclick="galleryPrev()">‹</button>' +
+        '<button class="gallery-nav gallery-next" onclick="galleryNext()">›</button>'
+      : '';
+
+    const photoCountBadge = photos.length > 1
+      ? '<span class="detail-photo-count" onclick="openLightbox(window._detailPhotos,0)" style="cursor:pointer">📷 ' + photos.length + ' photos · tap to expand</span>'
+      : '<span class="detail-photo-count" onclick="openLightbox(window._detailPhotos,0)" style="cursor:zoom-in">🔍 Tap to view fullscreen</span>';
+
+    galleryHTML =
+      '<div class="detail-gallery" style="position:relative;background:#000;border-radius:12px 12px 0 0;overflow:hidden">' +
+        '<div class="gallery-track" id="galleryTrack" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;height:280px" onscroll="syncGalleryDots()">' +
+          thumbs +
+        '</div>' +
+        navBtns + dots +
+        '<div style="position:absolute;bottom:10px;right:12px">' + photoCountBadge + '</div>' +
+      '</div>';
+  } else {
+    galleryHTML =
+      '<div style="height:180px;background:' + (cat?.color||'#f5f5f5') + ';border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-size:72px">' +
+        (cat?.icon||'📦') +
+      '</div>';
+  }
+
+  // ── Sold ribbon ───────────────────────────────────────────────
+  const soldRibbon = ad.status === 'sold'
+    ? '<div style="background:#e53e3e;color:#fff;text-align:center;padding:8px;font-weight:700;font-size:13px;letter-spacing:.5px">SOLD</div>'
+    : '';
+
+  // ── Action buttons ───────────────────────────────────────────
+  let actionBtns = '';
+  if (ad.status !== 'sold') {
+    if (isMine) {
+      actionBtns =
+        '<button class="btn btn-outline btn-sm" onclick="openEditAd(\'' + id + '\')">✏️ Edit</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleSold(\'' + id + '\');closeOverlay(\'ovDetail\')">🏷️ Mark Sold</button>' +
+        '<button class="btn btn-outline btn-sm" style="color:#e53e3e" onclick="delAd(\'' + id + '\');closeOverlay(\'ovDetail\')">🗑️ Delete</button>';
+    } else {
+      const wa = ad.phone
+        ? 'https://wa.me/' + ad.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hi, I saw your listing on Yaad Adz: ' + ad.title + ' — ' + adUrl)
+        : null;
+      actionBtns =
+        (wa ? '<a href="' + wa + '" target="_blank" rel="noopener" class="btn btn-green btn-lg" style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">📲 WhatsApp</a>' : '') +
+        (CU && CU.id !== ad.sellerId
+          ? '<button class="btn btn-outline btn-lg" style="flex:1" onclick="openChat(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\',\'' + (ad.sellerInit||'?') + '\')">💬 Message</button>'
+          : '') +
+        (ad.neg && CU && CU.id !== ad.sellerId
+          ? '<button class="btn btn-gold btn-sm" onclick="openOfferPanel(\'' + id + '\')">💰 Offer</button>'
+          : '');
+    }
+  }
+
+  // ── Offer panel ───────────────────────────────────────────────
+  const offerPanel = (ad.neg && !isMine && ad.status !== 'sold')
+    ? '<div class="offer-panel" id="offerPanel">' +
+        '<div style="font-size:13px;font-weight:600;margin-bottom:8px">Make an Offer</div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<input class="form-inp" id="offerAmt" type="number" placeholder="Your offer in J$" style="flex:1">' +
+          '<button class="btn btn-gold" onclick="sendOffer(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\',\'' + (ad.sellerInit||'?') + '\')">Send</button>' +
+        '</div>' +
       '</div>'
     : '';
 
-  // ── Contact buttons ───────────────────────────────────────────
-  const wa = ad.phone
-    ? 'https://wa.me/' + ad.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hi, I saw your listing on Yaad Adz: ' + ad.title + ' — ' + adUrl)
-    : null;
+  // ── Main HTML ─────────────────────────────────────────────────
+  const verified = typeof isSellerVerified === 'function' && isSellerVerified(ad.sellerId);
 
-  let contactBtns = '';
-  if (ad.status === 'sold') {
-    contactBtns = '<div style="background:#e53e3e;color:#fff;text-align:center;padding:12px;border-radius:10px;font-weight:700;font-size:15px;letter-spacing:.5px">SOLD</div>';
-  } else if (isMine) {
-    contactBtns =
-      '<button class="btn btn-outline btn-block" style="margin-bottom:10px" onclick="openEditAd(\'' + id + '\')">✏️ Edit Listing</button>' +
-      '<button class="btn btn-outline btn-block" style="margin-bottom:10px" onclick="toggleSold(\'' + id + '\');goHome()">🏷️ Mark as Sold</button>' +
-      '<button class="btn btn-block" style="background:#fee2e2;color:#e53e3e;border:none;cursor:pointer;padding:12px;border-radius:10px;font-weight:600" onclick="delAd(\'' + id + '\');goHome()">🗑️ Delete Listing</button>';
-  } else {
-    if (ad.phone) {
-      contactBtns += '<a href="tel:' + ad.phone + '" class="btn btn-green btn-block btn-lg" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;text-decoration:none">📞 Call Seller</a>';
-    }
-    if (wa) {
-      contactBtns += '<a href="' + wa + '" target="_blank" rel="noopener" class="btn btn-green btn-block btn-lg" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;text-decoration:none">📲 WhatsApp</a>';
-    }
-    if (CU && CU.id !== ad.sellerId) {
-      contactBtns += '<button class="btn btn-outline btn-block btn-lg" style="margin-bottom:10px" onclick="openChat(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\',\'' + (ad.sellerInit||'?') + '\')">💬 Message on Yaad Adz</button>';
-    }
-    if (ad.neg && CU && CU.id !== ad.sellerId) {
-      contactBtns +=
-        '<button class="btn btn-gold btn-block" onclick="openOfferPanel(\'' + id + '\')">💰 Make an Offer</button>' +
-        '<div class="offer-panel" id="offerPanel" style="display:none;margin-top:10px">' +
-          '<div style="display:flex;gap:8px">' +
-            '<input class="form-inp" id="offerAmt" type="number" placeholder="Your offer in J$" style="flex:1">' +
-            '<button class="btn btn-gold" onclick="sendOffer(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\',\'' + (ad.sellerInit||'?') + '\')">Send</button>' +
+  document.getElementById('detailInner').innerHTML =
+    galleryHTML +
+    soldRibbon +
+    '<div style="padding:20px">' +
+
+      // Price & title
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px">' +
+        '<div class="ad-price' + (ad.neg?' negotiable':'') + '" style="font-size:26px">J$' + fmtN(ad.price) + (ad.neg?' <span style="font-size:12px;font-weight:400;color:var(--text-3)">neg.</span>':'') + '</div>' +
+        '<button class="fav-btn" style="font-size:22px;background:none;border:none;cursor:pointer;padding:0" onclick="togFav(\'' + id + '\',this)">' + (isFav(id)?'❤️':'🤍') + '</button>' +
+      '</div>' +
+      '<h2 style="font-family:var(--font-d);font-size:20px;font-weight:800;margin:0 0 10px;line-height:1.3">' + escHtml(ad.title) + '</h2>' +
+
+      // Meta row
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">' +
+        '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600">📍 ' + escHtml(ad.parish) + '</span>' +
+        '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:4px 12px;font-size:12px">' + (cat?cat.icon+' '+cat.name:'📦 Other') + '</span>' +
+        '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-3)">🕐 ' + ago(ad.date) + '</span>' +
+      '</div>' +
+
+      // Description
+      (ad.desc
+        ? '<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Description</div>' +
+          '<p style="font-size:15px;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">' + escHtml(ad.desc) + '</p></div>'
+        : '') +
+
+      // Seller card
+      '<div style="border:1px solid var(--border,#e8e8e8);border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer" onclick="openProfile(\'' + ad.sellerId + '\')">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div class="u-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:40px;height:40px;font-size:15px">' + ini + '</div>' +
+          '<div>' +
+            '<div style="font-weight:700;font-size:14px">' + escHtml(ad.seller||'Seller') + (verified?' <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#005c35"/><path d="M5 8l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-3)">Yaad Adz Seller · ' + escHtml(ad.parish) + '</div>' +
           '</div>' +
-        '</div>';
-    }
-  }
-
-  // ── Build the full page ───────────────────────────────────────
-  const pageHTML =
-    // Back bar
-    '<div style="background:var(--nav-bg,#0c1e14);padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100">' +
-      '<button onclick="goHome()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.1)">← ' + (cat?cat.name:'Listings') + '</button>' +
-      '<div style="flex:1"></div>' +
-      '<button onclick="shareAd(\'' + id + '\')" style="background:rgba(255,255,255,.1);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 12px;border-radius:8px">🔗 Share</button>' +
-    '</div>' +
-
-    // Two-column layout
-    '<div style="max-width:1100px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:1fr;gap:24px" id="detailGrid">' +
-
-      // Left column: photos + info
-      '<div>' +
-        // Main photo
-        '<div style="width:100%;height:380px;border-radius:14px;overflow:hidden;background:#111;position:relative">' +
-          mainPhoto +
-          // fullscreen hint badge
-          (photos.length ? '<div onclick="openLightbox(window._detailPhotos,window._detailActivePhoto||0)" style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:5px 10px;border-radius:20px;cursor:zoom-in;backdrop-filter:blur(4px)">' + (photos.length > 1 ? '📷 ' + photos.length + ' photos · tap to expand' : '🔍 Tap to view fullscreen') + '</div>' : '') +
         '</div>' +
-        // Thumbnail strip
-        thumbStrip +
-        // Description card
-        (ad.desc
-          ? '<div style="background:var(--card-bg,#fff);border-radius:14px;padding:20px;margin-top:20px">' +
-              '<h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3,#888);margin:0 0 10px">Description</h3>' +
-              '<p style="font-size:15px;line-height:1.75;white-space:pre-wrap;margin:0;color:var(--text-1)">' + escHtml(ad.desc) + '</p>' +
-            '</div>'
+        '<span style="font-size:12px;color:var(--green,#00703f);font-weight:600">View profile ›</span>' +
+      '</div>' +
+
+      // Action buttons
+      '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">' + actionBtns + '</div>' +
+
+      offerPanel +
+
+      // Footer actions
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border,#eee)">' +
+        '<button class="btn btn-outline btn-sm" onclick="shareAd(\'' + id + '\')">🔗 Share</button>' +
+        (!isMine
+          ? '<button class="btn btn-outline btn-sm" onclick="openReport(\'' + id + '\')">🚩 Report</button>' +
+            (CU && CU.id !== ad.sellerId ? '<button class="btn btn-outline btn-sm" onclick="openRateModal(\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\')">⭐ Rate Seller</button>' : '')
           : '') +
-        // Seller card
-        '<div style="background:var(--card-bg,#fff);border-radius:14px;padding:18px;margin-top:20px;cursor:pointer" onclick="openProfile(\'' + ad.sellerId + '\')">' +
-          '<h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3,#888);margin:0 0 14px">Seller</h3>' +
-          '<div style="display:flex;align-items:center;gap:12px">' +
-            '<div class="u-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:48px;height:48px;font-size:17px;flex-shrink:0">' + ini + '</div>' +
-            '<div style="flex:1">' +
-              '<div style="font-weight:700;font-size:15px">' + escHtml(ad.seller||'Seller') + (verified?' ✅':'') + '</div>' +
-              '<div style="font-size:13px;color:var(--text-3)">Yaad Adz Member · ' + escHtml(ad.parish) + '</div>' +
-            '</div>' +
-            '<span style="font-size:13px;color:var(--green,#00703f);font-weight:600">View profile ›</span>' +
-          '</div>' +
-        '</div>' +
-        // Footer actions
-        '<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">' +
-          '<button class="btn btn-outline btn-sm" onclick="togFav(\'' + id + '\',this)">' + (isFav(id)?'❤️ Saved':'🤍 Save') + '</button>' +
-          (!isMine ? '<button class="btn btn-outline btn-sm" onclick="openReport(\'' + id + '\')">🚩 Report</button>' : '') +
-          (CU && CU.id !== ad.sellerId ? '<button class="btn btn-outline btn-sm" onclick="openRateModal(\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\')">⭐ Rate Seller</button>' : '') +
-        '</div>' +
       '</div>' +
-
-      // Right column: price + contact (will stack on mobile)
-      '<div id="detailSidebar">' +
-        '<div style="background:var(--card-bg,#fff);border-radius:14px;padding:22px;position:sticky;top:70px">' +
-          '<div class="ad-price' + (ad.neg?' negotiable':'') + '" style="font-size:32px;margin-bottom:6px">J$' + fmtN(ad.price) + '</div>' +
-          '<h1 style="font-family:var(--font-d);font-size:22px;font-weight:800;margin:0 0 14px;line-height:1.3;color:var(--text-1)">' + escHtml(ad.title) + '</h1>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px">' +
-            '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600">📍 ' + escHtml(ad.parish) + '</span>' +
-            '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:5px 13px;font-size:12px">' + (cat?cat.icon+' '+cat.name:'📦 Other') + '</span>' +
-            '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--text-3)">🕐 ' + ago(ad.date) + '</span>' +
-            (ad.status==='sold' ? '<span style="background:#fee2e2;color:#e53e3e;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700">SOLD</span>' : '<span style="background:#dcfce7;color:#16a34a;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600">● Available</span>') +
-          '</div>' +
-          '<div style="border-top:1px solid var(--border,#eee);padding-top:18px">' +
-            '<div style="font-size:13px;font-weight:700;color:var(--text-3);margin-bottom:12px">Contact Seller</div>' +
-            contactBtns +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-
     '</div>';
 
-  document.getElementById('detailPage').innerHTML = pageHTML;
-
-  // Make two-column on desktop
-  const grid = document.getElementById('detailGrid');
-  if (grid && window.innerWidth >= 768) {
-    grid.style.gridTemplateColumns = '1fr 340px';
-  }
-
-  // Thumbnail click handler
-  window._detailActivePhoto = 0;
-  window.detailThumbClick = function(i) {
-    window._detailActivePhoto = i;
-    const mainImg = document.getElementById('detailMainImg');
-    if (mainImg) { mainImg.src = photos[i]; mainImg.style.opacity='0'; setTimeout(function(){ mainImg.style.opacity='1'; mainImg.style.transition='opacity .2s'; },10); }
-    document.querySelectorAll('.detail-thumb').forEach(function(t, idx) {
-      t.style.borderColor = idx===i ? 'var(--green,#00703f)' : 'transparent';
+  // Sync gallery scroll dots
+  window.syncGalleryDots = function() {
+    const t = document.getElementById('galleryTrack');
+    if (!t || !t.children.length) return;
+    const idx = Math.round(t.scrollLeft / (t.offsetWidth || 1));
+    document.querySelectorAll('#galleryDots .gallery-dot').forEach(function(d, i) {
+      d.classList.toggle('active', i === idx);
     });
   };
 
   SEO.updateOGForListing(ad);
   history.pushState({ adId: id }, '', '/ad/' + slug);
-  goPage('detail');
-  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  openOverlay('ovDetail');
 }
 
 function openProfile(sellerId) {
@@ -4794,13 +4844,7 @@ window.addEventListener('popstate', function(e) {
   if (adId) {
     openDetail(adId);
   } else {
-    // Navigating back — close detail page if open, else close any overlay
-    const detailPage = document.getElementById('page-detail');
-    if (detailPage && detailPage.classList.contains('active')) {
-      goHome();
-      SEO.resetOG(); SEO.setCanonical('/');
-      return;
-    }
+    // Navigating back — close any open detail modal
     const ovDetail = document.getElementById('ovDetail');
     if (ovDetail && ovDetail.classList.contains('open')) {
       ovDetail.classList.remove('open');
