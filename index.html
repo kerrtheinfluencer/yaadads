@@ -1428,8 +1428,15 @@ function doLogout() {
 ═══════════════════════════════════════════════════════════ */
 function updateMsgBadge() {
   const count = typeof unreadCount === 'function' ? unreadCount() : 0;
+  // Mobile bottom nav badge
   const badge = document.getElementById('mobMsgBadge');
   if (badge) { badge.textContent = count || ''; badge.classList.toggle('show', count > 0); }
+  // Desktop nav badge
+  const navBadge = document.getElementById('navMsgBadge');
+  if (navBadge) {
+    if (count > 0) { navBadge.textContent = count > 9 ? '9+' : count; navBadge.style.display = ''; }
+    else { navBadge.style.display = 'none'; }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2291,6 +2298,13 @@ function renderNav() {
     const ini = initials(CU.name);
     el.innerHTML = `
       <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
+      <div style="position:relative;display:inline-flex">
+        <button class="btn btn-outline btn-sm" onclick="goPage('msgs')" style="display:flex;align-items:center;gap:5px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Messages
+        </button>
+        <span id="navMsgBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e53e3e;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;padding:0 3px;pointer-events:none"></span>
+      </div>
       <div class="badge-wrap">
         <div class="user-pill" onclick="goPage('myads')">
           <div class="u-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
