@@ -357,7 +357,7 @@ if ('serviceWorker' in navigator) {
   <!-- RESULTS AREA (categories + AI response + listings, all unified) -->
   <div class="results-area">
     <!-- Ad: below hero -->
-    <div class="ad-slot-banner">
+    <div class="ad-slot-banner" style="min-height:0">
       <ins class="adsbygoogle ad-slot"
         style="display:block"
         data-ad-client="ca-pub-9656521698490533"
@@ -420,8 +420,15 @@ if ('serviceWorker' in navigator) {
   <div class="page-wrap">
     <!-- Profile Card -->
     <div id="profileCard"></div>
-    <!-- My Listings -->
+    <!-- Messages -->
     <div style="margin-top:28px">
+      <div class="section-hd" style="margin-bottom:16px">
+        <h2 class="section-title">Messages</h2>
+      </div>
+      <div id="acctInboxList" class="inbox-list"></div>
+    </div>
+    <!-- My Listings -->
+    <div style="margin-top:32px">
       <div class="section-hd" style="margin-bottom:16px">
         <h2 class="section-title">My Listings</h2>
         <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
@@ -642,7 +649,7 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- Ad: above footer -->
-<div class="ad-slot-banner">
+<div class="ad-slot-banner" style="min-height:0">
   <ins class="adsbygoogle ad-slot"
     style="display:block"
     data-ad-client="ca-pub-9656521698490533"
@@ -1565,6 +1572,36 @@ function renderProfileCard() {
 
 function renderMyAds() {
   renderProfileCard();
+  // Render messages into account page inbox
+  const acctInbox = document.getElementById('acctInboxList');
+  if (acctInbox) {
+    if (!CU) {
+      acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
+    } else {
+      const keys = Object.keys(_msgs);
+      if (!keys.length) {
+        acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p style="color:var(--text-3)">No messages yet.</p></div>';
+      } else {
+        acctInbox.innerHTML = keys.map(function(key) {
+          const conv = _msgs[key];
+          const msgs = conv.messages || [];
+          const last = msgs[msgs.length - 1];
+          const unread = msgs.filter(function(m){ return !m.read && m.from !== CU.id; }).length;
+          const other = CU.id === conv.sellerId ? conv.buyerName : conv.sellerName;
+          const otherInit = CU.id === conv.sellerId ? conv.buyerInit : conv.sellerInit;
+          return '<div class="inbox-item' + (unread ? ' unread' : '') + '" onclick="openChatFromInbox(\'' + key + '\')">' +
+            '<div class="inbox-avatar">' + (otherInit || '?') + '</div>' +
+            '<div class="inbox-body">' +
+              '<div class="inbox-top"><span class="inbox-name">' + (other || 'User') + '</span>' +
+              '<span class="inbox-time">' + (last ? ago(last.ts) : '') + '</span></div>' +
+              '<div class="inbox-prev">' + (conv.adTitle || '') + (last ? ' · ' + last.text.slice(0, 40) : '') + '</div>' +
+            '</div>' +
+            (unread ? '<div class="inbox-badge">' + unread + '</div>' : '') +
+            '</div>';
+        }).join('');
+      }
+    }
+  }
   const el = document.getElementById('myAdsBox');
   if (!CU) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">🔐</div><h3>Please log in</h3><p>You need an account to manage your listings.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>';
