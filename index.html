@@ -246,7 +246,9 @@ if ('serviceWorker' in navigator) {
 #aiFloatChat        { display:none !important; }
 #aiFloatChat.open   { display:flex !important; }
 #aiSheet            { display:none; }
+#aiSheet.open       { display:block; }
 #aiSheetOverlay     { display:none; }
+#aiSheetOverlay.open{ display:block; }
 /* Faster mobile tap — removes 300ms delay */
 * { touch-action: manipulation; }
 </style>
@@ -3665,15 +3667,17 @@ function updateSheetSugs() {
 
 function openAiSheet() {
   if (sheetOpen) return;
+  sheetOpen = true;
   const sheet = document.getElementById('aiSheet');
   const overlay = document.getElementById('aiSheetOverlay');
+  // Show elements first, then add open class on next frame so CSS transition fires
   sheet.style.display = '';
   overlay.style.display = '';
-  sheet.offsetHeight; // force reflow so transition fires
-  sheet.classList.add('open');
-  overlay.classList.add('open');
+  requestAnimationFrame(function() {
+    sheet.classList.add('open');
+    overlay.classList.add('open');
+  });
   document.body.style.overflow = 'hidden';
-  sheetOpen = true;
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
   renderRecentSearches();
@@ -3682,14 +3686,17 @@ function openAiSheet() {
 }
 
 function closeAiSheet() {
+  sheetOpen = false;
   const sheet = document.getElementById('aiSheet');
   const overlay = document.getElementById('aiSheetOverlay');
   sheet.classList.remove('open');
   overlay.classList.remove('open');
-  setTimeout(() => { sheet.style.display = 'none'; overlay.style.display = 'none'; }, 300);
   document.body.style.overflow = '';
-  sheetOpen = false;
   if (document.activeElement) document.activeElement.blur();
+  // Hide after transition completes
+  setTimeout(function() {
+    if (!sheetOpen) { sheet.style.display = 'none'; overlay.style.display = 'none'; }
+  }, 350);
 }
 
 function sheetSearch(query) {
