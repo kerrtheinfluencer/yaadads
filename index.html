@@ -692,14 +692,14 @@ html { scroll-behavior: smooth; }
     <div class="sheet-recent-list" id="sheetRecentList"></div>
   </div>
 
-  <!-- Quick suggestions inside sheet -->
-  <div class="ai-sheet-sugs" id="sheetSugs">
-    <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
-    <button class="sheet-sug" onclick="sheetSearch('phone under 80000 Kingston')">📱 Phones KGN</button>
-    <button class="sheet-sug" onclick="sheetSearch('house under 20 million')">🏡 Houses</button>
-    <button class="sheet-sug" onclick="sheetSearch('jobs available')">💼 Jobs</button>
-    <button class="sheet-sug" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
-    <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food & Farm</button>
+  <!-- Quick suggestions inside sheet — single scrollable row, no wrapping -->
+  <div class="ai-sheet-sugs" id="sheetSugs" style="display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:4px 16px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('phone Kingston')">📱 Phones KGN</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('house for rent')">🏡 Houses</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('jobs available')">💼 Jobs</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
+    <button class="sheet-sug" style="flex-shrink:0" onclick="sheetSearch('fresh food farm')">🥭 Food</button>
   </div>
 
   <!-- Chat history area -->
@@ -939,6 +939,12 @@ html { scroll-behavior: smooth; }
   <div class="ai-float-msgs" id="floatMsgs">
     <div class="sheet-msg-ai" style="animation:none">
       <div class="sheet-msg-text">Hey! 👋 I'm your Yaad Adz assistant. Search for items, compare prices, or ask me anything about the marketplace.</div>
+    </div>
+    <div id="floatSugs" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 4px 4px">
+      <button onclick="floatSugClick('cheap car under 2 million')" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--border,#ddd);background:var(--surface,#fff);cursor:pointer;white-space:nowrap">🚗 Cheap cars</button>
+      <button onclick="floatSugClick('phone Kingston')" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--border,#ddd);background:var(--surface,#fff);cursor:pointer;white-space:nowrap">📱 Phones KGN</button>
+      <button onclick="floatSugClick('house for rent')" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--border,#ddd);background:var(--surface,#fff);cursor:pointer;white-space:nowrap">🏡 Houses</button>
+      <button onclick="floatSugClick('jobs available')" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--border,#ddd);background:var(--surface,#fff);cursor:pointer;white-space:nowrap">💼 Jobs</button>
     </div>
   </div>
   <div class="ai-float-input-wrap">
@@ -4428,11 +4434,24 @@ function toggleFloatChat() {
   if (_floatOpen) setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
 }
 
+function floatSugClick(query) {
+  // Hide suggestion chips after first use
+  const sugs = document.getElementById('floatSugs');
+  if (sugs) sugs.style.display = 'none';
+  const inp = document.getElementById('floatInput');
+  if (inp) inp.value = query;
+  floatSubmit();
+}
+
 function floatSubmit() {
   const inp = document.getElementById('floatInput');
   const query = (inp?.value||'').trim();
   if (!query) return;
   inp.value = '';
+
+  // Hide suggestion chips after first query
+  const sugs = document.getElementById('floatSugs');
+  if (sugs) sugs.style.display = 'none';
 
   const msgs = document.getElementById('floatMsgs');
 
