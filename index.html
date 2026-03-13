@@ -301,6 +301,32 @@ body { overscroll-behavior-y:contain; }
 
 /* ── Smooth scroll for the whole page ── */
 html { scroll-behavior: smooth; }
+
+/* ── Detail gallery ── */
+.gallery-track::-webkit-scrollbar { display:none; }
+.gallery-slide { flex:0 0 100%; scroll-snap-align:start; }
+.gallery-dots  { position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2; }
+.gallery-dot   { width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:background .2s; }
+.gallery-dot.active { background:#fff; }
+.gallery-nav   { position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;transition:background .2s; }
+.gallery-nav:hover { background:rgba(0,0,0,.7); }
+.gallery-prev  { left:10px; }
+.gallery-next  { right:10px; }
+.detail-photo-count { background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:4px 9px;border-radius:20px;backdrop-filter:blur(4px); }
+
+/* ── Lightbox (fullscreen) ── */
+.lightbox { position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column; }
+.lightbox.open { display:flex; }
+.lightbox-img  { max-width:95vw;max-height:82vh;object-fit:contain;border-radius:4px;user-select:none; }
+.lightbox-close { position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000; }
+.lightbox-nav  { position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000;transition:background .2s; }
+.lightbox-nav:hover { background:rgba(255,255,255,.3); }
+.lightbox-prev { left:16px; }
+.lightbox-next { right:16px; }
+.lightbox-dots { position:absolute;bottom:54px;left:50%;transform:translateX(-50%);display:flex;gap:6px; }
+.lightbox-dot  { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:background .2s; }
+.lightbox-dot.active { background:#fff; }
+.lightbox-counter { position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:13px; }
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -4034,8 +4060,165 @@ function escHtml(s) {
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   sbIncrView(id);
-  const slug = slugify(ad);
-  window.location.href = '/ad/' + slug + '.html';
+
+  const cat    = CATS.find(function(c){ return c.id === ad.category; });
+  const clr    = avatarColor(ad.seller || '?');
+  const ini    = ad.sellerInit || initials(ad.seller || '?');
+  const photos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
+  const isMine = CU && CU.id === ad.sellerId;
+  const slug   = slugify(ad);
+  const adUrl  = 'https://yaadadz.com/ad/' + slug;
+
+  // ── Store photos globally so onclick attrs can reference safely ─
+  window._detailPhotos = photos;
+
+  // ── Photo gallery ────────────────────────────────────────────
+  let galleryHTML = '';
+  if (photos.length > 0) {
+    const thumbs = photos.map(function(url, i) {
+      return '<div class="gallery-slide" onclick="openLightbox(window._detailPhotos,' + i + ')" style="cursor:zoom-in">' +
+        '<img src="' + url + '" alt="' + escHtml(ad.title) + ' photo ' + (i+1) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">' +
+      '</div>';
+    }).join('');
+
+    const dots = photos.length > 1
+      ? '<div class="gallery-dots" id="galleryDots">' +
+          photos.map(function(_, i){ return '<span class="gallery-dot' + (i===0?' active':'') + '" onclick="galleryGoTo(' + i + ')"></span>'; }).join('') +
+        '</div>'
+      : '';
+
+    const navBtns = photos.length > 1
+      ? '<button class="gallery-nav gallery-prev" onclick="galleryPrev()">‹</button>' +
+        '<button class="gallery-nav gallery-next" onclick="galleryNext()">›</button>'
+      : '';
+
+    const photoCountBadge = photos.length > 1
+      ? '<span class="detail-photo-count" onclick="openLightbox(window._detailPhotos,0)" style="cursor:pointer">📷 ' + photos.length + ' photos · tap to expand</span>'
+      : '<span class="detail-photo-count" onclick="openLightbox(window._detailPhotos,0)" style="cursor:zoom-in">🔍 Tap to view fullscreen</span>';
+
+    galleryHTML =
+      '<div class="detail-gallery" style="position:relative;background:#000;border-radius:12px 12px 0 0;overflow:hidden">' +
+        '<div class="gallery-track" id="galleryTrack" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;height:280px" onscroll="syncGalleryDots()">' +
+          thumbs +
+        '</div>' +
+        navBtns + dots +
+        '<div style="position:absolute;bottom:10px;right:12px">' + photoCountBadge + '</div>' +
+      '</div>';
+  } else {
+    galleryHTML =
+      '<div style="height:180px;background:' + (cat?.color||'#f5f5f5') + ';border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-size:72px">' +
+        (cat?.icon||'📦') +
+      '</div>';
+  }
+
+  // ── Sold ribbon ───────────────────────────────────────────────
+  const soldRibbon = ad.status === 'sold'
+    ? '<div style="background:#e53e3e;color:#fff;text-align:center;padding:8px;font-weight:700;font-size:13px;letter-spacing:.5px">SOLD</div>'
+    : '';
+
+  // ── Action buttons ───────────────────────────────────────────
+  let actionBtns = '';
+  if (ad.status !== 'sold') {
+    if (isMine) {
+      actionBtns =
+        '<button class="btn btn-outline btn-sm" onclick="openEditAd(\'' + id + '\')">✏️ Edit</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleSold(\'' + id + '\');closeOverlay(\'ovDetail\')">🏷️ Mark Sold</button>' +
+        '<button class="btn btn-outline btn-sm" style="color:#e53e3e" onclick="delAd(\'' + id + '\');closeOverlay(\'ovDetail\')">🗑️ Delete</button>';
+    } else {
+      const wa = ad.phone
+        ? 'https://wa.me/' + ad.phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hi, I saw your listing on Yaad Adz: ' + ad.title + ' — ' + adUrl)
+        : null;
+      actionBtns =
+        (wa ? '<a href="' + wa + '" target="_blank" rel="noopener" class="btn btn-green btn-lg" style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">📲 WhatsApp</a>' : '') +
+        (CU && CU.id !== ad.sellerId
+          ? '<button class="btn btn-outline btn-lg" style="flex:1" onclick="openChat(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\',\'' + (ad.sellerInit||'?') + '\')">💬 Message</button>'
+          : '') +
+        (ad.neg && CU && CU.id !== ad.sellerId
+          ? '<button class="btn btn-gold btn-sm" onclick="openOfferPanel(\'' + id + '\')">💰 Offer</button>'
+          : '');
+    }
+  }
+
+  // ── Offer panel ───────────────────────────────────────────────
+  const offerPanel = (ad.neg && !isMine && ad.status !== 'sold')
+    ? '<div class="offer-panel" id="offerPanel">' +
+        '<div style="font-size:13px;font-weight:600;margin-bottom:8px">Make an Offer</div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<input class="form-inp" id="offerAmt" type="number" placeholder="Your offer in J$" style="flex:1">' +
+          '<button class="btn btn-gold" onclick="sendOffer(\'' + id + '\',\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\',\'' + (ad.sellerInit||'?') + '\')">Send</button>' +
+        '</div>' +
+      '</div>'
+    : '';
+
+  // ── Main HTML ─────────────────────────────────────────────────
+  const verified = typeof isSellerVerified === 'function' && isSellerVerified(ad.sellerId);
+
+  document.getElementById('detailInner').innerHTML =
+    galleryHTML +
+    soldRibbon +
+    '<div style="padding:20px">' +
+
+      // Price & title
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px">' +
+        '<div class="ad-price' + (ad.neg?' negotiable':'') + '" style="font-size:26px">J$' + fmtN(ad.price) + (ad.neg?' <span style="font-size:12px;font-weight:400;color:var(--text-3)">neg.</span>':'') + '</div>' +
+        '<button class="fav-btn" style="font-size:22px;background:none;border:none;cursor:pointer;padding:0" onclick="togFav(\'' + id + '\',this)">' + (isFav(id)?'❤️':'🤍') + '</button>' +
+      '</div>' +
+      '<h2 style="font-family:var(--font-d);font-size:20px;font-weight:800;margin:0 0 10px;line-height:1.3">' + escHtml(ad.title) + '</h2>' +
+
+      // Meta row
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">' +
+        '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600">📍 ' + escHtml(ad.parish) + '</span>' +
+        '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:4px 12px;font-size:12px">' + (cat?cat.icon+' '+cat.name:'📦 Other') + '</span>' +
+        '<span style="background:var(--surface-2,#f0f0f0);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-3)">🕐 ' + ago(ad.date) + '</span>' +
+      '</div>' +
+
+      // Description
+      (ad.desc
+        ? '<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Description</div>' +
+          '<p style="font-size:15px;line-height:1.7;white-space:pre-wrap;color:var(--text-1)">' + escHtml(ad.desc) + '</p></div>'
+        : '') +
+
+      // Seller card
+      '<div style="border:1px solid var(--border,#e8e8e8);border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer" onclick="openProfile(\'' + ad.sellerId + '\')">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div class="u-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:40px;height:40px;font-size:15px">' + ini + '</div>' +
+          '<div>' +
+            '<div style="font-weight:700;font-size:14px">' + escHtml(ad.seller||'Seller') + (verified?' <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#005c35"/><path d="M5 8l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-3)">Yaad Adz Seller · ' + escHtml(ad.parish) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<span style="font-size:12px;color:var(--green,#00703f);font-weight:600">View profile ›</span>' +
+      '</div>' +
+
+      // Action buttons
+      '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">' + actionBtns + '</div>' +
+
+      offerPanel +
+
+      // Footer actions
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border,#eee)">' +
+        '<button class="btn btn-outline btn-sm" onclick="shareAd(\'' + id + '\')">🔗 Share</button>' +
+        (!isMine
+          ? '<button class="btn btn-outline btn-sm" onclick="openReport(\'' + id + '\')">🚩 Report</button>' +
+            (CU && CU.id !== ad.sellerId ? '<button class="btn btn-outline btn-sm" onclick="openRateModal(\'' + ad.sellerId + '\',\'' + escHtml(ad.seller||'Seller') + '\')">⭐ Rate Seller</button>' : '')
+          : '') +
+      '</div>' +
+    '</div>';
+
+  // Sync gallery scroll dots
+  window.syncGalleryDots = function() {
+    const t = document.getElementById('galleryTrack');
+    if (!t || !t.children.length) return;
+    const idx = Math.round(t.scrollLeft / (t.offsetWidth || 1));
+    document.querySelectorAll('#galleryDots .gallery-dot').forEach(function(d, i) {
+      d.classList.toggle('active', i === idx);
+    });
+  };
+
+  SEO.updateOGForListing(ad);
+  history.pushState({ adId: id }, '', '/ad/' + slug);
+
+  openOverlay('ovDetail');
 }
 
 function openProfile(sellerId) {
