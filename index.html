@@ -254,8 +254,7 @@ if ('serviceWorker' in navigator) {
 * { touch-action: manipulation; }
 
 /* ── Prevent layout flash on initial load ── */
-#homeGrid, #catRow { contain: layout style; }
-#scrollProgress { transform-origin:left center; will-change:transform; }
+#homeGrid, #catRow { will-change: contents; }
 
 /* ── Card enter animation — only fires when .animate is added by JS ── */
 @keyframes cardIn {
@@ -323,19 +322,6 @@ html { scroll-behavior: smooth; }
 
 /* ── No tap flash on result cards ── */
 .sheet-result-card { -webkit-tap-highlight-color: transparent; }
-
-/* ── Sheet suggestion pills — compact chips ── */
-#sheetSugs .sheet-sug {
-  flex:0 0 auto !important; width:auto !important; height:auto !important;
-  min-width:0 !important; aspect-ratio:unset !important;
-  padding:7px 14px !important; border-radius:20px !important;
-  font-size:13px !important; white-space:nowrap !important; line-height:1.4 !important;
-}
-#sheetSugs::-webkit-scrollbar { display:none; }
-#sheetSugs { scrollbar-width:none; }
-/* ── Sheet chat fills remaining height ── */
-.ai-sheet-chat { flex:1 1 0 !important; min-height:0 !important; overflow-y:auto; }
-.ai-sheet-input-wrap { flex-shrink:0 !important; }
 </style>
 <style>
 /* ── SEO ABOUT SECTION (above footer) ── */
@@ -368,7 +354,7 @@ html { scroll-behavior: smooth; }
 <body>
 
 <!-- SCROLL PROGRESS BAR -->
-<div class="scroll-progress" id="scrollProgress" style="transform:scaleX(0)"></div>
+<div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- BACK TO TOP FAB -->
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
@@ -3145,63 +3131,6 @@ const YaadBrain = (() => {
     return bigramSim(query, target) >= (threshold||0.55);
   }
 
-  /* ── Levenshtein edit distance (for spell correction) ── */
-  function editDist(a, b) {
-    if (a === b) return 0;
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
-    const m = a.length, n = b.length;
-    // Only need 2 rows
-    let prev = Array.from({length:n+1},(_,i)=>i);
-    let curr = new Array(n+1);
-    for (let i=1;i<=m;i++) {
-      curr[0] = i;
-      for (let j=1;j<=n;j++) {
-        curr[j] = a[i-1]===b[j-1] ? prev[j-1] : 1+Math.min(prev[j-1],prev[j],curr[j-1]);
-      }
-      [prev,curr] = [curr,prev];
-    }
-    return prev[n];
-  }
-
-  /* Build a flat vocabulary from all ad titles for spell correction */
-  let _spellVocab = null;
-  function buildSpellVocab(ads) {
-    const freq = {};
-    for (const ad of ads) {
-      for (const t of tokenize(ad.title + ' ' + (ad.desc||''))) {
-        if (t.length > 3) freq[t] = (freq[t]||0) + 1;
-      }
-    }
-    // Only keep words that appear at least twice (avoids junk)
-    _spellVocab = Object.entries(freq).filter(([,c])=>c>=2).map(([w])=>w);
-  }
-
-  function spellCorrect(token) {
-    if (!_spellVocab || token.length < 4) return token;
-    // Skip if already an exact vocab hit
-    if (_spellVocab.includes(token)) return token;
-    // Find closest word within edit distance 1 (fast — most typos are 1 char)
-    let best = null, bestDist = 2; // max dist = 1
-    for (const word of _spellVocab) {
-      if (Math.abs(word.length - token.length) > 2) continue; // fast skip
-      const d = editDist(token, word);
-      if (d < bestDist) { best = word; bestDist = d; }
-    }
-    return best || token;
-  }
-
-  function correctQuery(query) {
-    // Correct each token, rebuild query
-    const words = query.split(/\s+/);
-    return words.map(w => {
-      const lower = w.toLowerCase();
-      if (lower.length < 4 || STOP_WORDS.has(lower)) return w;
-      const corrected = spellCorrect(lower);
-      return corrected !== lower ? corrected : w;
-    }).join(' ');
-  }
-
   /* ══════════════════════════════════════════
      2. JAMAICAN PATOIS NLP LAYER
   ══════════════════════════════════════════ */
@@ -3379,7 +3308,6 @@ const YaadBrain = (() => {
       }
     }
     _vocabBuilt = ads.length;
-    buildSpellVocab(ads); // also rebuild spell-correction vocab
   }
 
   function detectCategories(q) {
@@ -3749,88 +3677,17 @@ const YaadBrain = (() => {
   /* ══════════════════════════════════════════
      13. MAIN PROCESS — the brain's entry point
   ══════════════════════════════════════════ */
-  let _lastCtx  = null;
-  let _ctxHistory = []; // rolling 5-turn context window
-
-  /* ── Pronoun / reference resolver ──
-     Turns "that one", "the cheap one", "first result" into
-     a concrete ctx by merging with the last known context.       */
-  function resolveReference(q, lastCtx) {
-    if (!lastCtx) return null;
-    const s = q.toLowerCase().trim();
-
-    // "that one" / "the first one" / "second one" → pass through last ctx unchanged
-    if (/^(that|this|it|the one|first one|second one|third one|show it|open it|see it|more info|tell me more|details)$/.test(s)) {
-      return { ...lastCtx, offset: lastCtx.offset||0 };
-    }
-
-    // "the cheap one" / "cheapest one" → add cheap flag
-    if (/(cheap|cheapest|budget|affordable|less expensive)/.test(s) && !lastCtx.cheap) {
-      return { ...lastCtx, cheap: true, expensive: false, hi: null, lo: null, offset: 0 };
-    }
-
-    // "the expensive one" / "premium" → flip to expensive
-    if (/(expensive|priciest|premium|top|best)/.test(s) && !lastCtx.expensive) {
-      return { ...lastCtx, expensive: true, cheap: false, hi: null, lo: null, offset: 0 };
-    }
-
-    // "negotiable only" / "nego" → add nego flag
-    if (/(negotiable|nego|haggle|bargain|price negotiable)/.test(s)) {
-      return { ...lastCtx, negoOnly: true, offset: 0 };
-    }
-
-    // "with photo" / "with image" → add hasPhoto flag
-    if (/(with photo|with image|has photo|has image|picture)/.test(s)) {
-      return { ...lastCtx, requirePhoto: true, offset: 0 };
-    }
-
-    // "new only" / "brand new" → add condition flag
-    if (/(brand new|new only|unused|factory sealed|box fresh)/.test(s)) {
-      return { ...lastCtx, newOnly: true, offset: 0 };
-    }
-
-    return null;
-  }
-
-  /* ── Smart empty-state: find closest partial matches ── */
-  function findClosestMatches(ctx, qTerms) {
-    const active = _ads.filter(a => a.status !== 'sold');
-    if (!active.length) return [];
-
-    // Score every ad by partial term overlap — no filters, just relevance
-    const scored = active.map(ad => {
-      let score = 0;
-      const title = (ad.title||'').toLowerCase();
-      const desc  = (ad.desc||'').toLowerCase();
-      const cat   = (ad.category||'').toLowerCase();
-      for (const t of qTerms) {
-        if (title.includes(t))   score += 3;
-        if (cat.includes(t))     score += 2;
-        if (desc.includes(t))    score += 1;
-        // partial prefix match (catches "phon" matching "phone")
-        if (t.length > 3 && title.split(/\s+/).some(w => w.startsWith(t))) score += 2;
-      }
-      // Bonus for parish match
-      if (ctx.parish && ad.parish.toLowerCase() === ctx.parish.toLowerCase()) score += 1;
-      return { ad, score };
-    }).filter(x => x.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    return scored.slice(0, 3).map(x => x.ad);
-  }
+  let _lastCtx = null;
 
   function process(query, history) {
     const rawQ = query.trim();
+    const normalized = normalizePatois(rawQ);
 
     // Record search for trending
     recordSearch(rawQ);
 
-    // Rebuild vocab if ads changed (also rebuilds spell vocab)
+    // Rebuild vocab if ads changed
     if (_vocabBuilt !== _ads.length) buildDynamicVocab(_ads);
-
-    // Spell-correct the raw query before any NLP
-    const corrected = correctQuery(rawQ);
-    const normalized = normalizePatois(corrected);
 
     // 1. Check intent/FAQ first (only if no product keywords detected)
     const detectedCats = detectCategories(normalized);
@@ -3855,15 +3712,13 @@ const YaadBrain = (() => {
     }
 
     // 3. Follow-up from previous conversation
-    //    Priority: pronoun-resolver → detectFollowUp → fresh context
-    const refCtx   = _lastCtx ? resolveReference(rawQ, _lastCtx) : null;
-    const followUp = !refCtx && history.length ? detectFollowUp(rawQ, _lastCtx) : null;
-    const ctx = refCtx || followUp || (() => {
+    const followUp = history.length ? detectFollowUp(rawQ, _lastCtx) : null;
+    const ctx = followUp || (() => {
       const price = parsePrice(normalized);
       const cats  = detectedCats;
       const parish = detectedParish;
       const terms = tokenize(normalized).filter(t=>t.length>2 && !STOP_WORDS.has(t));
-      return { cats, parish, lo: price.lo, hi: price.hi, target: price.target, cheap: price.cheap, expensive: price.expensive, terms, offset:0, requirePhoto: false, newOnly: false };
+      return { cats, parish, lo: price.lo, hi: price.hi, target: price.target, cheap: price.cheap, expensive: price.expensive, terms, offset:0 };
     })();
 
     // 4. Rebuild IDF if needed
@@ -3878,9 +3733,7 @@ const YaadBrain = (() => {
     if (ctx.parish) pool = pool.filter(a=>a.parish.toLowerCase()===ctx.parish.toLowerCase());
     if (ctx.hi) pool = pool.filter(a=>a.price<=ctx.hi);
     if (ctx.lo) pool = pool.filter(a=>a.price>=ctx.lo);
-    if (ctx.negoOnly)      pool = pool.filter(a=>a.neg);
-    if (ctx.requirePhoto)  pool = pool.filter(a=>a.image && a.image.length > 0);
-    if (ctx.newOnly)       pool = pool.filter(a=>/new|brand|sealed|unused|fresh/i.test(a.title+' '+(a.desc||'')));
+    if (ctx.negoOnly) pool = pool.filter(a=>a.neg);
     if (ctx.cheap) pool = pool.filter(a => {
       const ceil = CHEAP_CEILING[a.category]||20000;
       return a.price <= ceil;
@@ -3916,12 +3769,10 @@ const YaadBrain = (() => {
     const allResults = scored.map(s=>s.ad);
 
     _lastCtx = { ...ctx, _qTerms: qTerms };
-    _ctxHistory.push(_lastCtx);
-    if (_ctxHistory.length > 5) _ctxHistory.shift();
 
     const msg = broadened
       ? `No exact matches${ctx.parish?' in '+ctx.parish:''} — showing closest results across all categories. Try broader terms! 🔍`
-      : buildMessage(allResults, ctx, corrected);
+      : buildMessage(allResults, ctx, rawQ);
 
     return {
       type: 'search',
@@ -3941,9 +3792,8 @@ const YaadBrain = (() => {
 
   function learn(adId, qTerms) { recordClick(adId, qTerms||[]); }
   function suggestions() { return buildSuggestions(); }
-  function _findClosest(filters, qTerms) { return findClosestMatches(filters||{}, qTerms||[]); }
 
-  return { process, learn, suggestions, _findClosest };
+  return { process, learn, suggestions };
 })();
 
 /* ═══════════════════════════════════════════════════════════
@@ -4207,55 +4057,23 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
       el.appendChild(resWrap);
 
     } else {
-      // Smart empty state — show closest partial matches from live listings
+      // No results — helpful empty state with suggestions
       const emptyWrap = document.createElement('div');
-      emptyWrap.style.cssText = 'padding:8px 0 4px';
-
-      // Try to find close matches using the brain
-      const closeMatches = (typeof YaadBrain !== 'undefined' && YaadBrain._findClosest)
-        ? YaadBrain._findClosest(filters, qTerms || [])
-        : [];
-
-      if (closeMatches && closeMatches.length) {
-        emptyWrap.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;text-align:center">Nothing exact — but these might help 👇</div>';
-        const closeResWrap = document.createElement('div');
-        closeResWrap.className = 'sheet-results';
-        closeMatches.forEach(function(ad) {
-          const cat  = CATS.find(function(c){ return c.id === ad.category; });
-          const card = document.createElement('div');
-          card.className = 'sheet-result-card';
-          const thumb = ad.image
-            ? '<img class="src-thumb" src="' + ad.image + '" alt="" loading="lazy" onerror="this.style.display='none'">'
-            : '<div class="src-icon">' + (cat ? cat.icon : '📦') + '</div>';
-          card.innerHTML = thumb +
-            '<div class="src-info">' +
-              '<div class="src-price">J$' + fmtN(ad.price) + '</div>' +
-              '<div class="src-title">' + escHtml(ad.title) + '</div>' +
-              '<div class="src-meta">📍 ' + ad.parish + ' · ' + (cat ? cat.name : 'Other') + '</div>' +
-            '</div>' +
-            '<div class="src-arrow">›</div>';
-          card.onclick = (function(adCopy) {
-            return function() { closeAiSheet(); setTimeout(function(){ openDetail(adCopy.id); }, 200); };
-          })(ad);
-          closeResWrap.appendChild(card);
-        });
-        emptyWrap.appendChild(closeResWrap);
-      } else {
-        // Fallback: static suggestion chips
-        emptyWrap.innerHTML = '<div style="font-size:32px;margin-bottom:8px;text-align:center">🔍</div>' +
-          '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px;text-align:center">Try different keywords or check these popular searches:</div>';
-        const sugWrap = document.createElement('div');
-        sugWrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
-        const suggestions = ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'];
-        suggestions.forEach(function(s) {
-          const chip = document.createElement('button');
-          chip.className = 'sheet-sug';
-          chip.textContent = s;
-          chip.onclick = function() { sheetSearch(s); };
-          sugWrap.appendChild(chip);
-        });
-        emptyWrap.appendChild(sugWrap);
-      }
+      emptyWrap.style.cssText = 'text-align:center;padding:12px 0 4px';
+      emptyWrap.innerHTML = '<div style="font-size:32px;margin-bottom:8px">🔍</div>' +
+        '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Try different keywords or check these popular searches:</div>';
+      
+      const sugWrap = document.createElement('div');
+      sugWrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
+      const suggestions = ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'];
+      suggestions.forEach(function(s) {
+        const chip = document.createElement('button');
+        chip.className = 'sheet-sug';
+        chip.textContent = s;
+        chip.onclick = function() { sheetSearch(s); };
+        sugWrap.appendChild(chip);
+      });
+      emptyWrap.appendChild(sugWrap);
 
       const browseBtn = document.createElement('button');
       browseBtn.className = 'sheet-view-all';
@@ -4954,7 +4772,7 @@ window.addEventListener('resize', () => {
         // Scroll progress bar
         const bar = document.getElementById('scrollProgress');
         if (bar && docHeight > 0) {
-          bar.style.transform = 'scaleX(' + Math.min(scrollY / docHeight, 1) + ')';
+          bar.style.width = Math.min((scrollY / docHeight) * 100, 100) + '%';
         }
         
         ticking = false;
