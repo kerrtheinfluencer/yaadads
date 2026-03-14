@@ -213,6 +213,16 @@
     display: block;
     transition: opacity 0.2s;
   }
+  .gallery-zoom-hint {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,0.55);
+    color: #fff; font-size: 11px;
+    padding: 5px 10px; border-radius: 20px;
+    cursor: zoom-in;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.2s;
+  }
+  .gallery-zoom-hint:hover { opacity: 0.8; }
   .gallery-thumbs {
     display: flex; gap: 8px;
     margin-top: 10px; flex-wrap: wrap;
@@ -344,11 +354,124 @@
     border-radius: var(--radius);
     overflow: hidden;
   }
-  /* Only show background when ad actually loads */
   .ad-slot-wrap:has(ins[data-adsbygoogle-status]) {
     min-height: 90px;
     background: rgba(255,255,255,0.02);
   }
+
+  /* ── SIMILAR LISTINGS ── */
+  .similar-section {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .similar-heading {
+    font-family: var(--font-d);
+    font-size: 22px; font-weight: 800;
+    color: var(--text-1);
+    margin-bottom: 18px;
+  }
+  .similar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .sim-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    display: flex; flex-direction: column;
+  }
+  .sim-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--green);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .sim-img {
+    width: 100%; aspect-ratio: 4/3;
+    overflow: hidden; background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sim-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; transition: transform 0.2s;
+  }
+  .sim-card:hover .sim-img img { transform: scale(1.04); }
+  .sim-placeholder { font-size: 36px; }
+  .sim-body { padding: 12px; flex: 1; }
+  .sim-price {
+    font-family: var(--font-d);
+    font-size: 16px; font-weight: 800;
+    color: var(--green); margin-bottom: 4px;
+  }
+  .sim-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-1); line-height: 1.4;
+    margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .sim-meta { font-size: 11px; color: var(--text-3); }
+  .see-more-btn {
+    display: inline-block;
+    padding: 10px 24px; border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .see-more-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.96);
+    z-index: 9999;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .lightbox.open { display: flex; }
+  .lb-img {
+    max-width: 95vw; max-height: 85vh;
+    object-fit: contain; border-radius: 6px;
+    user-select: none; display: block;
+  }
+  .lb-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; border-radius: 50%;
+    width: 40px; height: 40px; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-close:hover { background: rgba(255,255,255,0.3); }
+  .lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; border-radius: 50%;
+    width: 48px; height: 48px; font-size: 26px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-nav:hover { background: rgba(255,255,255,0.3); }
+  .lb-prev { left: 16px; }
+  .lb-next { right: 16px; }
+  .lb-counter {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.65); font-size: 13px;
+  }
+  .lb-dots {
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px;
+  }
+  .lb-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s;
+  }
+  .lb-dot.active { background: #fff; }
 
   /* ── FOOTER ── */
   footer {
@@ -371,6 +494,9 @@
     nav { padding: 0 16px; }
     .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
+    .similar-section { padding: 0 16px 48px; }
+    .similar-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
   }
 </style>
 </head>
@@ -403,7 +529,8 @@
       
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ad-images/u1772759875453/1772972682634_b7ultz.jpg" alt="Territoire Eau De Parfum, Men&#39;s Cologne (Metal)" id="featuredImg" loading="eager">
+        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ad-images/u1772759875453/1772972682634_b7ultz.jpg" alt="Territoire Eau De Parfum, Men&#39;s Cologne (Metal)" id="featuredImg" loading="eager" onclick="openLightbox(0)" style="cursor:zoom-in">
+        <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 Tap to view fullscreen</div>
         
       </div>
       
@@ -425,14 +552,8 @@
         </div>
       </div>
 
-      <!-- AdSense in-content -->
-      <div class="ad-slot-wrap">
-        <ins class="adsbygoogle"
-          style="display:block"
-          data-ad-client="ca-pub-9656521698490533"
-          data-ad-format="auto"
-          data-full-width-responsive="true"></ins>
-      </div>
+      <!-- AdSense in-content — only shown on listings with real content -->
+      
     </div>
 
     <!-- RIGHT: Price + Contact -->
@@ -444,7 +565,7 @@
         <div class="ad-meta-tags">
           <span class="meta-tag">📍 Kingston</span>
           <span class="meta-tag">📦 Other</span>
-          <span class="meta-tag">🕐 5 days ago</span>
+          <span class="meta-tag">🕐 6 days ago</span>
           <span class="status-badge active">● Available</span>
         </div>
       </div>
@@ -457,18 +578,46 @@
       <a class="cta-btn cta-site" href="https://yaadadz.com/?ad=a1772972683458">✉️ Message on Yaad Adz</a>
     </div>
 
-      <!-- AdSense sidebar -->
-      <div class="ad-slot-wrap">
-        <ins class="adsbygoogle"
-          style="display:block"
-          data-ad-client="ca-pub-9656521698490533"
-          data-ad-format="auto"
-          data-full-width-responsive="true"></ins>
-      </div>
+      <!-- AdSense sidebar — only shown on listings with real content -->
+      
     </div>
 
   </div>
 </div>
+
+<!-- SIMILAR LISTINGS -->
+
+  <div class="similar-section">
+    <h2 class="similar-heading">Similar Listings</h2>
+    <div class="similar-grid">
+      <a class="sim-card" href="https://yaadadz.com/ad/territoire-eau-de-parfum-mens-cologne-gold-79-kingston-a1772972.html">
+        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ad-images/u1772759875453/1772972486222_s7edhp.jpg" alt="Territoire Eau De Parfum, Men&#39;s Cologne (Gold 79)" loading="lazy"></div>
+        <div class="sim-body">
+          <div class="sim-price">J$4,000</div>
+          <div class="sim-title">Territoire Eau De Parfum, Men&#39;s Cologne (Gold 79)</div>
+          <div class="sim-meta">📍 Kingston · 6 days ago</div>
+        </div>
+      </a>
+      <a class="sim-card" href="https://yaadadz.com/ad/territoire-eau-de-parfum-mens-cologne-wild-kingston-a1772972.html">
+        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ad-images/u1772759875453/1772972200916_4mwc2g.jpg" alt="Territoire Eau De Parfum, Men&#39;s Cologne (Wild)" loading="lazy"></div>
+        <div class="sim-body">
+          <div class="sim-price">J$3,500</div>
+          <div class="sim-title">Territoire Eau De Parfum, Men&#39;s Cologne (Wild)</div>
+          <div class="sim-meta">📍 Kingston · 6 days ago</div>
+        </div>
+      </a>
+      <a class="sim-card" href="https://yaadadz.com/ad/territoire-eau-de-parfum-mens-cologne-platinum-kingston-a1772972.html">
+        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ad-images/u1772759875453/1772972000051_tqkutj.jpg" alt="Territoire Eau De Parfum, Men&#39;s Cologne (Platinum)" loading="lazy"></div>
+        <div class="sim-body">
+          <div class="sim-price">J$3,000</div>
+          <div class="sim-title">Territoire Eau De Parfum, Men&#39;s Cologne (Platinum)</div>
+          <div class="sim-meta">📍 Kingston · 6 days ago</div>
+        </div>
+      </a></div>
+    <div style="text-align:center;margin-top:20px">
+      <a class="see-more-btn" href="https://yaadadz.com/?cat=other">See all Other →</a>
+    </div>
+  </div>
 
 <footer>
   <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
@@ -483,14 +632,93 @@
   <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
 
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
+  <img class="lb-img" id="lbImg" src="" alt="Territoire Eau De Parfum, Men&#39;s Cologne (Metal)">
+  <button class="lb-nav lb-next" id="lbNext" onclick="lbNav(1)">›</button>
+  <div class="lb-dots" id="lbDots"></div>
+  <div class="lb-counter" id="lbCounter"></div>
+</div>
+
 <script>
-  // Thumbnail switcher
-  function setFeatured(thumb, src) {
-    document.getElementById('featuredImg').src = src;
-    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+  // ── Photos array ─────────────────────────────────────────────
+  var PHOTOS = ["https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ad-images/u1772759875453/1772972682634_b7ultz.jpg"];
+  var lbIndex = 0;
+
+  // ── Thumbnail switcher ────────────────────────────────────────
+  function setFeatured(thumb, src, idx) {
+    var img = document.getElementById('featuredImg');
+    img.style.opacity = '0';
+    setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 150);
+    document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
     thumb.classList.add('active');
+    lbIndex = idx;
   }
-  // Push AdSense
+
+  // ── Lightbox ──────────────────────────────────────────────────
+  function openLightbox(startIndex) {
+    if (!PHOTOS.length) return;
+    lbIndex = startIndex || 0;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    renderLightbox();
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function lbNav(dir) {
+    lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
+    renderLightbox();
+  }
+  function lbGoTo(i) { lbIndex = i; renderLightbox(); }
+  function renderLightbox() {
+    var img = document.getElementById('lbImg');
+    img.src = PHOTOS[lbIndex];
+
+    // Counter
+    document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
+
+    // Nav arrows
+    var showNav = PHOTOS.length > 1;
+    document.getElementById('lbPrev').style.display = showNav ? '' : 'none';
+    document.getElementById('lbNext').style.display = showNav ? '' : 'none';
+
+    // Dots
+    var dotsEl = document.getElementById('lbDots');
+    if (PHOTOS.length > 1 && PHOTOS.length <= 10) {
+      dotsEl.innerHTML = PHOTOS.map(function(_, i) {
+        return '<span class="lb-dot' + (i === lbIndex ? ' active' : '') + '" onclick="lbGoTo(' + i + ')"></span>';
+      }).join('');
+      dotsEl.style.display = 'flex';
+    } else {
+      dotsEl.style.display = 'none';
+    }
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById('lightbox');
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape')      closeLightbox();
+    if (e.key === 'ArrowLeft')   lbNav(-1);
+    if (e.key === 'ArrowRight')  lbNav(1);
+  });
+
+  // Touch swipe
+  (function() {
+    var sx = 0;
+    var lb = document.getElementById('lightbox');
+    lb.addEventListener('touchstart', function(e) { sx = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend',   function(e) {
+      var dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+
+  // ── Push AdSense ──────────────────────────────────────────────
   window.addEventListener('load', function() {
     try {
       var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
