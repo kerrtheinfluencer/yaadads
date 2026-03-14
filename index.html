@@ -432,6 +432,23 @@ html { scroll-behavior: smooth; }
 
   <!-- RESULTS AREA (categories + AI response + listings, all unified) -->
   <div class="results-area">
+
+    <!-- STATIC SEO INTRO — indexed by Google, hidden once JS boots -->
+    <div id="seoIntro" style="padding:20px 24px 0;max-width:960px;margin:0 auto">
+      <h2 style="font-family:var(--font-d,serif);font-size:20px;font-weight:800;margin-bottom:8px">Free Classifieds in Jamaica</h2>
+      <p style="font-size:14px;color:var(--text-2,#888);line-height:1.7;margin-bottom:12px">Browse thousands of listings across all 14 parishes — cars for sale, houses for rent, phones, electronics, furniture, jobs and more. Post your ad free in under 2 minutes. No fees, no commission.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+        <a href="/?cat=vehicles"    style="color:var(--green,#00703f);text-decoration:none">🚗 Cars &amp; Vehicles</a>
+        <a href="/?cat=property"    style="color:var(--green,#00703f);text-decoration:none">🏡 Property</a>
+        <a href="/?cat=electronics" style="color:var(--green,#00703f);text-decoration:none">📱 Phones &amp; Electronics</a>
+        <a href="/?cat=jobs"        style="color:var(--green,#00703f);text-decoration:none">💼 Jobs</a>
+        <a href="/?cat=furniture"   style="color:var(--green,#00703f);text-decoration:none">🛋️ Furniture</a>
+        <a href="/?cat=fashion"     style="color:var(--green,#00703f);text-decoration:none">👗 Fashion</a>
+        <a href="/?cat=food"        style="color:var(--green,#00703f);text-decoration:none">🥭 Food &amp; Farm</a>
+        <a href="/?cat=services"    style="color:var(--green,#00703f);text-decoration:none">🔧 Services</a>
+      </div>
+    </div>
+
     <!-- Ad: below hero -->
     <div class="ad-slot-banner" style="min-height:0">
       <ins class="adsbygoogle ad-slot"
@@ -470,7 +487,20 @@ html { scroll-behavior: smooth; }
     </div>
 
     <!-- Listings grid -->
-    <div class="listings-grid" id="homeGrid"></div>
+    <div class="listings-grid" id="homeGrid">
+      <noscript>
+        <div style="grid-column:1/-1;padding:32px;text-align:center;color:#888">
+          <h2 style="margin-bottom:12px">Jamaica's Free Classifieds</h2>
+          <p>Please enable JavaScript to browse live listings.</p>
+          <p style="margin-top:10px">
+            <a href="/?cat=vehicles">Cars</a> ·
+            <a href="/?cat=property">Property</a> ·
+            <a href="/?cat=electronics">Phones</a> ·
+            <a href="/?cat=jobs">Jobs</a>
+          </p>
+        </div>
+      </noscript>
+    </div>
   </div>
 </div>
 
@@ -2269,6 +2299,9 @@ async function init() {
 
   renderCats();
   renderHome();
+  // Hide static SEO intro now that live listings have rendered
+  const seoIntro = document.getElementById('seoIntro');
+  if (seoIntro) seoIntro.style.display = 'none';
   updateStats();
   updateMsgBadge();
   updateTicker();

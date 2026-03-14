@@ -732,14 +732,15 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
         </div>
       </div>
 
-      <!-- AdSense in-content -->
+      <!-- AdSense in-content — only shown on listings with real content -->
+      ${(ad.desc && ad.desc.trim().length > 30 && photos.length > 0) ? `
       <div class="ad-slot-wrap">
         <ins class="adsbygoogle"
           style="display:block"
           data-ad-client="ca-pub-9656521698490533"
           data-ad-format="auto"
           data-full-width-responsive="true"></ins>
-      </div>
+      </div>` : ''}
     </div>
 
     <!-- RIGHT: Price + Contact -->
@@ -758,14 +759,15 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
       ${contactHtml}
 
-      <!-- AdSense sidebar -->
+      <!-- AdSense sidebar — only shown on listings with real content -->
+      ${(ad.desc && ad.desc.trim().length > 30 && photos.length > 0) ? `
       <div class="ad-slot-wrap">
         <ins class="adsbygoogle"
           style="display:block"
           data-ad-client="ca-pub-9656521698490533"
           data-ad-format="auto"
           data-full-width-responsive="true"></ins>
-      </div>
+      </div>` : ''}
     </div>
 
   </div>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yaad Adz — Redirecting…</title>
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
 <!-- ══════════════════════════════════════════════════════
      GITHUB PAGES SLUG ROUTER
      ─────────────────────────────────────────────────────
@@ -12,28 +12,22 @@
      We read the path and redirect to index.html while
      preserving the slug in sessionStorage so index.html
      can open the right listing on load.
-
      Supported patterns:
        /ad/2015-honda-civic-kingston-ab12cd34  → ad detail
        /ad/ab12cd34                            → short ID only (legacy)
        anything else                           → home
+     NOTE: No AdSense on this page — it is a redirect only
+     and must not show ads per Google policy.
 ══════════════════════════════════════════════════════ -->
 <script>
 (function() {
-  var path = window.location.pathname;   // e.g. /ad/2015-honda-civic-ab12cd34
-  var search = window.location.search;   // preserve ?q= etc if present
+  var path = window.location.pathname;
+  var search = window.location.search;
   var hash = window.location.hash;
-
-  // Store the original path so index.html can pick it up
   try {
     sessionStorage.setItem('yaad_redirect_path', path);
   } catch(e) {}
-
-  // Redirect to root, passing the path as a query param as fallback
-  // Index.html reads sessionStorage first, then this param
   var redirectUrl = '/' + search + hash;
-
-  // Use replace so the 404 page doesn't appear in browser history
   window.location.replace(redirectUrl);
 })();
 </script>
