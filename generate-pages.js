@@ -166,7 +166,7 @@ function buildSimilarHTML(ad, allAds) {
       ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
       : `<div class="sim-placeholder">${catIcon}</div>`;
     return `
-      <a class="sim-card" href="${BASE_URL}/ad/${slug}.html">
+      <a class="sim-card" href="${BASE_URL}/ad/${slug}">
         <div class="sim-img">${imgHtml}</div>
         <div class="sim-body">
           <div class="sim-price">${fmtPrice(a.price)}</div>
@@ -983,7 +983,8 @@ async function main() {
   const activeAds = allAds.filter(ad => ad.status !== 'sold');
   const adEntries = activeAds.map(ad => {
     const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
-    return { url: BASE_URL + '/ad/' + slugify(ad) + '.html', lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
+    // Use clean URL without .html for sitemap — Google prefers canonical clean URLs
+    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
   });
 
   const staticXml = staticPages.map(p => `
@@ -1019,6 +1020,19 @@ ${adXml}
   fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
   console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
 
+  // Ping Google to notify of updated sitemap
+  try {
+    const https = require('https');
+    const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(BASE_URL + '/sitemap.xml')}`;
+    https.get(pingUrl, (res) => {
+      console.log(`   📡 Google pinged — sitemap submitted (HTTP ${res.statusCode})`);
+    }).on('error', () => {
+      console.log('   ⚠️  Google ping failed (non-fatal)');
+    });
+  } catch(e) {
+    console.log('   ⚠️  Google ping skipped');
+  }
+
   const robotsPath = path.join(__dirname, 'robots.txt');
   let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
   if (!robots.includes('Sitemap:')) {
@@ -1032,7 +1046,7 @@ ${adXml}
   console.log(`   📄 ${created} ad pages written to ./ad/`);
   if (deleted) console.log(`   🗑️  ${deleted} stale pages deleted`);
   console.log(`   🗺️  sitemap.xml updated (${staticPages.length + adEntries.length} URLs total)`);
-  if (allRows.length > 0) console.log(`   🌐 Example: ${BASE_URL}/ad/${slugify(dbToAd(allRows[0]))}.html`);
+  if (allRows.length > 0) console.log(`   🌐 Example: ${BASE_URL}/ad/${slugify(dbToAd(allRows[0]))}`);
 }
 
 main().catch(err => {
