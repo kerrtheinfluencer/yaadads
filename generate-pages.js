@@ -1020,7 +1020,7 @@ ${adXml}
   fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
   console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
 
-  // Ping Google to notify of updated sitemap
+  // ── Ping Google sitemap ───────────────────────────────────────
   try {
     const https = require('https');
     const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(BASE_URL + '/sitemap.xml')}`;
@@ -1032,6 +1032,97 @@ ${adXml}
   } catch(e) {
     console.log('   ⚠️  Google ping skipped');
   }
+
+  // ── HTML Sitemap page (/sitemap.html) ─────────────────────────
+  // A human-readable page Google can crawl without JS — guaranteed link path to every ad
+  console.log('📄 Generating sitemap.html…');
+  const catGroups = {};
+  activeAds.forEach(ad => {
+    if (!catGroups[ad.category]) catGroups[ad.category] = [];
+    catGroups[ad.category].push(ad);
+  });
+  const catSections = Object.entries(catGroups).map(([catId, ads]) => {
+    const catName = CAT_NAMES[catId] || catId;
+    const catIcon = CAT_ICONS[catId] || '📦';
+    const links = ads.slice(0, 100).map(ad => {
+      const slug = slugify(ad);
+      return `      <li><a href="/ad/${slug}">${esc(ad.title)} — ${fmtPrice(ad.price)} · ${esc(ad.parish)}</a></li>`;
+    }).join('\n');
+    return `    <div class="cat-group">
+      <h2>${catIcon} ${catName} <span class="count">(${ads.length})</span></h2>
+      <ul>\n${links}\n      </ul>
+    </div>`;
+  }).join('\n');
+
+  const sitemapHtml = `<!DOCTYPE html>
+<html lang="en-JM">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Listings — Yaad Adz Jamaica Free Classifieds</title>
+<meta name="description" content="Browse all free classifieds listings on Yaad Adz — cars, property, phones, jobs and more across all 14 parishes in Jamaica.">
+<link rel="canonical" href="${BASE_URL}/sitemap.html">
+<style>
+  body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 24px 16px; color: #222; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  .count { font-size: 13px; color: #888; font-weight: normal; }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px; }
+  li a { font-size: 13px; color: #1a6b35; text-decoration: none; display: block; padding: 4px 0; }
+  li a:hover { text-decoration: underline; }
+  .nav { margin-bottom: 20px; font-size: 14px; }
+  .nav a { color: #1a6b35; margin-right: 12px; }
+  footer { margin-top: 40px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="${BASE_URL}">← Yaad Adz Home</a>
+  <a href="${BASE_URL}/?cat=vehicles">Cars</a>
+  <a href="${BASE_URL}/?cat=property">Property</a>
+  <a href="${BASE_URL}/?cat=electronics">Phones</a>
+  <a href="${BASE_URL}/?cat=jobs">Jobs</a>
+</div>
+<h1>All Listings on Yaad Adz</h1>
+<p style="color:#666;font-size:14px;margin-bottom:24px">${activeAds.length} active listings across Jamaica — updated ${today}</p>
+${catSections}
+<footer>
+  <p>Yaad Adz — Jamaica's free classifieds marketplace. <a href="${BASE_URL}/sitemap.xml">XML Sitemap</a> · <a href="${BASE_URL}">Home</a></p>
+  <p>Generated: ${new Date().toISOString()}</p>
+</footer>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(__dirname, 'sitemap.html'), sitemapHtml, 'utf8');
+  console.log(`   ✅ sitemap.html written — ${activeAds.length} listings linked`);
+
+  // ── Static links fragment for homepage (crawlable without JS) ─
+  // Saved as static-links.html, included via SSI or referenced in index.html
+  console.log('🔗 Generating static-links.html…');
+  const recentAds = activeAds.slice(0, 60);
+  const staticLinks = recentAds.map(ad => {
+    const slug = slugify(ad);
+    const catIcon = CAT_ICONS[ad.category] || '📦';
+    return `  <a href="/ad/${slug}" class="static-link-item">
+    <span class="sli-icon">${catIcon}</span>
+    <span class="sli-title">${esc(ad.title)}</span>
+    <span class="sli-price">${fmtPrice(ad.price)}</span>
+    <span class="sli-parish">📍 ${esc(ad.parish)}</span>
+  </a>`;
+  }).join('\n');
+
+  const staticLinksHtml = `<!-- Yaad Adz static listing links — crawlable by Google without JavaScript -->
+<!-- Generated: ${new Date().toISOString()} -->
+<div id="static-listings" style="display:none" aria-hidden="true">
+<style>
+  #static-listings { display:none !important; }
+</style>
+${staticLinks}
+<p><a href="/sitemap.html">Browse all ${activeAds.length} listings →</a></p>
+</div>`;
+
+  fs.writeFileSync(path.join(__dirname, 'static-links.html'), staticLinksHtml, 'utf8');
+  console.log(`   ✅ static-links.html written — ${recentAds.length} latest listings`);
 
   const robotsPath = path.join(__dirname, 'robots.txt');
   let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
@@ -1045,7 +1136,7 @@ ${adXml}
   console.log(`✅ Done!`);
   console.log(`   📄 ${created} ad pages written to ./ad/`);
   if (deleted) console.log(`   🗑️  ${deleted} stale pages deleted`);
-  console.log(`   🗺️  sitemap.xml updated (${staticPages.length + adEntries.length} URLs total)`);
+  console.log(`   🗺️  sitemap.xml + sitemap.html updated (${staticPages.length + adEntries.length} URLs total)`);
   if (allRows.length > 0) console.log(`   🌐 Example: ${BASE_URL}/ad/${slugify(dbToAd(allRows[0]))}`);
 }
 
