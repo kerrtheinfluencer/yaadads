@@ -331,6 +331,19 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     padding: 0 24px;
     height: 56px;
     display: flex; align-items: center; gap: 16px;
+    /* Prevent items overflowing on small screens */
+    overflow: hidden;
+  }
+  /* iOS PWA safe area — push nav below notch / Dynamic Island */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    @media all and (display-mode: standalone) {
+      nav {
+        height: calc(56px + env(safe-area-inset-top));
+        padding-top: env(safe-area-inset-top);
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+      }
+    }
   }
   .nav-logo {
     font-family: var(--font-d);
@@ -712,7 +725,11 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     .ad-layout { grid-template-columns: 1fr; }
     .ad-panel { position: static; }
     .page-wrap { padding: 16px 16px 48px; }
-    nav { padding: 0 16px; }
+    nav { padding: 0 16px; gap: 10px; }
+    /* Hide logo text on mobile — icon only, saves space for buttons */
+    .nav-logo-text { display: none; }
+    .nav-back { font-size: 13px; padding: 6px 10px; }
+    .nav-post { font-size: 12px; padding: 6px 11px; }
     .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
     .similar-section { padding: 0 16px 48px; }
@@ -725,7 +742,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
 <nav>
   <a class="nav-logo" href="${BASE_URL}">
-    <span>🇯🇲</span>Yaad <em>Adz</em>
+    <span>🇯🇲</span><span class="nav-logo-text">Yaad <em>Adz</em></span>
   </a>
   <div class="nav-spacer"></div>
   <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}">← ${catName}</a>
