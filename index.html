@@ -232,19 +232,40 @@
     --sab: env(safe-area-inset-bottom, 0px);
     --sal: env(safe-area-inset-left,   0px);
   }
-  /* Push nav below notch/Dynamic Island when running as PWA */
+  /* PWA standalone mode — fix nav and bottom bar for iPhone notch / home indicator */
   @media all and (display-mode: standalone) {
+    /* Nav: grow taller to sit below Dynamic Island / notch, content stays centred */
     nav {
-      padding-top: max(8px, env(safe-area-inset-top)) !important;
       height: calc(56px + env(safe-area-inset-top)) !important;
+      padding-top: env(safe-area-inset-top) !important;
+      padding-left: max(24px, env(safe-area-inset-left)) !important;
+      padding-right: max(24px, env(safe-area-inset-right)) !important;
     }
-    /* Push bottom nav above home indicator on iPhone */
+    /* Bottom nav: grow taller to sit above home indicator */
     .mob-nav {
-      padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
       height: calc(56px + env(safe-area-inset-bottom)) !important;
+      padding-bottom: env(safe-area-inset-bottom) !important;
     }
-    /* Prevent content hiding behind bottom nav -->
+    /* Prevent page content hiding behind bottom nav */
     body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  }
+  /* Nav actions — prevent overflow on narrow screens regardless of mode */
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  /* Shrink nav buttons slightly on very small screens */
+  @media (max-width: 390px) {
+    .nav-actions .btn { font-size: 12px !important; padding: 6px 10px !important; }
+    .nav-actions .user-pill { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+  /* On mobile, hide nav items that are already in the bottom nav */
+  @media (max-width: 640px) {
+    .nav-hide-mobile { display: none !important; }
   }
 </style>
 
@@ -2471,7 +2492,7 @@ function renderNav() {
     const ini = initials(CU.name);
     el.innerHTML = `
       <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
-      <div style="position:relative;display:inline-flex">
+      <div style="position:relative;display:inline-flex" class="nav-hide-mobile">
         <button class="btn btn-outline btn-sm" onclick="goPage('msgs')" style="display:flex;align-items:center;gap:5px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Messages
@@ -2481,10 +2502,10 @@ function renderNav() {
       <div class="badge-wrap">
         <div class="user-pill" onclick="goPage('myads')">
           <div class="u-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
-          ${CU.name.split(' ')[0]}
+          <span class="nav-hide-mobile">${CU.name.split(' ')[0]}</span>
         </div>
       </div>
-      <button class="btn btn-outline btn-sm" onclick="doLogout()">Log out</button>`;
+      <button class="btn btn-outline btn-sm nav-hide-mobile" onclick="doLogout()">Log out</button>`;
   } else {
     el.innerHTML = `
       <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
