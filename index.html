@@ -203,9 +203,7 @@
 <!-- black-translucent lets the app draw under the status bar (full bleed) -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Yaad Adz">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="https://fav.farm/🇯🇲">
 
 <!-- iOS splash screens — covers the most common iPhone/iPad sizes.
      Without these iOS shows a white flash on launch from home screen. -->
@@ -270,7 +268,7 @@
 <!-- PWA Manifest (inline blob) -->
 <script>
 (function(){
-const m={name:"Yaad Adz",short_name:"Yaad Adz",description:"Jamaica's free marketplace — buy and sell across all 14 parishes",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",categories:["shopping","classifieds","marketplace"],icons:[{src:"/icon-192.png",sizes:"192x192",type:"image/png",purpose:"any"},{src:"/icon-512.png",sizes:"512x512",type:"image/png",purpose:"any maskable"}],screenshots:[{src:"https://yaadadz.com/screenshot.jpg",sizes:"1080x1920",type:"image/jpeg",label:"Yaad Adz home — listings across Jamaica"}]};
+const m={name:"Yaad Adz",short_name:"Yaad Adz",description:"Jamaica's free marketplace — buy and sell across all 14 parishes",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",categories:["shopping","classifieds","marketplace"],icons:[{src:"https://fav.farm/🇯🇲",sizes:"192x192",type:"image/png"},{src:"https://fav.farm/🇯🇲",sizes:"512x512",type:"image/png"}],screenshots:[{src:"https://yaadadz.com/screenshot.jpg",sizes:"1080x1920",type:"image/jpeg",label:"Yaad Adz home — listings across Jamaica"}]};
 const b=new Blob([JSON.stringify(m)],{type:"application/json"});
 const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(b);
 document.head.appendChild(l);
@@ -582,6 +580,35 @@ nav {
   text-align: center !important;
   width: auto !important;
   max-width: none !important;
+}
+
+/* ── Ad views — always visible on mobile ─────────────────── */
+.ad-meta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 4px 8px !important;
+  overflow: visible !important;
+}
+.ad-views {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 11px !important;
+  color: var(--text-3, #888) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  white-space: nowrap !important;
+  margin-left: auto !important;
+}
+.ad-views svg {
+  width: 11px !important;
+  height: 11px !important;
+  flex-shrink: 0 !important;
+}
+@media (max-width: 480px) {
+  .ad-meta { font-size: 11px !important; gap: 3px 6px !important; }
+  .ad-views { font-size: 11px !important; }
 }
 </style>
 <body>
