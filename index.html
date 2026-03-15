@@ -1575,6 +1575,8 @@ async function doLogin() {
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+    // Ask for push permission after login (polite — user just chose to engage)
+    setTimeout(requestPushPermission, 2000);
   } catch(e) {
     authErr(e.message || 'Incorrect email or password.');
   } finally {
@@ -1601,6 +1603,8 @@ async function doRegister() {
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome to Yaad Adz, ' + name.split(' ')[0] + '! 🎉', '🎉');
     launchConfetti();
+    // Ask for push permission after registration
+    setTimeout(requestPushPermission, 3000);
   } catch(e) {
     authErr(e.message || 'Registration failed. Please try again.');
   } finally {
@@ -2453,6 +2457,13 @@ function subscribeMessages() {
       updateMsgBadge();
       if (currentConv === key) renderChat(key);
       showToast('New message received 💬', '💬');
+      // Fire push notification if app is in background
+      const senderName = (row.from_user_id === row.seller_id ? row.seller_name : row.buyer_name) || 'Someone';
+      sendPushNotification(
+        '💬 New message from ' + senderName,
+        row.text ? row.text.slice(0, 80) : 'You have a new message on Yaad Adz',
+        '/?msgs=1'
+      );
     })
     .subscribe();
 }
@@ -4419,6 +4430,102 @@ if (!document.getElementById('confettiStyles')) {
   s.textContent = '@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
   document.head.appendChild(s);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PUSH NOTIFICATIONS
+   ─ requestPushPermission: ask user after login (polite timing)
+   ─ sendPushNotification: fire when new message arrives
+   Uses the Web Notifications API — works on Android PWA and
+   desktop. iOS 16.4+ supports it when installed as PWA.
+═══════════════════════════════════════════════════════════ */
+function requestPushPermission() {
+  // Only ask if not already decided
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+
+  // Show a friendly in-app prompt first — better than raw browser dialog
+  const banner = document.createElement('div');
+  banner.id = 'pushBanner';
+  banner.style.cssText = [
+    'position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:50%;',
+    'transform:translateX(-50%);',
+    'background:#172a1f;border:1px solid rgba(29,185,84,0.3);',
+    'border-radius:16px;padding:16px 20px;',
+    'display:flex;align-items:center;gap:14px;',
+    'box-shadow:0 8px 32px rgba(0,0,0,0.5);',
+    'z-index:9800;max-width:360px;width:calc(100vw - 48px);',
+    'animation:slideUp .3s ease',
+  ].join('');
+  banner.innerHTML =
+    '<div style="font-size:28px">🔔</div>' +
+    '<div style="flex:1">' +
+      '<div style="font-weight:700;font-size:14px;color:#e8ede9;margin-bottom:2px">Get message alerts</div>' +
+      '<div style="font-size:12px;color:#6b7a71">Know instantly when a seller replies</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;flex-shrink:0">' +
+      '<button onclick="dismissPushBanner()" style="background:rgba(255,255,255,0.08);border:none;color:#a0a8a4;padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer">Not now</button>' +
+      '<button onclick="enablePushNotifications()" style="background:#1db954;border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Enable</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+
+  // Auto-dismiss after 8 seconds
+  setTimeout(function() { dismissPushBanner(); }, 8000);
+}
+
+function dismissPushBanner() {
+  const b = document.getElementById('pushBanner');
+  if (b) { b.style.animation = 'slideDown .25s ease forwards'; setTimeout(function(){ b.remove(); }, 250); }
+}
+
+function enablePushNotifications() {
+  dismissPushBanner();
+  Notification.requestPermission().then(function(permission) {
+    if (permission === 'granted') {
+      showToast('Notifications enabled! 🔔', '🔔');
+      // Store preference
+      try { localStorage.setItem('ya_push', '1'); } catch(e) {}
+    }
+  });
+}
+
+function sendPushNotification(title, body, url) {
+  // Only fire if tab is hidden (user is away) and permission granted
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  if (!document.hidden) return; // Don't interrupt if user is actively on the page
+
+  try {
+    const n = new Notification(title, {
+      body: body,
+      icon: 'https://yaadadz.com/icon-192.png',
+      badge: 'https://yaadadz.com/icon-72.png',
+      tag: 'yaadadz-message', // Replace previous notification
+      renotify: true,
+      vibrate: [200, 100, 200],
+    });
+    n.onclick = function() {
+      window.focus();
+      if (url) { window.location.href = url; }
+      n.close();
+    };
+    // Auto-close after 6 seconds
+    setTimeout(function() { n.close(); }, 6000);
+  } catch(e) {
+    // Notification API may be restricted in some contexts — fail silently
+  }
+}
+
+// Add slide animations for push banner
+(function() {
+  if (document.getElementById('pushAnimStyles')) return;
+  const s = document.createElement('style');
+  s.id = 'pushAnimStyles';
+  s.textContent = [
+    '@keyframes slideUp   { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }',
+    '@keyframes slideDown { from { opacity:1; transform:translateX(-50%) translateY(0); } to { opacity:0; transform:translateX(-50%) translateY(20px); } }',
+  ].join('');
+  document.head.appendChild(s);
+})();
 
 /* ═══════════════════════════════════════════════════════════
    ACTIVITY TICKER (removed — stub for compatibility)
