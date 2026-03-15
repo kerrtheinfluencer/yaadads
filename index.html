@@ -606,9 +606,84 @@ nav {
   height: 11px !important;
   flex-shrink: 0 !important;
 }
-@media (max-width: 480px) {
-  .ad-meta { font-size: 11px !important; gap: 3px 6px !important; }
-  .ad-views { font-size: 11px !important; }
+
+/* ── iOS-style back button ───────────────────────────────── */
+/* Override m-close on full-screen modals (detail, chat, profile) */
+.modal-full .m-close {
+  /* Reset default close position */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  width: auto !important;
+  height: 52px !important;
+  min-width: 80px !important;
+  padding: 0 16px 0 8px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 17px !important;
+  font-weight: 400 !important;
+  font-family: -apple-system, 'SF Pro Text', sans-serif !important;
+  color: var(--green, #005c35) !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  letter-spacing: -0.1px !important;
+}
+/* Hide the ✕ text — we'll use a chevron via ::before */
+.modal-full .m-close {
+  font-size: 0 !important; /* hide ✕ */
+}
+.modal-full .m-close::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-left: 2.5px solid var(--green, #005c35);
+  border-bottom: 2.5px solid var(--green, #005c35);
+  transform: rotate(45deg) translateX(2px);
+  flex-shrink: 0;
+}
+.modal-full .m-close::after {
+  content: 'Back';
+  font-size: 17px !important;
+  font-weight: 400;
+  color: var(--green, #005c35);
+  letter-spacing: -0.2px;
+}
+/* Add top padding to modal-full so content clears the back button */
+.modal-full {
+  padding-top: 52px !important;
+}
+.modal-full .modal-drag-handle {
+  position: absolute !important;
+  top: 8px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+/* On desktop keep normal close button */
+@media (min-width: 768px) {
+  .modal-full .m-close {
+    left: auto !important;
+    right: 16px !important;
+    top: 12px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: unset !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(0,0,0,0.06) !important;
+    font-size: 16px !important;
+    justify-content: center !important;
+    color: var(--text-1, #111) !important;
+  }
+  .modal-full .m-close::before { display: none !important; }
+  .modal-full .m-close::after { display: none !important; }
+  .modal-full { padding-top: 24px !important; }
 }
 </style>
 <body>
@@ -936,7 +1011,7 @@ nav {
 <div class="overlay" id="ovDetail">
   <div class="modal modal-full modal-wide" style="max-width:700px">
     <div class="modal-drag-handle"></div>
-    <button class="m-close" onclick="closeOverlay('ovDetail')">✕</button>
+    <button class="m-close" onclick="closeOverlay('ovDetail')" aria-label="Back"></button>
     <div id="detailInner"></div>
   </div>
 </div>
@@ -945,7 +1020,7 @@ nav {
 <div class="overlay" id="ovChat">
   <div class="modal modal-full" style="max-width:520px;padding:0">
     <div class="modal-drag-handle"></div>
-    <button class="m-close" onclick="closeOverlay('ovChat')">✕</button>
+    <button class="m-close" onclick="closeOverlay('ovChat')" aria-label="Back"></button>
     <div id="chatInner"></div>
   </div>
 </div>
@@ -953,7 +1028,7 @@ nav {
 <!-- SELLER PROFILE MODAL -->
 <div class="overlay" id="ovProfile">
   <div class="modal modal-full" style="max-width:600px;padding:0">
-    <button class="m-close" onclick="closeOverlay('ovProfile')">✕</button>
+    <button class="m-close" onclick="closeOverlay('ovProfile')" aria-label="Back"></button>
     <div id="profileInner"></div>
   </div>
 </div>
