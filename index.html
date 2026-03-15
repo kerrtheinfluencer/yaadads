@@ -2,7 +2,7 @@
 <html lang="en-JM" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 
 <!-- ═══════════════════════════════════════════
      PRIMARY META
@@ -555,6 +555,20 @@ nav {
   .sheet-result-card, .ai-response-card, .ai-search-bar {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* ── iOS zoom prevention ── */
+/* iOS Safari zooms in when input font-size < 16px. Force 16px on all inputs. */
+@media screen and (max-width: 768px) {
+  input, textarea, select,
+  .form-inp, .ai-search-input, .ai-sheet-input,
+  #floatInput, #sheetInput, #aiInput,
+  #lEmail, #lPass, #rName, #rEmail, #rPhone, #rPass,
+  #aTitle, #aDesc, #aPrice, #aPhone,
+  #eaTitle, #eaDesc, #eaPrice, #eaPhone,
+  #editName, #editPhone, #offerAmt, #rateComment {
+    font-size: 16px !important;
   }
 }
 </style>
