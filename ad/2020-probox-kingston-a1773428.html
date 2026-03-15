@@ -159,19 +159,14 @@ With fog lamps">
     padding: 0 24px;
     height: 56px;
     display: flex; align-items: center; gap: 16px;
-    /* Prevent items overflowing on small screens */
     overflow: hidden;
   }
-  /* iOS PWA safe area — push nav below notch / Dynamic Island */
-  @supports (padding-top: env(safe-area-inset-top)) {
-    @media all and (display-mode: standalone) {
-      nav {
-        height: calc(56px + env(safe-area-inset-top));
-        padding-top: env(safe-area-inset-top);
-        padding-left: max(16px, env(safe-area-inset-left));
-        padding-right: max(16px, env(safe-area-inset-right));
-      }
-    }
+  /* Safe area only applied when .pwa-mode class is set by JS (standalone PWA only) */
+  body.pwa-mode nav {
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(16px, env(safe-area-inset-left, 16px));
+    padding-right: max(16px, env(safe-area-inset-right, 16px));
   }
   .nav-logo {
     font-family: var(--font-d);
@@ -813,6 +808,12 @@ With fog lamps</p>
       var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
       ads.forEach(function() { (adsbygoogle = window.adsbygoogle || []).push({}); });
     } catch(e) {}
+
+    // Apply safe area only when running as installed PWA (not in browser)
+    if (window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches) {
+      document.body.classList.add('pwa-mode');
+    }
   });
 
   // ── Copy link to clipboard ────────────────────────────────────
