@@ -4597,14 +4597,14 @@ function requestPushPermission() {
   const banner = document.createElement('div');
   banner.id = 'pushBanner';
   banner.style.cssText = [
-    'position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:50%;',
-    'transform:translateX(-50%);',
+    'position:fixed;bottom:calc(72px + env(safe-area-inset-bottom, 0px));',
+    'left:16px;right:16px;',
     'background:#172a1f;border:1px solid rgba(29,185,84,0.3);',
-    'border-radius:16px;padding:16px 20px;',
-    'display:flex;align-items:center;gap:14px;',
+    'border-radius:16px;padding:14px 16px;',
+    'display:flex;align-items:center;gap:12px;',
     'box-shadow:0 8px 32px rgba(0,0,0,0.5);',
-    'z-index:9800;max-width:360px;width:calc(100vw - 48px);',
-    'animation:slideUp .3s ease',
+    'z-index:9800;max-width:420px;margin:0 auto;',
+    'animation:pushSlideUp .3s ease',
   ].join('');
   banner.innerHTML =
     '<div style="font-size:28px">🔔</div>' +
@@ -4624,7 +4624,7 @@ function requestPushPermission() {
 
 function dismissPushBanner() {
   const b = document.getElementById('pushBanner');
-  if (b) { b.style.animation = 'slideDown .25s ease forwards'; setTimeout(function(){ b.remove(); }, 250); }
+  if (b) { b.style.animation = 'pushSlideDown .25s ease forwards'; setTimeout(function(){ b.remove(); }, 250); }
 }
 
 function enablePushNotifications() {
@@ -4671,8 +4671,8 @@ function sendPushNotification(title, body, url) {
   const s = document.createElement('style');
   s.id = 'pushAnimStyles';
   s.textContent = [
-    '@keyframes slideUp   { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }',
-    '@keyframes slideDown { from { opacity:1; transform:translateX(-50%) translateY(0); } to { opacity:0; transform:translateX(-50%) translateY(20px); } }',
+    '@keyframes pushSlideUp   { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }',
+    '@keyframes pushSlideDown { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(20px); } }',
   ].join('');
   document.head.appendChild(s);
 })();
