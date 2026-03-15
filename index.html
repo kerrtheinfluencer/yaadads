@@ -233,22 +233,18 @@
     --sal: env(safe-area-inset-left,   0px);
   }
   /* PWA standalone mode — fix nav and bottom bar for iPhone notch / home indicator */
-  @media all and (display-mode: standalone) {
-    /* Nav: grow taller to sit below Dynamic Island / notch, content stays centred */
-    nav {
-      height: calc(56px + env(safe-area-inset-top)) !important;
-      padding-top: env(safe-area-inset-top) !important;
-      padding-left: max(24px, env(safe-area-inset-left)) !important;
-      padding-right: max(24px, env(safe-area-inset-right)) !important;
-    }
-    /* Bottom nav: grow taller to sit above home indicator */
-    .mob-nav {
-      height: calc(56px + env(safe-area-inset-bottom)) !important;
-      padding-bottom: env(safe-area-inset-bottom) !important;
-    }
-    /* Prevent page content hiding behind bottom nav */
-    body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  /* Applied only when body.pwa-mode is set by JS — never bleeds into browser view */
+  body.pwa-mode nav {
+    height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-left: max(24px, env(safe-area-inset-left, 24px)) !important;
+    padding-right: max(24px, env(safe-area-inset-right, 24px)) !important;
   }
+  body.pwa-mode .mob-nav {
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+  body.pwa-mode { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
   /* Nav actions — prevent overflow on narrow screens regardless of mode */
   .nav-actions {
     display: flex;
@@ -2354,6 +2350,12 @@ async function init() {
   fillParishSelects();
   fillCatSelect();
   renderNav();
+
+  // Detect PWA standalone mode — apply safe area CSS only when installed
+  if (window.navigator.standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches) {
+    document.body.classList.add('pwa-mode');
+  }
 
   showSkeletons();
   document.getElementById('resultsHeader').style.display = 'none';
