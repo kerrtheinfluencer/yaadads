@@ -420,7 +420,144 @@ html { scroll-behavior: smooth; }
   .seo-about { padding: 16px; }
 }
 </style>
-</head>
+
+<style>
+/* ══════════════════════════════════════════════════════════════
+   GLASSMORPHISM LAYER — purely additive visual polish
+   All changes are cosmetic only. No layout, z-index, or
+   functional properties are touched.
+══════════════════════════════════════════════════════════════ */
+
+/* ── Ad Cards ─────────────────────────────────────────────── */
+.ad-card {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.55) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(255,255,255,0.3) inset !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+.ad-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(255,255,255,0.4) inset !important;
+}
+
+/* ── Category Pills ───────────────────────────────────────── */
+.cat-pill-sm {
+  background: rgba(255,255,255,0.6) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06) !important;
+}
+.cat-pill-sm.active {
+  background: rgba(0,92,53,0.9) !important;
+  border-color: rgba(0,112,63,0.6) !important;
+  box-shadow: 0 2px 12px rgba(0,92,53,0.3) !important;
+}
+
+/* ── Hero section ─────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(160deg, rgba(12,30,20,0.97) 0%, rgba(18,45,28,0.95) 100%) !important;
+}
+.ai-search-bar {
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+}
+
+/* ── Modals ───────────────────────────────────────────────── */
+.modal {
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.4) inset !important;
+}
+
+/* ── AI Sheet ─────────────────────────────────────────────── */
+.ai-sheet {
+  background: rgba(12,30,20,0.88) !important;
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* ── AI Float Chat ────────────────────────────────────────── */
+.ai-float-chat {
+  background: rgba(12,30,20,0.88) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4) !important;
+}
+
+/* ── AI Response Card ─────────────────────────────────────── */
+.ai-response-card {
+  background: rgba(255,255,255,0.75) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06) !important;
+}
+
+/* ── Bottom Nav ───────────────────────────────────────────── */
+.mob-nav {
+  background: rgba(255,255,255,0.82) !important;
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid rgba(255,255,255,0.6) !important;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Nav Bar ──────────────────────────────────────────────── */
+nav {
+  background: rgba(12,30,20,0.82) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* ── Toast ────────────────────────────────────────────────── */
+.toast {
+  background: rgba(26,26,26,0.88) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+/* ── PWA Install Banner ───────────────────────────────────── */
+.pwa-banner {
+  background: rgba(23,42,31,0.9) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
+}
+
+/* ── Section result cards / sheet result cards ────────────── */
+.sheet-result-card {
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+.sheet-result-card:hover {
+  background: rgba(255,255,255,0.14) !important;
+}
+
+/* ── Performance: disable blur on low-end / battery saver ─── */
+@media (prefers-reduced-motion: reduce) {
+  .ad-card, .modal, .ai-sheet, .mob-nav, nav,
+  .ai-float-chat, .cat-pill-sm, .toast, .pwa-banner,
+  .sheet-result-card, .ai-response-card, .ai-search-bar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+</style>
 <body>
 
 <!-- BACK TO TOP FAB -->
