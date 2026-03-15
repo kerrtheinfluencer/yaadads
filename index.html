@@ -427,9 +427,6 @@ html { scroll-behavior: smooth; }
 </head>
 <body>
 
-<!-- SCROLL PROGRESS BAR -->
-<div class="scroll-progress" id="scrollProgress"></div>
-
 <!-- BACK TO TOP FAB -->
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
 
@@ -4950,12 +4947,6 @@ window.addEventListener('resize', () => {
         // Back to top visibility
         const fab = document.getElementById('backToTop');
         if (fab) fab.classList.toggle('visible', scrollY > 400);
-        
-        // Scroll progress bar
-        const bar = document.getElementById('scrollProgress');
-        if (bar && docHeight > 0) {
-          bar.style.width = Math.min((scrollY / docHeight) * 100, 100) + '%';
-        }
         
         ticking = false;
       });
