@@ -213,14 +213,19 @@ Fully loaded
   .nav-logo em { color: var(--gold); font-style: italic; }
   .nav-spacer { flex: 1; }
   .nav-back {
-    display: flex; align-items: center; gap: 6px;
-    color: var(--text-2); font-size: 14px;
+    display: flex; align-items: center; gap: 4px;
+    color: var(--green); font-size: 16px; font-weight: 500;
     text-decoration: none;
-    padding: 6px 12px; border-radius: 8px;
-    border: 1px solid var(--border);
-    transition: all 0.2s;
+    padding: 6px 4px;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .nav-back:hover { color: var(--text-1); border-color: var(--green); }
+  .nav-back:hover { opacity: 0.75; }
+  .nav-back svg { flex-shrink: 0; }
   .nav-post {
     background: var(--gold); color: #1a1a1a;
     font-weight: 700; font-size: 13px;
@@ -583,10 +588,10 @@ Fully loaded
     .ad-layout { grid-template-columns: 1fr; }
     .ad-panel { position: static; }
     .page-wrap { padding: 16px 16px 48px; }
-    nav { padding: 0 16px; gap: 10px; }
-    /* Hide logo text on mobile — icon only, saves space for buttons */
-    .nav-logo-text { display: none; }
-    .nav-back { font-size: 13px; padding: 6px 10px; }
+    nav { padding: 0 12px; gap: 0; }
+    /* Hide centred logo on mobile — back + post ad is enough */
+    .nav-logo-centre { display: none; }
+    .nav-back { font-size: 15px; padding: 6px 8px; max-width: 160px; }
     .nav-post { font-size: 12px; padding: 6px 11px; }
     .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
@@ -599,11 +604,17 @@ Fully loaded
 <body>
 
 <nav>
-  <a class="nav-logo" href="https://yaadadz.com">
+  <!-- iOS-style back button — far left with chevron -->
+  <a class="nav-back" href="https://yaadadz.com/?cat=vehicles">
+    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
+    Vehicles
+  </a>
+  <div class="nav-spacer"></div>
+  <!-- Logo centred — hidden on mobile to save space -->
+  <a class="nav-logo nav-logo-centre" href="https://yaadadz.com">
     <span>🇯🇲</span><span class="nav-logo-text">Yaad <em>Adz</em></span>
   </a>
   <div class="nav-spacer"></div>
-  <a class="nav-back" href="https://yaadadz.com/?cat=vehicles">← Vehicles</a>
   <a class="nav-post" href="https://yaadadz.com/?post=1">+ Post Ad</a>
 </nav>
 
