@@ -1720,7 +1720,7 @@ async function doLogin() {
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
     // Ask for push permission after login (polite — user just chose to engage)
-    setTimeout(requestPushPermission, 2000);
+    setTimeout(requestPushPermission, 4000);
   } catch(e) {
     authErr(e.message || 'Incorrect email or password.');
   } finally {
@@ -1748,7 +1748,7 @@ async function doRegister() {
     showToast('Welcome to Yaad Adz, ' + name.split(' ')[0] + '! 🎉', '🎉');
     launchConfetti();
     // Ask for push permission after registration
-    setTimeout(requestPushPermission, 3000);
+    setTimeout(requestPushPermission, 5000);
   } catch(e) {
     authErr(e.message || 'Registration failed. Please try again.');
   } finally {
@@ -4597,14 +4597,16 @@ function requestPushPermission() {
   const banner = document.createElement('div');
   banner.id = 'pushBanner';
   banner.style.cssText = [
-    'position:fixed;bottom:calc(72px + env(safe-area-inset-bottom, 0px));',
-    'left:16px;right:16px;',
-    'background:#172a1f;border:1px solid rgba(29,185,84,0.3);',
+    'position:fixed;',
+    'bottom:calc(80px + env(safe-area-inset-bottom, 0px));',
+    'left:12px;right:12px;',
+    'background:#172a1f;',
+    'border:1px solid rgba(29,185,84,0.35);',
     'border-radius:16px;padding:14px 16px;',
     'display:flex;align-items:center;gap:12px;',
-    'box-shadow:0 8px 32px rgba(0,0,0,0.5);',
-    'z-index:9800;max-width:420px;margin:0 auto;',
-    'animation:pushSlideUp .3s ease',
+    'box-shadow:0 8px 32px rgba(0,0,0,0.6);',
+    'z-index:99999;',
+    'animation:pushSlideUp .3s ease;',
   ].join('');
   banner.innerHTML =
     '<div style="font-size:28px">🔔</div>' +
