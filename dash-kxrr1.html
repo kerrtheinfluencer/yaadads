@@ -213,6 +213,14 @@ body { font-family:var(--font-s); background:var(--bg); color:var(--text-1); min
 .pulse { animation:pulse 1.5s ease infinite; }
 @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
 
+/* ── GA4 Quick Link Cards ── */
+.ga-links-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:4px; }
+.ga-link-card { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:16px; text-decoration:none; transition:all .2s; display:block; }
+.ga-link-card:hover { border-color:var(--green); background:rgba(29,185,84,0.06); transform:translateY(-1px); }
+.ga-link-icon { font-size:22px; margin-bottom:8px; }
+.ga-link-title { font-size:14px; font-weight:700; color:var(--text-1); margin-bottom:4px; }
+.ga-link-sub { font-size:11px; color:var(--text-3); line-height:1.4; }
+
 /* ── REFRESH BTN ── */
 .refresh-btn { background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--text-2); padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer; font-family:var(--font-s); transition:all .2s; margin-left:auto; }
 .refresh-btn:hover { border-color:var(--green); color:var(--green); }
@@ -305,43 +313,69 @@ body { font-family:var(--font-s); background:var(--bg); color:var(--text-1); min
     <!-- ── TAB: TRAFFIC ── -->
     <div class="tab-pane" id="tab-traffic">
 
-      <!-- REALTIME -->
+      <!-- GA4 QUICK LINKS -->
       <div class="panel" style="margin-bottom:20px">
-        <div class="section-title"><span class="live-dot"></span>Realtime Visitors <button class="refresh-btn" onclick="loadRealtime()">↻ Refresh</button></div>
-        <div class="realtime-row">
-          <div>
-            <div class="realtime-big" id="realtimeCount">—</div>
-            <div class="realtime-label">people on yaadadz.com right now</div>
-          </div>
+        <div class="section-title"><span class="live-dot"></span>Google Analytics 4 — yaadadz</div>
+        <div class="ga-note" style="margin-bottom:16px">
+          Your GA4 property <strong>G-KE3X5BMY63</strong> is now connected. Click any report below to open it directly in GA4.
         </div>
-        <div class="realtime-pages" id="realtimePages"></div>
-        <div class="ga-note" style="margin-top:16px;margin-bottom:0">
-          ℹ️ Realtime data via <strong>Google Analytics 4 Data API</strong>. Requires GA4 API credentials to be configured — see note below.
+        <div class="ga-links-grid" id="gaLinksGrid">
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/realtime/overview" target="_blank">
+            <div class="ga-link-icon">🔴</div>
+            <div class="ga-link-title">Realtime</div>
+            <div class="ga-link-sub">Who's on site right now</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?params=_u..nav%3Dmaui%26_r.explorerCard..startRow%3D0%26_r.explorerCard..rowsPerPage%3D10&r=acquisition-traffic-acquisition&ruid=acquisition-traffic-acquisition" target="_blank">
+            <div class="ga-link-icon">🌐</div>
+            <div class="ga-link-title">Traffic Sources</div>
+            <div class="ga-link-sub">Direct, Search, Social, Referral</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?r=lifecycle-audience-overview" target="_blank">
+            <div class="ga-link-icon">👥</div>
+            <div class="ga-link-title">Audience</div>
+            <div class="ga-link-sub">Users, sessions, demographics</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?r=engagement-pages-and-screens" target="_blank">
+            <div class="ga-link-icon">📄</div>
+            <div class="ga-link-title">Top Pages</div>
+            <div class="ga-link-sub">Most visited pages</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?r=lifecycle-acquisition-v2" target="_blank">
+            <div class="ga-link-icon">📈</div>
+            <div class="ga-link-title">Acquisition</div>
+            <div class="ga-link-sub">How users find the site</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?r=engagement-events" target="_blank">
+            <div class="ga-link-icon">⚡</div>
+            <div class="ga-link-title">Events</div>
+            <div class="ga-link-sub">search, post_ad, view_item, login</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?r=user-technology-overview" target="_blank">
+            <div class="ga-link-icon">📱</div>
+            <div class="ga-link-title">Devices</div>
+            <div class="ga-link-sub">Mobile vs desktop</div>
+          </a>
+          <a class="ga-link-card" href="https://analytics.google.com/analytics/web/#/p479850408/reports/explorer?r=user-demographics-overview" target="_blank">
+            <div class="ga-link-icon">🌍</div>
+            <div class="ga-link-title">Location</div>
+            <div class="ga-link-sub">Where visitors come from</div>
+          </a>
         </div>
       </div>
 
-      <!-- TRAFFIC SOURCES -->
+      <!-- UTM CAMPAIGN SOURCES -->
       <div class="panel" style="margin-bottom:20px">
-        <div class="section-title">Traffic Sources <span id="trafficPeriod">Last 30 days</span></div>
-        <div class="ga-note">
-          📊 Connect your <strong>GA4 Data API</strong> to see live traffic breakdown here. Until then, view your full traffic report at:<br>
-          <a href="https://analytics.google.com/analytics/web/#/p$(GA4_ID)/reports/defaulthome" target="_blank">→ Open Google Analytics Dashboard</a><br><br>
-          <strong>Quick links inside GA4:</strong><br>
-          • <strong>Acquisition → Traffic Acquisition</strong> — Direct, Search, Social, Referral breakdown<br>
-          • <strong>Acquisition → Source/Medium</strong> — Exact referrers (google/organic, facebook/social, whatsapp/referral)<br>
-          • <strong>Reports → Realtime</strong> — Who's on site right now<br>
-          • <strong>Engagement → Pages and Screens</strong> — Most visited pages
-        </div>
-        <div class="source-grid" id="sourceGrid">
-          <!-- Populated from UTM tracking data stored in localStorage -->
-        </div>
-        <div id="utmClickTracker"></div>
+        <div class="section-title">UTM Campaign Performance <span id="utmClickCount"></span></div>
+        <div class="source-grid" id="sourceGrid" style="margin-bottom:16px"></div>
+        <div id="utmClickLog"><div class="loading" style="color:var(--text-3)">No UTM clicks tracked yet. Share UTM links from the UTM Links tab to start tracking.</div></div>
       </div>
 
-      <!-- UTM CLICK LOG -->
+      <!-- REALTIME from UTM -->
       <div class="panel">
-        <div class="section-title">UTM Campaign Clicks <span id="utmClickCount"></span></div>
-        <div id="utmClickLog"><div class="loading" style="color:var(--text-3)">No UTM clicks tracked yet. Share UTM links to start tracking.</div></div>
+        <div class="section-title"><span class="live-dot"></span>Recent Activity <button class="refresh-btn" onclick="loadRealtime()">↻</button></div>
+        <div class="realtime-big" id="realtimeCount" style="font-size:36px;margin-bottom:4px">—</div>
+        <div style="font-size:13px;color:var(--text-3);margin-bottom:16px">UTM link clicks in last 30 min</div>
+        <div id="realtimePages"></div>
       </div>
 
     </div>
