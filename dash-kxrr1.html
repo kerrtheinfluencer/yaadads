@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yaad Adz — Admin</title>
 <meta name="robots" content="noindex, nofollow">
+<!-- GA4 — track admin page views separately -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-KE3X5BMY63');</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -467,16 +470,18 @@ function doLogout() {
 }
 
 // Check session on load
+// ── Supabase — init first so it's available for loadDash ─────
+const SB_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
+const SB_KEY = 'sb_publishable_j9j7NG5GhMeXqiiFnEAO-w_jeMnyY1n';
+const db = supabase.createClient(SB_URL, SB_KEY);
+
 if (sessionStorage.getItem(SESSION_KEY) === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   document.getElementById('topbarUser').textContent = '👤 ' + ADMIN_USER;
+  // Load data after DOM is ready
+  window.addEventListener('load', loadDash);
 }
-
-// ── Supabase ──────────────────────────────────────────────────
-const SB_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
-const SB_KEY = 'sb_publishable_j9j7NG5GhMeXqiiFnEAO-w_jeMnyY1n';
-const db = supabase.createClient(SB_URL, SB_KEY);
 
 const CAT_NAMES = {
   vehicles:'Vehicles', property:'Property', electronics:'Electronics',

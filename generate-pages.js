@@ -277,12 +277,12 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <script type="application/ld+json">${JSON.stringify(schemas[1], null, 2)}</script>
 
 <!-- Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-F70Z3M7TJ9');
+  gtag('config', 'G-KE3X5BMY63');
 </script>
 
 <!-- Google AdSense -->

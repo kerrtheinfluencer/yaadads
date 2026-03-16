@@ -284,13 +284,22 @@ if ('serviceWorker' in navigator) {
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
+<!-- Google Analytics 4 — G-KE3X5BMY63 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-F70Z3M7TJ9');
+  gtag('config', 'G-KE3X5BMY63', {
+    send_page_view: true,
+    // Enhanced measurement — track scrolls, outbound clicks, file downloads
+    enhanced_measurement: { scrolls: true, outbound_clicks: true },
+  });
+
+  // ── Custom event helper ──────────────────────────────────
+  function gaEvent(name, params) {
+    try { gtag('event', name, params || {}); } catch(e) {}
+  }
 </script>
 
 <!-- Google AdSense -->
@@ -1953,6 +1962,7 @@ async function doLogin() {
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+    gaEvent('login', { method: 'email' });
     // Ask for push permission after login (polite — user just chose to engage)
     setTimeout(requestPushPermission, 4000);
   } catch(e) {
@@ -1980,6 +1990,7 @@ async function doRegister() {
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome to Yaad Adz, ' + name.split(' ')[0] + '! 🎉', '🎉');
+    gaEvent('sign_up', { method: 'email' });
     launchConfetti();
     // Ask for push permission after registration
     setTimeout(requestPushPermission, 5000);
@@ -2602,6 +2613,7 @@ async function doPostAd() {
     renderCats(); renderHome(); updateStats();
     showToast('Your ad is live! 🎉', '🎉');
     launchConfetti();
+    gaEvent('post_ad', { category: ad.category, parish: ad.parish, price: ad.price, currency: 'JMD' });
   } catch(e) {
     showPostErr('Failed to post: ' + (e.message||'please try again'));
   } finally {
@@ -4303,6 +4315,7 @@ function runAiSearch() {
   const query = (inp?.value || '').trim();
   if (!query) return;
   saveRecentSearch(query);
+  gaEvent('search', { search_term: query });
 
   const btn = document.getElementById('aiBtn');
   const lbl = document.getElementById('aiBtnLabel');
@@ -4603,6 +4616,15 @@ function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   sbIncrView(id);
   trackRecentlyViewed(id);
+  // Track listing view in GA4
+  gaEvent('view_item', {
+    item_id:       ad.id,
+    item_name:     ad.title,
+    item_category: ad.category,
+    price:         ad.price,
+    currency:      'JMD',
+    item_list_name: ad.parish,
+  });
   window.location.href = '/ad/' + slugify(ad);
 }
 
