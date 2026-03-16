@@ -582,9 +582,9 @@ With fog lamps">
   /* ── MOBILE PRICE HEADER (above gallery on mobile) ── */
   .mob-price-header {
     display: none; /* hidden on desktop */
-    padding: 0 0 16px;
+    padding: 14px 16px 14px;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
   }
   .mob-price {
     font-family: var(--font-d);
@@ -606,6 +606,10 @@ With fog lamps">
     .mob-price-header { display: block; }
     /* Hide the desktop price card on mobile — mob-price-header replaces it */
     .price-card { display: none; }
+    /* Reduce top padding in page-wrap on mobile */
+    .page-wrap { padding-top: 8px !important; }
+    /* Hide breadcrumb on mobile to keep it clean */
+    .breadcrumb { display: none; }
   }
 
   /* ── lb-close — clear iOS notch/Dynamic Island ── */
@@ -661,6 +665,17 @@ With fog lamps">
   <a class="nav-post" href="https://yaadadz.com/?post=1">+ Post Ad</a>
 </nav>
 
+<div class="mob-price-header">
+  <div class="mob-price">J$2,100,000</div>
+  
+  <div class="mob-title">2020 probox</div>
+  <div class="mob-meta">
+    <span>📍 Kingston</span>
+    <span>🚗 Vehicles</span>
+    <span>👁 <span id="viewCountElMob">1</span></span>
+  </div>
+</div>
+
 <div class="breadcrumb">
   <a href="https://yaadadz.com">Yaad Adz</a>
   <span>›</span>
@@ -672,18 +687,6 @@ With fog lamps">
 </div>
 
 <div class="page-wrap">
-
-  <!-- MOBILE PRICE HEADER — shows above gallery on small screens, hidden on desktop -->
-  <div class="mob-price-header">
-    <div class="mob-price">J$2,100,000</div>
-    
-    <div class="mob-title">2020 probox</div>
-    <div class="mob-meta">
-      <span>📍 Kingston</span>
-      <span>🚗 Vehicles</span>
-      <span>👁 <span id="viewCountElMob">1</span></span>
-    </div>
-  </div>
 
   <div class="ad-layout">
 
@@ -947,7 +950,25 @@ With fog lamps</p>
     }, { passive: true });
   })();
 
-  // ── Push AdSense ──────────────────────────────────────────────
+  // ── Float contact — hide when static contact box is in view ──
+  (function() {
+    var floatEl = document.getElementById('floatContact');
+    var contactBox = document.querySelector('.contact-box');
+    if (!floatEl || !contactBox) return;
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        // Hide float button when contact box is visible on screen
+        floatEl.style.transform = entry.isIntersecting
+          ? 'translateX(-50%) translateY(120%)' // slide off-screen
+          : 'translateX(-50%) translateY(0)';    // slide back in
+        floatEl.style.opacity = entry.isIntersecting ? '0' : '1';
+        floatEl.style.pointerEvents = entry.isIntersecting ? 'none' : 'auto';
+      });
+    }, { threshold: 0.3 });
+    observer.observe(contactBox);
+    // Add transition for smooth animation
+    floatEl.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+  })();
   window.addEventListener('load', function() {
     try {
       var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
