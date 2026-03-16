@@ -258,21 +258,15 @@ function buildPage(ad, allAds) {
 <meta property="og:url" content="${adUrl}">
 <meta property="og:locale" content="en_JM">
 ${ad.image ? `<meta property="og:image" content="${esc(ad.image)}">
-<meta property="og:image:secure_url" content="${esc(ad.image)}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="900">
-<meta property="og:image:alt" content="${esc(ad.title)} for sale in ${esc(ad.parish)}, Jamaica — J$${Number(ad.price).toLocaleString('en-JM')}">
-<meta property="og:image:type" content="image/jpeg">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
+<meta property="og:image:alt" content="${esc(ad.title)}">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
 <meta property="product:price:amount" content="${ad.price}">
 <meta property="product:price:currency" content="JMD">
 
-<!-- Twitter Card — summary_large_image gets the big thumbnail in Twitter/X -->
+<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@yaadadz">
-<meta name="twitter:title" content="${esc(ad.title)} — ${price} | Yaad Adz Jamaica">
-<meta name="twitter:description" content="${esc((ad.desc||ad.title).slice(0,200))} · ${esc(ad.parish)}, Jamaica">
-${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">
-<meta name="twitter:image:alt" content="${esc(ad.title)} — Yaad Adz Jamaica">` : ''}
+<meta name="twitter:title" content="${esc(ad.title)} — ${price}">
+<meta name="twitter:description" content="${esc((ad.desc||ad.title).slice(0,200))}">
+${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
 <!-- Geo -->
 <meta name="geo.region" content="JM">
@@ -281,19 +275,6 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">${JSON.stringify(schemas[0], null, 2)}</script>
 <script type="application/ld+json">${JSON.stringify(schemas[1], null, 2)}</script>
-${ad.image ? `<script type="application/ld+json">${JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'ImageObject',
-  'contentUrl': ad.image,
-  'url': adUrl,
-  'name': ad.title + ' — ' + ad.parish + ', Jamaica',
-  'description': (ad.desc || ad.title) + ' — J$' + Number(ad.price).toLocaleString('en-JM'),
-  'width': 1200,
-  'height': 900,
-  'representativeOfPage': true,
-  'thumbnail': { '@type': 'ImageObject', 'contentUrl': ad.image },
-  'acquireLicensePage': adUrl,
-}, null, 2)}</script>` : ''}
 
 <!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
@@ -1068,240 +1049,7 @@ async function main() {
     }
   }
 
-  // ── Generate category landing pages ───────────────────────────
-  // These are the pages that get photo thumbnails in Google search results
-  // e.g. /category/vehicles → "Cars for Sale in Jamaica"
-  // e.g. /category/vehicles/kingston → "Cars for Sale in Kingston"
-  console.log('📂 Generating category landing pages…');
-
-  const CAT_DIR = path.join(__dirname, 'category');
-  if (!fs.existsSync(CAT_DIR)) fs.mkdirSync(CAT_DIR, { recursive: true });
-
-  const PARISHES = [
-    'Kingston','St. Andrew','St. Catherine','St. James','Manchester',
-    'St. Ann','Clarendon','Westmoreland','St. Elizabeth','Portland',
-    'St. Mary','St. Thomas','Trelawny','Hanover'
-  ];
-
-  const catPageUrls = []; // for sitemap
-
-  // Build one category page
-  function buildCatPage(catId, parish) {
-    const catName = CAT_NAMES[catId] || 'Listings';
-    const catIcon = CAT_ICONS[catId] || '📦';
-    const active  = allAds.filter(a =>
-      a.status !== 'sold' &&
-      a.category === catId &&
-      (!parish || a.parish === parish)
-    ).sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
-
-    const title = parish
-      ? `${catName} for Sale in ${parish}, Jamaica`
-      : `${catName} for Sale in Jamaica`;
-    const desc = parish
-      ? `Browse ${active.length} ${catName.toLowerCase()} listings in ${parish}. Free classifieds — contact sellers directly on Yaad Adz.`
-      : `Browse ${active.length} ${catName.toLowerCase()} listings across all 14 parishes in Jamaica. Free classifieds — no fees.`;
-    const canonicalUrl = parish
-      ? `${BASE_URL}/category/${catId}/${parish.toLowerCase().replace(/[\s.]/g,'-')}`
-      : `${BASE_URL}/category/${catId}`;
-
-    // Hero image — first listing with a photo
-    const heroAd  = active.find(a => a.image);
-    const heroImg = heroAd ? heroAd.image : '';
-
-    // Listing cards — up to 24
-    const cards = active.slice(0, 24).map(a => {
-      const slug = slugify(a);
-      const img  = a.image
-        ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
-        : `<div class="cat-card-placeholder">${catIcon}</div>`;
-      return `
-      <a class="cat-card" href="${BASE_URL}/ad/${slug}">
-        <div class="cat-card-img">${img}</div>
-        <div class="cat-card-body">
-          <div class="cat-card-price">${fmtPrice(a.price)}</div>
-          <div class="cat-card-title">${esc(a.title)}</div>
-          <div class="cat-card-meta">📍 ${esc(a.parish)} · ${ago(a.date)}</div>
-        </div>
-      </a>`;
-    }).join('');
-
-    // Parish sub-links
-    const parishLinks = !parish ? PARISHES.map(p => {
-      const count = allAds.filter(a => a.status !== 'sold' && a.category === catId && a.parish === p).length;
-      if (!count) return '';
-      const pSlug = p.toLowerCase().replace(/[\s.]/g,'-');
-      return `<a href="${BASE_URL}/category/${catId}/${pSlug}" class="parish-chip">📍 ${p} <span>${count}</span></a>`;
-    }).filter(Boolean).join('') : '';
-
-    return `<!DOCTYPE html>
-<html lang="en-JM">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>${esc(title)} | Yaad Adz</title>
-<meta name="description" content="${esc(desc)}">
-<meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="${canonicalUrl}">
-
-<!-- Open Graph — this is what puts the photo in Google search results -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Yaad Adz">
-<meta property="og:title" content="${esc(title)} | Yaad Adz">
-<meta property="og:description" content="${esc(desc)}">
-<meta property="og:url" content="${canonicalUrl}">
-${heroImg ? `<meta property="og:image" content="${esc(heroImg)}">
-<meta property="og:image:width" content="800">
-<meta property="og:image:height" content="600">
-<meta property="og:image:alt" content="${esc(title)}">` : ''}
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${esc(title)}">
-${heroImg ? `<meta name="twitter:image" content="${esc(heroImg)}">` : ''}
-<meta name="geo.region" content="JM">
-
-<!-- JSON-LD -->
-<script type="application/ld+json">${JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  'name': title,
-  'description': desc,
-  'url': canonicalUrl,
-  'numberOfItems': active.length,
-  ...(heroImg ? { 'image': heroImg } : {}),
-  'itemListElement': active.slice(0,10).map((a,i) => ({
-    '@type': 'ListItem',
-    'position': i+1,
-    'url': BASE_URL + '/ad/' + slugify(a),
-    'name': a.title,
-    'image': a.image || undefined,
-  }))
-})}</script>
-
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-F70Z3M7TJ9');</script>
-
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0c1e14;--bg2:#112019;--bg3:#172a1f;--green:#1db954;--gold:#f5c842;--text-1:#e8ede9;--text-2:#a0a8a4;--text-3:#6b7a71;--border:rgba(255,255,255,0.08);--radius:12px;--font-s:'Outfit',sans-serif;--font-d:'Fraunces',serif}
-body{font-family:var(--font-s);background:var(--bg);color:var(--text-1);min-height:100vh}
-nav{position:sticky;top:0;z-index:100;background:rgba(12,30,20,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px}
-.nav-back{display:flex;align-items:center;gap:4px;color:var(--green);font-size:16px;font-weight:500;text-decoration:none;padding:6px 4px;white-space:nowrap}
-.nav-back svg{flex-shrink:0}
-.nav-spacer{flex:1}
-.nav-logo{font-family:var(--font-d);font-weight:800;font-size:20px;color:var(--text-1);text-decoration:none;display:flex;align-items:center;gap:6px}
-.nav-logo em{color:var(--gold);font-style:italic}
-.nav-post{background:var(--gold);color:#1a1a1a;font-weight:700;font-size:13px;padding:7px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}
-
-.page-wrap{max-width:960px;margin:0 auto;padding:24px 16px 60px}
-.cat-hero{margin-bottom:28px}
-.cat-hero h1{font-family:var(--font-d);font-size:28px;font-weight:800;line-height:1.2;margin-bottom:8px}
-.cat-hero p{font-size:15px;color:var(--text-2);line-height:1.6}
-.cat-count{display:inline-block;background:rgba(29,185,84,0.15);color:var(--green);font-size:13px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px}
-
-.parish-chips{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}
-.parish-chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--text-2);text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:6px}
-.parish-chip:hover{border-color:var(--green);color:var(--green)}
-.parish-chip span{background:rgba(255,255,255,0.1);border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700}
-
-.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:24px}
-.cat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,box-shadow .18s,border-color .18s;display:flex;flex-direction:column}
-.cat-card:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.cat-card-img{width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg2)}
-.cat-card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
-.cat-card:hover .cat-card-img img{transform:scale(1.04)}
-.cat-card-placeholder{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--bg2)}
-.cat-card-body{padding:12px}
-.cat-card-price{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--green);margin-bottom:4px}
-.cat-card-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.cat-card-meta{font-size:11px;color:var(--text-3)}
-
-.empty{text-align:center;padding:60px 0;color:var(--text-3)}
-footer{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:24px;font-size:13px;color:var(--text-3)}
-footer a{color:var(--text-3);text-decoration:none;margin:0 8px}
-footer a:hover{color:var(--green)}
-.footer-logo{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--text-1);margin-bottom:8px}
-.footer-logo em{color:var(--gold);font-style:italic}
-
-@media(max-width:600px){
-  .cat-hero h1{font-size:22px}
-  .listings-grid{grid-template-columns:repeat(2,1fr);gap:12px}
-  nav{padding:0 12px}
-}
-</style>
-</head>
-<body>
-<nav>
-  <a class="nav-back" href="${parish ? `${BASE_URL}/category/${catId}` : BASE_URL}">
-    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
-    ${parish ? catName : 'Home'}
-  </a>
-  <div class="nav-spacer"></div>
-  <a class="nav-logo" href="${BASE_URL}"><span>🇯🇲</span><em>Yaad Adz</em></a>
-  <div class="nav-spacer"></div>
-  <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
-</nav>
-
-<div class="page-wrap">
-  <div class="cat-hero">
-    <div class="cat-count">${active.length} listing${active.length !== 1 ? 's' : ''}</div>
-    <h1>${catIcon} ${esc(title)}</h1>
-    <p>${esc(desc)}</p>
-  </div>
-
-  ${parishLinks ? `<div class="parish-chips">${parishLinks}</div>` : ''}
-
-  ${cards ? `<div class="listings-grid">${cards}</div>` : '<div class="empty"><p>No listings yet — <a href="${BASE_URL}/?post=1" style="color:var(--green)">post the first one!</a></p></div>'}
-</div>
-
-<footer>
-  <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
-  <p>Jamaica's free classifieds</p>
-  <div style="margin-top:10px">
-    <a href="${BASE_URL}">Home</a>
-    <a href="${BASE_URL}/?cat=vehicles">Cars</a>
-    <a href="${BASE_URL}/?cat=property">Property</a>
-    <a href="${BASE_URL}/?cat=electronics">Phones</a>
-    <a href="${BASE_URL}/?cat=jobs">Jobs</a>
-  </div>
-  <p style="margin-top:8px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
-</footer>
-</body>
-</html>`;
-  }
-
-  // Generate category index pages + parish sub-pages
-  let catPagesWritten = 0;
-  const catIds = Object.keys(CAT_NAMES);
-
-  for (const catId of catIds) {
-    const catDir = path.join(CAT_DIR, catId);
-    if (!fs.existsSync(catDir)) fs.mkdirSync(catDir, { recursive: true });
-
-    // Main category page: /category/vehicles/index.html
-    const catHtml = buildCatPage(catId, null);
-    fs.writeFileSync(path.join(catDir, 'index.html'), catHtml, 'utf8');
-    catPageUrls.push({ url: `${BASE_URL}/category/${catId}`, image: allAds.find(a => a.category === catId && a.image)?.image || null });
-    catPagesWritten++;
-
-    // Parish sub-pages: /category/vehicles/kingston/index.html
-    for (const parish of PARISHES) {
-      const hasAds = allAds.some(a => a.status !== 'sold' && a.category === catId && a.parish === parish);
-      if (!hasAds) continue;
-      const pSlug  = parish.toLowerCase().replace(/[\s.]/g, '-');
-      const pDir   = path.join(catDir, pSlug);
-      if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
-      const pHtml  = buildCatPage(catId, parish);
-      fs.writeFileSync(path.join(pDir, 'index.html'), pHtml, 'utf8');
-      catPageUrls.push({ url: `${BASE_URL}/category/${catId}/${pSlug}`, image: allAds.find(a => a.category === catId && a.parish === parish && a.image)?.image || null });
-      catPagesWritten++;
-    }
-  }
-  console.log(`   ✅ ${catPagesWritten} category pages written`);
+  // ── Generate sitemap.xml ──────────────────────────────────────
   console.log('🗺️  Generating sitemap.xml…');
   const today = new Date().toISOString().split('T')[0];
 
@@ -1338,8 +1086,7 @@ footer a:hover{color:var(--green)}
   const adEntries = activeAds.map(ad => {
     const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
     // Use clean URL without .html for sitemap — Google prefers canonical clean URLs
-    const allPhotos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
-    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', photos: allPhotos, title: ad.title };
+    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
   });
 
   const staticXml = staticPages.map(p => `
@@ -1355,21 +1102,10 @@ footer a:hover{color:var(--green)}
     <loc>${p.url}</loc>
     <lastmod>${p.lastmod}</lastmod>
     <changefreq>${p.changefreq}</changefreq>
-    <priority>${p.priority}</priority>${p.photos.map(img => `
-    <image:image>
-      <image:loc>${img}</image:loc>
-      <image:title>${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
-    </image:image>`).join('')}
-  </url>`).join('');
-
-  const catXml = catPageUrls.map(p => `
-  <url>
-    <loc>${p.url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>${p.image ? `
+    <priority>${p.priority}</priority>${p.image ? `
     <image:image>
       <image:loc>${p.image}</image:loc>
+      <image:title>${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
     </image:image>` : ''}
   </url>`).join('');
 
@@ -1378,14 +1114,14 @@ footer a:hover{color:var(--green)}
   xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <!-- Generated by Yaad Adz on ${new Date().toISOString()} -->
-  <!-- ${staticPages.length} static + ${catPageUrls.length} category + ${adEntries.length} ad pages -->
+  <!-- ${staticPages.length} static + ${PARISH_LIST.length} parish + ${adEntries.length} ad pages -->
 ${staticXml}
-${catXml}
+${parishXml}
 ${adXml}
 </urlset>`;
 
   fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
-  console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
+  console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${PARISH_LIST.length} parish + ${adEntries.length} ad pages`);
 
   // ── Ping Google sitemap ───────────────────────────────────────
   try {
@@ -1490,6 +1226,327 @@ ${staticLinks}
 
   fs.writeFileSync(path.join(__dirname, 'static-links.html'), staticLinksHtml, 'utf8');
   console.log(`   ✅ static-links.html written — ${recentAds.length} latest listings`);
+
+  // ── Parish landing pages ──────────────────────────────────────
+  // e.g. /parish/kingston/ → "Free Classifieds in Kingston, Jamaica"
+  // These rank for "buy sell Kingston Jamaica", "classifieds Montego Bay" etc.
+  console.log('📍 Generating parish landing pages…');
+
+  const PARISH_DIR = path.join(__dirname, 'parish');
+  if (!fs.existsSync(PARISH_DIR)) fs.mkdirSync(PARISH_DIR, { recursive: true });
+
+  const PARISH_LIST = [
+    { name: 'Kingston',       slug: 'kingston',       alt: 'Downtown Kingston, Jamaica' },
+    { name: 'St. Andrew',     slug: 'st-andrew',      alt: 'St. Andrew, Jamaica' },
+    { name: 'St. Catherine',  slug: 'st-catherine',   alt: 'Portmore & Spanish Town, Jamaica' },
+    { name: 'St. James',      slug: 'st-james',       alt: 'Montego Bay, Jamaica' },
+    { name: 'Manchester',     slug: 'manchester',     alt: 'Mandeville, Jamaica' },
+    { name: 'St. Ann',        slug: 'st-ann',         alt: 'Ocho Rios, Jamaica' },
+    { name: 'Clarendon',      slug: 'clarendon',      alt: 'May Pen, Jamaica' },
+    { name: 'Westmoreland',   slug: 'westmoreland',   alt: 'Savanna-la-Mar, Jamaica' },
+    { name: 'St. Elizabeth',  slug: 'st-elizabeth',   alt: 'Black River, Jamaica' },
+    { name: 'Portland',       slug: 'portland',       alt: 'Port Antonio, Jamaica' },
+    { name: 'St. Mary',       slug: 'st-mary',        alt: 'Annotto Bay, Jamaica' },
+    { name: 'St. Thomas',     slug: 'st-thomas',      alt: 'Morant Bay, Jamaica' },
+    { name: 'Trelawny',       slug: 'trelawny',       alt: 'Falmouth, Jamaica' },
+    { name: 'Hanover',        slug: 'hanover',        alt: 'Lucea, Jamaica' },
+  ];
+
+  const PARISH_NICKNAMES = {
+    'Kingston':      'Kingston',
+    'St. Andrew':    'St. Andrew',
+    'St. Catherine': 'Portmore & Spanish Town',
+    'St. James':     'Montego Bay',
+    'Manchester':    'Mandeville',
+    'St. Ann':       'Ocho Rios',
+    'Clarendon':     'May Pen',
+    'Westmoreland':  'Savanna-la-Mar',
+    'St. Elizabeth': 'Black River',
+    'Portland':      'Port Antonio',
+    'St. Mary':      'St. Mary',
+    'St. Thomas':    'St. Thomas',
+    'Trelawny':      'Falmouth',
+    'Hanover':       'Lucea',
+  };
+
+  const parishPageUrls = [];
+  let parishPagesWritten = 0;
+
+  for (const parish of PARISH_LIST) {
+    const parishAds = activeAds
+      .filter(a => a.parish === parish.name)
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    const heroImg   = parishAds.find(a => a.image)?.image || '';
+    const nickname  = PARISH_NICKNAMES[parish.name] || parish.name;
+    const pageUrl   = `${BASE_URL}/parish/${parish.slug}`;
+    const totalAds  = parishAds.length;
+
+    // Category breakdown for this parish
+    const catBreakdown = Object.entries(CAT_NAMES).map(([id, name]) => {
+      const count = parishAds.filter(a => a.category === id).length;
+      return count ? { id, name, icon: CAT_ICONS[id] || '📦', count } : null;
+    }).filter(Boolean).sort((a, b) => b.count - a.count);
+
+    // Top listing cards — up to 20
+    const cards = parishAds.slice(0, 20).map(a => {
+      const slug    = slugify(a);
+      const catIcon = CAT_ICONS[a.category] || '📦';
+      const img     = a.image
+        ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
+        : `<div class="card-placeholder">${catIcon}</div>`;
+      return `
+      <a class="listing-card" href="${BASE_URL}/ad/${slug}">
+        <div class="card-img">${img}</div>
+        <div class="card-body">
+          <div class="card-price">${fmtPrice(a.price)}</div>
+          <div class="card-title">${esc(a.title)}</div>
+          <div class="card-meta">${catIcon} ${esc(CAT_NAMES[a.category] || 'Other')} · ${ago(a.date)}</div>
+        </div>
+      </a>`;
+    }).join('');
+
+    // Category filter chips
+    const catChips = catBreakdown.map(c =>
+      `<a href="${BASE_URL}/category/${c.id}/${parish.slug}" class="cat-chip">${c.icon} ${c.name} <span>${c.count}</span></a>`
+    ).join('');
+
+    // Other parish links
+    const otherParishes = PARISH_LIST.filter(p => p.slug !== parish.slug).map(p => {
+      const count = activeAds.filter(a => a.parish === p.name).length;
+      return count ? `<a href="${BASE_URL}/parish/${p.slug}" class="other-parish">${p.name} <span>${count}</span></a>` : '';
+    }).filter(Boolean).join('');
+
+    const pageTitle = `Free Classifieds in ${parish.name}, Jamaica | Yaad Adz`;
+    const pageDesc  = `Browse ${totalAds} free classified ads in ${parish.name}, Jamaica — cars for sale, houses for rent, phones, jobs and more. Post free on Yaad Adz.`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en-JM">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>${esc(pageTitle)}</title>
+<meta name="description" content="${esc(pageDesc)}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="${pageUrl}">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Yaad Adz">
+<meta property="og:title" content="${esc(pageTitle)}">
+<meta property="og:description" content="${esc(pageDesc)}">
+<meta property="og:url" content="${pageUrl}">
+<meta property="og:locale" content="en_JM">
+${heroImg ? `<meta property="og:image" content="${esc(heroImg)}">
+<meta property="og:image:secure_url" content="${esc(heroImg)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="900">
+<meta property="og:image:alt" content="Free classifieds in ${esc(parish.name)}, Jamaica — Yaad Adz">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@yaadadz">
+<meta name="twitter:title" content="${esc(pageTitle)}">
+<meta name="twitter:description" content="${esc(pageDesc)}">
+${heroImg ? `<meta name="twitter:image" content="${esc(heroImg)}">` : ''}
+
+<!-- Geo — tells Google exactly where this page is about -->
+<meta name="geo.region" content="JM">
+<meta name="geo.placename" content="${esc(parish.name)}, Jamaica">
+
+<!-- JSON-LD -->
+<script type="application/ld+json">${JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  'name': `Free Classifieds in ${parish.name}, Jamaica`,
+  'description': pageDesc,
+  'url': pageUrl,
+  'numberOfItems': totalAds,
+  ...(heroImg ? { 'image': heroImg } : {}),
+  'areaServed': {
+    '@type': 'Place',
+    'name': parish.name + ', Jamaica',
+    'address': { '@type': 'PostalAddress', 'addressLocality': parish.name, 'addressCountry': 'JM' }
+  },
+  'itemListElement': parishAds.slice(0, 10).map((a, i) => ({
+    '@type': 'ListItem',
+    'position': i + 1,
+    'url': BASE_URL + '/ad/' + slugify(a),
+    'name': a.title,
+    ...(a.image ? { 'image': a.image } : {}),
+  }))
+}, null, 2)}</script>
+
+<script type="application/ld+json">${JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': [
+    { '@type': 'ListItem', 'position': 1, 'name': 'Yaad Adz', 'item': BASE_URL },
+    { '@type': 'ListItem', 'position': 2, 'name': parish.name, 'item': pageUrl },
+  ]
+}, null, 2)}</script>
+
+<!-- Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-F70Z3M7TJ9');</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0c1e14;--bg2:#112019;--bg3:#172a1f;--green:#1db954;--gold:#f5c842;--text-1:#e8ede9;--text-2:#a0a8a4;--text-3:#6b7a71;--border:rgba(255,255,255,0.08);--radius:12px;--font-s:'Outfit',sans-serif;--font-d:'Fraunces',serif}
+body{font-family:var(--font-s);background:var(--bg);color:var(--text-1);min-height:100vh;line-height:1.6}
+/* Nav */
+nav{position:sticky;top:0;z-index:100;background:rgba(12,30,20,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px}
+.nav-back{display:flex;align-items:center;gap:4px;color:var(--green);font-size:16px;font-weight:500;text-decoration:none;padding:6px 4px;white-space:nowrap}
+.nav-spacer{flex:1}
+.nav-logo{font-family:var(--font-d);font-weight:800;font-size:20px;color:var(--text-1);text-decoration:none;display:flex;align-items:center;gap:6px}
+.nav-logo em{color:var(--gold);font-style:italic}
+.nav-post{background:var(--gold);color:#1a1a1a;font-weight:700;font-size:13px;padding:7px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}
+/* Layout */
+.page-wrap{max-width:960px;margin:0 auto;padding:28px 16px 60px}
+/* Hero */
+.parish-hero{margin-bottom:28px}
+.parish-hero h1{font-family:var(--font-d);font-size:30px;font-weight:800;line-height:1.2;margin-bottom:10px}
+.parish-hero h1 em{color:var(--green);font-style:normal}
+.parish-hero p{font-size:15px;color:var(--text-2);max-width:600px;line-height:1.7}
+.hero-stats{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-n{font-family:var(--font-d);font-size:26px;font-weight:800;color:var(--gold)}
+.hero-stat-l{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+/* Category chips */
+.section-title{font-family:var(--font-d);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--text-1)}
+.cat-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.cat-chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:13px;color:var(--text-2);text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:6px}
+.cat-chip:hover{border-color:var(--green);color:var(--green)}
+.cat-chip span{background:rgba(255,255,255,.1);border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700}
+/* Listings grid */
+.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.listing-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,border-color .18s,box-shadow .18s;display:flex;flex-direction:column}
+.listing-card:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.card-img{width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg2)}
+.card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.listing-card:hover .card-img img{transform:scale(1.04)}
+.card-placeholder{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:40px}
+.card-body{padding:12px}
+.card-price{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--green);margin-bottom:4px}
+.card-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:11px;color:var(--text-3)}
+/* View all */
+.view-all{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:12px 20px;color:var(--text-2);text-decoration:none;font-weight:600;font-size:14px;transition:all .2s;margin-bottom:40px}
+.view-all:hover{border-color:var(--green);color:var(--green)}
+/* Other parishes */
+.other-parishes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.other-parish{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-3);text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:5px}
+.other-parish:hover{border-color:var(--green);color:var(--green)}
+.other-parish span{background:rgba(255,255,255,.08);border-radius:8px;padding:1px 6px;font-size:11px;font-weight:700}
+/* Footer */
+footer{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:24px 16px;font-size:13px;color:var(--text-3)}
+footer a{color:var(--text-3);text-decoration:none;margin:0 8px}
+footer a:hover{color:var(--green)}
+.footer-logo{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--text-1);margin-bottom:8px}
+.footer-logo em{color:var(--gold);font-style:italic}
+/* Responsive */
+@media(max-width:600px){
+  .parish-hero h1{font-size:24px}
+  .listings-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  nav{padding:0 12px}
+  .hero-stats{gap:14px}
+  .hero-stat-n{font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-back" href="${BASE_URL}">
+    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
+    Home
+  </a>
+  <div class="nav-spacer"></div>
+  <a class="nav-logo" href="${BASE_URL}"><span>🇯🇲</span><em>Yaad Adz</em></a>
+  <div class="nav-spacer"></div>
+  <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- Hero -->
+  <div class="parish-hero">
+    <h1>Free Classifieds in <em>${esc(parish.name)}</em>, Jamaica</h1>
+    <p>Browse ${totalAds} free listings in ${esc(nickname)} — cars for sale, houses for rent, phones, electronics, jobs and more. Post your ad free in under 2 minutes.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-n">${totalAds}</div>
+        <div class="hero-stat-l">Listings</div>
+      </div>
+      ${catBreakdown.slice(0, 3).map(c => `
+      <div class="hero-stat">
+        <div class="hero-stat-n">${c.count}</div>
+        <div class="hero-stat-l">${c.name}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- Category breakdown -->
+  ${catChips ? `
+  <div class="section-title">Browse by Category</div>
+  <div class="cat-chips">${catChips}</div>` : ''}
+
+  <!-- Latest listings -->
+  <div class="section-title">Latest in ${esc(parish.name)}</div>
+  ${cards ? `<div class="listings-grid">${cards}</div>` : '<p style="color:var(--text-3);margin-bottom:24px">No listings yet — be the first to post!</p>'}
+
+  <a class="view-all" href="${BASE_URL}/?parish=${encodeURIComponent(parish.name)}">
+    View all ${totalAds} listings in ${esc(parish.name)} →
+  </a>
+
+  <!-- Other parishes -->
+  <div class="section-title">Browse Other Parishes</div>
+  <div class="other-parishes">${otherParishes}</div>
+
+</div>
+
+<footer>
+  <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
+  <p>Jamaica's free classifieds — Post, Buy &amp; Sell across all 14 parishes</p>
+  <div style="margin-top:10px">
+    <a href="${BASE_URL}">Home</a>
+    <a href="${BASE_URL}/?cat=vehicles">Cars</a>
+    <a href="${BASE_URL}/?cat=property">Property</a>
+    <a href="${BASE_URL}/?cat=electronics">Phones</a>
+    <a href="${BASE_URL}/?cat=jobs">Jobs</a>
+    <a href="${BASE_URL}/sitemap.html">All Listings</a>
+  </div>
+  <p style="margin-top:10px;font-size:12px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
+</footer>
+
+</body>
+</html>`;
+
+    // Write to /parish/kingston/index.html
+    const pDir = path.join(PARISH_DIR, parish.slug);
+    if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+    fs.writeFileSync(path.join(pDir, 'index.html'), html, 'utf8');
+    parishPageUrls.push({ url: pageUrl, image: heroImg || null });
+    parishPagesWritten++;
+  }
+
+  console.log(`   ✅ ${parishPagesWritten} parish pages written`);
+
+  // Add parish pages to sitemap
+  const parishXml = parishPageUrls.map(p => `
+  <url>
+    <loc>${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>${p.image ? `
+    <image:image>
+      <image:loc>${p.image}</image:loc>
+    </image:image>` : ''}
+  </url>`).join('');
 
   const robotsPath = path.join(__dirname, 'robots.txt');
   let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
