@@ -343,7 +343,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   }
   .nav-logo {
     font-family: var(--font-d);
-    font-weight: 800; font-size: 22px;
+    font-weight: 800; font-size: 20px;
     color: var(--text-1);
     text-decoration: none;
     display: flex; align-items: center; gap: 6px;
@@ -351,14 +351,19 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .nav-logo em { color: var(--gold); font-style: italic; }
   .nav-spacer { flex: 1; }
   .nav-back {
-    display: flex; align-items: center; gap: 6px;
-    color: var(--text-2); font-size: 14px;
+    display: flex; align-items: center; gap: 5px;
+    color: var(--green); font-size: 16px; font-weight: 500;
     text-decoration: none;
-    padding: 6px 12px; border-radius: 8px;
-    border: 1px solid var(--border);
-    transition: all 0.2s;
+    padding: 6px 4px;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .nav-back:hover { color: var(--text-1); border-color: var(--green); }
+  .nav-back:hover { opacity: 0.75; }
+  .nav-back svg { flex-shrink: 0; }
   .nav-post {
     background: var(--gold); color: #1a1a1a;
     font-weight: 700; font-size: 13px;
@@ -819,13 +824,12 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   @media (max-width: 700px) {
     .ad-layout { grid-template-columns: 1fr; }
     .ad-panel { position: static; }
-    .page-wrap { padding: 16px 16px 48px; }
-    nav { padding: 0 16px; gap: 10px; }
-    /* Hide logo text on mobile — icon only, saves space for buttons */
-    .nav-logo-text { display: none; }
-    .nav-back { font-size: 13px; padding: 6px 10px; }
+    .page-wrap { padding: 8px 16px 80px; }
+    nav { padding: 0 12px; gap: 0; }
+    /* Hide centred logo on mobile — back + post ad takes priority */
+    .nav-logo-centre { display: none; }
+    .nav-back { max-width: 160px; }
     .nav-post { font-size: 12px; padding: 6px 11px; }
-    .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
     .similar-section { padding: 0 16px 48px; }
     .similar-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -836,11 +840,17 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <body>
 
 <nav>
-  <a class="nav-logo" href="${BASE_URL}">
+  <!-- iOS-style back button — far left with chevron -->
+  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}">
+    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
+    ${catName}
+  </a>
+  <div class="nav-spacer"></div>
+  <!-- Logo centred -->
+  <a class="nav-logo nav-logo-centre" href="${BASE_URL}">
     <span>🇯🇲</span><span class="nav-logo-text">Yaad <em>Adz</em></span>
   </a>
   <div class="nav-spacer"></div>
-  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}">← ${catName}</a>
   <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
 </nav>
 
