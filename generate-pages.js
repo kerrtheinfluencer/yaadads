@@ -258,15 +258,21 @@ function buildPage(ad, allAds) {
 <meta property="og:url" content="${adUrl}">
 <meta property="og:locale" content="en_JM">
 ${ad.image ? `<meta property="og:image" content="${esc(ad.image)}">
-<meta property="og:image:alt" content="${esc(ad.title)}">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
+<meta property="og:image:secure_url" content="${esc(ad.image)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="900">
+<meta property="og:image:alt" content="${esc(ad.title)} for sale in ${esc(ad.parish)}, Jamaica — J$${Number(ad.price).toLocaleString('en-JM')}">
+<meta property="og:image:type" content="image/jpeg">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
 <meta property="product:price:amount" content="${ad.price}">
 <meta property="product:price:currency" content="JMD">
 
-<!-- Twitter Card -->
+<!-- Twitter Card — summary_large_image gets the big thumbnail in Twitter/X -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${esc(ad.title)} — ${price}">
-<meta name="twitter:description" content="${esc((ad.desc||ad.title).slice(0,200))}">
-${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
+<meta name="twitter:site" content="@yaadadz">
+<meta name="twitter:title" content="${esc(ad.title)} — ${price} | Yaad Adz Jamaica">
+<meta name="twitter:description" content="${esc((ad.desc||ad.title).slice(0,200))} · ${esc(ad.parish)}, Jamaica">
+${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">
+<meta name="twitter:image:alt" content="${esc(ad.title)} — Yaad Adz Jamaica">` : ''}
 
 <!-- Geo -->
 <meta name="geo.region" content="JM">
@@ -275,6 +281,19 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">${JSON.stringify(schemas[0], null, 2)}</script>
 <script type="application/ld+json">${JSON.stringify(schemas[1], null, 2)}</script>
+${ad.image ? `<script type="application/ld+json">${JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ImageObject',
+  'contentUrl': ad.image,
+  'url': adUrl,
+  'name': ad.title + ' — ' + ad.parish + ', Jamaica',
+  'description': (ad.desc || ad.title) + ' — J$' + Number(ad.price).toLocaleString('en-JM'),
+  'width': 1200,
+  'height': 900,
+  'representativeOfPage': true,
+  'thumbnail': { '@type': 'ImageObject', 'contentUrl': ad.image },
+  'acquireLicensePage': adUrl,
+}, null, 2)}</script>` : ''}
 
 <!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
@@ -1319,7 +1338,8 @@ footer a:hover{color:var(--green)}
   const adEntries = activeAds.map(ad => {
     const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
     // Use clean URL without .html for sitemap — Google prefers canonical clean URLs
-    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
+    const allPhotos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
+    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', photos: allPhotos, title: ad.title };
   });
 
   const staticXml = staticPages.map(p => `
@@ -1335,11 +1355,11 @@ footer a:hover{color:var(--green)}
     <loc>${p.url}</loc>
     <lastmod>${p.lastmod}</lastmod>
     <changefreq>${p.changefreq}</changefreq>
-    <priority>${p.priority}</priority>${p.image ? `
+    <priority>${p.priority}</priority>${p.photos.map(img => `
     <image:image>
-      <image:loc>${p.image}</image:loc>
+      <image:loc>${img}</image:loc>
       <image:title>${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
-    </image:image>` : ''}
+    </image:image>`).join('')}
   </url>`).join('');
 
   const catXml = catPageUrls.map(p => `
