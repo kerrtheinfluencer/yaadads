@@ -751,7 +751,47 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .float-contact-btn .btn-icon { font-size: 20px; width: 28px; text-align: center; }
   @media (min-width: 700px) { .float-contact { display: none; } }
 
-  /* ── FOOTER ── */
+  /* ── MOBILE PRICE HEADER (above gallery on mobile) ── */
+  .mob-price-header {
+    display: none; /* hidden on desktop */
+    padding: 0 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .mob-price {
+    font-family: var(--font-d);
+    font-size: 30px; font-weight: 800;
+    color: var(--green); line-height: 1.1;
+  }
+  .mob-price-neg {
+    font-size: 13px; color: var(--text-3); margin-top: 2px;
+  }
+  .mob-title {
+    font-size: 17px; font-weight: 700;
+    color: var(--text-1); margin-top: 8px; line-height: 1.3;
+  }
+  .mob-meta {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 8px; font-size: 12px; color: var(--text-3);
+  }
+  @media (max-width: 700px) {
+    .mob-price-header { display: block; }
+    /* Hide the desktop price card on mobile — mob-price-header replaces it */
+    .price-card { display: none; }
+  }
+
+  /* ── lb-close — clear iOS notch/Dynamic Island ── */
+  .lb-close {
+    top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  /* ── Float contact — ensure visible above everything ── */
+  .float-contact {
+    z-index: 8000 !important;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  /* Make sure lightbox sits above float contact */
+  .lightbox { z-index: 9999 !important; }
   footer {
     background: var(--bg2);
     border-top: 1px solid var(--border);
@@ -804,6 +844,19 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 </div>
 
 <div class="page-wrap">
+
+  <!-- MOBILE PRICE HEADER — shows above gallery on small screens, hidden on desktop -->
+  <div class="mob-price-header">
+    <div class="mob-price">${price}</div>
+    ${ad.neg ? '<div class="mob-price-neg">· Negotiable</div>' : ''}
+    <div class="mob-title">${esc(ad.title)}</div>
+    <div class="mob-meta">
+      <span>📍 ${esc(ad.parish)}</span>
+      <span>${catIcon} ${catName}</span>
+      <span>👁 <span id="viewCountElMob">${ad.views || 0}</span></span>
+    </div>
+  </div>
+
   <div class="ad-layout">
 
     <!-- LEFT: Gallery + Description -->
@@ -1061,8 +1114,9 @@ ${ad.status !== 'sold' ? `
 
   // ── Live view count — fetch from Supabase and update display ─
   (function() {
-    var el = document.getElementById('viewCountEl');
-    if (!el) return;
+    var el    = document.getElementById('viewCountEl');
+    var elMob = document.getElementById('viewCountElMob');
+    if (!el && !elMob) return;
     var adId = '${ad.id}';
     fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/ads?id=eq.' + adId + '&select=views', {
       headers: {
@@ -1072,7 +1126,9 @@ ${ad.status !== 'sold' ? `
     }).then(function(r) { return r.json(); })
       .then(function(data) {
         if (data && data[0] && data[0].views != null) {
-          el.textContent = Number(data[0].views).toLocaleString('en-JM');
+          var v = Number(data[0].views).toLocaleString('en-JM');
+          if (el) el.textContent = v;
+          if (elMob) elMob.textContent = v;
         }
       }).catch(function() {});
   })();
