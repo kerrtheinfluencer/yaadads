@@ -592,11 +592,35 @@ nav {
   flex-wrap: wrap !important;
 }
 
+/* ── Grid column fix — more columns on desktop, tighter cards ─ */
+.listings-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  gap: 14px !important;
+}
+@media (min-width: 900px) {
+  .listings-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+@media (min-width: 1200px) {
+  .listings-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+@media (max-width: 600px) {
+  .listings-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
 /* ── 2. Category colour strip at top of each card ────────────── */
 .ad-card-img {
   border-radius: 10px 10px 0 0 !important;
   overflow: hidden !important;
-  aspect-ratio: 4/3 !important;
+  aspect-ratio: 16/10 !important;
   position: relative !important;
 }
 .ad-card-img::before {
@@ -754,6 +778,37 @@ nav {
   padding: 2px 9px !important;
   font-size: 12px !important;
 }
+
+/* ── Price range filter bar ───────────────────────────────────── */
+.price-filter-bar { padding:8px 16px 4px; max-width:960px; margin:0 auto; }
+.price-filter-inner { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:12px; padding:8px 14px; box-shadow:0 1px 8px rgba(0,0,0,0.06); }
+.price-filter-label { font-size:12px; font-weight:700; color:#1a2e22; white-space:nowrap; }
+.price-filter-inputs { display:flex; align-items:center; gap:6px; flex:1; }
+.price-input { width:100%; max-width:130px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:5px 10px; font-size:13px; font-weight:500; color:#1a2e22; outline:none; transition:border-color 0.2s; }
+.price-input:focus { border-color:#00703f; }
+.price-filter-sep { color:#6b7a71; font-weight:600; font-size:13px; flex-shrink:0; }
+.price-filter-clear { background:rgba(0,0,0,0.06); border:none; border-radius:6px; width:24px; height:24px; font-size:12px; cursor:pointer; color:#6b7a71; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
+.price-filter-clear:hover { background:rgba(229,62,62,0.12); color:#e53e3e; }
+
+/* ── Recently viewed ──────────────────────────────────────────── */
+.recently-viewed { max-width:960px; margin:0 auto; padding:20px 16px 32px; }
+.rv-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.rv-title { font-size:14px; font-weight:700; color:#1a2e22; }
+.rv-clear { background:none; border:none; font-size:12px; color:#6b7a71; cursor:pointer; padding:2px 6px; border-radius:6px; transition:all 0.2s; }
+.rv-clear:hover { background:rgba(0,0,0,0.05); color:#e53e3e; }
+.rv-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.rv-grid::-webkit-scrollbar { display:none; }
+.rv-card { flex:0 0 120px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:10px; overflow:hidden; cursor:pointer; transition:transform 0.18s,box-shadow 0.18s; }
+.rv-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.1); }
+.rv-card-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#e8ede9; }
+.rv-card-body { padding:6px 8px 8px; }
+.rv-card-price { font-size:12px; font-weight:800; color:#00703f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rv-card-title { font-size:11px; color:#1a2e22; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; margin-top:2px; }
+
+/* ── Empty state suggestions ─────────────────────────────────── */
+.empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
+.empty-sug-btn { background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#1a2e22; cursor:pointer; transition:all 0.2s; backdrop-filter:blur(8px); }
+.empty-sug-btn:hover { border-color:#00703f; color:#00703f; }
 
 /* ── Nav SVG logo — constrain on mobile so it doesn't push items off screen ── */
 .nav-logo svg {
@@ -967,6 +1022,19 @@ nav {
       </select>
     </div>
 
+    <!-- Price range filter -->
+    <div class="price-filter-bar" id="priceFilterBar" style="display:none">
+      <div class="price-filter-inner">
+        <span class="price-filter-label">💰 Budget</span>
+        <div class="price-filter-inputs">
+          <input type="number" id="priceMin" class="price-input" placeholder="Min J$" min="0" oninput="applyPriceFilter()">
+          <span class="price-filter-sep">–</span>
+          <input type="number" id="priceMax" class="price-input" placeholder="Max J$" min="0" oninput="applyPriceFilter()">
+        </div>
+        <button class="price-filter-clear" id="priceFilterClear" onclick="clearPriceFilter()" style="display:none">✕</button>
+      </div>
+    </div>
+
     <!-- Listings grid -->
     <div class="listings-grid" id="homeGrid">
       <noscript>
@@ -981,6 +1049,15 @@ nav {
           </p>
         </div>
       </noscript>
+    </div>
+
+    <!-- Recently viewed section -->
+    <div class="recently-viewed" id="recentlyViewed" style="display:none">
+      <div class="rv-header">
+        <span class="rv-title">👁 Recently Viewed</span>
+        <button class="rv-clear" onclick="clearRecentlyViewed()">Clear</button>
+      </div>
+      <div class="rv-grid" id="rvGrid"></div>
     </div>
   </div>
 </div>
@@ -2811,6 +2888,8 @@ async function init() {
       window.matchMedia('(display-mode: standalone)').matches) {
     document.body.classList.add('pwa-mode');
   }
+  // Render recently viewed on init (populated from previous sessions)
+  setTimeout(renderRecentlyViewed, 800);
 
   showSkeletons();
   document.getElementById('resultsHeader').style.display = 'none';
@@ -3192,8 +3271,18 @@ function renderHome() {
     if (f.categories && f.categories.length > 1) ads = ads.filter(a => f.categories.includes(a.category));
   }
 
+  // Apply manual price range filter
+  const pMin = parseFloat(document.getElementById('priceMin')?.value) || 0;
+  const pMax = parseFloat(document.getElementById('priceMax')?.value) || 0;
+  if (pMin > 0) ads = ads.filter(a => a.price >= pMin);
+  if (pMax > 0) ads = ads.filter(a => a.price <= pMax);
+
   // Hide sold filter
   if (_hideSold) ads = ads.filter(a => a.status !== 'sold');
+
+  // Show price filter bar once results are loaded
+  const pfBar = document.getElementById('priceFilterBar');
+  if (pfBar) pfBar.style.display = 'block';
 
   const hdr = document.getElementById('resultsHeader');
   const cnt = document.getElementById('resultsCount');
@@ -3207,17 +3296,32 @@ function renderHome() {
   if (visible.length) {
     visible.forEach(function(a, i) {
       html += cardHTML(a, i);
-      // Insert in-feed ad after every 8th card
       if ((i + 1) % 8 === 0 && i < visible.length - 1) {
         html += '<div class="ad-slot-infeed"><ins class="adsbygoogle ad-slot" style="display:block" data-ad-client="ca-pub-9656521698490533" data-ad-slot="auto" data-ad-format="fluid" data-ad-layout-key="-6t+ed+2i-1n-4w"></ins></div>';
       }
     });
   } else {
-    html = emptyEl('No listings match your search.',
-        `<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>`);
+    // Improved empty state with popular search suggestions
+    const suggestions = [
+      { label: '🚗 Cars under 2M', q: 'car under 2 million' },
+      { label: '📱 Phones', q: 'phone for sale' },
+      { label: '🏡 Houses', q: 'house for sale' },
+      { label: '💼 Jobs', q: 'jobs available' },
+      { label: '💻 Laptops', q: 'laptop for sale' },
+      { label: '🛋️ Furniture', q: 'furniture' },
+    ];
+    const sugHtml = suggestions.map(s =>
+      `<button class="empty-sug-btn" onclick="setAiQuery('${s.q}')">${s.label}</button>`
+    ).join('');
+    html = `<div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">🔍</div>
+      <h3>No listings found</h3>
+      <p>Try a different search or browse popular categories:</p>
+      <div class="empty-suggestions">${sugHtml}</div>
+      <button class="btn btn-green" style="margin-top:16px" onclick="resetHeroSearch()">Show All Listings</button>
+    </div>`;
   }
 
-  // Load More button
   if (remaining > 0) {
     html += `<div class="load-more-wrap">
       <button class="load-more-btn" onclick="loadMoreHome()">
@@ -3230,7 +3334,6 @@ function renderHome() {
   const prevCount = grid.querySelectorAll('.ad-card').length;
   grid.innerHTML = html;
 
-  // Animate only freshly rendered cards (first paint or count changed)
   if (prevCount === 0) {
     grid.querySelectorAll('.ad-card').forEach((c, i) => {
       c.style.animationDelay = Math.min(i * 0.04, 0.28) + 's';
@@ -3238,9 +3341,6 @@ function renderHome() {
     });
   }
 
-  // Prefetch ad pages for instant navigation
-  // Desktop: prefetch on mouseenter (user is about to click)
-  // Mobile: prefetch on touchstart (fires before click, ~80ms head start)
   if (window._prefetchEnabled !== false) {
     grid.querySelectorAll('.ad-card').forEach(function(card) {
       const onIntent = function() {
@@ -3252,12 +3352,9 @@ function renderHome() {
         if (!ad) return;
         const slug = slugify(ad);
         const url = '/ad/' + slug;
-        // Only prefetch once per URL
         if (document.querySelector('link[rel="prefetch"][href="' + url + '"]')) return;
         const link = document.createElement('link');
-        link.rel = 'prefetch';
-        link.href = url;
-        link.as = 'document';
+        link.rel = 'prefetch'; link.href = url; link.as = 'document';
         document.head.appendChild(link);
       };
       card.addEventListener('mouseenter', onIntent, { passive: true, once: true });
@@ -3265,12 +3362,12 @@ function renderHome() {
     });
   }
 
-  // Debounced ad push — don't thrash layout on every filter change
   clearTimeout(window._adPushTimer);
   window._adPushTimer = setTimeout(pushAds, 600);
-
-  // Persist search state in URL
   if (typeof pushSearchState === 'function') pushSearchState();
+
+  // Render recently viewed after grid
+  renderRecentlyViewed();
 
   return ads.length;
 }
@@ -4665,6 +4762,7 @@ function escHtml(s) {
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   sbIncrView(id);
+  trackRecentlyViewed(id);
   // Navigate directly to the static ad page — consistent experience every time
   window.location.href = '/ad/' + slugify(ad);
 }
@@ -4888,7 +4986,87 @@ if (!document.getElementById('confettiStyles')) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PUSH NOTIFICATIONS
+   PRICE RANGE FILTER
+═══════════════════════════════════════════════════════════ */
+function applyPriceFilter() {
+  const min = document.getElementById('priceMin');
+  const max = document.getElementById('priceMax');
+  const clearBtn = document.getElementById('priceFilterClear');
+  const hasValue = (min?.value && parseFloat(min.value) > 0) || (max?.value && parseFloat(max.value) > 0);
+  if (clearBtn) clearBtn.style.display = hasValue ? 'flex' : 'none';
+  clearTimeout(window._priceFilterTimer);
+  window._priceFilterTimer = setTimeout(function() {
+    _homeShowCount = _homePageSize;
+    renderHome();
+  }, 400);
+}
+
+function clearPriceFilter() {
+  const min = document.getElementById('priceMin');
+  const max = document.getElementById('priceMax');
+  const clearBtn = document.getElementById('priceFilterClear');
+  if (min) min.value = '';
+  if (max) max.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  _homeShowCount = _homePageSize;
+  renderHome();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RECENTLY VIEWED
+   Stores last 8 ad IDs in localStorage, shows 5 on home page
+═══════════════════════════════════════════════════════════ */
+const RV_KEY = 'ya_rv';
+const RV_MAX = 8;
+
+function trackRecentlyViewed(id) {
+  try {
+    let rv = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
+    rv = rv.filter(i => i !== id);
+    rv.unshift(id);
+    if (rv.length > RV_MAX) rv = rv.slice(0, RV_MAX);
+    localStorage.setItem(RV_KEY, JSON.stringify(rv));
+  } catch(e) {}
+}
+
+function renderRecentlyViewed() {
+  const section = document.getElementById('recentlyViewed');
+  const grid    = document.getElementById('rvGrid');
+  if (!section || !grid) return;
+
+  try {
+    const rv = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
+    // Only show ads still in the current dataset
+    const ads = rv.map(id => _ads.find(a => a.id === id)).filter(Boolean).slice(0, 5);
+
+    if (ads.length < 2) { section.style.display = 'none'; return; }
+
+    section.style.display = 'block';
+    grid.innerHTML = ads.map(ad => {
+      const cat = CATS.find(c => c.id === ad.category);
+      const img = ad.image
+        ? `<img class="rv-card-img" src="${ad.image}" alt="${ad.title}" loading="lazy">`
+        : `<div class="rv-card-img" style="display:flex;align-items:center;justify-content:center;font-size:28px">${cat?.icon||'📦'}</div>`;
+      return `<div class="rv-card" onclick="openDetail('${ad.id}')">
+        ${img}
+        <div class="rv-card-body">
+          <div class="rv-card-price">J$${fmtN(ad.price)}</div>
+          <div class="rv-card-title">${ad.title}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    section.style.display = 'none';
+  }
+}
+
+function clearRecentlyViewed() {
+  try { localStorage.removeItem(RV_KEY); } catch(e) {}
+  const section = document.getElementById('recentlyViewed');
+  if (section) section.style.display = 'none';
+}
+
+
    ─ requestPushPermission: ask user after login (polite timing)
    ─ sendPushNotification: fire when new message arrives
    Uses the Web Notifications API — works on Android PWA and
