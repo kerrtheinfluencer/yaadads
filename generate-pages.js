@@ -754,9 +754,9 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   /* ── MOBILE PRICE HEADER (above gallery on mobile) ── */
   .mob-price-header {
     display: none; /* hidden on desktop */
-    padding: 0 0 16px;
+    padding: 14px 16px 14px;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
   }
   .mob-price {
     font-family: var(--font-d);
@@ -778,6 +778,10 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     .mob-price-header { display: block; }
     /* Hide the desktop price card on mobile — mob-price-header replaces it */
     .price-card { display: none; }
+    /* Reduce top padding in page-wrap on mobile */
+    .page-wrap { padding-top: 8px !important; }
+    /* Hide breadcrumb on mobile to keep it clean */
+    .breadcrumb { display: none; }
   }
 
   /* ── lb-close — clear iOS notch/Dynamic Island ── */
@@ -833,6 +837,17 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
 </nav>
 
+<div class="mob-price-header">
+  <div class="mob-price">${price}</div>
+  ${ad.neg ? '<div class="mob-price-neg">· Negotiable</div>' : ''}
+  <div class="mob-title">${esc(ad.title)}</div>
+  <div class="mob-meta">
+    <span>📍 ${esc(ad.parish)}</span>
+    <span>${catIcon} ${catName}</span>
+    <span>👁 <span id="viewCountElMob">${ad.views || 0}</span></span>
+  </div>
+</div>
+
 <div class="breadcrumb">
   <a href="${BASE_URL}">Yaad Adz</a>
   <span>›</span>
@@ -844,18 +859,6 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 </div>
 
 <div class="page-wrap">
-
-  <!-- MOBILE PRICE HEADER — shows above gallery on small screens, hidden on desktop -->
-  <div class="mob-price-header">
-    <div class="mob-price">${price}</div>
-    ${ad.neg ? '<div class="mob-price-neg">· Negotiable</div>' : ''}
-    <div class="mob-title">${esc(ad.title)}</div>
-    <div class="mob-meta">
-      <span>📍 ${esc(ad.parish)}</span>
-      <span>${catIcon} ${catName}</span>
-      <span>👁 <span id="viewCountElMob">${ad.views || 0}</span></span>
-    </div>
-  </div>
 
   <div class="ad-layout">
 
@@ -1076,7 +1079,25 @@ ${ad.status !== 'sold' ? `
     }, { passive: true });
   })();
 
-  // ── Push AdSense ──────────────────────────────────────────────
+  // ── Float contact — hide when static contact box is in view ──
+  (function() {
+    var floatEl = document.getElementById('floatContact');
+    var contactBox = document.querySelector('.contact-box');
+    if (!floatEl || !contactBox) return;
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        // Hide float button when contact box is visible on screen
+        floatEl.style.transform = entry.isIntersecting
+          ? 'translateX(-50%) translateY(120%)' // slide off-screen
+          : 'translateX(-50%) translateY(0)';    // slide back in
+        floatEl.style.opacity = entry.isIntersecting ? '0' : '1';
+        floatEl.style.pointerEvents = entry.isIntersecting ? 'none' : 'auto';
+      });
+    }, { threshold: 0.3 });
+    observer.observe(contactBox);
+    // Add transition for smooth animation
+    floatEl.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+  })();
   window.addEventListener('load', function() {
     try {
       var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
