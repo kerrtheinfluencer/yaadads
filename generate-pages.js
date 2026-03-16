@@ -21,24 +21,6 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_j9j7NG5GhMeXqii
 const BASE_URL     = 'https://yaadadz.com';
 const OUT_DIR      = path.join(__dirname, 'ad');
 
-// Parish list — module-level so it's available everywhere in the file
-const PARISH_LIST = [
-  { name: 'Kingston',       slug: 'kingston',       alt: 'Downtown Kingston, Jamaica' },
-  { name: 'St. Andrew',     slug: 'st-andrew',      alt: 'St. Andrew, Jamaica' },
-  { name: 'St. Catherine',  slug: 'st-catherine',   alt: 'Portmore & Spanish Town, Jamaica' },
-  { name: 'St. James',      slug: 'st-james',       alt: 'Montego Bay, Jamaica' },
-  { name: 'Manchester',     slug: 'manchester',     alt: 'Mandeville, Jamaica' },
-  { name: 'St. Ann',        slug: 'st-ann',         alt: 'Ocho Rios, Jamaica' },
-  { name: 'Clarendon',      slug: 'clarendon',      alt: 'May Pen, Jamaica' },
-  { name: 'Westmoreland',   slug: 'westmoreland',   alt: 'Savanna-la-Mar, Jamaica' },
-  { name: 'St. Elizabeth',  slug: 'st-elizabeth',   alt: 'Black River, Jamaica' },
-  { name: 'Portland',       slug: 'portland',       alt: 'Port Antonio, Jamaica' },
-  { name: 'St. Mary',       slug: 'st-mary',        alt: 'Annotto Bay, Jamaica' },
-  { name: 'St. Thomas',     slug: 'st-thomas',      alt: 'Morant Bay, Jamaica' },
-  { name: 'Trelawny',       slug: 'trelawny',       alt: 'Falmouth, Jamaica' },
-  { name: 'Hanover',        slug: 'hanover',        alt: 'Lucea, Jamaica' },
-];
-
 // ── Helpers ───────────────────────────────────────────────────
 function slugify(ad) {
   const raw = (ad.title || '') + (ad.parish ? '-' + ad.parish : '');
@@ -676,42 +658,54 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   /* ── LIGHTBOX ── */
   .lightbox {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.96);
     z-index: 9999;
     align-items: center; justify-content: center; flex-direction: column;
+    overflow: hidden;
   }
   .lightbox.open { display: flex; }
+  /* Blurred background — current photo shown blurred + dark behind sharp photo */
+  .lb-bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: blur(28px) brightness(0.35) saturate(1.2);
+    transform: scale(1.1); /* prevent blur edges showing */
+    transition: background-image 0.2s ease;
+  }
   .lb-img {
+    position: relative; z-index: 2;
     max-width: 95vw; max-height: 85vh;
-    object-fit: contain; border-radius: 6px;
+    object-fit: contain; border-radius: 8px;
     user-select: none; display: block;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.6);
   }
   .lb-close {
-    position: absolute; top: 16px; right: 16px;
-    background: rgba(255,255,255,0.15); color: #fff;
+    position: absolute; top: 16px; right: 16px; z-index: 10;
+    background: rgba(0,0,0,0.5); color: #fff;
     border: none; border-radius: 50%;
     width: 40px; height: 40px; font-size: 20px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
+    transition: background 0.2s; backdrop-filter: blur(8px);
   }
-  .lb-close:hover { background: rgba(255,255,255,0.3); }
+  .lb-close:hover { background: rgba(0,0,0,0.75); }
   .lb-nav {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    background: rgba(255,255,255,0.15); color: #fff;
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    background: rgba(0,0,0,0.45); color: #fff;
     border: none; border-radius: 50%;
     width: 48px; height: 48px; font-size: 26px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
+    transition: background 0.2s; backdrop-filter: blur(8px);
   }
-  .lb-nav:hover { background: rgba(255,255,255,0.3); }
+  .lb-nav:hover { background: rgba(0,0,0,0.7); }
   .lb-prev { left: 16px; }
   .lb-next { right: 16px; }
   .lb-counter {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.65); font-size: 13px;
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+    color: rgba(255,255,255,0.8); font-size: 13px;
+    background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 20px;
+    backdrop-filter: blur(8px);
   }
   .lb-dots {
-    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%); z-index: 10;
     display: flex; gap: 6px;
   }
   .lb-dot {
@@ -719,6 +713,43 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s;
   }
   .lb-dot.active { background: #fff; }
+
+  /* ── FLOATING CONTACT BUTTON (mobile) ── */
+  .float-contact {
+    position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    left: 50%; transform: translateX(-50%);
+    z-index: 500; width: calc(100% - 32px); max-width: 400px;
+  }
+  .float-contact-toggle {
+    width: 100%; padding: 14px 20px;
+    background: var(--green); color: #fff;
+    border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(29,185,84,0.45);
+    transition: all 0.2s;
+  }
+  .float-contact-toggle.open {
+    border-radius: 14px 14px 0 0;
+    box-shadow: none;
+  }
+  .float-contact-drawer {
+    display: none; flex-direction: column; gap: 0;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 14px 14px;
+    overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .float-contact-drawer.open { display: flex; }
+  .float-contact-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 15px 20px; font-size: 15px; font-weight: 600;
+    text-decoration: none; color: var(--text-1);
+    border-bottom: 1px solid var(--border); transition: background 0.15s;
+  }
+  .float-contact-btn:last-child { border-bottom: none; }
+  .float-contact-btn:hover { background: rgba(255,255,255,0.06); }
+  .float-contact-btn .btn-icon { font-size: 20px; width: 28px; text-align: center; }
+  @media (min-width: 700px) { .float-contact { display: none; } }
 
   /* ── FOOTER ── */
   footer {
@@ -864,7 +895,8 @@ ${similarHTML}
 </footer>
 
 <!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+<div class="lightbox" id="lightbox" onclick="if(event.target===this||event.target.classList.contains('lb-bg'))closeLightbox()">
+  <div class="lb-bg" id="lbBg"></div>
   <button class="lb-close" onclick="closeLightbox()">✕</button>
   <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
   <img class="lb-img" id="lbImg" src="" alt="${esc(ad.title)}">
@@ -872,6 +904,19 @@ ${similarHTML}
   <div class="lb-dots" id="lbDots"></div>
   <div class="lb-counter" id="lbCounter"></div>
 </div>
+
+<!-- FLOATING CONTACT BUTTON (mobile only) -->
+${ad.status !== 'sold' ? `
+<div class="float-contact" id="floatContact">
+  <div class="float-contact-drawer" id="floatDrawer">
+    ${ad.phone ? `<a class="float-contact-btn" href="tel:${esc(ad.phone)}"><span class="btn-icon">📞</span> Call Seller</a>` : ''}
+    ${waLink ? `<a class="float-contact-btn" href="${waLink}" target="_blank" rel="noopener noreferrer"><span class="btn-icon" style="color:#25d366">💬</span> WhatsApp</a>` : ''}
+    <a class="float-contact-btn" href="${BASE_URL}/?ad=${ad.id}"><span class="btn-icon">✉️</span> Message on Yaad Adz</a>
+  </div>
+  <button class="float-contact-toggle" id="floatToggle" onclick="toggleFloatContact()">
+    <span>📲</span> Contact Seller
+  </button>
+</div>` : ''}
 
 <script>
   // ── Photos array ─────────────────────────────────────────────
@@ -907,7 +952,10 @@ ${similarHTML}
   function lbGoTo(i) { lbIndex = i; renderLightbox(); }
   function renderLightbox() {
     var img = document.getElementById('lbImg');
+    var bg  = document.getElementById('lbBg');
     img.src = PHOTOS[lbIndex];
+    // Set blurred background to current photo
+    if (bg) bg.style.backgroundImage = 'url(' + PHOTOS[lbIndex] + ')';
 
     // Counter
     document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
@@ -926,6 +974,32 @@ ${similarHTML}
       dotsEl.style.display = 'flex';
     } else {
       dotsEl.style.display = 'none';
+    }
+  }
+
+  // ── Floating contact toggle ──────────────────────────────────
+  function toggleFloatContact() {
+    var drawer  = document.getElementById('floatDrawer');
+    var toggle  = document.getElementById('floatToggle');
+    var isOpen  = drawer.classList.contains('open');
+    drawer.classList.toggle('open', !isOpen);
+    toggle.classList.toggle('open', !isOpen);
+    toggle.innerHTML = isOpen
+      ? '<span>📲</span> Contact Seller'
+      : '<span>✕</span> Close';
+    // Close when tapping outside
+    if (!isOpen) {
+      setTimeout(function() {
+        document.addEventListener('click', function closeOnOutside(e) {
+          var fc = document.getElementById('floatContact');
+          if (fc && !fc.contains(e.target)) {
+            drawer.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.innerHTML = '<span>📲</span> Contact Seller';
+            document.removeEventListener('click', closeOnOutside);
+          }
+        });
+      }, 50);
     }
   }
 
@@ -1103,8 +1177,8 @@ async function main() {
   const activeAds = allAds.filter(ad => ad.status !== 'sold');
   const adEntries = activeAds.map(ad => {
     const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
-    const allPhotos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
-    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', photos: allPhotos, title: ad.title };
+    // Use clean URL without .html for sitemap — Google prefers canonical clean URLs
+    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
   });
 
   const staticXml = staticPages.map(p => `
@@ -1120,15 +1194,38 @@ async function main() {
     <loc>${p.url}</loc>
     <lastmod>${p.lastmod}</lastmod>
     <changefreq>${p.changefreq}</changefreq>
-    <priority>${p.priority}</priority>${p.photos.map(img => `
+    <priority>${p.priority}</priority>${p.image ? `
     <image:image>
-      <image:loc>${img}</image:loc>
+      <image:loc>${p.image}</image:loc>
       <image:title>${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
-    </image:image>`).join('')}
+    </image:image>` : ''}
   </url>`).join('');
 
-  // NOTE: sitemap.xml is written AFTER parish pages are generated below
-  // so that parishXml is available
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Generated by Yaad Adz on ${new Date().toISOString()} -->
+  <!-- ${staticPages.length} static pages + ${adEntries.length} active listings -->
+${staticXml}
+${adXml}
+</urlset>`;
+
+  fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
+  console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
+
+  // ── Ping Google sitemap ───────────────────────────────────────
+  try {
+    const https = require('https');
+    const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(BASE_URL + '/sitemap.xml')}`;
+    https.get(pingUrl, (res) => {
+      console.log(`   📡 Google pinged — sitemap submitted (HTTP ${res.statusCode})`);
+    }).on('error', () => {
+      console.log('   ⚠️  Google ping failed (non-fatal)');
+    });
+  } catch(e) {
+    console.log('   ⚠️  Google ping skipped');
+  }
 
   // ── HTML Sitemap page (/sitemap.html) ─────────────────────────
   // A human-readable page Google can crawl without JS — guaranteed link path to every ad
@@ -1220,334 +1317,6 @@ ${staticLinks}
 
   fs.writeFileSync(path.join(__dirname, 'static-links.html'), staticLinksHtml, 'utf8');
   console.log(`   ✅ static-links.html written — ${recentAds.length} latest listings`);
-
-  // ── Parish landing pages ──────────────────────────────────────
-  // e.g. /parish/kingston/ → "Free Classifieds in Kingston, Jamaica"
-  // These rank for "buy sell Kingston Jamaica", "classifieds Montego Bay" etc.
-  console.log('📍 Generating parish landing pages…');
-
-  const PARISH_DIR = path.join(__dirname, 'parish');
-  if (!fs.existsSync(PARISH_DIR)) fs.mkdirSync(PARISH_DIR, { recursive: true });
-
-  const PARISH_NICKNAMES = {
-    'Kingston':      'Kingston',
-    'St. Andrew':    'St. Andrew',
-    'St. Catherine': 'Portmore & Spanish Town',
-    'St. James':     'Montego Bay',
-    'Manchester':    'Mandeville',
-    'St. Ann':       'Ocho Rios',
-    'Clarendon':     'May Pen',
-    'Westmoreland':  'Savanna-la-Mar',
-    'St. Elizabeth': 'Black River',
-    'Portland':      'Port Antonio',
-    'St. Mary':      'St. Mary',
-    'St. Thomas':    'St. Thomas',
-    'Trelawny':      'Falmouth',
-    'Hanover':       'Lucea',
-  };
-
-  const parishPageUrls = [];
-  let parishPagesWritten = 0;
-
-  for (const parish of PARISH_LIST) {
-    const parishAds = activeAds
-      .filter(a => a.parish === parish.name)
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-
-    const heroImg   = parishAds.find(a => a.image)?.image || '';
-    const nickname  = PARISH_NICKNAMES[parish.name] || parish.name;
-    const pageUrl   = `${BASE_URL}/parish/${parish.slug}`;
-    const totalAds  = parishAds.length;
-
-    // Category breakdown for this parish
-    const catBreakdown = Object.entries(CAT_NAMES).map(([id, name]) => {
-      const count = parishAds.filter(a => a.category === id).length;
-      return count ? { id, name, icon: CAT_ICONS[id] || '📦', count } : null;
-    }).filter(Boolean).sort((a, b) => b.count - a.count);
-
-    // Top listing cards — up to 20
-    const cards = parishAds.slice(0, 20).map(a => {
-      const slug    = slugify(a);
-      const catIcon = CAT_ICONS[a.category] || '📦';
-      const img     = a.image
-        ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
-        : `<div class="card-placeholder">${catIcon}</div>`;
-      return `
-      <a class="listing-card" href="${BASE_URL}/ad/${slug}">
-        <div class="card-img">${img}</div>
-        <div class="card-body">
-          <div class="card-price">${fmtPrice(a.price)}</div>
-          <div class="card-title">${esc(a.title)}</div>
-          <div class="card-meta">${catIcon} ${esc(CAT_NAMES[a.category] || 'Other')} · ${ago(a.date)}</div>
-        </div>
-      </a>`;
-    }).join('');
-
-    // Category filter chips
-    const catChips = catBreakdown.map(c =>
-      `<a href="${BASE_URL}/category/${c.id}/${parish.slug}" class="cat-chip">${c.icon} ${c.name} <span>${c.count}</span></a>`
-    ).join('');
-
-    // Other parish links
-    const otherParishes = PARISH_LIST.filter(p => p.slug !== parish.slug).map(p => {
-      const count = activeAds.filter(a => a.parish === p.name).length;
-      return count ? `<a href="${BASE_URL}/parish/${p.slug}" class="other-parish">${p.name} <span>${count}</span></a>` : '';
-    }).filter(Boolean).join('');
-
-    const pageTitle = `Free Classifieds in ${parish.name}, Jamaica | Yaad Adz`;
-    const pageDesc  = `Browse ${totalAds} free classified ads in ${parish.name}, Jamaica — cars for sale, houses for rent, phones, jobs and more. Post free on Yaad Adz.`;
-
-    const html = `<!DOCTYPE html>
-<html lang="en-JM">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>${esc(pageTitle)}</title>
-<meta name="description" content="${esc(pageDesc)}">
-<meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="${pageUrl}">
-
-<!-- Open Graph -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Yaad Adz">
-<meta property="og:title" content="${esc(pageTitle)}">
-<meta property="og:description" content="${esc(pageDesc)}">
-<meta property="og:url" content="${pageUrl}">
-<meta property="og:locale" content="en_JM">
-${heroImg ? `<meta property="og:image" content="${esc(heroImg)}">
-<meta property="og:image:secure_url" content="${esc(heroImg)}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="900">
-<meta property="og:image:alt" content="Free classifieds in ${esc(parish.name)}, Jamaica — Yaad Adz">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
-
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@yaadadz">
-<meta name="twitter:title" content="${esc(pageTitle)}">
-<meta name="twitter:description" content="${esc(pageDesc)}">
-${heroImg ? `<meta name="twitter:image" content="${esc(heroImg)}">` : ''}
-
-<!-- Geo — tells Google exactly where this page is about -->
-<meta name="geo.region" content="JM">
-<meta name="geo.placename" content="${esc(parish.name)}, Jamaica">
-
-<!-- JSON-LD -->
-<script type="application/ld+json">${JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  'name': `Free Classifieds in ${parish.name}, Jamaica`,
-  'description': pageDesc,
-  'url': pageUrl,
-  'numberOfItems': totalAds,
-  ...(heroImg ? { 'image': heroImg } : {}),
-  'areaServed': {
-    '@type': 'Place',
-    'name': parish.name + ', Jamaica',
-    'address': { '@type': 'PostalAddress', 'addressLocality': parish.name, 'addressCountry': 'JM' }
-  },
-  'itemListElement': parishAds.slice(0, 10).map((a, i) => ({
-    '@type': 'ListItem',
-    'position': i + 1,
-    'url': BASE_URL + '/ad/' + slugify(a),
-    'name': a.title,
-    ...(a.image ? { 'image': a.image } : {}),
-  }))
-}, null, 2)}</script>
-
-<script type="application/ld+json">${JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  'itemListElement': [
-    { '@type': 'ListItem', 'position': 1, 'name': 'Yaad Adz', 'item': BASE_URL },
-    { '@type': 'ListItem', 'position': 2, 'name': parish.name, 'item': pageUrl },
-  ]
-}, null, 2)}</script>
-
-<!-- Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-F70Z3M7TJ9');</script>
-
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0c1e14;--bg2:#112019;--bg3:#172a1f;--green:#1db954;--gold:#f5c842;--text-1:#e8ede9;--text-2:#a0a8a4;--text-3:#6b7a71;--border:rgba(255,255,255,0.08);--radius:12px;--font-s:'Outfit',sans-serif;--font-d:'Fraunces',serif}
-body{font-family:var(--font-s);background:var(--bg);color:var(--text-1);min-height:100vh;line-height:1.6}
-/* Nav */
-nav{position:sticky;top:0;z-index:100;background:rgba(12,30,20,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px}
-.nav-back{display:flex;align-items:center;gap:4px;color:var(--green);font-size:16px;font-weight:500;text-decoration:none;padding:6px 4px;white-space:nowrap}
-.nav-spacer{flex:1}
-.nav-logo{font-family:var(--font-d);font-weight:800;font-size:20px;color:var(--text-1);text-decoration:none;display:flex;align-items:center;gap:6px}
-.nav-logo em{color:var(--gold);font-style:italic}
-.nav-post{background:var(--gold);color:#1a1a1a;font-weight:700;font-size:13px;padding:7px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}
-/* Layout */
-.page-wrap{max-width:960px;margin:0 auto;padding:28px 16px 60px}
-/* Hero */
-.parish-hero{margin-bottom:28px}
-.parish-hero h1{font-family:var(--font-d);font-size:30px;font-weight:800;line-height:1.2;margin-bottom:10px}
-.parish-hero h1 em{color:var(--green);font-style:normal}
-.parish-hero p{font-size:15px;color:var(--text-2);max-width:600px;line-height:1.7}
-.hero-stats{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
-.hero-stat{text-align:center}
-.hero-stat-n{font-family:var(--font-d);font-size:26px;font-weight:800;color:var(--gold)}
-.hero-stat-l{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-/* Category chips */
-.section-title{font-family:var(--font-d);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--text-1)}
-.cat-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
-.cat-chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:13px;color:var(--text-2);text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:6px}
-.cat-chip:hover{border-color:var(--green);color:var(--green)}
-.cat-chip span{background:rgba(255,255,255,.1);border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700}
-/* Listings grid */
-.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px}
-.listing-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,border-color .18s,box-shadow .18s;display:flex;flex-direction:column}
-.listing-card:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.card-img{width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg2)}
-.card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
-.listing-card:hover .card-img img{transform:scale(1.04)}
-.card-placeholder{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:40px}
-.card-body{padding:12px}
-.card-price{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--green);margin-bottom:4px}
-.card-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-meta{font-size:11px;color:var(--text-3)}
-/* View all */
-.view-all{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:12px 20px;color:var(--text-2);text-decoration:none;font-weight:600;font-size:14px;transition:all .2s;margin-bottom:40px}
-.view-all:hover{border-color:var(--green);color:var(--green)}
-/* Other parishes */
-.other-parishes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.other-parish{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-3);text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:5px}
-.other-parish:hover{border-color:var(--green);color:var(--green)}
-.other-parish span{background:rgba(255,255,255,.08);border-radius:8px;padding:1px 6px;font-size:11px;font-weight:700}
-/* Footer */
-footer{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:24px 16px;font-size:13px;color:var(--text-3)}
-footer a{color:var(--text-3);text-decoration:none;margin:0 8px}
-footer a:hover{color:var(--green)}
-.footer-logo{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--text-1);margin-bottom:8px}
-.footer-logo em{color:var(--gold);font-style:italic}
-/* Responsive */
-@media(max-width:600px){
-  .parish-hero h1{font-size:24px}
-  .listings-grid{grid-template-columns:repeat(2,1fr);gap:12px}
-  nav{padding:0 12px}
-  .hero-stats{gap:14px}
-  .hero-stat-n{font-size:22px}
-}
-</style>
-</head>
-<body>
-
-<nav>
-  <a class="nav-back" href="${BASE_URL}">
-    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
-    Home
-  </a>
-  <div class="nav-spacer"></div>
-  <a class="nav-logo" href="${BASE_URL}"><span>🇯🇲</span><em>Yaad Adz</em></a>
-  <div class="nav-spacer"></div>
-  <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
-</nav>
-
-<div class="page-wrap">
-
-  <!-- Hero -->
-  <div class="parish-hero">
-    <h1>Free Classifieds in <em>${esc(parish.name)}</em>, Jamaica</h1>
-    <p>Browse ${totalAds} free listings in ${esc(nickname)} — cars for sale, houses for rent, phones, electronics, jobs and more. Post your ad free in under 2 minutes.</p>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-n">${totalAds}</div>
-        <div class="hero-stat-l">Listings</div>
-      </div>
-      ${catBreakdown.slice(0, 3).map(c => `
-      <div class="hero-stat">
-        <div class="hero-stat-n">${c.count}</div>
-        <div class="hero-stat-l">${c.name}</div>
-      </div>`).join('')}
-    </div>
-  </div>
-
-  <!-- Category breakdown -->
-  ${catChips ? `
-  <div class="section-title">Browse by Category</div>
-  <div class="cat-chips">${catChips}</div>` : ''}
-
-  <!-- Latest listings -->
-  <div class="section-title">Latest in ${esc(parish.name)}</div>
-  ${cards ? `<div class="listings-grid">${cards}</div>` : '<p style="color:var(--text-3);margin-bottom:24px">No listings yet — be the first to post!</p>'}
-
-  <a class="view-all" href="${BASE_URL}/?parish=${encodeURIComponent(parish.name)}">
-    View all ${totalAds} listings in ${esc(parish.name)} →
-  </a>
-
-  <!-- Other parishes -->
-  <div class="section-title">Browse Other Parishes</div>
-  <div class="other-parishes">${otherParishes}</div>
-
-</div>
-
-<footer>
-  <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
-  <p>Jamaica's free classifieds — Post, Buy &amp; Sell across all 14 parishes</p>
-  <div style="margin-top:10px">
-    <a href="${BASE_URL}">Home</a>
-    <a href="${BASE_URL}/?cat=vehicles">Cars</a>
-    <a href="${BASE_URL}/?cat=property">Property</a>
-    <a href="${BASE_URL}/?cat=electronics">Phones</a>
-    <a href="${BASE_URL}/?cat=jobs">Jobs</a>
-    <a href="${BASE_URL}/sitemap.html">All Listings</a>
-  </div>
-  <p style="margin-top:10px;font-size:12px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
-</footer>
-
-</body>
-</html>`;
-
-    // Write to /parish/kingston/index.html
-    const pDir = path.join(PARISH_DIR, parish.slug);
-    if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
-    fs.writeFileSync(path.join(pDir, 'index.html'), html, 'utf8');
-    parishPageUrls.push({ url: pageUrl, image: heroImg || null });
-    parishPagesWritten++;
-  }
-
-  console.log(`   ✅ ${parishPagesWritten} parish pages written`);
-
-  // ── Generate sitemap.xml (done here so parishXml is available) ─
-  console.log('🗺️  Generating sitemap.xml…');
-
-  const parishXml = parishPageUrls.map(p => `
-  <url>
-    <loc>${p.url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>${p.image ? `
-    <image:image>
-      <image:loc>${p.image}</image:loc>
-    </image:image>` : ''}
-  </url>`).join('');
-
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <!-- Generated by Yaad Adz on ${new Date().toISOString()} -->
-  <!-- ${staticPages.length} static + ${PARISH_LIST.length} parish + ${adEntries.length} ad pages -->
-${staticXml}
-${parishXml}
-${adXml}
-</urlset>`;
-
-  fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
-  console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${PARISH_LIST.length} parish + ${adEntries.length} ad pages`);
-
-  // Ping Google
-  try {
-    const https = require('https');
-    https.get(`https://www.google.com/ping?sitemap=${encodeURIComponent(BASE_URL + '/sitemap.xml')}`, (res) => {
-      console.log(`   📡 Google pinged (HTTP ${res.statusCode})`);
-    }).on('error', () => {});
-  } catch(e) {}
 
   const robotsPath = path.join(__dirname, 'robots.txt');
   let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
