@@ -2788,7 +2788,13 @@ async function init() {
     const shortId = idFromSlug(window._pendingSlug);
     if (shortId) {
       const ad = _ads.find(function(a){ return a.id.startsWith(shortId); });
-      if (ad) setTimeout(() => openDetail(ad.id), 300);
+      if (ad) {
+        // Don't call openDetail — would loop. Scroll to card instead.
+        setTimeout(function() {
+          const card = document.querySelector('[onclick*="' + ad.id + '"]');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 600);
+      }
     }
     window._pendingSlug = null;
   }
@@ -5324,10 +5330,17 @@ function checkUrlAdParam() {
   if (pathParts[1] === 'ad' && pathParts[2]) {
     const shortId = idFromSlug(pathParts[2]);
     if (shortId) {
-      // Find ad whose id starts with shortId
       const ad = _ads.find(function(a){ return a.id.startsWith(shortId); });
-      if (ad) { setTimeout(() => openDetail(ad.id), 600); return; }
-      // Ads not yet loaded — retry after load
+      if (ad) {
+        // We got here via 404.html redirect (static page doesn't exist yet)
+        // Don't call openDetail — that would navigate back and loop.
+        // Just scroll to the listing on the home grid instead.
+        setTimeout(function() {
+          const card = document.querySelector('[onclick*="' + ad.id + '"]');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 800);
+        return;
+      }
       window._pendingSlug = pathParts[2];
       return;
     }
