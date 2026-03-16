@@ -491,42 +491,54 @@
   /* ── LIGHTBOX ── */
   .lightbox {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.96);
     z-index: 9999;
     align-items: center; justify-content: center; flex-direction: column;
+    overflow: hidden;
   }
   .lightbox.open { display: flex; }
+  /* Blurred background — current photo shown blurred + dark behind sharp photo */
+  .lb-bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: blur(28px) brightness(0.35) saturate(1.2);
+    transform: scale(1.1); /* prevent blur edges showing */
+    transition: background-image 0.2s ease;
+  }
   .lb-img {
+    position: relative; z-index: 2;
     max-width: 95vw; max-height: 85vh;
-    object-fit: contain; border-radius: 6px;
+    object-fit: contain; border-radius: 8px;
     user-select: none; display: block;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.6);
   }
   .lb-close {
-    position: absolute; top: 16px; right: 16px;
-    background: rgba(255,255,255,0.15); color: #fff;
+    position: absolute; top: 16px; right: 16px; z-index: 10;
+    background: rgba(0,0,0,0.5); color: #fff;
     border: none; border-radius: 50%;
     width: 40px; height: 40px; font-size: 20px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
+    transition: background 0.2s; backdrop-filter: blur(8px);
   }
-  .lb-close:hover { background: rgba(255,255,255,0.3); }
+  .lb-close:hover { background: rgba(0,0,0,0.75); }
   .lb-nav {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    background: rgba(255,255,255,0.15); color: #fff;
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    background: rgba(0,0,0,0.45); color: #fff;
     border: none; border-radius: 50%;
     width: 48px; height: 48px; font-size: 26px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
+    transition: background 0.2s; backdrop-filter: blur(8px);
   }
-  .lb-nav:hover { background: rgba(255,255,255,0.3); }
+  .lb-nav:hover { background: rgba(0,0,0,0.7); }
   .lb-prev { left: 16px; }
   .lb-next { right: 16px; }
   .lb-counter {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.65); font-size: 13px;
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+    color: rgba(255,255,255,0.8); font-size: 13px;
+    background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 20px;
+    backdrop-filter: blur(8px);
   }
   .lb-dots {
-    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%); z-index: 10;
     display: flex; gap: 6px;
   }
   .lb-dot {
@@ -534,6 +546,43 @@
     background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s;
   }
   .lb-dot.active { background: #fff; }
+
+  /* ── FLOATING CONTACT BUTTON (mobile) ── */
+  .float-contact {
+    position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    left: 50%; transform: translateX(-50%);
+    z-index: 500; width: calc(100% - 32px); max-width: 400px;
+  }
+  .float-contact-toggle {
+    width: 100%; padding: 14px 20px;
+    background: var(--green); color: #fff;
+    border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(29,185,84,0.45);
+    transition: all 0.2s;
+  }
+  .float-contact-toggle.open {
+    border-radius: 14px 14px 0 0;
+    box-shadow: none;
+  }
+  .float-contact-drawer {
+    display: none; flex-direction: column; gap: 0;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 14px 14px;
+    overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .float-contact-drawer.open { display: flex; }
+  .float-contact-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 15px 20px; font-size: 15px; font-weight: 600;
+    text-decoration: none; color: var(--text-1);
+    border-bottom: 1px solid var(--border); transition: background 0.15s;
+  }
+  .float-contact-btn:last-child { border-bottom: none; }
+  .float-contact-btn:hover { background: rgba(255,255,255,0.06); }
+  .float-contact-btn .btn-icon { font-size: 20px; width: 28px; text-align: center; }
+  @media (min-width: 700px) { .float-contact { display: none; } }
 
   /* ── FOOTER ── */
   footer {
@@ -721,13 +770,27 @@
 </footer>
 
 <!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+<div class="lightbox" id="lightbox" onclick="if(event.target===this||event.target.classList.contains('lb-bg'))closeLightbox()">
+  <div class="lb-bg" id="lbBg"></div>
   <button class="lb-close" onclick="closeLightbox()">✕</button>
   <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
   <img class="lb-img" id="lbImg" src="" alt="2021 fit shuttle">
   <button class="lb-nav lb-next" id="lbNext" onclick="lbNav(1)">›</button>
   <div class="lb-dots" id="lbDots"></div>
   <div class="lb-counter" id="lbCounter"></div>
+</div>
+
+<!-- FLOATING CONTACT BUTTON (mobile only) -->
+
+<div class="float-contact" id="floatContact">
+  <div class="float-contact-drawer" id="floatDrawer">
+    <a class="float-contact-btn" href="tel:+1 (876) 276-7496"><span class="btn-icon">📞</span> Call Seller</a>
+    <a class="float-contact-btn" href="https://wa.me/18762767496?text=Hi!%20I%20saw%20your%20ad%20on%20Yaad%20Adz%3A%202021%20fit%20shuttle%20-%20https%3A%2F%2Fyaadadz.com%2Fad%2F2021-fit-shuttle-kingston-a1773427" target="_blank" rel="noopener noreferrer"><span class="btn-icon" style="color:#25d366">💬</span> WhatsApp</a>
+    <a class="float-contact-btn" href="https://yaadadz.com/?ad=a1773427680380"><span class="btn-icon">✉️</span> Message on Yaad Adz</a>
+  </div>
+  <button class="float-contact-toggle" id="floatToggle" onclick="toggleFloatContact()">
+    <span>📲</span> Contact Seller
+  </button>
 </div>
 
 <script>
@@ -764,7 +827,10 @@
   function lbGoTo(i) { lbIndex = i; renderLightbox(); }
   function renderLightbox() {
     var img = document.getElementById('lbImg');
+    var bg  = document.getElementById('lbBg');
     img.src = PHOTOS[lbIndex];
+    // Set blurred background to current photo
+    if (bg) bg.style.backgroundImage = 'url(' + PHOTOS[lbIndex] + ')';
 
     // Counter
     document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
@@ -783,6 +849,32 @@
       dotsEl.style.display = 'flex';
     } else {
       dotsEl.style.display = 'none';
+    }
+  }
+
+  // ── Floating contact toggle ──────────────────────────────────
+  function toggleFloatContact() {
+    var drawer  = document.getElementById('floatDrawer');
+    var toggle  = document.getElementById('floatToggle');
+    var isOpen  = drawer.classList.contains('open');
+    drawer.classList.toggle('open', !isOpen);
+    toggle.classList.toggle('open', !isOpen);
+    toggle.innerHTML = isOpen
+      ? '<span>📲</span> Contact Seller'
+      : '<span>✕</span> Close';
+    // Close when tapping outside
+    if (!isOpen) {
+      setTimeout(function() {
+        document.addEventListener('click', function closeOnOutside(e) {
+          var fc = document.getElementById('floatContact');
+          if (fc && !fc.contains(e.target)) {
+            drawer.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.innerHTML = '<span>📲</span> Contact Seller';
+            document.removeEventListener('click', closeOnOutside);
+          }
+        });
+      }, 50);
     }
   }
 
