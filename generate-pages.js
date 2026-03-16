@@ -21,6 +21,24 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_j9j7NG5GhMeXqii
 const BASE_URL     = 'https://yaadadz.com';
 const OUT_DIR      = path.join(__dirname, 'ad');
 
+// Parish list — module-level so it's available everywhere in the file
+const PARISH_LIST = [
+  { name: 'Kingston',       slug: 'kingston',       alt: 'Downtown Kingston, Jamaica' },
+  { name: 'St. Andrew',     slug: 'st-andrew',      alt: 'St. Andrew, Jamaica' },
+  { name: 'St. Catherine',  slug: 'st-catherine',   alt: 'Portmore & Spanish Town, Jamaica' },
+  { name: 'St. James',      slug: 'st-james',       alt: 'Montego Bay, Jamaica' },
+  { name: 'Manchester',     slug: 'manchester',     alt: 'Mandeville, Jamaica' },
+  { name: 'St. Ann',        slug: 'st-ann',         alt: 'Ocho Rios, Jamaica' },
+  { name: 'Clarendon',      slug: 'clarendon',      alt: 'May Pen, Jamaica' },
+  { name: 'Westmoreland',   slug: 'westmoreland',   alt: 'Savanna-la-Mar, Jamaica' },
+  { name: 'St. Elizabeth',  slug: 'st-elizabeth',   alt: 'Black River, Jamaica' },
+  { name: 'Portland',       slug: 'portland',       alt: 'Port Antonio, Jamaica' },
+  { name: 'St. Mary',       slug: 'st-mary',        alt: 'Annotto Bay, Jamaica' },
+  { name: 'St. Thomas',     slug: 'st-thomas',      alt: 'Morant Bay, Jamaica' },
+  { name: 'Trelawny',       slug: 'trelawny',       alt: 'Falmouth, Jamaica' },
+  { name: 'Hanover',        slug: 'hanover',        alt: 'Lucea, Jamaica' },
+];
+
 // ── Helpers ───────────────────────────────────────────────────
 function slugify(ad) {
   const raw = (ad.title || '') + (ad.parish ? '-' + ad.parish : '');
@@ -1234,23 +1252,6 @@ ${staticLinks}
 
   const PARISH_DIR = path.join(__dirname, 'parish');
   if (!fs.existsSync(PARISH_DIR)) fs.mkdirSync(PARISH_DIR, { recursive: true });
-
-  const PARISH_LIST = [
-    { name: 'Kingston',       slug: 'kingston',       alt: 'Downtown Kingston, Jamaica' },
-    { name: 'St. Andrew',     slug: 'st-andrew',      alt: 'St. Andrew, Jamaica' },
-    { name: 'St. Catherine',  slug: 'st-catherine',   alt: 'Portmore & Spanish Town, Jamaica' },
-    { name: 'St. James',      slug: 'st-james',       alt: 'Montego Bay, Jamaica' },
-    { name: 'Manchester',     slug: 'manchester',     alt: 'Mandeville, Jamaica' },
-    { name: 'St. Ann',        slug: 'st-ann',         alt: 'Ocho Rios, Jamaica' },
-    { name: 'Clarendon',      slug: 'clarendon',      alt: 'May Pen, Jamaica' },
-    { name: 'Westmoreland',   slug: 'westmoreland',   alt: 'Savanna-la-Mar, Jamaica' },
-    { name: 'St. Elizabeth',  slug: 'st-elizabeth',   alt: 'Black River, Jamaica' },
-    { name: 'Portland',       slug: 'portland',       alt: 'Port Antonio, Jamaica' },
-    { name: 'St. Mary',       slug: 'st-mary',        alt: 'Annotto Bay, Jamaica' },
-    { name: 'St. Thomas',     slug: 'st-thomas',      alt: 'Morant Bay, Jamaica' },
-    { name: 'Trelawny',       slug: 'trelawny',       alt: 'Falmouth, Jamaica' },
-    { name: 'Hanover',        slug: 'hanover',        alt: 'Lucea, Jamaica' },
-  ];
 
   const PARISH_NICKNAMES = {
     'Kingston':      'Kingston',
