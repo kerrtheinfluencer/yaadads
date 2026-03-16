@@ -431,136 +431,200 @@ html { scroll-behavior: smooth; }
 
 <style>
 /* ══════════════════════════════════════════════════════════════
-   GLASSMORPHISM LAYER — purely additive visual polish
-   All changes are cosmetic only. No layout, z-index, or
-   functional properties are touched.
+   GLASSMORPHISM LAYER v2 — more transparent, deeper blur,
+   richer depth. Purely cosmetic — no layout or z-index changes.
 ══════════════════════════════════════════════════════════════ */
 
 /* ── Ad Cards ─────────────────────────────────────────────── */
 .ad-card {
-  background: rgba(255,255,255,0.72) !important;
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  border: 1px solid rgba(255,255,255,0.55) !important;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(255,255,255,0.3) inset !important;
-  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  background: rgba(255,255,255,0.52) !important;
+  backdrop-filter: blur(20px) saturate(1.8) brightness(1.02);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.02);
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.05),
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 -1px 0 rgba(0,0,0,0.04) inset !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
 }
 .ad-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(255,255,255,0.4) inset !important;
+  background: rgba(255,255,255,0.68) !important;
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 12px 32px rgba(0,0,0,0.10),
+    0 1px 0 rgba(255,255,255,0.95) inset !important;
 }
 
 /* ── Category Pills ───────────────────────────────────────── */
 .cat-pill-sm {
-  background: rgba(255,255,255,0.6) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.5) !important;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.06) !important;
+  background: rgba(255,255,255,0.45) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.65) !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05), 0 1px 0 rgba(255,255,255,0.8) inset !important;
+  transition: all 0.18s ease !important;
+}
+.cat-pill-sm:hover {
+  background: rgba(255,255,255,0.65) !important;
 }
 .cat-pill-sm.active {
-  background: rgba(0,92,53,0.9) !important;
-  border-color: rgba(0,112,63,0.6) !important;
-  box-shadow: 0 2px 12px rgba(0,92,53,0.3) !important;
+  background: rgba(0,92,53,0.88) !important;
+  border-color: rgba(0,130,70,0.5) !important;
+  box-shadow: 0 2px 14px rgba(0,92,53,0.35), 0 1px 0 rgba(255,255,255,0.15) inset !important;
 }
 
 /* ── Hero section ─────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(160deg, rgba(12,30,20,0.97) 0%, rgba(18,45,28,0.95) 100%) !important;
+  background: linear-gradient(150deg, #0c1e14 0%, #112218 60%, #0e2416 100%) !important;
 }
 .ai-search-bar {
-  background: rgba(255,255,255,0.08) !important;
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(24px) saturate(2);
+  -webkit-backdrop-filter: blur(24px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.25),
+    0 1px 0 rgba(255,255,255,0.12) inset !important;
 }
 
 /* ── Modals ───────────────────────────────────────────────── */
 .modal {
-  background: rgba(255,255,255,0.92) !important;
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid rgba(255,255,255,0.7) !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.4) inset !important;
+  background: rgba(255,255,255,0.78) !important;
+  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  border: 1px solid rgba(255,255,255,0.85) !important;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.18),
+    0 1px 0 rgba(255,255,255,1) inset,
+    0 -1px 0 rgba(0,0,0,0.04) inset !important;
 }
 
 /* ── AI Sheet ─────────────────────────────────────────────── */
 .ai-sheet {
-  background: rgba(12,30,20,0.88) !important;
-  backdrop-filter: blur(28px) saturate(1.4);
-  -webkit-backdrop-filter: blur(28px) saturate(1.4);
-  border-top: 1px solid rgba(255,255,255,0.1) !important;
+  background: rgba(10,26,17,0.75) !important;
+  backdrop-filter: blur(40px) saturate(1.6);
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  border-top: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.3) !important;
 }
 
 /* ── AI Float Chat ────────────────────────────────────────── */
 .ai-float-chat {
-  background: rgba(12,30,20,0.88) !important;
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.4) !important;
+  background: rgba(10,26,17,0.78) !important;
+  backdrop-filter: blur(36px) saturate(1.6);
+  -webkit-backdrop-filter: blur(36px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45) !important;
 }
 
 /* ── AI Response Card ─────────────────────────────────────── */
 .ai-response-card {
-  background: rgba(255,255,255,0.75) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.6) !important;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06) !important;
+  background: rgba(255,255,255,0.55) !important;
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05), 0 1px 0 rgba(255,255,255,0.9) inset !important;
 }
 
 /* ── Bottom Nav ───────────────────────────────────────────── */
 .mob-nav {
-  background: rgba(255,255,255,0.82) !important;
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border-top: 1px solid rgba(255,255,255,0.6) !important;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
+  background: rgba(255,255,255,0.65) !important;
+  backdrop-filter: blur(32px) saturate(2) brightness(1.04);
+  -webkit-backdrop-filter: blur(32px) saturate(2) brightness(1.04);
+  border-top: 1px solid rgba(255,255,255,0.8) !important;
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -8px 32px rgba(0,0,0,0.06) !important;
 }
 
 /* ── Nav Bar ──────────────────────────────────────────────── */
 nav {
-  background: rgba(12,30,20,0.82) !important;
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  background: rgba(10,24,16,0.72) !important;
+  backdrop-filter: blur(32px) saturate(1.6);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6);
+  border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15) !important;
 }
 
 /* ── Toast ────────────────────────────────────────────────── */
 .toast {
-  background: rgba(26,26,26,0.88) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: rgba(18,18,18,0.75) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
 }
 
 /* ── PWA Install Banner ───────────────────────────────────── */
 .pwa-banner {
-  background: rgba(23,42,31,0.9) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
+  background: rgba(18,38,26,0.78) !important;
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4) !important;
 }
 
-/* ── Section result cards / sheet result cards ────────────── */
+/* ── Sheet result cards ───────────────────────────────────── */
 .sheet-result-card {
-  background: rgba(255,255,255,0.08) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  transition: background 0.15s ease !important;
 }
 .sheet-result-card:hover {
   background: rgba(255,255,255,0.14) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+}
+
+/* ── Results header + filter bar ─────────────────────────── */
+.results-header {
+  background: rgba(255,255,255,0.4) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
+}
+
+/* ── Price filter bar ─────────────────────────────────────── */
+.price-filter-inner {
+  background: rgba(255,255,255,0.45) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.65) !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
+}
+
+/* ── Fav button on cards ──────────────────────────────────── */
+.fav-btn {
+  background: rgba(255,255,255,0.55) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+.fav-btn:hover {
+  background: rgba(255,255,255,0.8) !important;
+}
+
+/* ── Recently viewed cards ────────────────────────────────── */
+.rv-card {
+  background: rgba(255,255,255,0.5) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.68) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important;
+}
+.rv-card:hover {
+  background: rgba(255,255,255,0.72) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
 }
 
 /* ── Performance: disable blur on low-end / battery saver ─── */
 @media (prefers-reduced-motion: reduce) {
   .ad-card, .modal, .ai-sheet, .mob-nav, nav,
   .ai-float-chat, .cat-pill-sm, .toast, .pwa-banner,
-  .sheet-result-card, .ai-response-card, .ai-search-bar {
+  .sheet-result-card, .ai-response-card, .ai-search-bar,
+  .results-header, .price-filter-inner, .fav-btn, .rv-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -589,77 +653,6 @@ nav {
   width: auto !important;
   max-width: none !important;
 }
-
-/* ── Grid columns ── */
-.listings-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
-@media(min-width:900px){ .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
-@media(max-width:600px){ .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
-
-/* ── Card image aspect ratio ── */
-.ad-card-img { aspect-ratio:16/10 !important; overflow:hidden !important; position:relative !important; }
-.ad-card-img::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--cat-bg,#00703f); z-index:1; opacity:0.85; }
-.ad-card-img img { width:100% !important; height:100% !important; object-fit:cover !important; object-position:center !important; }
-
-/* ── Price filter bar ── */
-.price-filter-bar { padding:8px 16px 4px; max-width:960px; margin:0 auto; }
-.price-filter-inner { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:12px; padding:8px 14px; box-shadow:0 1px 8px rgba(0,0,0,0.06); }
-.price-filter-label { font-size:12px; font-weight:700; color:#1a2e22; white-space:nowrap; }
-.price-filter-inputs { display:flex; align-items:center; gap:6px; flex:1; }
-.price-input { width:100%; max-width:130px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:5px 10px; font-size:16px; font-weight:500; color:#1a2e22; outline:none; transition:border-color 0.2s; }
-.price-input:focus { border-color:#00703f; }
-.price-filter-sep { color:#6b7a71; font-weight:600; font-size:13px; flex-shrink:0; }
-.price-filter-clear { background:rgba(0,0,0,0.06); border:none; border-radius:6px; width:24px; height:24px; font-size:12px; cursor:pointer; color:#6b7a71; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
-.price-filter-clear:hover { background:rgba(229,62,62,0.12); color:#e53e3e; }
-
-/* ── Recently viewed ── */
-.recently-viewed { max-width:960px; margin:0 auto; padding:20px 16px 32px; }
-.rv-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.rv-title { font-size:14px; font-weight:700; color:#1a2e22; }
-.rv-clear { background:none; border:none; font-size:12px; color:#6b7a71; cursor:pointer; padding:2px 6px; border-radius:6px; }
-.rv-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-.rv-grid::-webkit-scrollbar { display:none; }
-.rv-card { flex:0 0 120px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:10px; overflow:hidden; cursor:pointer; transition:transform 0.18s,box-shadow 0.18s; }
-.rv-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.1); }
-.rv-card-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#e8ede9; }
-.rv-card-body { padding:6px 8px 8px; }
-.rv-card-price { font-size:12px; font-weight:800; color:#00703f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rv-card-title { font-size:11px; color:#1a2e22; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; margin-top:2px; }
-
-/* ── Empty state suggestions ── */
-.empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
-.empty-sug-btn { background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#1a2e22; cursor:pointer; transition:all 0.2s; }
-.empty-sug-btn:hover { border-color:#00703f; color:#00703f; }
-
-/* ── Nav logo — constrain SVG so text stays visible ── */
-.nav-logo svg { height:32px !important; width:auto !important; max-width:120px !important; }
-@media(max-width:640px){ .nav-logo svg { height:26px !important; max-width:80px !important; } }
-
-/* ── Price on cards — bigger, bolder, more dominant ── */
-.ad-price {
-  font-size: 18px !important;
-  font-weight: 800 !important;
-  color: #00703f !important;
-  line-height: 1.1 !important;
-  letter-spacing: -0.3px !important;
-}
-
-/* ── View count — always visible ── */
-.ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.7 !important; }
-.ad-views svg { width:12px !important; height:12px !important; }
-
-/* ── Grid — max 4 columns, never orphan-y ── */
-.listings-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-  gap: 14px !important;
-}
-@media(min-width:900px) { .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
-@media(max-width:600px) { .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
-
-/* ── Card image aspect ratio ── */
-.ad-card-img { aspect-ratio:16/10 !important; overflow:hidden !important; position:relative !important; border-radius:10px 10px 0 0 !important; }
-.ad-card-img::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--cat-bg,#00703f); z-index:1; opacity:0.85; }
-.ad-card-img img { width:100% !important; height:100% !important; object-fit:cover !important; object-position:center !important; }
 </style>
 <body>
 
@@ -675,7 +668,7 @@ nav {
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="goHome()" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:36px;width:auto;max-width:110px;display:block;" aria-label="Yaad Adz">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:38px;width:auto;display:block;" aria-label="Yaad Adz">
       <defs>
         <linearGradient id="nig" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#007a45"/><stop offset="100%" style="stop-color:#003d20"/></linearGradient>
         <linearGradient id="ngg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffe45e"/><stop offset="100%" style="stop-color:#c89a00"/></linearGradient>
@@ -780,6 +773,16 @@ nav {
       </div>
     </div>
 
+    <!-- Ad: below hero -->
+    <div class="ad-slot-banner" style="min-height:0">
+      <ins class="adsbygoogle ad-slot"
+        style="display:block"
+        data-ad-client="ca-pub-9656521698490533"
+        data-ad-slot="auto"
+        data-ad-format="horizontal"
+        data-full-width-responsive="true"></ins>
+    </div>
+
     <!-- Compact category row -->
     <div class="cat-row" id="catRow"></div>
 
@@ -807,19 +810,6 @@ nav {
       </select>
     </div>
 
-    <!-- Price range filter -->
-    <div class="price-filter-bar" id="priceFilterBar" style="display:none">
-      <div class="price-filter-inner">
-        <span class="price-filter-label">💰 Budget</span>
-        <div class="price-filter-inputs">
-          <input type="number" id="priceMin" class="price-input" placeholder="Min J$" min="0" oninput="applyPriceFilter()">
-          <span class="price-filter-sep">–</span>
-          <input type="number" id="priceMax" class="price-input" placeholder="Max J$" min="0" oninput="applyPriceFilter()">
-        </div>
-        <button class="price-filter-clear" id="priceFilterClear" onclick="clearPriceFilter()" style="display:none">✕</button>
-      </div>
-    </div>
-
     <!-- Listings grid -->
     <div class="listings-grid" id="homeGrid">
       <noscript>
@@ -834,15 +824,6 @@ nav {
           </p>
         </div>
       </noscript>
-    </div>
-
-    <!-- Recently viewed -->
-    <div class="recently-viewed" id="recentlyViewed" style="display:none">
-      <div class="rv-header">
-        <span class="rv-title">👁 Recently Viewed</span>
-        <button class="rv-clear" onclick="clearRecentlyViewed()">Clear</button>
-      </div>
-      <div class="rv-grid" id="rvGrid"></div>
     </div>
   </div>
 </div>
@@ -1118,6 +1099,16 @@ nav {
     </div>
     <div class="ai-sheet-hint">Powered by Claude AI · Speaks Jamaican</div>
   </div>
+</div>
+
+<!-- Ad: above footer -->
+<div class="ad-slot-banner" style="min-height:0">
+  <ins class="adsbygoogle ad-slot"
+    style="display:block"
+    data-ad-client="ca-pub-9656521698490533"
+    data-ad-slot="auto"
+    data-ad-format="horizontal"
+    data-full-width-responsive="true"></ins>
 </div>
 
 <!-- ─── SEO ABOUT SECTION (above footer — crawlable by Google) ─── -->
@@ -2663,8 +2654,6 @@ async function init() {
       window.matchMedia('(display-mode: standalone)').matches) {
     document.body.classList.add('pwa-mode');
   }
-  // Render recently viewed from previous session
-  setTimeout(renderRecentlyViewed, 800);
 
   showSkeletons();
   document.getElementById('resultsHeader').style.display = 'none';
@@ -3046,18 +3035,8 @@ function renderHome() {
     if (f.categories && f.categories.length > 1) ads = ads.filter(a => f.categories.includes(a.category));
   }
 
-  // Apply manual price range filter
-  const pMin = parseFloat(document.getElementById('priceMin')?.value) || 0;
-  const pMax = parseFloat(document.getElementById('priceMax')?.value) || 0;
-  if (pMin > 0) ads = ads.filter(a => a.price >= pMin);
-  if (pMax > 0) ads = ads.filter(a => a.price <= pMax);
-
   // Hide sold filter
   if (_hideSold) ads = ads.filter(a => a.status !== 'sold');
-
-  // Show price filter bar
-  const pfBar = document.getElementById('priceFilterBar');
-  if (pfBar) pfBar.style.display = 'block';
 
   const hdr = document.getElementById('resultsHeader');
   const cnt = document.getElementById('resultsCount');
@@ -3071,28 +3050,17 @@ function renderHome() {
   if (visible.length) {
     visible.forEach(function(a, i) {
       html += cardHTML(a, i);
+      // Insert in-feed ad after every 8th card
+      if ((i + 1) % 8 === 0 && i < visible.length - 1) {
+        html += '<div class="ad-slot-infeed"><ins class="adsbygoogle ad-slot" style="display:block" data-ad-client="ca-pub-9656521698490533" data-ad-slot="auto" data-ad-format="fluid" data-ad-layout-key="-6t+ed+2i-1n-4w"></ins></div>';
+      }
     });
   } else {
-    const suggestions = [
-      { label: '🚗 Cars under 2M', q: 'car under 2 million' },
-      { label: '📱 Phones', q: 'phone for sale' },
-      { label: '🏡 Houses', q: 'house for sale' },
-      { label: '💼 Jobs', q: 'jobs available' },
-      { label: '💻 Laptops', q: 'laptop for sale' },
-      { label: '🛋️ Furniture', q: 'furniture' },
-    ];
-    const sugHtml = suggestions.map(s =>
-      `<button class="empty-sug-btn" onclick="setAiQuery('${s.q}')">${s.label}</button>`
-    ).join('');
-    html = `<div class="empty" style="grid-column:1/-1">
-      <div class="empty-icon">🔍</div>
-      <h3>No listings found</h3>
-      <p>Try a different search or browse popular categories:</p>
-      <div class="empty-suggestions">${sugHtml}</div>
-      <button class="btn btn-green" style="margin-top:16px" onclick="resetHeroSearch()">Show All Listings</button>
-    </div>`;
+    html = emptyEl('No listings match your search.',
+        `<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>`);
   }
 
+  // Load More button
   if (remaining > 0) {
     html += `<div class="load-more-wrap">
       <button class="load-more-btn" onclick="loadMoreHome()">
@@ -3105,6 +3073,7 @@ function renderHome() {
   const prevCount = grid.querySelectorAll('.ad-card').length;
   grid.innerHTML = html;
 
+  // Animate only freshly rendered cards (first paint or count changed)
   if (prevCount === 0) {
     grid.querySelectorAll('.ad-card').forEach((c, i) => {
       c.style.animationDelay = Math.min(i * 0.04, 0.28) + 's';
@@ -3146,7 +3115,6 @@ function renderHome() {
   // Persist search state in URL
   if (typeof pushSearchState === 'function') pushSearchState();
 
-  renderRecentlyViewed();
   return ads.length;
 }
 
@@ -4540,7 +4508,7 @@ function escHtml(s) {
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   sbIncrView(id);
-  trackRecentlyViewed(id);
+  // Navigate directly to the static ad page — consistent experience every time
   window.location.href = '/ad/' + slugify(ad);
 }
 
@@ -4760,81 +4728,6 @@ if (!document.getElementById('confettiStyles')) {
   s.id = 'confettiStyles';
   s.textContent = '@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
   document.head.appendChild(s);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   PRICE RANGE FILTER
-═══════════════════════════════════════════════════════════ */
-function applyPriceFilter() {
-  const min = document.getElementById('priceMin');
-  const max = document.getElementById('priceMax');
-  const clearBtn = document.getElementById('priceFilterClear');
-  const hasValue = (min?.value && parseFloat(min.value) > 0) || (max?.value && parseFloat(max.value) > 0);
-  if (clearBtn) clearBtn.style.display = hasValue ? 'flex' : 'none';
-  clearTimeout(window._priceFilterTimer);
-  window._priceFilterTimer = setTimeout(function() {
-    _homeShowCount = _homePageSize;
-    renderHome();
-  }, 400);
-}
-
-function clearPriceFilter() {
-  const min = document.getElementById('priceMin');
-  const max = document.getElementById('priceMax');
-  const clearBtn = document.getElementById('priceFilterClear');
-  if (min) min.value = '';
-  if (max) max.value = '';
-  if (clearBtn) clearBtn.style.display = 'none';
-  _homeShowCount = _homePageSize;
-  renderHome();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RECENTLY VIEWED
-   Stores last 8 ad IDs in localStorage, shows 5 on home page
-═══════════════════════════════════════════════════════════ */
-const RV_KEY = 'ya_rv';
-const RV_MAX = 8;
-
-function trackRecentlyViewed(id) {
-  try {
-    let rv = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
-    rv = rv.filter(i => i !== id);
-    rv.unshift(id);
-    if (rv.length > RV_MAX) rv = rv.slice(0, RV_MAX);
-    localStorage.setItem(RV_KEY, JSON.stringify(rv));
-  } catch(e) {}
-}
-
-function renderRecentlyViewed() {
-  const section = document.getElementById('recentlyViewed');
-  const grid    = document.getElementById('rvGrid');
-  if (!section || !grid) return;
-  try {
-    const rv  = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
-    const ads = rv.map(id => _ads.find(a => a.id === id)).filter(Boolean).slice(0, 5);
-    if (ads.length < 2) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
-    grid.innerHTML = ads.map(ad => {
-      const cat = CATS.find(c => c.id === ad.category);
-      const img = ad.image
-        ? `<img class="rv-card-img" src="${ad.image}" alt="${ad.title}" loading="lazy">`
-        : `<div class="rv-card-img" style="display:flex;align-items:center;justify-content:center;font-size:28px">${cat?.icon||'📦'}</div>`;
-      return `<div class="rv-card" onclick="openDetail('${ad.id}')">
-        ${img}
-        <div class="rv-card-body">
-          <div class="rv-card-price">J$${fmtN(ad.price)}</div>
-          <div class="rv-card-title">${ad.title}</div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) { section.style.display = 'none'; }
-}
-
-function clearRecentlyViewed() {
-  try { localStorage.removeItem(RV_KEY); } catch(e) {}
-  const s = document.getElementById('recentlyViewed');
-  if (s) s.style.display = 'none';
 }
 
 /* ═══════════════════════════════════════════════════════════
