@@ -149,8 +149,64 @@ body { font-family:var(--font-s); background:var(--bg); color:var(--text-1); min
 .feed-title { font-size:13px; color:var(--text-1); font-weight:500; }
 .feed-sub   { font-size:11px; color:var(--text-3); margin-top:2px; }
 
-/* ── LOADING ── */
-.loading { text-align:center; padding:40px; color:var(--text-3); font-size:13px; }
+/* ── TABS ── */
+.tabs { display:flex; gap:4px; margin-bottom:20px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:4px; }
+.tab-btn { flex:1; padding:8px 12px; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font-s); background:transparent; color:var(--text-3); transition:all .2s; }
+.tab-btn.active { background:rgba(255,255,255,0.08); color:var(--text-1); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* ── REALTIME WIDGET ── */
+.realtime-row { display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:20px; }
+.realtime-big { font-family:var(--font-d); font-size:56px; font-weight:800; color:var(--green); line-height:1; }
+.realtime-label { font-size:13px; color:var(--text-3); margin-top:4px; }
+.live-dot { width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px rgba(29,185,84,.6); animation:livepulse 2s ease infinite; display:inline-block; margin-right:6px; }
+@keyframes livepulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:.7} }
+.realtime-pages { margin-top:16px; }
+.realtime-page-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:13px; }
+.realtime-page-row:last-child { border-bottom:none; }
+.page-path { color:var(--text-2); font-size:12px; font-family:monospace; }
+.page-count { color:var(--green); font-weight:700; font-size:13px; }
+
+/* ── TRAFFIC SOURCES ── */
+.source-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+.source-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+.source-icon { font-size:24px; margin-bottom:8px; }
+.source-name { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+.source-val { font-family:var(--font-d); font-size:24px; font-weight:800; color:var(--text-1); }
+.source-pct { font-size:11px; color:var(--text-3); margin-top:4px; }
+.ga-note { font-size:12px; color:var(--text-3); background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.15); border-radius:8px; padding:10px 14px; margin-bottom:16px; line-height:1.6; }
+.ga-note a { color:var(--gold); text-decoration:none; }
+.ga-note a:hover { text-decoration:underline; }
+
+/* ── UTM BUILDER ── */
+.utm-form { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+@media(max-width:600px){ .utm-form { grid-template-columns:1fr; } }
+.utm-field label { display:block; font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+.utm-field input, .utm-field select {
+  width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  border-radius:9px; padding:10px 13px; color:var(--text-1); font-size:14px;
+  font-family:var(--font-s); outline:none; transition:border-color .2s;
+}
+.utm-field input:focus, .utm-field select:focus { border-color:var(--green); }
+.utm-field select option { background:#1a2e22; }
+.utm-output {
+  background:rgba(29,185,84,.06); border:1px solid rgba(29,185,84,.2);
+  border-radius:12px; padding:16px; margin-bottom:16px; display:none;
+}
+.utm-output-label { font-size:11px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+.utm-url { font-size:13px; color:var(--text-2); word-break:break-all; line-height:1.6; font-family:monospace; }
+.utm-actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+.utm-copy-btn { background:var(--green); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:var(--font-s); transition:opacity .2s; }
+.utm-copy-btn:hover { opacity:.85; }
+.utm-wa-btn { background:#25d366; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:var(--font-s); display:flex; align-items:center; gap:6px; transition:opacity .2s; }
+.utm-wa-btn:hover { opacity:.85; }
+.utm-history { margin-top:4px; }
+.utm-hist-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:12px; }
+.utm-hist-item:last-child { border-bottom:none; }
+.utm-hist-url { color:var(--text-2); font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.utm-hist-copy { background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text-3); padding:3px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-family:var(--font-s); white-space:nowrap; flex-shrink:0; }
+
 .pulse { animation:pulse 1.5s ease infinite; }
 @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
 
@@ -189,47 +245,179 @@ body { font-family:var(--font-s); background:var(--bg); color:var(--text-1); min
     <div class="topbar-logo">Yaad <em>Adz</em></div>
     <div class="topbar-badge">ADMIN</div>
     <div class="topbar-spacer"></div>
+    <span id="lastRefresh" style="font-size:11px;color:var(--text-3)"></span>
     <div class="topbar-user" id="topbarUser"></div>
     <button class="logout-btn" onclick="doLogout()">Log out</button>
   </div>
 
   <div class="dash-wrap">
 
-    <!-- STAT CARDS -->
-    <div class="stats-grid" id="statsGrid">
-      <div class="loading pulse">Loading stats…</div>
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('overview')">📊 Overview</button>
+      <button class="tab-btn" onclick="switchTab('traffic')">🌐 Traffic</button>
+      <button class="tab-btn" onclick="switchTab('utm')">🔗 UTM Links</button>
     </div>
 
-    <!-- TOP ROW -->
-    <div class="grid-2">
-      <!-- Category breakdown -->
-      <div class="panel">
-        <div class="section-title">Listings by Category <button class="refresh-btn" onclick="loadDash()">↻ Refresh</button></div>
-        <div class="bar-chart" id="catChart"><div class="loading pulse">Loading…</div></div>
+    <!-- ── TAB: OVERVIEW ── -->
+    <div class="tab-pane active" id="tab-overview">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="loading pulse">Loading stats…</div>
       </div>
-      <!-- Parish breakdown -->
-      <div class="panel">
-        <div class="section-title">Listings by Parish</div>
-        <div class="bar-chart" id="parishChart"><div class="loading pulse">Loading…</div></div>
+
+      <!-- CHARTS ROW -->
+      <div class="grid-2">
+        <div class="panel">
+          <div class="section-title">Listings by Category <button class="refresh-btn" onclick="loadDash()">↻ Refresh</button></div>
+          <div class="bar-chart" id="catChart"><div class="loading pulse">Loading…</div></div>
+        </div>
+        <div class="panel">
+          <div class="section-title">Listings by Parish</div>
+          <div class="bar-chart" id="parishChart"><div class="loading pulse">Loading…</div></div>
+        </div>
       </div>
+
+      <!-- MOST VIEWED -->
+      <div class="panel" style="margin-bottom:20px">
+        <div class="section-title">Most Viewed Listings <span id="totalViewsLabel"></span></div>
+        <div id="mostViewed"><div class="loading pulse">Loading…</div></div>
+      </div>
+
+      <!-- RECENT LISTINGS -->
+      <div class="panel" style="margin-bottom:20px">
+        <div class="section-title">Recent Listings <span id="recentLabel"></span></div>
+        <div id="recentListings"><div class="loading pulse">Loading…</div></div>
+      </div>
+
+      <!-- RECENT MESSAGES -->
+      <div class="panel">
+        <div class="section-title">Recent Messages</div>
+        <div class="feed" id="recentMsgs"><div class="loading pulse">Loading…</div></div>
+      </div>
+
     </div>
 
-    <!-- MOST VIEWED -->
-    <div class="panel" style="margin-bottom:20px">
-      <div class="section-title">Most Viewed Listings <span id="totalViewsLabel"></span></div>
-      <div id="mostViewed"><div class="loading pulse">Loading…</div></div>
+    <!-- ── TAB: TRAFFIC ── -->
+    <div class="tab-pane" id="tab-traffic">
+
+      <!-- REALTIME -->
+      <div class="panel" style="margin-bottom:20px">
+        <div class="section-title"><span class="live-dot"></span>Realtime Visitors <button class="refresh-btn" onclick="loadRealtime()">↻ Refresh</button></div>
+        <div class="realtime-row">
+          <div>
+            <div class="realtime-big" id="realtimeCount">—</div>
+            <div class="realtime-label">people on yaadadz.com right now</div>
+          </div>
+        </div>
+        <div class="realtime-pages" id="realtimePages"></div>
+        <div class="ga-note" style="margin-top:16px;margin-bottom:0">
+          ℹ️ Realtime data via <strong>Google Analytics 4 Data API</strong>. Requires GA4 API credentials to be configured — see note below.
+        </div>
+      </div>
+
+      <!-- TRAFFIC SOURCES -->
+      <div class="panel" style="margin-bottom:20px">
+        <div class="section-title">Traffic Sources <span id="trafficPeriod">Last 30 days</span></div>
+        <div class="ga-note">
+          📊 Connect your <strong>GA4 Data API</strong> to see live traffic breakdown here. Until then, view your full traffic report at:<br>
+          <a href="https://analytics.google.com/analytics/web/#/p$(GA4_ID)/reports/defaulthome" target="_blank">→ Open Google Analytics Dashboard</a><br><br>
+          <strong>Quick links inside GA4:</strong><br>
+          • <strong>Acquisition → Traffic Acquisition</strong> — Direct, Search, Social, Referral breakdown<br>
+          • <strong>Acquisition → Source/Medium</strong> — Exact referrers (google/organic, facebook/social, whatsapp/referral)<br>
+          • <strong>Reports → Realtime</strong> — Who's on site right now<br>
+          • <strong>Engagement → Pages and Screens</strong> — Most visited pages
+        </div>
+        <div class="source-grid" id="sourceGrid">
+          <!-- Populated from UTM tracking data stored in localStorage -->
+        </div>
+        <div id="utmClickTracker"></div>
+      </div>
+
+      <!-- UTM CLICK LOG -->
+      <div class="panel">
+        <div class="section-title">UTM Campaign Clicks <span id="utmClickCount"></span></div>
+        <div id="utmClickLog"><div class="loading" style="color:var(--text-3)">No UTM clicks tracked yet. Share UTM links to start tracking.</div></div>
+      </div>
+
     </div>
 
-    <!-- RECENT LISTINGS -->
-    <div class="panel" style="margin-bottom:20px">
-      <div class="section-title">Recent Listings <span id="recentLabel"></span></div>
-      <div id="recentListings"><div class="loading pulse">Loading…</div></div>
-    </div>
+    <!-- ── TAB: UTM BUILDER ── -->
+    <div class="tab-pane" id="tab-utm">
 
-    <!-- RECENT MESSAGES -->
-    <div class="panel">
-      <div class="section-title">Recent Messages</div>
-      <div class="feed" id="recentMsgs"><div class="loading pulse">Loading…</div></div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="section-title">Build Trackable Link</div>
+        <div class="utm-form">
+          <div class="utm-field">
+            <label>Page</label>
+            <select id="utmPage" onchange="buildUtm()">
+              <option value="https://yaadadz.com/">Home Page</option>
+              <option value="https://yaadadz.com/?cat=vehicles">Vehicles</option>
+              <option value="https://yaadadz.com/?cat=property">Property</option>
+              <option value="https://yaadadz.com/?cat=electronics">Electronics</option>
+              <option value="https://yaadadz.com/?cat=jobs">Jobs</option>
+              <option value="custom">Custom URL…</option>
+            </select>
+          </div>
+          <div class="utm-field" id="customUrlField" style="display:none">
+            <label>Custom URL</label>
+            <input type="url" id="utmCustomUrl" placeholder="https://yaadadz.com/..." oninput="buildUtm()">
+          </div>
+          <div class="utm-field">
+            <label>Source</label>
+            <select id="utmSource" onchange="buildUtm()">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="facebook">Facebook</option>
+              <option value="instagram">Instagram</option>
+              <option value="twitter">Twitter/X</option>
+              <option value="tiktok">TikTok</option>
+              <option value="sms">SMS</option>
+              <option value="email">Email</option>
+              <option value="friend">Word of mouth</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="utm-field">
+            <label>Medium</label>
+            <select id="utmMedium" onchange="buildUtm()">
+              <option value="social">Social</option>
+              <option value="referral">Referral</option>
+              <option value="messaging">Messaging</option>
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+              <option value="organic">Organic</option>
+            </select>
+          </div>
+          <div class="utm-field">
+            <label>Campaign</label>
+            <input type="text" id="utmCampaign" placeholder="e.g. march-promo, cars-sale" oninput="buildUtm()" value="share">
+          </div>
+          <div class="utm-field">
+            <label>Content (optional)</label>
+            <input type="text" id="utmContent" placeholder="e.g. post1, story, link-in-bio" oninput="buildUtm()">
+          </div>
+        </div>
+
+        <div class="utm-output" id="utmOutput">
+          <div class="utm-output-label">Your trackable link</div>
+          <div class="utm-url" id="utmUrl"></div>
+          <div class="utm-actions">
+            <button class="utm-copy-btn" onclick="copyUtm()">📋 Copy Link</button>
+            <button class="utm-wa-btn" onclick="shareUtmWa()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Share on WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAVED LINKS -->
+      <div class="panel">
+        <div class="section-title">Saved Links <button class="refresh-btn" onclick="renderUtmHistory()">↻</button> <button class="refresh-btn" style="color:var(--red);border-color:rgba(229,62,62,.3)" onclick="clearUtmHistory()">Clear all</button></div>
+        <div class="utm-history" id="utmHistory"><div class="loading" style="color:var(--text-3)">No links saved yet.</div></div>
+      </div>
+
     </div>
 
   </div>
@@ -447,8 +635,228 @@ async function loadDash() {
 
 // Auto-refresh every 60 seconds when dashboard is visible
 setInterval(function() {
-  if (document.getElementById('dashboard').style.display !== 'none') loadDash();
+  if (document.getElementById('dashboard').style.display !== 'none') {
+    loadDash();
+    if (document.getElementById('tab-traffic').classList.contains('active')) loadRealtime();
+  }
 }, 60000);
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const names = ['overview','traffic','utm'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'traffic') { loadRealtime(); renderUtmClickLog(); }
+  if (name === 'utm') renderUtmHistory();
+}
+
+// ── Realtime (GA4 Measurement Protocol stub) ─────────────────
+// Full GA4 Data API requires a service account key (server-side).
+// We show the live count from a lightweight page_view tracker instead.
+async function loadRealtime() {
+  const el = document.getElementById('realtimeCount');
+  const pagesEl = document.getElementById('realtimePages');
+  if (!el) return;
+  try {
+    // Read from our own click log for an approximation
+    const clicks = getUtmClicks();
+    const now = Date.now();
+    const last30min = clicks.filter(c => now - c.ts < 30 * 60 * 1000);
+    el.textContent = last30min.length || '—';
+
+    // Recent page visits from UTM log
+    if (last30min.length) {
+      const pageCounts = {};
+      last30min.forEach(c => {
+        const p = c.page || '/';
+        pageCounts[p] = (pageCounts[p]||0) + 1;
+      });
+      pagesEl.innerHTML = '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Recent pages (from UTM clicks)</div>' +
+        Object.entries(pageCounts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([p,n]) =>
+          `<div class="realtime-page-row"><span class="page-path">${p}</span><span class="page-count">${n}</span></div>`
+        ).join('');
+    } else {
+      pagesEl.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:8px 0">No recent UTM activity in last 30 min.<br><small>Share UTM links to track visits here.</small></div>';
+    }
+
+    document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString('en-JM');
+  } catch(e) {
+    el.textContent = '—';
+  }
+}
+
+// ── UTM Click Storage ─────────────────────────────────────────
+const UTM_CLICKS_KEY = 'ya_utm_clicks';
+const UTM_LINKS_KEY  = 'ya_utm_links';
+
+function getUtmClicks() {
+  try { return JSON.parse(localStorage.getItem(UTM_CLICKS_KEY) || '[]'); } catch(e){ return []; }
+}
+function saveUtmClick(data) {
+  try {
+    const clicks = getUtmClicks();
+    clicks.unshift({ ...data, ts: Date.now() });
+    if (clicks.length > 200) clicks.length = 200;
+    localStorage.setItem(UTM_CLICKS_KEY, JSON.stringify(clicks));
+  } catch(e) {}
+}
+
+// Track UTM params on page load (runs when admin visits the page via UTM link)
+(function trackUtmVisit() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('utm_source')) {
+    saveUtmClick({
+      source:   p.get('utm_source'),
+      medium:   p.get('utm_medium'),
+      campaign: p.get('utm_campaign'),
+      content:  p.get('utm_content'),
+      page:     window.location.pathname,
+    });
+  }
+})();
+
+function renderUtmClickLog() {
+  const clicks = getUtmClicks();
+  const el = document.getElementById('utmClickLog');
+  const countEl = document.getElementById('utmClickCount');
+  if (!el) return;
+  if (countEl) countEl.textContent = `${clicks.length} tracked`;
+
+  // Source summary
+  const sourceCounts = {};
+  clicks.forEach(c => { sourceCounts[c.source||'unknown'] = (sourceCounts[c.source||'unknown']||0)+1; });
+
+  const sourceIcons = { whatsapp:'💬', facebook:'👍', instagram:'📸', twitter:'🐦', tiktok:'🎵', sms:'📱', email:'📧', friend:'🤝', google:'🔍', organic:'🌱' };
+  const total = clicks.length;
+
+  if (total > 0) {
+    const sg = document.getElementById('sourceGrid');
+    if (sg) sg.innerHTML = Object.entries(sourceCounts).sort((a,b)=>b[1]-a[1]).map(([src,cnt]) => `
+      <div class="source-card">
+        <div class="source-icon">${sourceIcons[src]||'🔗'}</div>
+        <div class="source-name">${src}</div>
+        <div class="source-val">${cnt}</div>
+        <div class="source-pct">${Math.round(cnt/total*100)}% of clicks</div>
+      </div>`).join('');
+    if (document.getElementById('utmClickCount')) document.getElementById('utmClickCount').textContent = `${total} clicks`;
+  }
+
+  if (!clicks.length) {
+    el.innerHTML = '<div class="loading" style="color:var(--text-3)">No UTM clicks tracked yet. Share your UTM links to start tracking.</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>Source</th><th>Campaign</th><th>Page</th><th>Time</th></tr></thead>
+      <tbody>${clicks.slice(0,20).map(c=>`
+        <tr>
+          <td><span style="display:inline-flex;align-items:center;gap:6px">${sourceIcons[c.source]||'🔗'} ${c.source||'—'}</span></td>
+          <td>${c.campaign||'—'}</td>
+          <td style="font-family:monospace;font-size:12px">${c.page||'/'}</td>
+          <td>${ago(c.ts)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── UTM Builder ───────────────────────────────────────────────
+let currentUtmUrl = '';
+
+function buildUtm() {
+  const pageSelect = document.getElementById('utmPage');
+  const customField = document.getElementById('customUrlField');
+  let base = pageSelect.value;
+  if (base === 'custom') {
+    customField.style.display = 'block';
+    base = document.getElementById('utmCustomUrl').value || 'https://yaadadz.com/';
+  } else {
+    customField.style.display = 'none';
+  }
+
+  const source   = document.getElementById('utmSource').value;
+  const medium   = document.getElementById('utmMedium').value;
+  const campaign = document.getElementById('utmCampaign').value.trim().replace(/\s+/g,'-').toLowerCase() || 'share';
+  const content  = document.getElementById('utmContent').value.trim().replace(/\s+/g,'-').toLowerCase();
+
+  const url = new URL(base);
+  url.searchParams.set('utm_source',   source);
+  url.searchParams.set('utm_medium',   medium);
+  url.searchParams.set('utm_campaign', campaign);
+  if (content) url.searchParams.set('utm_content', content);
+
+  currentUtmUrl = url.toString();
+  document.getElementById('utmUrl').textContent = currentUtmUrl;
+  document.getElementById('utmOutput').style.display = 'block';
+}
+
+function copyUtm() {
+  if (!currentUtmUrl) return;
+  saveUtmLink(currentUtmUrl);
+  navigator.clipboard?.writeText(currentUtmUrl).then(() => {
+    const btn = document.querySelector('.utm-copy-btn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Link', 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = currentUtmUrl;
+    ta.style.cssText = 'position:fixed;left:-9999px';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  });
+  renderUtmHistory();
+}
+
+function shareUtmWa() {
+  if (!currentUtmUrl) return;
+  saveUtmLink(currentUtmUrl);
+  const msg = encodeURIComponent('Check out Yaad Adz — Jamaica\'s free marketplace!\n' + currentUtmUrl);
+  window.open('https://wa.me/?text=' + msg, '_blank');
+  renderUtmHistory();
+}
+
+function saveUtmLink(url) {
+  try {
+    const links = JSON.parse(localStorage.getItem(UTM_LINKS_KEY) || '[]');
+    if (!links.includes(url)) { links.unshift(url); if (links.length > 50) links.length = 50; }
+    localStorage.setItem(UTM_LINKS_KEY, JSON.stringify(links));
+  } catch(e) {}
+}
+
+function renderUtmHistory() {
+  const el = document.getElementById('utmHistory');
+  if (!el) return;
+  try {
+    const links = JSON.parse(localStorage.getItem(UTM_LINKS_KEY) || '[]');
+    if (!links.length) { el.innerHTML = '<div class="loading" style="color:var(--text-3)">No links saved yet.</div>'; return; }
+    el.innerHTML = '<div class="utm-history">' + links.map(url => `
+      <div class="utm-hist-item">
+        <span class="utm-hist-url">${url}</span>
+        <button class="utm-hist-copy" onclick="copyToClip('${url.replace(/'/g,'\\\'').replace(/"/g,'&quot;')}',this)">Copy</button>
+      </div>`).join('') + '</div>';
+  } catch(e) {}
+}
+
+function clearUtmHistory() {
+  if (!confirm('Clear all saved links?')) return;
+  localStorage.removeItem(UTM_LINKS_KEY);
+  renderUtmHistory();
+}
+
+function copyToClip(url, btn) {
+  navigator.clipboard?.writeText(url).then(() => {
+    btn.textContent = '✅'; setTimeout(() => btn.textContent = 'Copy', 1500);
+  }).catch(() => {});
+}
+
+// Build UTM on load
+window.addEventListener('load', function() {
+  if (sessionStorage.getItem(SESSION_KEY) === '1') buildUtm();
+});
+
 </script>
 </body>
 </html>
