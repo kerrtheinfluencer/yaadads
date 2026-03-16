@@ -350,19 +350,14 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .nav-logo em { color: var(--gold); font-style: italic; }
   .nav-spacer { flex: 1; }
   .nav-back {
-    display: flex; align-items: center; gap: 4px;
-    color: var(--green); font-size: 16px; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-2); font-size: 14px;
     text-decoration: none;
-    padding: 6px 4px;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-    white-space: nowrap;
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
   }
-  .nav-back:hover { opacity: 0.75; }
-  .nav-back svg { flex-shrink: 0; }
+  .nav-back:hover { color: var(--text-1); border-color: var(--green); }
   .nav-post {
     background: var(--gold); color: #1a1a1a;
     font-weight: 700; font-size: 13px;
@@ -725,10 +720,10 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     .ad-layout { grid-template-columns: 1fr; }
     .ad-panel { position: static; }
     .page-wrap { padding: 16px 16px 48px; }
-    nav { padding: 0 12px; gap: 0; }
-    /* Hide centred logo on mobile — back + post ad is enough */
-    .nav-logo-centre { display: none; }
-    .nav-back { font-size: 15px; padding: 6px 8px; max-width: 160px; }
+    nav { padding: 0 16px; gap: 10px; }
+    /* Hide logo text on mobile — icon only, saves space for buttons */
+    .nav-logo-text { display: none; }
+    .nav-back { font-size: 13px; padding: 6px 10px; }
     .nav-post { font-size: 12px; padding: 6px 11px; }
     .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
@@ -741,17 +736,11 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <body>
 
 <nav>
-  <!-- iOS-style back button — far left with chevron -->
-  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}">
-    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
-    ${catName}
-  </a>
-  <div class="nav-spacer"></div>
-  <!-- Logo centred — hidden on mobile to save space -->
-  <a class="nav-logo nav-logo-centre" href="${BASE_URL}">
+  <a class="nav-logo" href="${BASE_URL}">
     <span>🇯🇲</span><span class="nav-logo-text">Yaad <em>Adz</em></span>
   </a>
   <div class="nav-spacer"></div>
+  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}">← ${catName}</a>
   <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
 </nav>
 
@@ -1060,7 +1049,240 @@ async function main() {
     }
   }
 
-  // ── Generate sitemap.xml ──────────────────────────────────────
+  // ── Generate category landing pages ───────────────────────────
+  // These are the pages that get photo thumbnails in Google search results
+  // e.g. /category/vehicles → "Cars for Sale in Jamaica"
+  // e.g. /category/vehicles/kingston → "Cars for Sale in Kingston"
+  console.log('📂 Generating category landing pages…');
+
+  const CAT_DIR = path.join(__dirname, 'category');
+  if (!fs.existsSync(CAT_DIR)) fs.mkdirSync(CAT_DIR, { recursive: true });
+
+  const PARISHES = [
+    'Kingston','St. Andrew','St. Catherine','St. James','Manchester',
+    'St. Ann','Clarendon','Westmoreland','St. Elizabeth','Portland',
+    'St. Mary','St. Thomas','Trelawny','Hanover'
+  ];
+
+  const catPageUrls = []; // for sitemap
+
+  // Build one category page
+  function buildCatPage(catId, parish) {
+    const catName = CAT_NAMES[catId] || 'Listings';
+    const catIcon = CAT_ICONS[catId] || '📦';
+    const active  = allAds.filter(a =>
+      a.status !== 'sold' &&
+      a.category === catId &&
+      (!parish || a.parish === parish)
+    ).sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+
+    const title = parish
+      ? `${catName} for Sale in ${parish}, Jamaica`
+      : `${catName} for Sale in Jamaica`;
+    const desc = parish
+      ? `Browse ${active.length} ${catName.toLowerCase()} listings in ${parish}. Free classifieds — contact sellers directly on Yaad Adz.`
+      : `Browse ${active.length} ${catName.toLowerCase()} listings across all 14 parishes in Jamaica. Free classifieds — no fees.`;
+    const canonicalUrl = parish
+      ? `${BASE_URL}/category/${catId}/${parish.toLowerCase().replace(/[\s.]/g,'-')}`
+      : `${BASE_URL}/category/${catId}`;
+
+    // Hero image — first listing with a photo
+    const heroAd  = active.find(a => a.image);
+    const heroImg = heroAd ? heroAd.image : '';
+
+    // Listing cards — up to 24
+    const cards = active.slice(0, 24).map(a => {
+      const slug = slugify(a);
+      const img  = a.image
+        ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
+        : `<div class="cat-card-placeholder">${catIcon}</div>`;
+      return `
+      <a class="cat-card" href="${BASE_URL}/ad/${slug}">
+        <div class="cat-card-img">${img}</div>
+        <div class="cat-card-body">
+          <div class="cat-card-price">${fmtPrice(a.price)}</div>
+          <div class="cat-card-title">${esc(a.title)}</div>
+          <div class="cat-card-meta">📍 ${esc(a.parish)} · ${ago(a.date)}</div>
+        </div>
+      </a>`;
+    }).join('');
+
+    // Parish sub-links
+    const parishLinks = !parish ? PARISHES.map(p => {
+      const count = allAds.filter(a => a.status !== 'sold' && a.category === catId && a.parish === p).length;
+      if (!count) return '';
+      const pSlug = p.toLowerCase().replace(/[\s.]/g,'-');
+      return `<a href="${BASE_URL}/category/${catId}/${pSlug}" class="parish-chip">📍 ${p} <span>${count}</span></a>`;
+    }).filter(Boolean).join('') : '';
+
+    return `<!DOCTYPE html>
+<html lang="en-JM">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>${esc(title)} | Yaad Adz</title>
+<meta name="description" content="${esc(desc)}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="${canonicalUrl}">
+
+<!-- Open Graph — this is what puts the photo in Google search results -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Yaad Adz">
+<meta property="og:title" content="${esc(title)} | Yaad Adz">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${canonicalUrl}">
+${heroImg ? `<meta property="og:image" content="${esc(heroImg)}">
+<meta property="og:image:width" content="800">
+<meta property="og:image:height" content="600">
+<meta property="og:image:alt" content="${esc(title)}">` : ''}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+${heroImg ? `<meta name="twitter:image" content="${esc(heroImg)}">` : ''}
+<meta name="geo.region" content="JM">
+
+<!-- JSON-LD -->
+<script type="application/ld+json">${JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  'name': title,
+  'description': desc,
+  'url': canonicalUrl,
+  'numberOfItems': active.length,
+  ...(heroImg ? { 'image': heroImg } : {}),
+  'itemListElement': active.slice(0,10).map((a,i) => ({
+    '@type': 'ListItem',
+    'position': i+1,
+    'url': BASE_URL + '/ad/' + slugify(a),
+    'name': a.title,
+    'image': a.image || undefined,
+  }))
+})}</script>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F70Z3M7TJ9"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-F70Z3M7TJ9');</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0c1e14;--bg2:#112019;--bg3:#172a1f;--green:#1db954;--gold:#f5c842;--text-1:#e8ede9;--text-2:#a0a8a4;--text-3:#6b7a71;--border:rgba(255,255,255,0.08);--radius:12px;--font-s:'Outfit',sans-serif;--font-d:'Fraunces',serif}
+body{font-family:var(--font-s);background:var(--bg);color:var(--text-1);min-height:100vh}
+nav{position:sticky;top:0;z-index:100;background:rgba(12,30,20,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px}
+.nav-back{display:flex;align-items:center;gap:4px;color:var(--green);font-size:16px;font-weight:500;text-decoration:none;padding:6px 4px;white-space:nowrap}
+.nav-back svg{flex-shrink:0}
+.nav-spacer{flex:1}
+.nav-logo{font-family:var(--font-d);font-weight:800;font-size:20px;color:var(--text-1);text-decoration:none;display:flex;align-items:center;gap:6px}
+.nav-logo em{color:var(--gold);font-style:italic}
+.nav-post{background:var(--gold);color:#1a1a1a;font-weight:700;font-size:13px;padding:7px 14px;border-radius:8px;text-decoration:none;white-space:nowrap}
+
+.page-wrap{max-width:960px;margin:0 auto;padding:24px 16px 60px}
+.cat-hero{margin-bottom:28px}
+.cat-hero h1{font-family:var(--font-d);font-size:28px;font-weight:800;line-height:1.2;margin-bottom:8px}
+.cat-hero p{font-size:15px;color:var(--text-2);line-height:1.6}
+.cat-count{display:inline-block;background:rgba(29,185,84,0.15);color:var(--green);font-size:13px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+
+.parish-chips{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}
+.parish-chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--text-2);text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:6px}
+.parish-chip:hover{border-color:var(--green);color:var(--green)}
+.parish-chip span{background:rgba(255,255,255,0.1);border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700}
+
+.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:24px}
+.cat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,box-shadow .18s,border-color .18s;display:flex;flex-direction:column}
+.cat-card:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.cat-card-img{width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg2)}
+.cat-card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.cat-card:hover .cat-card-img img{transform:scale(1.04)}
+.cat-card-placeholder{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--bg2)}
+.cat-card-body{padding:12px}
+.cat-card-price{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--green);margin-bottom:4px}
+.cat-card-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cat-card-meta{font-size:11px;color:var(--text-3)}
+
+.empty{text-align:center;padding:60px 0;color:var(--text-3)}
+footer{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:24px;font-size:13px;color:var(--text-3)}
+footer a{color:var(--text-3);text-decoration:none;margin:0 8px}
+footer a:hover{color:var(--green)}
+.footer-logo{font-family:var(--font-d);font-size:17px;font-weight:800;color:var(--text-1);margin-bottom:8px}
+.footer-logo em{color:var(--gold);font-style:italic}
+
+@media(max-width:600px){
+  .cat-hero h1{font-size:22px}
+  .listings-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  nav{padding:0 12px}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-back" href="${parish ? `${BASE_URL}/category/${catId}` : BASE_URL}">
+    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 1 1 9 9 17"/></svg>
+    ${parish ? catName : 'Home'}
+  </a>
+  <div class="nav-spacer"></div>
+  <a class="nav-logo" href="${BASE_URL}"><span>🇯🇲</span><em>Yaad Adz</em></a>
+  <div class="nav-spacer"></div>
+  <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
+</nav>
+
+<div class="page-wrap">
+  <div class="cat-hero">
+    <div class="cat-count">${active.length} listing${active.length !== 1 ? 's' : ''}</div>
+    <h1>${catIcon} ${esc(title)}</h1>
+    <p>${esc(desc)}</p>
+  </div>
+
+  ${parishLinks ? `<div class="parish-chips">${parishLinks}</div>` : ''}
+
+  ${cards ? `<div class="listings-grid">${cards}</div>` : '<div class="empty"><p>No listings yet — <a href="${BASE_URL}/?post=1" style="color:var(--green)">post the first one!</a></p></div>'}
+</div>
+
+<footer>
+  <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
+  <p>Jamaica's free classifieds</p>
+  <div style="margin-top:10px">
+    <a href="${BASE_URL}">Home</a>
+    <a href="${BASE_URL}/?cat=vehicles">Cars</a>
+    <a href="${BASE_URL}/?cat=property">Property</a>
+    <a href="${BASE_URL}/?cat=electronics">Phones</a>
+    <a href="${BASE_URL}/?cat=jobs">Jobs</a>
+  </div>
+  <p style="margin-top:8px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
+</footer>
+</body>
+</html>`;
+  }
+
+  // Generate category index pages + parish sub-pages
+  let catPagesWritten = 0;
+  const catIds = Object.keys(CAT_NAMES);
+
+  for (const catId of catIds) {
+    const catDir = path.join(CAT_DIR, catId);
+    if (!fs.existsSync(catDir)) fs.mkdirSync(catDir, { recursive: true });
+
+    // Main category page: /category/vehicles/index.html
+    const catHtml = buildCatPage(catId, null);
+    fs.writeFileSync(path.join(catDir, 'index.html'), catHtml, 'utf8');
+    catPageUrls.push({ url: `${BASE_URL}/category/${catId}`, image: allAds.find(a => a.category === catId && a.image)?.image || null });
+    catPagesWritten++;
+
+    // Parish sub-pages: /category/vehicles/kingston/index.html
+    for (const parish of PARISHES) {
+      const hasAds = allAds.some(a => a.status !== 'sold' && a.category === catId && a.parish === parish);
+      if (!hasAds) continue;
+      const pSlug  = parish.toLowerCase().replace(/[\s.]/g, '-');
+      const pDir   = path.join(catDir, pSlug);
+      if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true });
+      const pHtml  = buildCatPage(catId, parish);
+      fs.writeFileSync(path.join(pDir, 'index.html'), pHtml, 'utf8');
+      catPageUrls.push({ url: `${BASE_URL}/category/${catId}/${pSlug}`, image: allAds.find(a => a.category === catId && a.parish === parish && a.image)?.image || null });
+      catPagesWritten++;
+    }
+  }
+  console.log(`   ✅ ${catPagesWritten} category pages written`);
   console.log('🗺️  Generating sitemap.xml…');
   const today = new Date().toISOString().split('T')[0];
 
@@ -1120,13 +1342,25 @@ async function main() {
     </image:image>` : ''}
   </url>`).join('');
 
+  const catXml = catPageUrls.map(p => `
+  <url>
+    <loc>${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>${p.image ? `
+    <image:image>
+      <image:loc>${p.image}</image:loc>
+    </image:image>` : ''}
+  </url>`).join('');
+
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset
   xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <!-- Generated by Yaad Adz on ${new Date().toISOString()} -->
-  <!-- ${staticPages.length} static pages + ${adEntries.length} active listings -->
+  <!-- ${staticPages.length} static + ${catPageUrls.length} category + ${adEntries.length} ad pages -->
 ${staticXml}
+${catXml}
 ${adXml}
 </urlset>`;
 
