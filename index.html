@@ -556,7 +556,229 @@ nav {
   background: rgba(255,255,255,0.14) !important;
 }
 
-/* ── Performance: disable blur on low-end / battery saver ─── */
+/* ══════════════════════════════════════════════════════════════
+   UI IMPROVEMENTS LAYER
+   All additive — no layout or functional changes.
+══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Card visual hierarchy — price dominant, title secondary ─ */
+.ad-price {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.3px !important;
+  line-height: 1.1 !important;
+  color: #00703f !important;
+}
+.ad-price.negotiable::after {
+  content: ' · neg.';
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.65;
+  letter-spacing: 0;
+}
+.ad-title {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: #1a2e22 !important;
+  line-height: 1.35 !important;
+  margin-top: 3px !important;
+}
+.ad-meta {
+  font-size: 11.5px !important;
+  color: #6b7a71 !important;
+  margin-top: 6px !important;
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+/* ── 2. Category colour strip at top of each card ────────────── */
+.ad-card-img {
+  border-radius: 10px 10px 0 0 !important;
+  overflow: hidden !important;
+  aspect-ratio: 4/3 !important;
+  position: relative !important;
+}
+.ad-card-img::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--cat-bg, #00703f);
+  z-index: 1;
+  opacity: 0.85;
+}
+.ad-card-img img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* ── 3. Hero search bar wider on desktop ─────────────────────── */
+@media (min-width: 768px) {
+  .ai-search-wrap {
+    max-width: 680px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .ai-search-bar {
+    padding: 14px 18px !important;
+    font-size: 16px !important;
+  }
+  .ai-search-input {
+    font-size: 15px !important;
+  }
+}
+
+/* ── 4. Improved empty state ─────────────────────────────────── */
+.empty {
+  padding: 48px 24px !important;
+  text-align: center !important;
+}
+.empty-icon {
+  font-size: 52px !important;
+  margin-bottom: 12px !important;
+  display: block !important;
+}
+.empty h3 {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #1a2e22 !important;
+  margin-bottom: 8px !important;
+  font-family: var(--font-d, serif) !important;
+}
+.empty p {
+  font-size: 14px !important;
+  color: #6b7a71 !important;
+  margin-bottom: 20px !important;
+  line-height: 1.6 !important;
+}
+
+/* ── 5. Card body padding tighter and more balanced ──────────── */
+.ad-card-body {
+  padding: 10px 12px 12px !important;
+}
+
+/* ── 6. Badges refinement ─────────────────────────────────────── */
+.fresh-badge {
+  background: #00703f !important;
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 3px 7px !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.3px !important;
+}
+.trending-badge {
+  background: linear-gradient(135deg, #f5c842, #e6a817) !important;
+  color: #1a1a1a !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 3px 7px !important;
+  border-radius: 6px !important;
+}
+.photo-count-badge {
+  background: rgba(0,0,0,0.55) !important;
+  backdrop-filter: blur(4px) !important;
+  font-size: 10px !important;
+  padding: 3px 7px !important;
+  border-radius: 6px !important;
+}
+.ad-cat-tag {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* ── 7. Sold card dimmed more clearly ────────────────────────── */
+.ad-card.sold {
+  opacity: 0.55 !important;
+  filter: grayscale(0.4) !important;
+}
+.sold-tag {
+  background: #e53e3e !important;
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* ── 8. Hero eyebrow pill refined ────────────────────────────── */
+.hero-eyebrow {
+  display: inline-block !important;
+  background: rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 20px !important;
+  padding: 5px 14px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  margin-bottom: 14px !important;
+}
+
+/* ── 9. Results header cleaner ───────────────────────────────── */
+.results-count {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #6b7a71 !important;
+}
+.results-count strong {
+  color: #1a2e22 !important;
+  font-size: 15px !important;
+}
+
+/* ── 10. Load more button polished ──────────────────────────── */
+.load-more-btn {
+  background: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+.load-more-btn:hover {
+  background: rgba(255,255,255,0.9) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+.load-more-count {
+  background: rgba(0,112,63,0.12) !important;
+  color: #00703f !important;
+  border-radius: 20px !important;
+  padding: 2px 9px !important;
+  font-size: 12px !important;
+}
+
+/* ── Nav SVG logo — constrain on mobile so it doesn't push items off screen ── */
+.nav-logo svg {
+  height: 32px !important;
+  width: auto !important;
+  max-width: 120px !important;
+}
+@media (max-width: 640px) {
+  .nav-logo svg {
+    height: 28px !important;
+    max-width: 90px !important;
+  }
+}
+
+/* ── Ad views — ensure always visible ── */
+.ad-views {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  opacity: 0.7 !important;
+}
+.ad-views svg {
+  width: 12px !important;
+  height: 12px !important;
+}
 @media (prefers-reduced-motion: reduce) {
   .ad-card, .modal, .ai-sheet, .mob-nav, nav,
   .ai-float-chat, .cat-pill-sm, .toast, .pwa-banner,
@@ -567,7 +789,6 @@ nav {
 }
 
 /* ── iOS zoom prevention ── */
-/* iOS Safari zooms in when input font-size < 16px. Force 16px on all inputs. */
 @media screen and (max-width: 768px) {
   input, textarea, select,
   .form-inp, .ai-search-input, .ai-sheet-input,
@@ -580,7 +801,7 @@ nav {
   }
 }
 
-/* ── Toast fix — override style.css centering that clips on mobile ── */
+/* ── Toast fix ── */
 .toast {
   left: 16px !important;
   right: 16px !important;
