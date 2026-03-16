@@ -556,284 +556,7 @@ nav {
   background: rgba(255,255,255,0.14) !important;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   UI IMPROVEMENTS LAYER
-   All additive — no layout or functional changes.
-══════════════════════════════════════════════════════════════ */
-
-/* ── 1. Card visual hierarchy — price dominant, title secondary ─ */
-.ad-price {
-  font-size: 20px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.3px !important;
-  line-height: 1.1 !important;
-  color: #00703f !important;
-}
-.ad-price.negotiable::after {
-  content: ' · neg.';
-  font-size: 11px;
-  font-weight: 500;
-  opacity: 0.65;
-  letter-spacing: 0;
-}
-.ad-title {
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
-  color: #1a2e22 !important;
-  line-height: 1.35 !important;
-  margin-top: 3px !important;
-}
-.ad-meta {
-  font-size: 11.5px !important;
-  color: #6b7a71 !important;
-  margin-top: 6px !important;
-  display: flex !important;
-  gap: 8px !important;
-  flex-wrap: wrap !important;
-}
-
-/* ── Grid column fix — more columns on desktop, tighter cards ─ */
-.listings-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-  gap: 14px !important;
-}
-@media (min-width: 900px) {
-  .listings-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 16px !important;
-  }
-}
-@media (min-width: 1200px) {
-  .listings-grid {
-    grid-template-columns: repeat(5, 1fr) !important;
-  }
-}
-@media (max-width: 600px) {
-  .listings-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-}
-
-/* ── 2. Category colour strip at top of each card ────────────── */
-.ad-card-img {
-  border-radius: 10px 10px 0 0 !important;
-  overflow: hidden !important;
-  aspect-ratio: 16/10 !important;
-  position: relative !important;
-}
-.ad-card-img::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--cat-bg, #00703f);
-  z-index: 1;
-  opacity: 0.85;
-}
-.ad-card-img img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center !important;
-}
-
-/* ── 3. Hero search bar wider on desktop ─────────────────────── */
-@media (min-width: 768px) {
-  .ai-search-wrap {
-    max-width: 680px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-  .ai-search-bar {
-    padding: 14px 18px !important;
-    font-size: 16px !important;
-  }
-  .ai-search-input {
-    font-size: 15px !important;
-  }
-}
-
-/* ── 4. Improved empty state ─────────────────────────────────── */
-.empty {
-  padding: 48px 24px !important;
-  text-align: center !important;
-}
-.empty-icon {
-  font-size: 52px !important;
-  margin-bottom: 12px !important;
-  display: block !important;
-}
-.empty h3 {
-  font-size: 20px !important;
-  font-weight: 800 !important;
-  color: #1a2e22 !important;
-  margin-bottom: 8px !important;
-  font-family: var(--font-d, serif) !important;
-}
-.empty p {
-  font-size: 14px !important;
-  color: #6b7a71 !important;
-  margin-bottom: 20px !important;
-  line-height: 1.6 !important;
-}
-
-/* ── 5. Card body padding tighter and more balanced ──────────── */
-.ad-card-body {
-  padding: 10px 12px 12px !important;
-}
-
-/* ── 6. Badges refinement ─────────────────────────────────────── */
-.fresh-badge {
-  background: #00703f !important;
-  color: #fff !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  padding: 3px 7px !important;
-  border-radius: 6px !important;
-  letter-spacing: 0.3px !important;
-}
-.trending-badge {
-  background: linear-gradient(135deg, #f5c842, #e6a817) !important;
-  color: #1a1a1a !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  padding: 3px 7px !important;
-  border-radius: 6px !important;
-}
-.photo-count-badge {
-  background: rgba(0,0,0,0.55) !important;
-  backdrop-filter: blur(4px) !important;
-  font-size: 10px !important;
-  padding: 3px 7px !important;
-  border-radius: 6px !important;
-}
-.ad-cat-tag {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  padding: 3px 8px !important;
-  border-radius: 6px !important;
-  letter-spacing: 0.2px !important;
-}
-
-/* ── 7. Sold card dimmed more clearly ────────────────────────── */
-.ad-card.sold {
-  opacity: 0.55 !important;
-  filter: grayscale(0.4) !important;
-}
-.sold-tag {
-  background: #e53e3e !important;
-  color: #fff !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  padding: 3px 8px !important;
-  border-radius: 6px !important;
-  letter-spacing: 0.5px !important;
-}
-
-/* ── 8. Hero eyebrow pill refined ────────────────────────────── */
-.hero-eyebrow {
-  display: inline-block !important;
-  background: rgba(255,255,255,0.1) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  border-radius: 20px !important;
-  padding: 5px 14px !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.5px !important;
-  text-transform: uppercase !important;
-  margin-bottom: 14px !important;
-}
-
-/* ── 9. Results header cleaner ───────────────────────────────── */
-.results-count {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #6b7a71 !important;
-}
-.results-count strong {
-  color: #1a2e22 !important;
-  font-size: 15px !important;
-}
-
-/* ── 10. Load more button polished ──────────────────────────── */
-.load-more-btn {
-  background: rgba(255,255,255,0.7) !important;
-  backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(255,255,255,0.5) !important;
-  border-radius: 12px !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
-}
-.load-more-btn:hover {
-  background: rgba(255,255,255,0.9) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
-}
-.load-more-count {
-  background: rgba(0,112,63,0.12) !important;
-  color: #00703f !important;
-  border-radius: 20px !important;
-  padding: 2px 9px !important;
-  font-size: 12px !important;
-}
-
-/* ── Price range filter bar ───────────────────────────────────── */
-.price-filter-bar { padding:8px 16px 4px; max-width:960px; margin:0 auto; }
-.price-filter-inner { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:12px; padding:8px 14px; box-shadow:0 1px 8px rgba(0,0,0,0.06); }
-.price-filter-label { font-size:12px; font-weight:700; color:#1a2e22; white-space:nowrap; }
-.price-filter-inputs { display:flex; align-items:center; gap:6px; flex:1; }
-.price-input { width:100%; max-width:130px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:5px 10px; font-size:13px; font-weight:500; color:#1a2e22; outline:none; transition:border-color 0.2s; }
-.price-input:focus { border-color:#00703f; }
-.price-filter-sep { color:#6b7a71; font-weight:600; font-size:13px; flex-shrink:0; }
-.price-filter-clear { background:rgba(0,0,0,0.06); border:none; border-radius:6px; width:24px; height:24px; font-size:12px; cursor:pointer; color:#6b7a71; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
-.price-filter-clear:hover { background:rgba(229,62,62,0.12); color:#e53e3e; }
-
-/* ── Recently viewed ──────────────────────────────────────────── */
-.recently-viewed { max-width:960px; margin:0 auto; padding:20px 16px 32px; }
-.rv-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.rv-title { font-size:14px; font-weight:700; color:#1a2e22; }
-.rv-clear { background:none; border:none; font-size:12px; color:#6b7a71; cursor:pointer; padding:2px 6px; border-radius:6px; transition:all 0.2s; }
-.rv-clear:hover { background:rgba(0,0,0,0.05); color:#e53e3e; }
-.rv-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-.rv-grid::-webkit-scrollbar { display:none; }
-.rv-card { flex:0 0 120px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:10px; overflow:hidden; cursor:pointer; transition:transform 0.18s,box-shadow 0.18s; }
-.rv-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.1); }
-.rv-card-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#e8ede9; }
-.rv-card-body { padding:6px 8px 8px; }
-.rv-card-price { font-size:12px; font-weight:800; color:#00703f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rv-card-title { font-size:11px; color:#1a2e22; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; margin-top:2px; }
-
-/* ── Empty state suggestions ─────────────────────────────────── */
-.empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
-.empty-sug-btn { background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#1a2e22; cursor:pointer; transition:all 0.2s; backdrop-filter:blur(8px); }
-.empty-sug-btn:hover { border-color:#00703f; color:#00703f; }
-
-/* ── Nav SVG logo — constrain on mobile so it doesn't push items off screen ── */
-.nav-logo svg {
-  height: 32px !important;
-  width: auto !important;
-  max-width: 120px !important;
-}
-@media (max-width: 640px) {
-  .nav-logo svg {
-    height: 28px !important;
-    max-width: 90px !important;
-  }
-}
-
-/* ── Ad views — ensure always visible ── */
-.ad-views {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-  opacity: 0.7 !important;
-}
-.ad-views svg {
-  width: 12px !important;
-  height: 12px !important;
-}
+/* ── Performance: disable blur on low-end / battery saver ─── */
 @media (prefers-reduced-motion: reduce) {
   .ad-card, .modal, .ai-sheet, .mob-nav, nav,
   .ai-float-chat, .cat-pill-sm, .toast, .pwa-banner,
@@ -844,6 +567,7 @@ nav {
 }
 
 /* ── iOS zoom prevention ── */
+/* iOS Safari zooms in when input font-size < 16px. Force 16px on all inputs. */
 @media screen and (max-width: 768px) {
   input, textarea, select,
   .form-inp, .ai-search-input, .ai-sheet-input,
@@ -856,7 +580,7 @@ nav {
   }
 }
 
-/* ── Toast fix ── */
+/* ── Toast fix — override style.css centering that clips on mobile ── */
 .toast {
   left: 16px !important;
   right: 16px !important;
@@ -865,6 +589,47 @@ nav {
   width: auto !important;
   max-width: none !important;
 }
+
+/* ── Grid columns ── */
+.listings-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
+@media(min-width:900px){ .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
+@media(min-width:1200px){ .listings-grid { grid-template-columns:repeat(5,1fr) !important; } }
+@media(max-width:600px){ .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
+
+/* ── Card image aspect ratio ── */
+.ad-card-img { aspect-ratio:16/10 !important; overflow:hidden !important; position:relative !important; }
+.ad-card-img::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--cat-bg,#00703f); z-index:1; opacity:0.85; }
+.ad-card-img img { width:100% !important; height:100% !important; object-fit:cover !important; object-position:center !important; }
+
+/* ── Price filter bar ── */
+.price-filter-bar { padding:8px 16px 4px; max-width:960px; margin:0 auto; }
+.price-filter-inner { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:12px; padding:8px 14px; box-shadow:0 1px 8px rgba(0,0,0,0.06); }
+.price-filter-label { font-size:12px; font-weight:700; color:#1a2e22; white-space:nowrap; }
+.price-filter-inputs { display:flex; align-items:center; gap:6px; flex:1; }
+.price-input { width:100%; max-width:130px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:5px 10px; font-size:16px; font-weight:500; color:#1a2e22; outline:none; transition:border-color 0.2s; }
+.price-input:focus { border-color:#00703f; }
+.price-filter-sep { color:#6b7a71; font-weight:600; font-size:13px; flex-shrink:0; }
+.price-filter-clear { background:rgba(0,0,0,0.06); border:none; border-radius:6px; width:24px; height:24px; font-size:12px; cursor:pointer; color:#6b7a71; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
+.price-filter-clear:hover { background:rgba(229,62,62,0.12); color:#e53e3e; }
+
+/* ── Recently viewed ── */
+.recently-viewed { max-width:960px; margin:0 auto; padding:20px 16px 32px; }
+.rv-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.rv-title { font-size:14px; font-weight:700; color:#1a2e22; }
+.rv-clear { background:none; border:none; font-size:12px; color:#6b7a71; cursor:pointer; padding:2px 6px; border-radius:6px; }
+.rv-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.rv-grid::-webkit-scrollbar { display:none; }
+.rv-card { flex:0 0 120px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:10px; overflow:hidden; cursor:pointer; transition:transform 0.18s,box-shadow 0.18s; }
+.rv-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.1); }
+.rv-card-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#e8ede9; }
+.rv-card-body { padding:6px 8px 8px; }
+.rv-card-price { font-size:12px; font-weight:800; color:#00703f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rv-card-title { font-size:11px; color:#1a2e22; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; margin-top:2px; }
+
+/* ── Empty state suggestions ── */
+.empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
+.empty-sug-btn { background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#1a2e22; cursor:pointer; transition:all 0.2s; }
+.empty-sug-btn:hover { border-color:#00703f; color:#00703f; }
 </style>
 <body>
 
@@ -1051,7 +816,7 @@ nav {
       </noscript>
     </div>
 
-    <!-- Recently viewed section -->
+    <!-- Recently viewed -->
     <div class="recently-viewed" id="recentlyViewed" style="display:none">
       <div class="rv-header">
         <span class="rv-title">👁 Recently Viewed</span>
@@ -2888,7 +2653,7 @@ async function init() {
       window.matchMedia('(display-mode: standalone)').matches) {
     document.body.classList.add('pwa-mode');
   }
-  // Render recently viewed on init (populated from previous sessions)
+  // Render recently viewed from previous session
   setTimeout(renderRecentlyViewed, 800);
 
   showSkeletons();
@@ -3280,7 +3045,7 @@ function renderHome() {
   // Hide sold filter
   if (_hideSold) ads = ads.filter(a => a.status !== 'sold');
 
-  // Show price filter bar once results are loaded
+  // Show price filter bar
   const pfBar = document.getElementById('priceFilterBar');
   if (pfBar) pfBar.style.display = 'block';
 
@@ -3301,7 +3066,6 @@ function renderHome() {
       }
     });
   } else {
-    // Improved empty state with popular search suggestions
     const suggestions = [
       { label: '🚗 Cars under 2M', q: 'car under 2 million' },
       { label: '📱 Phones', q: 'phone for sale' },
@@ -3341,6 +3105,9 @@ function renderHome() {
     });
   }
 
+  // Prefetch ad pages for instant navigation
+  // Desktop: prefetch on mouseenter (user is about to click)
+  // Mobile: prefetch on touchstart (fires before click, ~80ms head start)
   if (window._prefetchEnabled !== false) {
     grid.querySelectorAll('.ad-card').forEach(function(card) {
       const onIntent = function() {
@@ -3352,9 +3119,12 @@ function renderHome() {
         if (!ad) return;
         const slug = slugify(ad);
         const url = '/ad/' + slug;
+        // Only prefetch once per URL
         if (document.querySelector('link[rel="prefetch"][href="' + url + '"]')) return;
         const link = document.createElement('link');
-        link.rel = 'prefetch'; link.href = url; link.as = 'document';
+        link.rel = 'prefetch';
+        link.href = url;
+        link.as = 'document';
         document.head.appendChild(link);
       };
       card.addEventListener('mouseenter', onIntent, { passive: true, once: true });
@@ -3362,13 +3132,14 @@ function renderHome() {
     });
   }
 
+  // Debounced ad push — don't thrash layout on every filter change
   clearTimeout(window._adPushTimer);
   window._adPushTimer = setTimeout(pushAds, 600);
+
+  // Persist search state in URL
   if (typeof pushSearchState === 'function') pushSearchState();
 
-  // Render recently viewed after grid
   renderRecentlyViewed();
-
   return ads.length;
 }
 
@@ -4763,7 +4534,6 @@ function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   sbIncrView(id);
   trackRecentlyViewed(id);
-  // Navigate directly to the static ad page — consistent experience every time
   window.location.href = '/ad/' + slugify(ad);
 }
 
@@ -5033,14 +4803,10 @@ function renderRecentlyViewed() {
   const section = document.getElementById('recentlyViewed');
   const grid    = document.getElementById('rvGrid');
   if (!section || !grid) return;
-
   try {
-    const rv = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
-    // Only show ads still in the current dataset
+    const rv  = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
     const ads = rv.map(id => _ads.find(a => a.id === id)).filter(Boolean).slice(0, 5);
-
     if (ads.length < 2) { section.style.display = 'none'; return; }
-
     section.style.display = 'block';
     grid.innerHTML = ads.map(ad => {
       const cat = CATS.find(c => c.id === ad.category);
@@ -5055,18 +4821,17 @@ function renderRecentlyViewed() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) {
-    section.style.display = 'none';
-  }
+  } catch(e) { section.style.display = 'none'; }
 }
 
 function clearRecentlyViewed() {
   try { localStorage.removeItem(RV_KEY); } catch(e) {}
-  const section = document.getElementById('recentlyViewed');
-  if (section) section.style.display = 'none';
+  const s = document.getElementById('recentlyViewed');
+  if (s) s.style.display = 'none';
 }
 
-
+/* ═══════════════════════════════════════════════════════════
+   PUSH NOTIFICATIONS
    ─ requestPushPermission: ask user after login (polite timing)
    ─ sendPushNotification: fire when new message arrives
    Uses the Web Notifications API — works on Android PWA and
