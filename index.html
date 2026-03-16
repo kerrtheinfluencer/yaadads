@@ -683,6 +683,60 @@ nav {
   width: auto !important;
   max-width: none !important;
 }
+
+/* ── Nav logo — constrain SVG and show Yaad Adz text ── */
+.nav-logo svg {
+  height: 32px !important;
+  width: auto !important;
+  max-width: 100px !important;
+  flex-shrink: 0;
+}
+.nav-logo-text {
+  display: inline !important;
+  font-family: var(--font-d, serif) !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: var(--text-1, #e8ede9) !important;
+  white-space: nowrap;
+}
+.nav-logo-text em {
+  color: var(--gold, #f5c842) !important;
+  font-style: italic !important;
+}
+@media (max-width: 480px) {
+  .nav-logo svg { max-width: 72px !important; height: 26px !important; }
+  .nav-logo-text { font-size: 16px !important; }
+}
+
+/* ── Ad view count — always visible ── */
+.ad-views {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  opacity: 0.75 !important;
+  font-size: 11px !important;
+}
+.ad-views svg {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Grid columns ── */
+.listings-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  gap: 14px !important;
+}
+@media (min-width: 900px) { .listings-grid { grid-template-columns: repeat(4,1fr) !important; gap:16px !important; } }
+@media (max-width: 600px) { .listings-grid { grid-template-columns: repeat(2,1fr) !important; gap:10px !important; } }
+
+/* ── Card image ── */
+.ad-card-img { aspect-ratio: 16/10 !important; overflow: hidden !important; position: relative !important; }
+.ad-card-img img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center !important; }
+
+/* ── Price on cards ── */
+.ad-price { font-size: 18px !important; font-weight: 800 !important; color: #00703f !important; line-height: 1.1 !important; }
 </style>
 <body>
 
@@ -698,7 +752,7 @@ nav {
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="goHome()" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:38px;width:auto;display:block;" aria-label="Yaad Adz">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:32px;width:auto;max-width:100px;display:block;" aria-label="Yaad Adz">
       <defs>
         <linearGradient id="nig" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#007a45"/><stop offset="100%" style="stop-color:#003d20"/></linearGradient>
         <linearGradient id="ngg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffe45e"/><stop offset="100%" style="stop-color:#c89a00"/></linearGradient>
@@ -729,6 +783,7 @@ nav {
       <rect x="321" y="198" width="208" height="2" rx="1" fill="#f4c300" opacity="0.65"/>
       <text x="425" y="232" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="26" fill="white" letter-spacing="12" opacity="0.95">ADZ</text>
     </svg>
+    <span class="nav-logo-text" style="margin-left:6px">Yaad <em>Adz</em></span>
   </div>
   <div class="nav-spacer"></div>
   <div class="nav-actions" id="navActions">
