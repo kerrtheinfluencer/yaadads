@@ -593,7 +593,6 @@ nav {
 /* ── Grid columns ── */
 .listings-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
 @media(min-width:900px){ .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
-@media(min-width:1200px){ .listings-grid { grid-template-columns:repeat(5,1fr) !important; } }
 @media(max-width:600px){ .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
 
 /* ── Card image aspect ratio ── */
@@ -630,6 +629,28 @@ nav {
 .empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
 .empty-sug-btn { background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#1a2e22; cursor:pointer; transition:all 0.2s; }
 .empty-sug-btn:hover { border-color:#00703f; color:#00703f; }
+
+/* ── Nav logo — constrain SVG so text stays visible ── */
+.nav-logo svg { height:32px !important; width:auto !important; max-width:120px !important; }
+@media(max-width:640px){ .nav-logo svg { height:26px !important; max-width:80px !important; } }
+
+/* ── View count — always visible ── */
+.ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.7 !important; }
+.ad-views svg { width:12px !important; height:12px !important; }
+
+/* ── Grid — max 4 columns, never orphan-y ── */
+.listings-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  gap: 14px !important;
+}
+@media(min-width:900px) { .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
+@media(max-width:600px) { .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
+
+/* ── Card image aspect ratio ── */
+.ad-card-img { aspect-ratio:16/10 !important; overflow:hidden !important; position:relative !important; border-radius:10px 10px 0 0 !important; }
+.ad-card-img::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--cat-bg,#00703f); z-index:1; opacity:0.85; }
+.ad-card-img img { width:100% !important; height:100% !important; object-fit:cover !important; object-position:center !important; }
 </style>
 <body>
 
@@ -645,7 +666,7 @@ nav {
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="goHome()" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:38px;width:auto;display:block;" aria-label="Yaad Adz">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:36px;width:auto;max-width:110px;display:block;" aria-label="Yaad Adz">
       <defs>
         <linearGradient id="nig" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#007a45"/><stop offset="100%" style="stop-color:#003d20"/></linearGradient>
         <linearGradient id="ngg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffe45e"/><stop offset="100%" style="stop-color:#c89a00"/></linearGradient>
