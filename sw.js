@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v3';
+const CACHE_VERSION  = 'yaadadz-v4';
 const STATIC_CACHE   = CACHE_VERSION + '-static';
 const PAGES_CACHE    = CACHE_VERSION + '-pages';
 
@@ -74,11 +74,11 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Ad pages — Stale-While-Revalidate (instant load + fresh in background)
+  // Ad pages — Network First (NEVER serve stale — old 404s break navigation)
   if (url.pathname.startsWith('/ad/') ||
       url.pathname.startsWith('/category/') ||
       url.pathname.startsWith('/parish/')) {
-    event.respondWith(staleWhileRevalidate(request, PAGES_CACHE));
+    event.respondWith(networkFirstPages(request));
     return;
   }
 
@@ -87,6 +87,25 @@ self.addEventListener('fetch', event => {
 });
 
 // ── Cache strategies ──────────────────────────────────────────────
+
+async function networkFirstPages(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      // Only cache successful 200 responses — NEVER cache 404s
+      const cache = await caches.open(PAGES_CACHE);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    // Network failed — try cache as offline fallback
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    // Last resort: serve home page
+    const home = await caches.match('/');
+    return home || new Response('Offline', { status: 503 });
+  }
+}
 
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);

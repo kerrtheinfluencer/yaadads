@@ -5332,9 +5332,9 @@ function checkUrlAdParam() {
     if (shortId) {
       const ad = _ads.find(function(a){ return a.id.startsWith(shortId); });
       if (ad) {
-        // We got here via 404.html redirect (static page doesn't exist yet)
-        // Don't call openDetail — that would navigate back and loop.
-        // Just scroll to the listing on the home grid instead.
+        // We arrived here via 404.html redirect — the static page doesn't exist yet.
+        // Don't call openDetail (would navigate back to /ad/slug and loop).
+        // Just scroll to the card on the home grid so the user can see it.
         setTimeout(function() {
           const card = document.querySelector('[onclick*="' + ad.id + '"]');
           if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
