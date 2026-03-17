@@ -761,6 +761,300 @@ nav {
 
 /* ── Price on cards ── */
 .ad-price { font-size: 18px !important; font-weight: 800 !important; color: #00703f !important; line-height: 1.1 !important; }
+
+/* ════════════════════════════════════════════════════════════
+   AI SHEET — FULL UI REDESIGN
+════════════════════════════════════════════════════════════ */
+
+/* ── Sheet container ── */
+#aiSheet {
+  position: fixed !important;
+  bottom: 0 !important; left: 0 !important; right: 0 !important;
+  max-height: 92vh !important;
+  border-radius: 24px 24px 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  z-index: 8000 !important;
+  background: #0e1f16 !important;
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 -12px 60px rgba(0,0,0,0.5) !important;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32,0.72,0,1) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+#aiSheet.open {
+  transform: translateY(0) !important;
+  display: flex !important;
+}
+
+/* ── Drag handle ── */
+.ai-sheet-handle {
+  width: 36px !important; height: 4px !important;
+  background: rgba(255,255,255,0.2) !important;
+  border-radius: 2px !important;
+  margin: 12px auto 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Header ── */
+.ai-sheet-header {
+  display: flex !important;
+  align-items: center !important;
+  padding: 14px 18px 12px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  flex-shrink: 0 !important;
+}
+.ai-sheet-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 11px !important;
+  flex: 1 !important;
+}
+.ai-sheet-icon {
+  font-size: 28px !important;
+  width: 44px !important; height: 44px !important;
+  background: rgba(29,185,84,0.12) !important;
+  border: 1px solid rgba(29,185,84,0.25) !important;
+  border-radius: 14px !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+.ai-sheet-name {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: #e8ede9 !important;
+  letter-spacing: -0.2px !important;
+}
+.ai-sheet-sub {
+  font-size: 12px !important;
+  color: rgba(255,255,255,0.4) !important;
+  margin-top: 1px !important;
+}
+.ai-sheet-close {
+  width: 32px !important; height: 32px !important;
+  background: rgba(255,255,255,0.08) !important;
+  border: none !important; border-radius: 50% !important;
+  color: rgba(255,255,255,0.5) !important;
+  font-size: 14px !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+  flex-shrink: 0 !important;
+}
+.ai-sheet-close:hover { background: rgba(255,255,255,0.15) !important; }
+
+/* ── Scrollable body ── */
+.ai-sheet-body {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 16px 16px 8px !important;
+  scrollbar-width: none !important;
+}
+.ai-sheet-body::-webkit-scrollbar { display: none !important; }
+
+/* ── Recent searches ── */
+.ai-sheet-recent {
+  margin-bottom: 18px !important;
+}
+.sheet-recent-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,0.3) !important;
+  margin-bottom: 10px !important;
+}
+.sheet-recent-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+.sheet-recent-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 20px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  color: rgba(255,255,255,0.65) !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  white-space: nowrap !important;
+}
+.sheet-recent-chip::before { content: '🕐'; font-size: 11px !important; }
+.sheet-recent-chip:hover {
+  background: rgba(255,255,255,0.12) !important;
+  color: #e8ede9 !important;
+}
+
+/* ── Suggestion chips ── */
+.ai-sheet-sugs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-bottom: 4px !important;
+}
+.sheet-sug {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 20px !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #c8d4cc !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  white-space: nowrap !important;
+}
+.sheet-sug:hover, .sheet-sug:active {
+  background: rgba(29,185,84,0.15) !important;
+  border-color: rgba(29,185,84,0.35) !important;
+  color: #1db954 !important;
+  transform: scale(0.97) !important;
+}
+
+/* ── Chat area ── */
+.ai-sheet-chat {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+}
+
+/* ── Chat bubbles ── */
+.sheet-msg-user {
+  align-self: flex-end !important;
+  background: #1db954 !important;
+  color: #fff !important;
+  border-radius: 18px 18px 4px 18px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  max-width: 82% !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+}
+.sheet-msg-ai {
+  align-self: flex-start !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #d8e4dc !important;
+  border-radius: 4px 18px 18px 18px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  max-width: 88% !important;
+  line-height: 1.55 !important;
+}
+.sheet-msg-typing {
+  align-self: flex-start !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 4px 18px 18px 18px !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  gap: 4px !important;
+  align-items: center !important;
+}
+.sheet-msg-typing span {
+  width: 7px !important; height: 7px !important;
+  background: rgba(255,255,255,0.35) !important;
+  border-radius: 50% !important;
+  animation: typingBounce 1.2s ease infinite !important;
+  display: block !important;
+}
+.sheet-msg-typing span:nth-child(2) { animation-delay: 0.15s !important; }
+.sheet-msg-typing span:nth-child(3) { animation-delay: 0.30s !important; }
+@keyframes typingBounce {
+  0%,60%,100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+/* ── Result cards inside chat ── */
+.sheet-result-card {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 14px !important;
+  padding: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  display: flex !important;
+  gap: 10px !important;
+  align-items: center !important;
+}
+.sheet-result-card:hover, .sheet-result-card:active {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(29,185,84,0.3) !important;
+}
+
+/* ── Input bar ── */
+.ai-sheet-input-wrap {
+  flex-shrink: 0 !important;
+  padding: 10px 14px 12px !important;
+  border-top: 1px solid rgba(255,255,255,0.07) !important;
+  background: #0e1f16 !important;
+}
+.ai-sheet-input-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1.5px solid rgba(255,255,255,0.12) !important;
+  border-radius: 28px !important;
+  padding: 6px 6px 6px 16px !important;
+  transition: border-color 0.2s !important;
+}
+.ai-sheet-input-bar:focus-within {
+  border-color: rgba(29,185,84,0.5) !important;
+  background: rgba(255,255,255,0.09) !important;
+}
+.ai-sheet-input {
+  flex: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #e8ede9 !important;
+  font-size: 15px !important;
+  font-family: var(--font-s, sans-serif) !important;
+  padding: 6px 0 !important;
+  min-width: 0 !important;
+}
+.ai-sheet-input::placeholder { color: rgba(255,255,255,0.3) !important; }
+.ai-sheet-send {
+  width: 38px !important; height: 38px !important;
+  background: #1db954 !important;
+  border: none !important; border-radius: 50% !important;
+  color: #fff !important; font-size: 18px !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  cursor: pointer !important; flex-shrink: 0 !important;
+  transition: all 0.15s !important;
+  box-shadow: 0 2px 12px rgba(29,185,84,0.35) !important;
+}
+.ai-sheet-send:hover { transform: scale(1.08) !important; background: #1ed760 !important; }
+.ai-sheet-send:active { transform: scale(0.95) !important; }
+.ai-sheet-hint {
+  text-align: center !important;
+  font-size: 11px !important;
+  color: rgba(255,255,255,0.2) !important;
+  margin-top: 8px !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* ── Overlay ── */
+.ai-sheet-overlay {
+  position: fixed !important; inset: 0 !important;
+  background: rgba(0,0,0,0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 7999 !important;
+  display: none !important;
+}
+.ai-sheet-overlay.open { display: block !important; }
 </style>
 <body>
 
@@ -1199,24 +1493,27 @@ nav {
     <button class="ai-sheet-close" onclick="closeAiSheet()">✕</button>
   </div>
 
-  <!-- Recent searches (populated by JS) -->
-  <div class="ai-sheet-recent" id="sheetRecentWrap" style="display:none">
-    <div class="sheet-recent-label">Recent searches</div>
-    <div class="sheet-recent-list" id="sheetRecentList"></div>
-  </div>
+  <!-- Scrollable body -->
+  <div class="ai-sheet-body" id="aiSheetBody">
+    <!-- Recent searches (populated by JS) -->
+    <div class="ai-sheet-recent" id="sheetRecentWrap" style="display:none">
+      <div class="sheet-recent-label">Recent searches</div>
+      <div class="sheet-recent-list" id="sheetRecentList"></div>
+    </div>
 
-  <!-- Quick suggestions inside sheet -->
-  <div class="ai-sheet-sugs" id="sheetSugs">
-    <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
-    <button class="sheet-sug" onclick="sheetSearch('phone under 80000 Kingston')">📱 Phones KGN</button>
-    <button class="sheet-sug" onclick="sheetSearch('house under 20 million')">🏡 Houses</button>
-    <button class="sheet-sug" onclick="sheetSearch('jobs available')">💼 Jobs</button>
-    <button class="sheet-sug" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
-    <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food & Farm</button>
-  </div>
+    <!-- Quick suggestion chips -->
+    <div class="ai-sheet-sugs" id="sheetSugs">
+      <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
+      <button class="sheet-sug" onclick="sheetSearch('phone under 80000 Kingston')">📱 Phones KGN</button>
+      <button class="sheet-sug" onclick="sheetSearch('house under 20 million')">🏡 Houses</button>
+      <button class="sheet-sug" onclick="sheetSearch('jobs available')">💼 Jobs</button>
+      <button class="sheet-sug" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
+      <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food & Farm</button>
+    </div>
 
-  <!-- Chat history area -->
-  <div class="ai-sheet-chat" id="sheetChat"></div>
+    <!-- Chat history -->
+    <div class="ai-sheet-chat" id="sheetChat"></div>
+  </div>
 
   <!-- Input bar pinned to bottom -->
   <div class="ai-sheet-input-wrap">
@@ -4472,12 +4769,14 @@ function openAiSheet() {
   sheetOpen = true;
   const sheet = document.getElementById('aiSheet');
   const overlay = document.getElementById('aiSheetOverlay');
-  // Show elements first, then add open class on next frame so CSS transition fires
-  sheet.style.display = '';
-  overlay.style.display = '';
+  sheet.style.display = 'flex';
+  overlay.style.display = 'block';
+  // Double rAF ensures display change is committed before transform transition fires
   requestAnimationFrame(function() {
-    sheet.classList.add('open');
-    overlay.classList.add('open');
+    requestAnimationFrame(function() {
+      sheet.classList.add('open');
+      overlay.classList.add('open');
+    });
   });
   document.body.style.overflow = 'hidden';
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
@@ -4495,10 +4794,12 @@ function closeAiSheet() {
   overlay.classList.remove('open');
   document.body.style.overflow = '';
   if (document.activeElement) document.activeElement.blur();
-  // Hide after transition completes
   setTimeout(function() {
-    if (!sheetOpen) { sheet.style.display = 'none'; overlay.style.display = 'none'; }
-  }, 350);
+    if (!sheetOpen) {
+      sheet.style.display = 'none';
+      overlay.style.display = 'none';
+    }
+  }, 380);
 }
 
 function sheetSearch(query) {
@@ -4561,13 +4862,20 @@ function sheetSubmit() {
 
 function addSheetMsg(role, text, results, filters, allResults, qTerms) {
   const chat = document.getElementById('sheetChat');
+  const body = document.getElementById('aiSheetBody');
   const el   = document.createElement('div');
+
+  const scrollToBottom = function() {
+    requestAnimationFrame(function() {
+      if (body) body.scrollTop = body.scrollHeight;
+    });
+  };
 
   if (role === 'user') {
     el.className = 'sheet-msg-user';
     el.textContent = text;
     chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
+    scrollToBottom();
     return el;
   }
 
@@ -4601,7 +4909,7 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
         const negBadge = ad.neg ? '<span class="src-neg-badge">neg.</span>' : '';
         const newBadge = isNew  ? '<span class="src-new-badge">New</span>'  : '';
         const thumb = ad.image
-          ? '<img class="src-thumb" src="' + ad.image + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          ? '<img class="src-thumb" src="' + thumbUrl(ad.image, 120) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
           : '<div class="src-icon">' + (cat ? cat.icon : '📦') + '</div>';
         card.innerHTML =
           thumb +
@@ -4673,17 +4981,18 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
   }
 
   chat.appendChild(el);
-  chat.scrollTop = chat.scrollHeight;
+  scrollToBottom();
   return el;
 }
 
 function addTyping() {
   const chat = document.getElementById('sheetChat');
+  const body = document.getElementById('aiSheetBody');
   const el = document.createElement('div');
-  el.className = 'sheet-typing';
+  el.className = 'sheet-msg-typing';
   el.innerHTML = '<span></span><span></span><span></span>';
   chat.appendChild(el);
-  chat.scrollTop = chat.scrollHeight;
+  requestAnimationFrame(function() { if (body) body.scrollTop = body.scrollHeight; });
   return el;
 }
 
