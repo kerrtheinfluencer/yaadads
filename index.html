@@ -14,6 +14,19 @@
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="googlebot" content="index, follow">
 <link rel="canonical" href="https://yaadadz.com/">
+<script>
+// Always keep canonical pointing to clean root — prevents ?q= ?ad= ?cat= variants being indexed
+(function() {
+  var params = new URLSearchParams(location.search);
+  var hasAppParam = params.has('q') || params.has('ad') || params.has('cat') ||
+                    params.has('parish') || params.has('min') || params.has('max') ||
+                    params.has('post') || params.has('modal');
+  if (hasAppParam) {
+    var el = document.querySelector('link[rel="canonical"]');
+    if (el) el.href = 'https://yaadadz.com/';
+  }
+})();
+</script>
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
 <!-- Google Search Console — replace XXXX with your verification code -->
@@ -5751,8 +5764,20 @@ function checkUrlAdParam() {
   }
 
   // Legacy: ?ad=full-uuid support (backwards compat for old shared links)
+  // Also update canonical so Google indexes the clean /ad/slug URL not ?ad=
   const id = params.get('ad');
-  if (id) { setTimeout(() => openDetail(id), 600); return; }
+  if (id) {
+    setTimeout(function() {
+      const ad = _ads.find(function(a){ return a.id === id; });
+      if (ad) {
+        // Update canonical to the correct static page
+        const canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.href = 'https://yaadadz.com/ad/' + slugify(ad);
+        openDetail(id);
+      }
+    }, 600);
+    return;
+  }
 
   // Restore search state from URL
   const q      = params.get('q');

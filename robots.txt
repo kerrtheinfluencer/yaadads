@@ -1,24 +1,24 @@
-# Yaad Adz — robots.txt
-# https://yaadadz.com
-
 User-agent: *
 Allow: /
 
-# Sitemap
+# Block URL parameter variants — these are app state, not real pages
+# Google should only index clean URLs and static /ad/ /category/ /parish/ pages
+Disallow: /*?q=
+Disallow: /*?ad=
+Disallow: /*?cat=
+Disallow: /*?parish=
+Disallow: /*?min=
+Disallow: /*?max=
+Disallow: /*?post=
+Disallow: /*?modal=
+
+# Allow static generated pages (override the wildcard above)
+Allow: /ad/
+Allow: /category/
+Allow: /parish/
+
+# Admin dashboard — never index
+Disallow: /dash-kxrr1.html
+
+# Sitemap location
 Sitemap: https://yaadadz.com/sitemap.xml
-
-# AI Crawlers
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: Anthropic-AI
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
