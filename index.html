@@ -1068,6 +1068,49 @@ nav {
   display: none !important;
 }
 .ai-sheet-overlay.open { display: block !important; }
+
+/* ── Sheet result cards — consistent dark theme ── */
+.sheet-count-tag {
+  font-size: 12px !important;
+  color: rgba(255,255,255,0.4) !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 20px !important;
+  padding: 3px 10px !important;
+  display: inline-block !important;
+  margin: 8px 0 10px !important;
+}
+.sheet-results {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+}
+.sheet-result-card {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-top: none !important; /* remove yellow border */
+  border-radius: 12px !important;
+  padding: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.sheet-result-card:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(29,185,84,0.3) !important; }
+.src-thumb { width: 56px !important; height: 56px !important; object-fit: cover !important; border-radius: 8px !important; flex-shrink: 0 !important; }
+.src-icon { width: 56px !important; height: 56px !important; border-radius: 8px !important; background: rgba(255,255,255,0.06) !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 22px !important; flex-shrink: 0 !important; }
+.src-info { flex: 1 !important; min-width: 0 !important; }
+.src-price { font-size: 15px !important; font-weight: 700 !important; color: #1db954 !important; line-height: 1.2 !important; }
+.src-title { font-size: 13px !important; color: #d8e4dc !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; margin-top: 2px !important; }
+.src-meta { font-size: 11px !important; color: rgba(255,255,255,0.35) !important; margin-top: 3px !important; }
+.src-arrow { color: rgba(255,255,255,0.25) !important; font-size: 18px !important; flex-shrink: 0 !important; }
+.src-neg-badge { background: rgba(245,200,66,0.15) !important; color: #f5c842 !important; font-size: 10px !important; font-weight: 700 !important; padding: 1px 6px !important; border-radius: 10px !important; margin-left: 4px !important; }
+.src-new-badge { background: rgba(29,185,84,0.15) !important; color: #1db954 !important; font-size: 10px !important; font-weight: 700 !important; padding: 1px 6px !important; border-radius: 10px !important; margin-left: 4px !important; }
+.sheet-view-all { width: 100% !important; padding: 10px !important; background: rgba(29,185,84,0.1) !important; border: 1px solid rgba(29,185,84,0.25) !important; border-radius: 10px !important; color: #1db954 !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer !important; text-align: center !important; margin-top: 4px !important; transition: all 0.15s !important; font-family: var(--font-s, sans-serif) !important; }
+.sheet-view-all:hover { background: rgba(29,185,84,0.18) !important; }
+.sheet-msg-text { line-height: 1.55 !important; }
 </style>
 <body>
 
@@ -1919,8 +1962,13 @@ async function loadAds() {
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) { console.error('loadAds:', error); _ads = []; return; }
+  const prevIds = new Set(_ads.map(a => a.id));
   _ads = (data || []).map(dbToAd);
-  // No fallback to demo data — show real empty state if DB is empty
+  // Check saved search alerts against any newly added listings
+  const newAds = _ads.filter(a => !prevIds.has(a.id));
+  if (newAds.length && prevIds.size > 0) {
+    setTimeout(function() { checkSavedSearchAlerts(newAds); }, 1500);
+  }
 }
 
 // Map DB row → app ad object
@@ -3134,6 +3182,7 @@ async function init() {
     document.body.classList.add('pwa-mode');
   }
   setTimeout(renderRecentlyViewed, 800);
+  purgeBadTrendingData(); // clean up old numeric trending tokens
 
   showSkeletons();
   document.getElementById('resultsHeader').style.display = 'none';
@@ -4015,8 +4064,13 @@ const YaadBrain = (() => {
     'how','when','where','why','am','im','some','any','all','each','every','no','not',
     'so','very','just','also','than','then','now','up','out','if','as']);
 
+  // Short Patois words that carry meaning and must NOT be stripped
+  const PATOIS_KEEP = new Set(['fi','mi','di','de','ya','yah','yuh','yu','si','wi','dem','dat','dis','deh','ah','an','nuh','weh','deh']);
+
   function tokenize(text) {
-    return (text||'').toLowerCase().replace(/[^\w\s$]/g,' ').split(/\s+/).filter(t=>t.length>1 && !STOP_WORDS.has(t));
+    return (text||'').toLowerCase().replace(/[^\w\s$]/g,' ').split(/\s+/).filter(t =>
+      (t.length > 1 && !STOP_WORDS.has(t)) || PATOIS_KEEP.has(t)
+    );
   }
   function bigrams(word) {
     const b = []; for (let i=0;i<word.length-1;i++) b.push(word[i]+word[i+1]); return b;
@@ -4110,22 +4164,42 @@ const YaadBrain = (() => {
       return isNaN(n) ? null : n;
     };
 
-    // 1. "between X and Y"
-    const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
-    if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
+    // Helper: if a parsed price is unrealistically low for Jamaica (< J$5,000)
+    // treat it as if the user meant millions (e.g. "under 3" → "under 3 million")
+    const jmdSanity = (num, isMax) => {
+      if (num === null) return null;
+      if (num > 0 && num < 5000) return num * 1e6; // "under 3" → 3,000,000
+      return num;
+    };
+
+    // 1. "between X and Y" — fixed: proper word groups not character class
+    const bet = s.match(/between\s+([\d.,]+\s*(?:million|mil|thousand|k|m)?)\s+and\s+([\d.,]+\s*(?:million|mil|thousand|k|m)?)/i);
+    if (bet) { lo = jmdSanity(toNum(bet[1])); hi = jmdSanity(toNum(bet[2])); return {lo,hi}; }
 
     // 2. "under / below / less than / up to X"
     const und = s.match(/(?:under|below|less than|max|beneath|up to|no more than)\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)/i);
-    if (und) { hi = toNum(und[1]); if(hi) return {lo,hi}; }
+    if (und) {
+      const rawHi = toNum(und[1]);
+      const hasUnit = /million|thousand|mil\b|[km]\b/i.test(und[1]);
+      if (hasUnit) {
+        hi = rawHi;
+      } else if (rawHi !== null) {
+        // No unit — infer scale from magnitude (Jamaican price context)
+        if (rawHi >= 1 && rawHi <= 20)       hi = rawHi * 1e6;   // "under 3"  → 3M
+        else if (rawHi > 20 && rawHi <= 999)  hi = rawHi * 1e3;   // "under 80" → 80k
+        else                                   hi = rawHi;          // "under 80000" kept
+      }
+      if (hi) return {lo, hi};
+    }
 
     // 3. "over / above / more than / from / starting X"
     const ov = s.match(/(?:over|above|more than|min|at least|starting from|starting at|from)\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)/i);
-    if (ov) { lo = toNum(ov[1]); if(lo) return {lo,hi}; }
+    if (ov) { lo = jmdSanity(toNum(ov[1])); if(lo) return {lo,hi}; }
 
     // 4. "for X" — treat as target price (±25%)
     const forMatch = s.match(/\bfor\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)\b/i);
     if (forMatch) {
-      const target = toNum(forMatch[1]);
+      const target = jmdSanity(toNum(forMatch[1]));
       if (target && target >= 500) { return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target }; }
     }
 
@@ -4157,7 +4231,16 @@ const YaadBrain = (() => {
       if (target >= 1000) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
     }
 
-    // 8. Keyword-based
+    // 8. Small bare number (1-5 digits) — in Jamaica context, likely means millions
+    // e.g. "car under 3" or "phone under 80" — 80 = J$80,000 (common for phones)
+    const bareSmall = s.match(/(?:under|below|less than|max|up to)\s+(\d{1,4})\b/i);
+    if (bareSmall) {
+      const n = parseInt(bareSmall[1]);
+      if (n >= 1 && n <= 20) { hi = n * 1e6; return {lo, hi}; }       // "under 3" → 3M
+      if (n > 20 && n <= 999) { hi = n * 1e3; return {lo, hi}; }       // "under 80" → 80k
+    }
+
+    // 9. Keyword-based
     if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|bargain|steal|good deal|nuh dear)\b/.test(s))
       return { cheap: true };
     if (/\b(expensive|dear|premium|luxury|high.?end|top.?shelf)\b/.test(s))
@@ -4218,10 +4301,9 @@ const YaadBrain = (() => {
     const scores = {};
     // Score from base keywords
     for (const [cat, keywords] of Object.entries(BASE_CAT_KEYWORDS)) {
+      if (cat === 'other') continue; // 'other' is never auto-detected — it's a fallback only
       for (const token of tokens) {
-        // Exact match
         if (keywords.includes(token)) { scores[cat] = (scores[cat]||0) + 3; continue; }
-        // Fuzzy match (catches typos)
         for (const kw of keywords) {
           if (fuzzyMatch(token, kw, 0.6)) { scores[cat] = (scores[cat]||0) + 2; break; }
         }
@@ -4229,6 +4311,7 @@ const YaadBrain = (() => {
     }
     // Score from dynamic vocabulary (learned from listings)
     for (const [cat, terms] of Object.entries(_dynVocab)) {
+      if (cat === 'other') continue;
       for (const token of tokens) {
         if (terms.has(token)) { scores[cat] = (scores[cat]||0) + 1.5; }
         else {
@@ -4238,8 +4321,20 @@ const YaadBrain = (() => {
         }
       }
     }
-    // Return categories with score >= 2, sorted by score
-    return Object.entries(scores).filter(([_,s])=>s>=2).sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+
+    const sorted = Object.entries(scores)
+      .filter(([_,s]) => s >= 2)
+      .sort((a,b) => b[1]-a[1]);
+
+    if (!sorted.length) return [];
+
+    // Only return multiple categories if they score within 30% of the top score
+    // This prevents "Vehicles/Furniture" when user clearly means vehicles
+    const topScore = sorted[0][1];
+    return sorted
+      .filter(([_,s]) => s >= topScore * 0.7)
+      .map(([c]) => c)
+      .slice(0, 2); // max 2 categories ever
   }
 
   /* ══════════════════════════════════════════
@@ -4262,7 +4357,8 @@ const YaadBrain = (() => {
     'portland':['portland','port antonio','buff bay','hope bay','long bay','fairy hill','san san'],
   };
   function detectParish(q) {
-    const s = q.toLowerCase();
+    // Normalize: remove dots so "st. andrew" and "st andrew" both match
+    const s = q.toLowerCase().replace(/\./g, ' ').replace(/\s+/g, ' ');
     for (const [parish, aliases] of Object.entries(PARISH_MAP)) {
       if (aliases.some(a => s.includes(a))) return parish.split(' ').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
     }
@@ -4273,11 +4369,11 @@ const YaadBrain = (() => {
      6. INTENT CLASSIFIER (deep)
   ══════════════════════════════════════════ */
   const INTENT_PATTERNS = [
-    // FAQ / info
+    // FAQ / info — order matters: more specific patterns first
     [/how.*(post|sell|list|put up|advertise|upload|create)/i, 'how_to_post'],
+    [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],  // before is_free — "is it safe" must not match is_free
     [/(is it|it is|is yaad adz|cost|fee|charge|paid|free)\b/i, 'is_free'],
     [/how.*(contact|reach|message|talk|call|whatsapp|chat with)/i, 'how_contact'],
-    [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],
     [/(how.*(work|use)|what is yaad adz|about yaad adz|explain|tell me about)/i, 'how_it_works'],
     [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
     [/(pay|payment|accept|transfer|method)/i, 'payment'],
@@ -4343,8 +4439,8 @@ const YaadBrain = (() => {
     if (parish) pool = pool.filter(a=>a.parish.toLowerCase()===parish.toLowerCase());
     if (!pool.length) return null;
 
-    const catNames = cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
-    const catStr = catNames.length ? catNames.join('/') : 'listings';
+    const catNames = cats.filter(c => c !== 'other').map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    const catStr = catNames.length ? catNames.join(' & ') : 'listings';
     const loc = parish ? ` in ${parish}` : '';
 
     if (intent === 'compare_cheapest') {
@@ -4404,30 +4500,61 @@ const YaadBrain = (() => {
   }
   function getHaystack(ad) {
     const cat = CATS.find(c=>c.id===ad.category)?.name||'';
-    return `${ad.title} ${ad.title} ${ad.title} ${cat} ${cat} ${ad.parish} ${ad.parish} ${ad.desc||''}`;
+    // Description + category + parish only — title is scored separately at 3x
+    return `${cat} ${cat} ${ad.parish} ${ad.desc||''}`;
   }
+
+  function getTitleTokens(ad) {
+    return tokenize(ad.title);
+  }
+
   function scoreAd(ad, queryTerms, idf, clickBoosts) {
-    const hayTokens = tokenize(getHaystack(ad));
-    const tf = {};
-    for (const t of hayTokens) tf[t] = (tf[t]||0)+1;
+    const titleTokens = getTitleTokens(ad);
+    const hayTokens   = tokenize(getHaystack(ad));
+    const allTokens   = [...titleTokens, ...hayTokens];
+
+    // Build TF from full haystack for IDF weighting
+    const tfAll = {};
+    for (const t of allTokens) tfAll[t] = (tfAll[t]||0)+1;
+
+    // Build TF from title only for title-specific boost
+    const tfTitle = {};
+    for (const t of titleTokens) tfTitle[t] = (tfTitle[t]||0)+1;
+
     let score = 0;
     for (const qt of queryTerms) {
-      // Exact match
-      if (tf[qt]) {
-        score += (tf[qt] / hayTokens.length) * (idf[qt]||1) * 2;
+      const idfScore = idf[qt] || 1;
+
+      // Title exact match — 3x weight
+      if (tfTitle[qt]) {
+        score += (tfTitle[qt] / Math.max(titleTokens.length, 1)) * idfScore * 6;
         continue;
       }
-      // Fuzzy match — catches typos and variants
-      let bestFuzzy = 0;
-      for (const w of Object.keys(tf)) {
-        const sim = bigramSim(qt, w);
-        if (sim > bestFuzzy && sim >= 0.55) bestFuzzy = sim;
+      // Haystack exact match — 1x weight
+      if (tfAll[qt]) {
+        score += (tfAll[qt] / Math.max(allTokens.length, 1)) * idfScore * 2;
+        continue;
       }
-      if (bestFuzzy > 0) score += bestFuzzy * (idf[qt]||1) * 0.8;
-      // Prefix match
-      const prefix = hayTokens.some(w=>w.startsWith(qt)&&w!==qt);
-      if (prefix) score += 0.5 * (idf[qt]||1);
+      // Fuzzy match — try title first (higher weight), then haystack
+      let bestTitleFuzzy = 0, bestHayFuzzy = 0;
+      for (const w of titleTokens) {
+        const sim = bigramSim(qt, w);
+        if (sim > bestTitleFuzzy && sim >= 0.55) bestTitleFuzzy = sim;
+      }
+      if (bestTitleFuzzy > 0) { score += bestTitleFuzzy * idfScore * 2.5; continue; }
+
+      for (const w of Object.keys(tfAll)) {
+        const sim = bigramSim(qt, w);
+        if (sim > bestHayFuzzy && sim >= 0.55) bestHayFuzzy = sim;
+      }
+      if (bestHayFuzzy > 0) score += bestHayFuzzy * idfScore * 0.8;
+
+      // Prefix match in title
+      if (titleTokens.some(w=>w.startsWith(qt)&&w!==qt)) score += 1.0 * idfScore;
+      // Prefix match in haystack
+      else if (hayTokens.some(w=>w.startsWith(qt)&&w!==qt)) score += 0.4 * idfScore;
     }
+
     // Recency boost
     const ageDays = (Date.now()-new Date(ad.date||0))/86400000;
     if (ageDays<1) score*=1.5; else if (ageDays<3) score*=1.35; else if (ageDays<7) score*=1.2; else if (ageDays<30) score*=1.08;
@@ -4436,7 +4563,7 @@ const YaadBrain = (() => {
     if (v>100) score*=1.15; else if (v>50) score*=1.1; else if (v>20) score*=1.05;
     // Click boost from learning
     if (clickBoosts && clickBoosts[ad.id]) score *= (1 + Math.min(clickBoosts[ad.id]*0.15, 0.6));
-    // Negotiable slight bonus (buyers like flexibility)
+    // Negotiable slight bonus
     if (ad.neg) score *= 1.03;
     return score;
   }
@@ -4465,20 +4592,33 @@ const YaadBrain = (() => {
     const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
     const day = new Date().toISOString().slice(0,10);
     if (!data[day]) data[day] = {};
-    const terms = tokenize(query);
+
+    // Store meaningful word tokens only — filter out pure numbers and very short tokens
+    const terms = tokenize(query).filter(t =>
+      t.length >= 3 &&          // min 3 chars
+      !/^\d+$/.test(t) &&       // not a pure number
+      !/^(under|over|from|between|less|more|than|find|show|get|want|need|waan|look)$/.test(t) // not filler words
+    );
     for (const t of terms) data[day][t] = (data[day][t]||0)+1;
+
     // Keep only last 7 days
     const keys = Object.keys(data).sort();
     while (keys.length > 7) { delete data[keys.shift()]; }
     localStorage.setItem('ya_brain_searches', JSON.stringify(data));
   }
+
   function getTrendingTerms() {
     const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
     const merged = {};
     for (const day of Object.values(data)) {
       for (const [t,c] of Object.entries(day)) merged[t] = (merged[t]||0)+c;
     }
-    return Object.entries(merged).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([t])=>t);
+    // Return only clean word terms — no numbers, min length 3
+    return Object.entries(merged)
+      .filter(([t]) => t.length >= 3 && !/^\d/.test(t))
+      .sort((a,b) => b[1]-a[1])
+      .slice(0, 10)
+      .map(([t]) => t);
   }
 
   /* ══════════════════════════════════════════
@@ -4487,27 +4627,38 @@ const YaadBrain = (() => {
   function detectFollowUp(q, lastCtx) {
     if (!lastCtx) return null;
     const s = q.toLowerCase();
-    // Price refinements
-    if (/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less)\b/.test(s) && lastCtx.hi)
-      return { ...lastCtx, hi: Math.floor(lastCtx.hi * 0.6), offset:0 };
+
+    // Price refinements — Bug fix: reduce by 20% max (was 40%), prevent runaway degradation
+    if (/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less)\b/.test(s) && lastCtx.hi) {
+      const newHi = Math.floor(lastCtx.hi * 0.8); // 20% reduction, not 40%
+      // Don't go below J$50,000 — floor for sanity
+      return { ...lastCtx, hi: Math.max(newHi, 50000), offset:0 };
+    }
     if (/\b(more expensive|higher|pricier|bigger budget|spend more|willing to pay more)\b/.test(s) && (lastCtx.hi || lastCtx.lo))
-      return { ...lastCtx, hi: lastCtx.hi ? Math.floor(lastCtx.hi * 1.5) : null, lo: lastCtx.lo ? Math.floor(lastCtx.lo * 1.5) : null, offset:0 };
-    // Pagination
-    if (/\b(more|show more|other|different|else|anything else|next|continue|keep going)\b/.test(s))
+      return { ...lastCtx, hi: lastCtx.hi ? Math.floor(lastCtx.hi * 1.4) : null, lo: lastCtx.lo ? Math.floor(lastCtx.lo * 1.4) : null, offset:0 };
+
+    // Pagination — Bug fix: removed 'other' and 'different' from this list
+    // 'other' was causing category mismatch; 'different' is ambiguous
+    if (/\b(more|show more|next|continue|keep going|anything else|else)\b/.test(s))
       return { ...lastCtx, offset: (lastCtx.offset||0) + 6 };
+
     // Sort changes
     if (/\b(newer|recent|latest|fresh|just posted)\b/.test(s)) return { ...lastCtx, sort:'newest', offset:0 };
     if (/\b(cheapest first|price low|lowest first|sort by price)\b/.test(s)) return { ...lastCtx, sort:'price_lo', offset:0 };
+
     // Location refinement
     const parish = detectParish(q);
     if (parish && parish !== lastCtx.parish) return { ...lastCtx, parish, offset:0 };
-    // Category pivot
+
+    // Category pivot — 'different' / 'other' handled here now (explicit category change)
     const newCats = detectCategories(normalizePatois(q));
     if (newCats.length && JSON.stringify(newCats) !== JSON.stringify(lastCtx.cats))
       return { ...lastCtx, cats: newCats, offset:0 };
-    // "negotiable only" / "nego only"
+
+    // "negotiable only"
     if (/\b(negotiable|nego|haggle|bargain)\b/.test(s))
       return { ...lastCtx, negoOnly: true, offset:0 };
+
     return null;
   }
 
@@ -4544,35 +4695,43 @@ const YaadBrain = (() => {
   ══════════════════════════════════════════ */
   function buildMessage(results, ctx, query) {
     const n = results.length;
-    const catNames = ctx.cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    // Filter out 'other' from display, show max 2 category names
+    const catNames = ctx.cats
+      .filter(c => c !== 'other')
+      .map(c => CATS.find(x=>x.id===c)?.name)
+      .filter(Boolean)
+      .slice(0, 2);
     const loc = ctx.parish ? ` in ${ctx.parish}` : '';
-    const catStr = catNames.length ? catNames.join('/') : 'listings';
-    const price = ctx.target ? ` around J$${fmtN(ctx.target)}` : ctx.hi ? ` under J$${fmtN(ctx.hi)}` : ctx.lo ? ` from J$${fmtN(ctx.lo)}` : '';
+    const catStr = catNames.length ? catNames.join(' & ') : 'listings';
+    // Price display — only show if clearly set by user
+    const price = ctx.target
+      ? ` around J$${fmtN(ctx.target)}`
+      : ctx.hi && ctx.lo ? ` between J$${fmtN(ctx.lo)} – J$${fmtN(ctx.hi)}`
+      : ctx.hi ? ` under J$${fmtN(ctx.hi)}`
+      : ctx.lo ? ` from J$${fmtN(ctx.lo)}`
+      : '';
 
     if (n===0) {
-      // Smart empty state — suggest alternatives
       const allCat = ctx.cats.length ? _ads.filter(a=>a.status!=='sold'&&ctx.cats.includes(a.category)) : [];
-      if (allCat.length && ctx.hi) return `No ${catStr}${price}${loc} right now — but there are ${allCat.length} ${catStr} at other prices. Try raising your budget or removing the location filter! 💡`;
-      if (allCat.length && ctx.parish) return `No ${catStr} found${loc} — but ${allCat.length} available in other parishes. Try "show all ${catStr}" to see them! 🔍`;
-      return `No ${catStr} found${loc}${price} right now. New listings drop daily — check back soon or try different keywords! 🔍`;
+      if (allCat.length && ctx.hi) return `No ${catStr}${price}${loc} right now — ${allCat.length} ${catStr} available at other prices. Try a higher budget! 💡`;
+      if (allCat.length && ctx.parish) return `No ${catStr}${loc} — but ${allCat.length} available elsewhere. Try removing the parish filter! 🔍`;
+      return `No ${catStr}${price}${loc} right now. New listings drop daily — check back soon! 🔍`;
     }
 
-    // Context-aware responses
-    if (ctx.cheap) return `💰 Here are the budget-friendly ${catStr}${loc} — straight bargains! ${n > 5 ? 'Showing the best deals first.' : ''}`;
-    if (ctx.expensive) return `💎 Here's the premium ${catStr}${loc} — top shelf quality:`;
+    if (ctx.cheap) return `💰 Best budget ${catStr}${loc} right now — showing cheapest first!`;
+    if (ctx.expensive) return `💎 Premium ${catStr}${loc} — top picks:`;
 
-    // Variety based on count
     const templates = n === 1
-      ? [`Only 1 ${catStr} match${loc}${price} — but it looks solid! Check it out 👇`]
+      ? [`Only 1 ${catStr}${price}${loc} — but it looks solid! 👇`]
       : n <= 3
-      ? [`Found ${n} ${catStr}${price}${loc}. Small selection, but quality! 👇`,
-         `${n} results${loc}${price} — here's what's available:`]
+      ? [`Found ${n} ${catStr}${price}${loc}. Small selection, but good! 👇`,
+         `${n} results${price}${loc} — here's what's available:`]
       : n <= 10
-      ? [`Found ${n} ${catStr}${price}${loc}! 🔥 Best matches first.`,
-         `${n} ${catStr}${loc}${price} — nice selection! 🇯🇲`,
+      ? [`Found ${n} ${catStr}${price}${loc} 🔥 Best matches first.`,
+         `${n} ${catStr}${loc}${price} — showing best first 🇯🇲`,
          `Here ${n===1?'is':'are'} ${n} ${catStr}${loc}${price}. Check them! 👀`]
-      : [`Nuff options! ${n} ${catStr}${price}${loc} available. Showing top matches first. 🔥`,
-         `${n} ${catStr}${loc}${price} — I'm showing the most relevant first. Use "cheapest" or "newest" to re-sort! 📊`];
+      : [`Nuff options! ${n} ${catStr}${price}${loc}. Showing top matches first 🔥`,
+         `${n} ${catStr}${loc}${price} — most relevant shown first. Say "cheapest" or "newest" to re-sort! 📊`];
 
     return templates[Math.floor(Math.random()*templates.length)];
   }
@@ -4592,12 +4751,21 @@ const YaadBrain = (() => {
     // Rebuild vocab if ads changed
     if (_vocabBuilt !== _ads.length) buildDynamicVocab(_ads);
 
-    // 1. Check intent/FAQ first (only if no product keywords detected)
+    // 1. Pure FAQ intents — always fire first, even if a category is detected
+    // These are unambiguous questions that should never fall through to search
+    const FAQ_ONLY = new Set(['how_to_post','is_free','how_contact','safety','how_it_works','manage_ads','payment','delivery','greeting','thanks','help']);
+    for (const [pattern, intent] of INTENT_PATTERNS) {
+      if (FAQ_ONLY.has(intent) && pattern.test(rawQ)) {
+        const fn = INTENT_ANSWERS[intent];
+        if (fn) return { type:'answer', message: fn() };
+      }
+    }
+
+    // 2. Category-aware FAQ (stats, top_sellers) — only if no product search detected
     const detectedCats = detectCategories(normalized);
     const detectedParish = detectParish(normalized);
     for (const [pattern, intent] of INTENT_PATTERNS) {
-      if (pattern.test(rawQ) && !detectedCats.length && !detectedParish) {
-        // FAQ answer
+      if (!FAQ_ONLY.has(intent) && pattern.test(rawQ) && !detectedCats.length && !detectedParish) {
         const fn = INTENT_ANSWERS[intent];
         if (fn) return { type:'answer', message: fn() };
       }
@@ -4617,11 +4785,13 @@ const YaadBrain = (() => {
     // 3. Follow-up from previous conversation
     const followUp = history.length ? detectFollowUp(rawQ, _lastCtx) : null;
     const ctx = followUp || (() => {
-      const price = parsePrice(normalized);
-      const cats  = detectedCats;
-      const parish = detectedParish;
-      const terms = tokenize(normalized).filter(t=>t.length>2 && !STOP_WORDS.has(t));
-      return { cats, parish, lo: price.lo, hi: price.hi, target: price.target, cheap: price.cheap, expensive: price.expensive, terms, offset:0 };
+      const price    = parsePrice(normalized);
+      const cats     = detectedCats;
+      const parish   = detectedParish;
+      const terms    = tokenize(normalized).filter(t=>t.length>2 && !STOP_WORDS.has(t));
+      // Improvement 2: detect negotiable in any query, not just follow-ups
+      const negoOnly = /\b(negotiable|nego only|nego|bargain only|must negotiate|price negotiable)\b/i.test(rawQ);
+      return { cats, parish, lo: price.lo, hi: price.hi, target: price.target, cheap: price.cheap, expensive: price.expensive, terms, negoOnly, offset:0 };
     })();
 
     // 4. Rebuild IDF if needed
@@ -4768,13 +4938,72 @@ function renderRecentSearches() {
 function updateSheetSugs() {
   const sugs = YaadBrain.suggestions();
   const wrap = document.getElementById('sheetSugs');
-  if (!wrap || !sugs.length) return;
-  const extra = sugs.map(s=>
-    `<button class="sheet-sug" onclick="sheetSearch('${s.query.replace(/'/g,"\\'")}')">` +
+  if (!wrap) return;
+
+  // Remove any previously appended dynamic chips (keep only the 6 hardcoded ones)
+  wrap.querySelectorAll('.sheet-sug-dynamic').forEach(el => el.remove());
+
+  // Improvement 6: Replace hardcoded chips with data-driven ones based on actual listings
+  if (_ads && _ads.length > 0) {
+    const active = _ads.filter(a => a.status !== 'sold');
+    const catCounts = {};
+    active.forEach(a => { catCounts[a.category] = (catCounts[a.category]||0)+1; });
+    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+
+    // Replace the static chips with live ones
+    const staticChips = wrap.querySelectorAll('.sheet-sug:not(.sheet-sug-dynamic)');
+    const liveChips = [];
+
+    topCats.forEach(function(catId) {
+      const cat = CATS.find(c=>c.id===catId);
+      if (!cat) return;
+      const prices = active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
+      const median = prices[Math.floor(prices.length/2)]||0;
+      if (median > 0) {
+        liveChips.push({ label: cat.icon+' '+cat.name+' under J$'+fmtN(Math.ceil(median/100000)*100000), query: cat.name.toLowerCase()+' under '+Math.ceil(median/100000)*100000 });
+      } else {
+        liveChips.push({ label: cat.icon+' '+cat.name, query: cat.name.toLowerCase() });
+      }
+    });
+
+    // Add Kingston filter if Kingston has most listings
+    const kgnCount = active.filter(a=>a.parish==='Kingston').length;
+    if (kgnCount > active.length * 0.3) liveChips.push({ label: '📍 Kingston deals', query: 'Kingston' });
+    liveChips.push({ label: '🆕 Just posted', query: 'newest listings' });
+    liveChips.push({ label: '🤝 Negotiable only', query: 'negotiable' });
+
+    // Update static chips if we have live data
+    staticChips.forEach(function(chip, i) {
+      if (liveChips[i]) {
+        chip.textContent = liveChips[i].label;
+        chip.onclick = (function(q){ return function(){ sheetSearch(q); }; })(liveChips[i].query);
+      }
+    });
+  }
+
+  if (!sugs.length) return;
+  const extra = sugs.map(s =>
+    `<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'")}')">` +
     `${s.label}</button>`
   ).join('');
-  // Append to existing chips
   wrap.insertAdjacentHTML('beforeend', extra);
+}
+
+function purgeBadTrendingData() {
+  // One-time cleanup: remove old trending data that stored raw numbers like "2400000"
+  try {
+    const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
+    let changed = false;
+    for (const day of Object.keys(data)) {
+      for (const term of Object.keys(data[day])) {
+        if (/^\d+$/.test(term) || term.length < 3) {
+          delete data[day][term];
+          changed = true;
+        }
+      }
+    }
+    if (changed) localStorage.setItem('ya_brain_searches', JSON.stringify(data));
+  } catch(e) {}
 }
 
 function openAiSheet() {
@@ -4828,9 +5057,14 @@ function sheetSubmit() {
   const inp     = document.getElementById('sheetInput');
   const sendBtn = document.getElementById('sheetSendBtn');
   const query   = (inp?.value||'').trim();
-  if (!query) return;
-  inp.value = '';
 
+  // Feature 4: Empty query — show helpful prompt instead of silently ignoring
+  if (!query) {
+    addSheetMsg('ai', 'What are you looking for? Try:\n• "cheap car under 2 million"\n• "iPhone in Kingston"\n• "house for rent Portmore"\n• "how do I post an ad?"', null, null);
+    return;
+  }
+
+  inp.value = '';
   saveRecentSearch(query);
   sendBtn.disabled = true;
   sendBtn.classList.add('sending');
@@ -4841,7 +5075,6 @@ function sheetSubmit() {
   addSheetMsg('user', query);
   const typingEl = addTyping();
 
-  // Use rAF so typing indicator renders before synchronous work
   requestAnimationFrame(() => {
     setTimeout(() => {
       try {
@@ -4850,8 +5083,20 @@ function sheetSubmit() {
 
         if (result.type === 'answer') {
           addSheetMsg('ai', result.message, null, null);
+          // Improvement 5: After FAQ answers, nudge with relevant listings
+          // Only for intents that mention products/selling/buying
+          const nudgeIntents = /how.*(post|sell|list)|how.*(contact|reach|message)|how.*(work|use)|delivery|payment/i;
+          if (nudgeIntents.test(query) && _ads.length) {
+            const active = _ads.filter(a => a.status !== 'sold');
+            // Pick 2 popular listings to make it feel alive
+            const popular = [...active].sort((a,b) => (b.views||0)-(a.views||0)).slice(0, 2);
+            if (popular.length) {
+              setTimeout(function() {
+                addSheetMsg('ai', 'Here\'s what\'s listed on Yaad Adz right now 👇', popular, null, popular, []);
+              }, 400);
+            }
+          }
         } else {
-          // Pass qTerms so click learning works
           _sheetLastQTerms = result._qTerms || [];
           addSheetMsg('ai', result.message, result.results, result.filters, result.allResults, _sheetLastQTerms);
         }
@@ -4859,6 +5104,10 @@ function sheetSubmit() {
         sheetHistory.push({ role:'user', text:query });
         sheetHistory.push({ role:'ai', text:result.message });
         if (sheetHistory.length > 8) sheetHistory = sheetHistory.slice(-8);
+
+        // Feature 3: Update suggestion chips after each search to be context-aware
+        updateSheetSugsAfterSearch(result);
+
       } catch(err) {
         console.error('Brain error:', err);
         typingEl.remove();
@@ -4868,7 +5117,7 @@ function sheetSubmit() {
         sendBtn.classList.remove('sending');
         document.getElementById('sheetInput')?.focus();
       }
-    }, 180); // tiny delay for UX realism
+    }, 180);
   });
 }
 
@@ -4944,11 +5193,15 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
         resWrap.appendChild(card);
       });
 
-      // View All on home button
+      // View All on home button + Notify Me button
       if (filters && totalCount > 0) {
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-top:4px';
+
         const viewAll = document.createElement('button');
         viewAll.className = 'sheet-view-all';
-        viewAll.textContent = 'View all ' + totalCount + ' results on home →';
+        viewAll.style.flex = '1';
+        viewAll.textContent = 'View all ' + totalCount + ' results →';
         viewAll.onclick = function() {
           closeAiSheet();
           activeF = (filters.categories && filters.categories.length === 1) ? filters.categories[0] : 'all';
@@ -4961,17 +5214,80 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
           showAiResponse(text, totalCount);
           scrollToResults();
         };
-        resWrap.appendChild(viewAll);
+        btnRow.appendChild(viewAll);
+
+        // Feature 5: Notify Me button
+        const notifyBtn = document.createElement('button');
+        notifyBtn.className = 'sheet-view-all';
+        notifyBtn.style.cssText = 'flex:0 0 auto;padding:10px 14px;font-size:12px;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6)';
+        notifyBtn.title = 'Get notified when new listings match this search';
+        const currentQuery = sheetHistory.length ? sheetHistory[sheetHistory.length-2]?.text || '' : '';
+        const isSaved = getSavedSearches().find(s => s.query === currentQuery);
+        notifyBtn.textContent = isSaved ? '🔔 Saved' : '🔔 Notify me';
+        notifyBtn.onclick = function() {
+          if (!currentQuery) return;
+          saveSearchAlert(currentQuery, filters);
+          notifyBtn.textContent = '🔔 Saved';
+          notifyBtn.style.color = '#1db954';
+          notifyBtn.style.borderColor = 'rgba(29,185,84,0.3)';
+        };
+        btnRow.appendChild(notifyBtn);
+
+        resWrap.appendChild(btnRow);
       }
       el.appendChild(resWrap);
 
     } else {
-      // No results — helpful empty state with suggestions
+      // No results — Feature 1: "Did you mean?" fuzzy match against listing titles
       const emptyWrap = document.createElement('div');
       emptyWrap.style.cssText = 'text-align:center;padding:12px 0 4px';
-      emptyWrap.innerHTML = '<div style="font-size:32px;margin-bottom:8px">🔍</div>' +
-        '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Try different keywords or check these popular searches:</div>';
-      
+
+      // Find closest title matches using bigram similarity
+      const qTokens = (qTerms || []);
+      const candidates = _ads.filter(a => a.status !== 'sold').map(ad => {
+        const titleWords = ad.title.toLowerCase().split(/\s+/);
+        let best = 0;
+        for (const qt of qTokens) {
+          for (const tw of titleWords) {
+            const sim = bigramSim ? bigramSim(qt, tw) : 0;
+            if (sim > best) best = sim;
+          }
+        }
+        return { ad, score: best };
+      }).filter(c => c.score >= 0.55).sort((a,b) => b.score - a.score).slice(0, 3);
+
+      if (candidates.length) {
+        emptyWrap.innerHTML = '<div style="font-size:28px;margin-bottom:8px">🤔</div>' +
+          '<div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px">Nothing exact — did you mean one of these?</div>';
+        const didYouMeanWrap = document.createElement('div');
+        didYouMeanWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:left';
+        candidates.forEach(function(c) {
+          const btn = document.createElement('button');
+          btn.className = 'sheet-result-card';
+          btn.style.cssText = 'background:rgba(29,185,84,0.06);border-color:rgba(29,185,84,0.2);cursor:pointer;width:100%';
+          const cat = CATS.find(function(x){ return x.id === c.ad.category; });
+          btn.innerHTML =
+            '<div style="font-size:20px;width:36px;text-align:center;flex-shrink:0">' + (cat ? cat.icon : '📦') + '</div>' +
+            '<div class="src-info">' +
+              '<div class="src-price">J$' + fmtN(c.ad.price) + '</div>' +
+              '<div class="src-title">' + escHtml(c.ad.title) + '</div>' +
+            '</div>' +
+            '<div class="src-arrow" style="color:rgba(29,185,84,0.6)">›</div>';
+          btn.onclick = (function(adCopy) {
+            return function() {
+              if (qTerms && qTerms.length) YaadBrain.learn(adCopy.id, qTerms);
+              closeAiSheet();
+              setTimeout(function(){ openDetail(adCopy.id); }, 200);
+            };
+          })(c.ad);
+          didYouMeanWrap.appendChild(btn);
+        });
+        emptyWrap.appendChild(didYouMeanWrap);
+      } else {
+        emptyWrap.innerHTML = '<div style="font-size:32px;margin-bottom:8px">🔍</div>' +
+          '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Nothing found — try these popular searches:</div>';
+      }
+
       const sugWrap = document.createElement('div');
       sugWrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
       const suggestions = ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'];
@@ -4998,7 +5314,113 @@ function addSheetMsg(role, text, results, filters, allResults, qTerms) {
   return el;
 }
 
-function addTyping() {
+// Feature 3: Update sheet suggestion chips to be context-aware after a search
+function updateSheetSugsAfterSearch(result) {
+  const wrap = document.getElementById('sheetSugs');
+  if (!wrap) return;
+
+  // Remove old dynamic chips
+  wrap.querySelectorAll('.sheet-sug-dynamic').forEach(el => el.remove());
+
+  if (!result || result.type !== 'search') return;
+
+  const cats = result.filters?.categories || [];
+  const parish = result.filters?.parish || '';
+  const hi = result.filters?.maxPrice;
+  const catId = cats[0];
+  const cat = catId ? CATS.find(c => c.id === catId) : null;
+  const catName = cat ? cat.name.toLowerCase() : '';
+  const chips = [];
+
+  if (catName) {
+    chips.push({ label: '💰 Cheapest ' + catName, query: 'cheapest ' + catName });
+    chips.push({ label: '🆕 Newest ' + catName, query: 'newest ' + catName });
+    if (parish) {
+      chips.push({ label: cat.icon + ' ' + catName + ' elsewhere', query: catName });
+    } else {
+      chips.push({ label: '📍 ' + catName + ' in Kingston', query: catName + ' in Kingston' });
+    }
+    if (hi) {
+      chips.push({ label: '💸 Higher budget ' + catName, query: catName + ' under ' + fmtN(Math.ceil(hi * 1.5)) });
+    }
+    chips.push({ label: '🤝 Negotiable ' + catName, query: 'negotiable ' + catName });
+  } else {
+    // Generic fallbacks
+    chips.push({ label: '🔥 Most popular', query: 'most popular' });
+    chips.push({ label: '🆕 Just posted', query: 'newest listings' });
+  }
+
+  chips.slice(0, 4).forEach(function(c) {
+    const btn = document.createElement('button');
+    btn.className = 'sheet-sug sheet-sug-dynamic';
+    btn.textContent = c.label;
+    btn.onclick = function() { sheetSearch(c.query); };
+    wrap.appendChild(btn);
+  });
+
+  // Show the suggestion row again with new chips
+  wrap.classList.remove('hidden');
+  wrap.style.display = '';
+}
+
+// ── Feature 5: Save Search / Notify Me ──────────────────────
+const SAVED_SEARCHES_KEY = 'ya_saved_searches';
+
+function getSavedSearches() {
+  try { return JSON.parse(localStorage.getItem(SAVED_SEARCHES_KEY) || '[]'); } catch(e){ return []; }
+}
+
+function saveSearchAlert(query, filters) {
+  try {
+    const searches = getSavedSearches();
+    // Don't duplicate
+    if (searches.find(s => s.query === query)) {
+      showToast('Already saved! We\'ll notify you 🔔', '🔔');
+      return;
+    }
+    searches.unshift({ query, filters: filters || {}, saved: Date.now() });
+    if (searches.length > 10) searches.length = 10;
+    localStorage.setItem(SAVED_SEARCHES_KEY, JSON.stringify(searches));
+    showToast('Search saved! We\'ll notify you when new listings match 🔔', '🔔');
+    // Request push permission if not already granted
+    if (typeof requestPushPermission === 'function') {
+      setTimeout(requestPushPermission, 1000);
+    }
+  } catch(e) {}
+}
+
+function removeSavedSearch(query) {
+  try {
+    const searches = getSavedSearches().filter(s => s.query !== query);
+    localStorage.setItem(SAVED_SEARCHES_KEY, JSON.stringify(searches));
+  } catch(e) {}
+}
+
+// Check saved searches against new listings — called after loadAds completes
+function checkSavedSearchAlerts(newAds) {
+  if (!newAds || !newAds.length) return;
+  if (Notification.permission !== 'granted') return;
+  const searches = getSavedSearches();
+  if (!searches.length) return;
+
+  for (const saved of searches) {
+    // Process this saved search through YaadBrain
+    try {
+      const result = YaadBrain.process(saved.query, []);
+      if (result.type !== 'search' || !result.results) continue;
+      // Check if any result is from the new ads
+      const newMatch = result.results.find(r => newAds.some(n => n.id === r.id));
+      if (newMatch) {
+        const cat = CATS.find(c => c.id === newMatch.category);
+        new Notification('New listing on Yaad Adz! 🇯🇲', {
+          body: newMatch.title + ' — J$' + fmtN(newMatch.price) + ' · ' + newMatch.parish,
+          icon: newMatch.image || '/og-image.jpg',
+          tag: 'yaadadz-alert-' + newMatch.id,
+        });
+      }
+    } catch(e) {}
+  }
+}
   const chat = document.getElementById('sheetChat');
   const body = document.getElementById('aiSheetBody');
   const el = document.createElement('div');
