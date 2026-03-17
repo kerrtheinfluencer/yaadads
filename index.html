@@ -282,7 +282,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Google Analytics 4 — G-KE3X5BMY63 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
@@ -1575,18 +1575,7 @@ const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St
 /* ═══════════════════════════════════════════════════════════
    SUPABASE CLIENT
 ═══════════════════════════════════════════════════════════ */
-// Wait for Supabase SDK if it loaded async
-function getDb() {
-  if (typeof supabase !== 'undefined') return supabase.createClient(CFG.supabase.url, CFG.supabase.key);
-  return null;
-}
-let _db = getDb();
-// Retry in case supabase.js hasn't loaded yet (async attribute)
-if (!_db) {
-  document.querySelector('script[src*="supabase"]')?.addEventListener('load', function() {
-    _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
-  });
-}
+const _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
 
 /* ═══════════════════════════════════════════════════════════
    IN-MEMORY CACHE (populated on init, kept in sync)
