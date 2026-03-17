@@ -7,7 +7,7 @@
 <!-- ═══════════════════════════════════════════
      PRIMARY META
 ═══════════════════════════════════════════ -->
-<title>Yaad Adz — Free Classifieds Jamaica | Cars, Property, Phones &amp; Jobs</title>
+<title>Free Classifieds Jamaica — Cars, Houses, Phones &amp; Jobs | Yaad Adz</title>
 <meta name="description" content="Jamaica's #1 free classifieds site. Post free ads and find cars for sale in Jamaica, houses for rent, phones, electronics, jobs, furniture &amp; more across Kingston, Portmore, Montego Bay and all 14 parishes. 100% free — no hidden fees.">
 <meta name="keywords" content="free classifieds Jamaica, cars for sale Jamaica, car for sale Jamaica, houses for rent Jamaica, property for sale Jamaica, phones for sale Jamaica, jobs in Jamaica, Jamaica marketplace, buy and sell Jamaica, free ads Jamaica, Kingston classifieds, Portmore ads, Montego Bay classifieds, used cars Jamaica, cheap cars Jamaica, Toyota for sale Jamaica, Honda for sale Jamaica, land for sale Jamaica, apartment for rent Kingston, laptop for sale Jamaica, electronics Jamaica, furniture Jamaica, second hand Jamaica, yaadadz, yaad adz, Jamaica online market, free posting Jamaica, sell online Jamaica, Ocho Rios classifieds, Spanish Town ads, St Catherine classifieds, Mandeville ads">
 <meta name="author" content="Yaad Adz">
@@ -282,7 +282,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
 
 <!-- Google Analytics 4 — G-KE3X5BMY63 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
@@ -693,7 +693,22 @@ nav {
   max-width: none !important;
 }
 
-/* ── Nav logo — constrain SVG and show Yaad Adz text ── */
+/* ── Price row with negotiable pill ── */
+.ad-price-row { display:flex; align-items:center; gap:6px; }
+.neg-pill { background:#f5c842; color:#7a5c00; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+
+/* ── Share button on card (bottom-left of image) ── */
+.share-card-btn {
+  position:absolute; bottom:8px; left:8px;
+  background:rgba(255,255,255,0.55); backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.7); border-radius:50%;
+  width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:#1a2e22; transition:all 0.18s; padding:0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.share-card-btn:hover { background:rgba(255,255,255,0.85); transform:scale(1.08); }
+
+/* ── Nav logo ── */
 .nav-logo svg {
   height: 32px !important;
   width: auto !important;
@@ -1120,6 +1135,16 @@ nav {
     <div class="step-panel" id="sp3">
       <div id="adPreviewCard" style="max-width:260px;margin:0 auto 24px"></div>
       <div id="previewDetails" style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px"></div>
+      <!-- Upload progress bar — hidden until uploading -->
+      <div id="uploadProgressWrap" style="display:none;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);margin-bottom:6px">
+          <span id="uploadProgressLabel">Uploading photos…</span>
+          <span id="uploadProgressPct">0%</span>
+        </div>
+        <div style="background:rgba(0,0,0,0.08);border-radius:20px;height:6px;overflow:hidden">
+          <div id="uploadProgressBar" style="height:100%;background:#1db954;border-radius:20px;width:0%;transition:width 0.3s ease"></div>
+        </div>
+      </div>
       <div class="step-nav">
         <button class="btn btn-ghost" onclick="nextStep(2)" style="min-width:90px">← Back</button>
         <button class="btn btn-gold btn-lg" style="flex:1" onclick="doPostAd()">🚀 Publish Ad Free</button>
@@ -1484,18 +1509,25 @@ nav {
      buyer_id text, buyer_name text, buyer_init text,
      created_at timestamptz default now()
    );
-   alter table ads    enable row level security;
-   alter table users  enable row level security;
+   create table if not exists reports (
+     id text primary key, ad_id text, ad_title text,
+     reason text, reporter_id text, reporter_name text,
+     created_at timestamptz default now()
+   );
+   alter table ads      enable row level security;
+   alter table users    enable row level security;
    alter table messages enable row level security;
-   create policy "Public read ads"     on ads      for select using (true);
-   create policy "Public insert ads"   on ads      for insert with check (true);
-   create policy "Public update ads"   on ads      for update using (true);
-   create policy "Public delete ads"   on ads      for delete using (true);
-   create policy "Public read users"   on users    for select using (true);
-   create policy "Public insert users" on users    for insert with check (true);
-   create policy "Public read msgs"    on messages for select using (true);
-   create policy "Public insert msgs"  on messages for insert with check (true);
-   create policy "Public update msgs"  on messages for update using (true);
+   alter table reports  enable row level security;
+   create policy "Public read ads"        on ads      for select using (true);
+   create policy "Public insert ads"      on ads      for insert with check (true);
+   create policy "Public update ads"      on ads      for update using (true);
+   create policy "Public delete ads"      on ads      for delete using (true);
+   create policy "Public read users"      on users    for select using (true);
+   create policy "Public insert users"    on users    for insert with check (true);
+   create policy "Public read msgs"       on messages for select using (true);
+   create policy "Public insert msgs"     on messages for insert with check (true);
+   create policy "Public update msgs"     on messages for update using (true);
+   create policy "Public insert reports"  on reports  for insert with check (true);
 
    -- SUPABASE STORAGE SETUP (do this in the Storage tab):
    -- 1. Create a bucket called "ad-images" 
@@ -1540,21 +1572,21 @@ const CATS = [
 
 const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon','St. Catherine'];
 
-const DEMO = [
-  {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
-  {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
-  {id:'d3',title:'iPhone 14 Pro 256GB — Like New',category:'electronics',price:95000,parish:'St. James',desc:'Used 6 months only. Deep purple. Original box, charger & case included. No cracks. Battery 98%. Last price.',seller:'Kezia Brown',sellerInit:'KB',sellerId:'s3',phone:'876-654-3210',date:'2025-06-05',image:'',status:'active',neg:false, views:124},
-  {id:'d4',title:'Graphic Designer — Logos, Flyers & Social',category:'services',price:5000,parish:'St. Andrew',desc:'Professional designer, 5+ years experience. Logos, flyers, business cards, Instagram content. Fast turnaround. WhatsApp for portfolio.',seller:'Andre Thomas',sellerInit:'AT',sellerId:'s4',phone:'876-789-0123',date:'2025-06-06',image:'',status:'active',neg:true, views:31},
-  {id:'d5',title:'Fresh Ackee & Saltfish — Free Delivery',category:'food',price:1500,parish:'Clarendon',desc:'Fresh ackee from my own tree, cleaned and ready. Saltfish packages available. Free delivery within Clarendon.',seller:'Miss Gloria',sellerInit:'MG',sellerId:'s5',phone:'876-555-1234',date:'2025-06-07',image:'',status:'active',neg:false, views:19},
-  {id:'d6',title:'Yamaha Guitar + Amp Bundle',category:'music',price:35000,parish:'Kingston',desc:'Yamaha Pacifica 112V in sonic blue. 15W amp, cable, strap & picks included. Perfect for beginners.',seller:'Justin Lee',sellerInit:'JL',sellerId:'s6',phone:'876-234-5678',date:'2025-06-08',image:'',status:'active',neg:false, views:66},
-  {id:'d7',title:'Samsung 65" 4K Smart TV',category:'electronics',price:85000,parish:'St. Andrew',desc:'Samsung 65" 4K UHD Smart TV. Netflix, YouTube, Disney+ built-in. Bought 1 year ago, upgrading. Pickup only.',seller:'Troy Brown',sellerInit:'TB',sellerId:'s7',phone:'876-111-2222',date:'2025-06-09',image:'',status:'active',neg:true, views:91},
-  {id:'d8',title:'Vacant Lot for Sale — Portmore',category:'property',price:4500000,parish:'St. Catherine',desc:'800 sq ft residential lot in gated community. Survey done, title available. Owner moving abroad.',seller:'Pearl Watson',sellerInit:'PW',sellerId:'s8',phone:'876-777-8888',date:'2025-06-10',image:'',status:'active',neg:false, views:38},
-];
-
 /* ═══════════════════════════════════════════════════════════
    SUPABASE CLIENT
 ═══════════════════════════════════════════════════════════ */
-const _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
+// Wait for Supabase SDK if it loaded async
+function getDb() {
+  if (typeof supabase !== 'undefined') return supabase.createClient(CFG.supabase.url, CFG.supabase.key);
+  return null;
+}
+let _db = getDb();
+// Retry in case supabase.js hasn't loaded yet (async attribute)
+if (!_db) {
+  document.querySelector('script[src*="supabase"]')?.addEventListener('load', function() {
+    _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
+  });
+}
 
 /* ═══════════════════════════════════════════════════════════
    IN-MEMORY CACHE (populated on init, kept in sync)
@@ -1587,9 +1619,9 @@ async function loadAds() {
     .select('*')
     .order('created_at', { ascending: false })
     .limit(200);
-  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
+  if (error) { console.error('loadAds:', error); _ads = []; return; }
   _ads = (data || []).map(dbToAd);
-  if (!_ads.length) _ads = DEMO; // fallback to demo if DB empty
+  // No fallback to demo data — show real empty state if DB is empty
 }
 
 // Map DB row → app ad object
@@ -2559,12 +2591,35 @@ let currentPostStep = 1;
 async function toggleSold(id) {
   const ad = _ads.find(function(a){ return a.id===id; }); if (!ad) return;
   const newStatus = ad.status === 'sold' ? 'active' : 'sold';
+  // Confirm before marking sold (prevent accidental taps)
+  if (newStatus === 'sold') {
+    const ok = confirm(`Mark "${ad.title.slice(0,40)}" as sold?`);
+    if (!ok) return;
+  }
   try {
     await sbUpdateAdStatus(id, newStatus);
     ad.status = newStatus;
     renderHome(); renderCats(); updateStats();
-    showToast(newStatus==='sold' ? 'Marked as sold' : 'Relisted as active', newStatus==='sold'?'🏷️':'✅');
-  } catch(e) { showToast('Update failed', '⚠️'); }
+    showToast(newStatus==='sold' ? 'Marked as sold 🏷️' : 'Relisted as active ✅');
+  } catch(e) { showToast('Update failed ⚠️'); }
+}
+
+// ── Share a card listing via native share / WhatsApp fallback ─
+async function shareCard(id) {
+  const ad = _ads.find(a => a.id === id); if (!ad) return;
+  const url  = 'https://yaadadz.com/ad/' + slugify(ad);
+  const text = `${ad.title} — J$${fmtN(ad.price)} · ${ad.parish}, Jamaica`;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: ad.title, text, url });
+      gaEvent('share', { method: 'native', item_id: id, item_name: ad.title });
+      return;
+    } catch(e) { /* cancelled or failed — fall through */ }
+  }
+  // Fallback: WhatsApp
+  const waText = encodeURIComponent(text + '\n' + url);
+  window.open('https://wa.me/?text=' + waText, '_blank');
+  gaEvent('share', { method: 'whatsapp', item_id: id, item_name: ad.title });
 }
 
 async function doPostAd() {
@@ -2575,17 +2630,29 @@ async function doPostAd() {
   if (!title || !parish || !price) return showPostErr('Please fill in all required fields.');
 
   const btn = document.querySelector('#sp3 .btn-gold');
-  if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
+  const progressWrap = document.getElementById('uploadProgressWrap');
+  const progressBar  = document.getElementById('uploadProgressBar');
+  const progressLbl  = document.getElementById('uploadProgressLabel');
+  const progressPct  = document.getElementById('uploadProgressPct');
+
+  if (btn) { btn.textContent = '⏳ Uploading…'; btn.disabled = true; }
+  if (uploadPhotos.length > 0 && progressWrap) progressWrap.style.display = 'block';
 
   try {
-    // Upload all photos to Supabase Storage and get public URLs
     const imageUrls = [];
     for (let i = 0; i < uploadPhotos.length; i++) {
-      if (btn) btn.textContent = `⏳ Uploading image ${i+1}/${uploadPhotos.length}…`;
+      const pct = Math.round((i / uploadPhotos.length) * 100);
+      if (btn) btn.textContent = `⏳ Photo ${i+1}/${uploadPhotos.length}…`;
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (progressPct) progressPct.textContent = pct + '%';
+      if (progressLbl) progressLbl.textContent = `Uploading photo ${i+1} of ${uploadPhotos.length}…`;
       const url = await uploadToSupabase(uploadPhotos[i].file);
       if (url) imageUrls.push(url);
     }
-
+    // Complete
+    if (progressBar) progressBar.style.width = '100%';
+    if (progressPct) progressPct.textContent = '100%';
+    if (progressLbl) progressLbl.textContent = 'Publishing…';
     if (btn) btn.textContent = '⏳ Publishing…';
 
     const ad = {
@@ -2618,6 +2685,8 @@ async function doPostAd() {
     showPostErr('Failed to post: ' + (e.message||'please try again'));
   } finally {
     if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
+    if (progressWrap) progressWrap.style.display = 'none';
+    if (progressBar)  progressBar.style.width = '0%';
   }
 }
 
@@ -2648,6 +2717,18 @@ function compressImage(file, maxWidth, quality) {
     img.onerror = function() { resolve(file); };
     img.src = URL.createObjectURL(file);
   });
+}
+
+// ── Supabase Image Transform — fast thumbnails ───────────────
+// Adds ?width=400&quality=70 to Supabase Storage URLs for card thumbnails
+// Falls back to original URL for non-Supabase images
+function thumbUrl(url, width) {
+  if (!url) return '';
+  width = width || 400;
+  if (url.includes('supabase.co/storage')) {
+    return url + (url.includes('?') ? '&' : '?') + 'width=' + width + '&quality=70&format=webp';
+  }
+  return url;
 }
 
 // Upload a single file to Supabase Storage → returns public URL
@@ -2763,12 +2844,10 @@ async function init() {
     if (CU) await loadMessages();
   } catch(e) {
     console.error('Init load error:', e);
-    _ads = DEMO;
-    // Only show connection banner on actual Supabase failure (not demo fallback)
-    if (e && e.message && !_ads.length) {
-      const banner = document.getElementById('setupBanner');
-      if (banner) { banner.style.display = 'block'; }
-    }
+    _ads = [];
+    // Show connection error banner on Supabase failure
+    const banner = document.getElementById('setupBanner');
+    if (banner) banner.style.display = 'block';
   }
 
   renderCats();
@@ -3065,10 +3144,9 @@ function getViews(id) {
 function cardHTML(ad, idx) {
   const cat   = CATS.find(c => c.id === ad.category);
   const catColor = cat?.color || '#f5f5f5';
-  // First 4 cards load eagerly (above fold) — rest lazy
   const loadAttr = idx < 4 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" ${loadAttr} decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
+    ? `<img src="${thumbUrl(ad.image, 400)}" alt="${ad.title}" ${loadAttr} decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
@@ -3083,12 +3161,21 @@ function cardHTML(ad, idx) {
   const photoCount = (ad.photos && ad.photos.length > 1)
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  // Negotiable pill
+  const negPill = ad.neg && ad.status !== 'sold'
+    ? `<span class="neg-pill">Neg.</span>` : '';
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
+      <button class="share-card-btn" onclick="event.stopPropagation();shareCard('${ad.id}')" title="Share">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
     </div>
     <div class="ad-card-body">
-      <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
+      <div class="ad-price-row">
+        <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
+        ${negPill}
+      </div>
       <div class="ad-title">${ad.title}</div>
       <div class="ad-meta">
         <span>📍 ${ad.parish}</span>
@@ -4744,13 +4831,32 @@ function selectReport(el, reason) {
   el.classList.add('selected');
   document.getElementById('reportSubmitBtn').disabled = false;
 }
-function submitReport() {
+async function submitReport() {
   if (!_reportReason || !_reportAdId) return;
-  const reports = JSON.parse(localStorage.getItem('ya_reports')||'[]');
-  reports.push({ adId: _reportAdId, reason: _reportReason, ts: Date.now(), reporterId: CU?.id||'guest' });
-  localStorage.setItem('ya_reports', JSON.stringify(reports));
+  const btn = document.getElementById('reportSubmitBtn');
+  if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
+
+  const ad = _ads.find(a => a.id === _reportAdId);
+  const report = {
+    id:            'rpt_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    ad_id:         _reportAdId,
+    ad_title:      ad?.title || '',
+    reason:        _reportReason,
+    reporter_id:   CU?.id || 'guest',
+    reporter_name: CU?.name || 'Anonymous',
+  };
+
+  try {
+    const { error } = await _db.from('reports').insert(report);
+    if (error) throw error;
+  } catch(e) {
+    // Silently fail — still close and thank the user
+    console.warn('Report save failed:', e.message);
+  }
+
   closeOverlay('ovReport');
-  showToast('Report submitted — we\'ll review it.', '🚩');
+  showToast('Report submitted — we\'ll review it. 🙏', '🚩');
+  if (btn) { btn.textContent = 'Submit Report'; btn.disabled = false; }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -5351,10 +5457,12 @@ function checkUrlAdParam() {
   if (id) { setTimeout(() => openDetail(id), 600); return; }
 
   // Restore search state from URL
-  const q = params.get('q');
-  const cat = params.get('cat');
+  const q      = params.get('q');
+  const cat    = params.get('cat');
   const parish = params.get('parish');
-  if (q || cat || parish) {
+  const pMin   = params.get('min');
+  const pMax   = params.get('max');
+  if (q || cat || parish || pMin || pMax) {
     if (q) {
       searchQ = q;
       const inp = document.getElementById('aiInput');
@@ -5362,6 +5470,8 @@ function checkUrlAdParam() {
     }
     if (cat && CATS.find(c=>c.id===cat)) activeF = cat;
     if (parish) window._aiFilters = { parish };
+    if (pMin) { const el = document.getElementById('priceMin'); if (el) el.value = pMin; }
+    if (pMax) { const el = document.getElementById('priceMax'); if (el) el.value = pMax; }
     setTimeout(() => { renderCats(); renderHome(); scrollToResults(); }, 700);
   }
 }
@@ -5414,6 +5524,11 @@ function pushSearchState() {
   const params = new URLSearchParams();
   if (searchQ) params.set('q', searchQ);
   if (activeF && activeF !== 'all') params.set('cat', activeF);
+  // Persist price filter in URL so it's shareable
+  const pMin = document.getElementById('priceMin')?.value;
+  const pMax = document.getElementById('priceMax')?.value;
+  if (pMin && parseFloat(pMin) > 0) params.set('min', pMin);
+  if (pMax && parseFloat(pMax) > 0) params.set('max', pMax);
   const qs = params.toString();
   const url = location.pathname + (qs ? '?' + qs : '');
   if (history.replaceState) history.replaceState({}, '', url);
