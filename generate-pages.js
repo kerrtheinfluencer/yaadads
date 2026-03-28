@@ -136,33 +136,121 @@ function adSchema(ad, adUrl) {
 }
 
 // ── Similar listings HTML ─────────────────────────────────────
+// ── Extract meaningful keywords from a listing title ──────────
+function titleKeywords(title) {
+  if (!title) return [];
+  const STOP = new Set([
+    'a','an','the','and','or','for','in','on','at','to','of','with','by',
+    'is','it','its','this','that','from','as','up','are','was','be','has',
+    'sale','selling','sell','used','new','good','condition','price','very',
+    'available','only','best','great','perfect','nice','clean','top',
+    'jamaican','jamaica','jm',
+  ]);
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 2 && !STOP.has(w));
+}
+
+// How many title tokens overlap (0.0 – 1.0)
+function tokenOverlap(aTokens, bTokens) {
+  if (!aTokens.length || !bTokens.length) return 0;
+  const bSet = new Set(bTokens);
+  const hits = aTokens.filter(t => bSet.has(t)).length;
+  return hits / Math.max(aTokens.length, bTokens.length);
+}
+
+// Make/model words to detect brand/model similarity
+const MAKE_KEYWORDS = new Set([
+  // Car brands
+  'toyota','honda','nissan','mazda','subaru','mitsubishi','suzuki','isuzu',
+  'hyundai','kia','bmw','mercedes','benz','audi','volkswagen','vw','ford',
+  'chevy','chevrolet','jeep','dodge','lexus','infiniti','acura','volvo',
+  'land','rover','range','porsche','ferrari','lamborghini','bentley',
+  'peugeot','renault','fiat','alfa','romeo','daihatsu','chery','haval','geely','byd',
+  // Car models common in JA
+  'mark','voxy','aqua','axio','fielder','premio','allion','succeed','wish',
+  'stream','freed','fit','jazz','civic','accord','crv','hrv','pilot','odyssey',
+  'corolla','camry','rav','prado','hilux','fortuner','rush','vitz','yaris',
+  'tiida','wingroad','note','march','xtrail','patrol','navara','lancer',
+  'outlander','asx','pajero','swift','vitara','jimny','alto','wagon',
+  'accent','tucson','santa','elantra','sonata','tucson',
+  // BMW/Merc/Audi series
+  'x5','x3','x6','series','a4','a6','a3','q5','q7','q3',
+  // Phone brands and models
+  'iphone','samsung','huawei','xiaomi','oppo','vivo','realme','tecno',
+  'infinix','itel','nokia','motorola','lg','sony','google','pixel','oneplus',
+  // Phone model descriptors
+  'ultra','plus','pro','max','mini','lite',
+  // Appliance brands
+  'lg','samsung','whirlpool','frigidaire','maytag','ge','sharp','panasonic',
+]);
+
 function buildSimilarHTML(ad, allAds) {
-  // Score: same parish + same category = best, then same category only
   const others = allAds.filter(a => a.id !== ad.id && a.status !== 'sold');
+  const adTokens = titleKeywords(ad.title);
+  const adMakeWords = adTokens.filter(t => MAKE_KEYWORDS.has(t));
 
   const scored = others.map(a => {
     let score = 0;
-    if (a.category === ad.category) score += 10;
-    if (a.parish   === ad.parish)   score += 5;
-    // Boost recent listings
-    const ageDays = (Date.now() - new Date(a.date||0)) / 86400000;
-    if (ageDays < 7)  score += 3;
-    if (ageDays < 30) score += 1;
+    const aTokens = titleKeywords(a.title);
+    const aMakeWords = aTokens.filter(t => MAKE_KEYWORDS.has(t));
+    const aMakeSet = new Set(aMakeWords);
+
+    // ── Tier 1: Same make + model (e.g. both "toyota mark x") ───
+    const makeOverlap = adMakeWords.filter(w => aMakeSet.has(w)).length;
+    if (adMakeWords.length >= 2 && makeOverlap >= 2) {
+      score += 100; // exact model family match — always show first
+    } else if (adMakeWords.length >= 1 && makeOverlap >= 1) {
+      score += 50;  // same make (e.g. both Toyota, both iPhone)
+    }
+
+    // ── Tier 2: General title keyword overlap ────────────────────
+    const overlap = tokenOverlap(adTokens, aTokens);
+    score += Math.round(overlap * 30);
+
+    // ── Tier 3: Same category ────────────────────────────────────
+    if (a.category === ad.category) score += 20;
+
+    // ── Tier 4: Similar price range ─────────────────────────────
+    if (ad.price && a.price) {
+      const ratio = Math.min(ad.price, a.price) / Math.max(ad.price, a.price);
+      if (ratio >= 0.8) score += 10; // within 20%
+      else if (ratio >= 0.6) score += 5; // within 40%
+    }
+
+    // ── Tier 5: Same parish ──────────────────────────────────────
+    if (a.parish === ad.parish) score += 8;
+
+    // ── Tier 6: Recency ─────────────────────────────────────────
+    const ageDays = (Date.now() - new Date(a.date || 0)) / 86400000;
+    if (ageDays < 7)  score += 4;
+    if (ageDays < 30) score += 2;
+
     return { ad: a, score };
   });
 
-  const similar = scored
-    .filter(s => s.score >= 10)   // must at least share the category
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4)
-    .map(s => s.ad);
+  // Must share at least the category (score >= 20), or be a make match
+  const filtered = scored.filter(s => s.score >= 20);
+  const ranked = filtered.sort((a, b) => b.score - a.score).slice(0, 4).map(s => s.ad);
 
-  if (!similar.length) return '';
+  // Fallback: not enough same-category — fill with most recent across all categories
+  const display = ranked.length >= 2 ? ranked :
+    others.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
 
-  const cards = similar.map(a => {
-    const slug     = slugify(a);
-    const catIcon  = CAT_ICONS[a.category] || '📦';
-    const imgHtml  = a.image
+  if (!display.length) return '';
+
+  // Section heading — smarter label based on what we matched
+  const topScore = scored.length ? Math.max(...scored.map(s => s.score)) : 0;
+  const headingLabel = topScore >= 100 ? `More ${ad.title.split(' ').slice(0,3).join(' ')} listings`
+    : topScore >= 50 ? `More ${adMakeWords[0] ? adMakeWords[0].charAt(0).toUpperCase() + adMakeWords[0].slice(1) : ''} listings`
+    : `Similar listings`;
+
+  const cards = display.map(a => {
+    const slug    = slugify(a);
+    const catIcon = CAT_ICONS[a.category] || '📦';
+    const imgHtml = a.image
       ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
       : `<div class="sim-placeholder">${catIcon}</div>`;
     return `
@@ -178,13 +266,15 @@ function buildSimilarHTML(ad, allAds) {
 
   return `
   <div class="similar-section">
-    <h2 class="similar-heading">Similar Listings</h2>
+    <h2 class="similar-heading">${esc(headingLabel)}</h2>
     <div class="similar-grid">${cards}</div>
     <div style="text-align:center;margin-top:20px">
       <a class="see-more-btn" href="${BASE_URL}/?cat=${ad.category}">See all ${CAT_NAMES[ad.category] || 'listings'} →</a>
     </div>
   </div>`;
 }
+
+
 
 // ── HTML template for one ad page ─────────────────────────────
 function buildPage(ad, allAds) {
