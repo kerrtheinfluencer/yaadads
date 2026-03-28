@@ -7,7 +7,7 @@
 <!-- ═══════════════════════════════════════════
      PRIMARY META
 ═══════════════════════════════════════════ -->
-<title>Free Classifieds Jamaica — Cars, Houses, Phones &amp; Jobs | Yaad Adz</title>
+<title>Yaad Adz — Free Classifieds Jamaica | Cars, Property, Phones &amp; Jobs</title>
 <meta name="description" content="Jamaica's #1 free classifieds site. Post free ads and find cars for sale in Jamaica, houses for rent, phones, electronics, jobs, furniture &amp; more across Kingston, Portmore, Montego Bay and all 14 parishes. 100% free — no hidden fees.">
 <meta name="keywords" content="free classifieds Jamaica, cars for sale Jamaica, car for sale Jamaica, houses for rent Jamaica, property for sale Jamaica, phones for sale Jamaica, jobs in Jamaica, Jamaica marketplace, buy and sell Jamaica, free ads Jamaica, Kingston classifieds, Portmore ads, Montego Bay classifieds, used cars Jamaica, cheap cars Jamaica, Toyota for sale Jamaica, Honda for sale Jamaica, land for sale Jamaica, apartment for rent Kingston, laptop for sale Jamaica, electronics Jamaica, furniture Jamaica, second hand Jamaica, yaadadz, yaad adz, Jamaica online market, free posting Jamaica, sell online Jamaica, Ocho Rios classifieds, Spanish Town ads, St Catherine classifieds, Mandeville ads">
 <meta name="author" content="Yaad Adz">
@@ -284,22 +284,13 @@ if ('serviceWorker' in navigator) {
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Google Analytics 4 — G-KE3X5BMY63 -->
+<!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-KE3X5BMY63', {
-    send_page_view: true,
-    // Enhanced measurement — track scrolls, outbound clicks, file downloads
-    enhanced_measurement: { scrolls: true, outbound_clicks: true },
-  });
-
-  // ── Custom event helper ──────────────────────────────────
-  function gaEvent(name, params) {
-    try { gtag('event', name, params || {}); } catch(e) {}
-  }
+  gtag('config', 'G-KE3X5BMY63');
 </script>
 
 <!-- Google AdSense -->
@@ -312,8 +303,6 @@ if ('serviceWorker' in navigator) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cquwshpsfybvgqodbxsf.supabase.co">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<!-- Preload critical CSS — eliminates render-blocking -->
-<link rel="preload" href="style.css" as="style">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
@@ -325,6 +314,11 @@ if ('serviceWorker' in navigator) {
 #aiSheet.open       { display:block; }
 #aiSheetOverlay     { display:none; }
 #aiSheetOverlay.open{ display:block; }
+
+/* ── Hide desktop AI FAB on mobile (bottom sheet handles it instead) ── */
+@media (max-width: 640px) {
+  #aiFab { display:none !important; }
+}
 
 /* ── Eliminate 300ms tap delay everywhere ── */
 * { touch-action: manipulation; }
@@ -338,12 +332,6 @@ if ('serviceWorker' in navigator) {
   to   { opacity:1; transform:translateY(0); }
 }
 .ad-card.animate { animation: cardIn 0.22s ease both; }
-
-/* ── content-visibility — skip rendering off-screen cards entirely ── */
-.ad-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 280px; /* approximate card height */
-}
 
 /* ── Smooth page transitions ── */
 .page { opacity:0; transition:opacity 0.15s ease; pointer-events:none; }
@@ -439,231 +427,137 @@ html { scroll-behavior: smooth; }
 </style>
 
 <style>
-/* ── Price range filter bar ── */
-.price-filter-bar { padding:8px 16px 4px; max-width:960px; margin:0 auto; }
-.price-filter-inner { display:flex; align-items:center; gap:10px; border-radius:12px; padding:8px 14px; }
-.price-filter-label { font-size:12px; font-weight:700; color:#1a2e22; white-space:nowrap; }
-.price-filter-inputs { display:flex; align-items:center; gap:6px; flex:1; }
-.price-input { width:100%; max-width:130px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:5px 10px; font-size:16px; font-weight:500; color:#1a2e22; outline:none; transition:border-color 0.2s; }
-.price-input:focus { border-color:#00703f; }
-.price-filter-sep { color:#6b7a71; font-weight:600; font-size:13px; flex-shrink:0; }
-.price-filter-clear { background:rgba(0,0,0,0.06); border:none; border-radius:6px; width:24px; height:24px; font-size:12px; cursor:pointer; color:#6b7a71; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
-.price-filter-clear:hover { background:rgba(229,62,62,0.12); color:#e53e3e; }
-/* ── Recently viewed ── */
-.recently-viewed { max-width:960px; margin:0 auto; padding:20px 16px 32px; }
-.rv-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.rv-title { font-size:14px; font-weight:700; color:#1a2e22; }
-.rv-clear { background:none; border:none; font-size:12px; color:#6b7a71; cursor:pointer; padding:2px 6px; border-radius:6px; }
-.rv-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-.rv-grid::-webkit-scrollbar { display:none; }
-.rv-card { flex:0 0 120px; border-radius:10px; overflow:hidden; cursor:pointer; transition:transform 0.18s,box-shadow 0.18s; }
-.rv-card:hover { transform:translateY(-2px); }
-.rv-card-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#e8ede9; }
-.rv-card-body { padding:6px 8px 8px; }
-.rv-card-price { font-size:12px; font-weight:800; color:#00703f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rv-card-title { font-size:11px; color:#1a2e22; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; margin-top:2px; }
-/* ── Empty suggestions ── */
-.empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
-.empty-sug-btn { background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#1a2e22; cursor:pointer; transition:all 0.2s; }
-.empty-sug-btn:hover { border-color:#00703f; color:#00703f; }
-</style>
-
-<style>
 /* ══════════════════════════════════════════════════════════════
-   GLASSMORPHISM LAYER v2 — more transparent, deeper blur,
-   richer depth. Purely cosmetic — no layout or z-index changes.
+   GLASSMORPHISM LAYER — purely additive visual polish
+   All changes are cosmetic only. No layout, z-index, or
+   functional properties are touched.
 ══════════════════════════════════════════════════════════════ */
 
 /* ── Ad Cards ─────────────────────────────────────────────── */
 .ad-card {
-  background: rgba(255,255,255,0.52) !important;
-  backdrop-filter: blur(20px) saturate(1.8) brightness(1.02);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.02);
-  border: 1px solid rgba(255,255,255,0.7) !important;
-  box-shadow:
-    0 2px 8px rgba(0,0,0,0.05),
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 -1px 0 rgba(0,0,0,0.04) inset !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.55) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(255,255,255,0.3) inset !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
 }
 .ad-card:hover {
-  background: rgba(255,255,255,0.68) !important;
-  transform: translateY(-3px) !important;
-  box-shadow:
-    0 12px 32px rgba(0,0,0,0.10),
-    0 1px 0 rgba(255,255,255,0.95) inset !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(255,255,255,0.4) inset !important;
 }
 
 /* ── Category Pills ───────────────────────────────────────── */
 .cat-pill-sm {
-  background: rgba(255,255,255,0.45) !important;
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.65) !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05), 0 1px 0 rgba(255,255,255,0.8) inset !important;
-  transition: all 0.18s ease !important;
-}
-.cat-pill-sm:hover {
-  background: rgba(255,255,255,0.65) !important;
+  background: rgba(255,255,255,0.6) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06) !important;
 }
 .cat-pill-sm.active {
-  background: rgba(0,92,53,0.88) !important;
-  border-color: rgba(0,130,70,0.5) !important;
-  box-shadow: 0 2px 14px rgba(0,92,53,0.35), 0 1px 0 rgba(255,255,255,0.15) inset !important;
+  background: rgba(0,92,53,0.9) !important;
+  border-color: rgba(0,112,63,0.6) !important;
+  box-shadow: 0 2px 12px rgba(0,92,53,0.3) !important;
 }
 
 /* ── Hero section ─────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(150deg, #0c1e14 0%, #112218 60%, #0e2416 100%) !important;
+  background: linear-gradient(160deg, rgba(12,30,20,0.97) 0%, rgba(18,45,28,0.95) 100%) !important;
 }
 .ai-search-bar {
-  background: rgba(255,255,255,0.07) !important;
-  backdrop-filter: blur(24px) saturate(2);
-  -webkit-backdrop-filter: blur(24px) saturate(2);
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  box-shadow:
-    0 4px 24px rgba(0,0,0,0.25),
-    0 1px 0 rgba(255,255,255,0.12) inset !important;
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
 }
 
 /* ── Modals ───────────────────────────────────────────────── */
 .modal {
-  background: rgba(255,255,255,0.78) !important;
-  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
-  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
-  border: 1px solid rgba(255,255,255,0.85) !important;
-  box-shadow:
-    0 32px 80px rgba(0,0,0,0.18),
-    0 1px 0 rgba(255,255,255,1) inset,
-    0 -1px 0 rgba(0,0,0,0.04) inset !important;
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.4) inset !important;
 }
 
 /* ── AI Sheet ─────────────────────────────────────────────── */
 .ai-sheet {
-  background: rgba(10,26,17,0.75) !important;
-  backdrop-filter: blur(40px) saturate(1.6);
-  -webkit-backdrop-filter: blur(40px) saturate(1.6);
-  border-top: 1px solid rgba(255,255,255,0.12) !important;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.3) !important;
+  background: rgba(12,30,20,0.88) !important;
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
 }
 
 /* ── AI Float Chat ────────────────────────────────────────── */
 .ai-float-chat {
-  background: rgba(10,26,17,0.78) !important;
-  backdrop-filter: blur(36px) saturate(1.6);
-  -webkit-backdrop-filter: blur(36px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.45) !important;
+  background: rgba(12,30,20,0.88) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4) !important;
 }
 
 /* ── AI Response Card ─────────────────────────────────────── */
 .ai-response-card {
-  background: rgba(255,255,255,0.55) !important;
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.7) !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05), 0 1px 0 rgba(255,255,255,0.9) inset !important;
+  background: rgba(255,255,255,0.75) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06) !important;
 }
 
 /* ── Bottom Nav ───────────────────────────────────────────── */
 .mob-nav {
-  background: rgba(255,255,255,0.65) !important;
-  backdrop-filter: blur(32px) saturate(2) brightness(1.04);
-  -webkit-backdrop-filter: blur(32px) saturate(2) brightness(1.04);
-  border-top: 1px solid rgba(255,255,255,0.8) !important;
-  box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -8px 32px rgba(0,0,0,0.06) !important;
+  background: rgba(255,255,255,0.82) !important;
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid rgba(255,255,255,0.6) !important;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
 }
 
 /* ── Nav Bar ──────────────────────────────────────────────── */
 nav {
-  background: rgba(10,24,16,0.72) !important;
-  backdrop-filter: blur(32px) saturate(1.6);
-  -webkit-backdrop-filter: blur(32px) saturate(1.6);
-  border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.15) !important;
+  background: rgba(12,30,20,0.82) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
 }
 
 /* ── Toast ────────────────────────────────────────────────── */
 .toast {
-  background: rgba(18,18,18,0.75) !important;
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+  background: rgba(26,26,26,0.88) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12) !important;
 }
 
 /* ── PWA Install Banner ───────────────────────────────────── */
 .pwa-banner {
-  background: rgba(18,38,26,0.78) !important;
-  backdrop-filter: blur(28px) saturate(1.5);
-  -webkit-backdrop-filter: blur(28px) saturate(1.5);
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.4) !important;
+  background: rgba(23,42,31,0.9) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
 }
 
-/* ── Sheet result cards ───────────────────────────────────── */
+/* ── Section result cards / sheet result cards ────────────── */
 .sheet-result-card {
-  background: rgba(255,255,255,0.07) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  transition: background 0.15s ease !important;
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1) !important;
 }
 .sheet-result-card:hover {
   background: rgba(255,255,255,0.14) !important;
-  border-color: rgba(255,255,255,0.2) !important;
-}
-
-/* ── Results header + filter bar ─────────────────────────── */
-.results-header {
-  background: rgba(255,255,255,0.4) !important;
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.6) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
-}
-
-/* ── Price filter bar ─────────────────────────────────────── */
-.price-filter-inner {
-  background: rgba(255,255,255,0.45) !important;
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.65) !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
-}
-
-/* ── Fav button on cards ──────────────────────────────────── */
-.fav-btn {
-  background: rgba(255,255,255,0.55) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255,255,255,0.7) !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-}
-.fav-btn:hover {
-  background: rgba(255,255,255,0.8) !important;
-}
-
-/* ── Recently viewed cards ────────────────────────────────── */
-.rv-card {
-  background: rgba(255,255,255,0.5) !important;
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.68) !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important;
-}
-.rv-card:hover {
-  background: rgba(255,255,255,0.72) !important;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
 }
 
 /* ── Performance: disable blur on low-end / battery saver ─── */
 @media (prefers-reduced-motion: reduce) {
   .ad-card, .modal, .ai-sheet, .mob-nav, nav,
   .ai-float-chat, .cat-pill-sm, .toast, .pwa-banner,
-  .sheet-result-card, .ai-response-card, .ai-search-bar,
-  .results-header, .price-filter-inner, .fav-btn, .rv-card {
+  .sheet-result-card, .ai-response-card, .ai-search-bar {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -697,364 +591,80 @@ nav {
 .ad-price-row { display:flex; align-items:center; gap:6px; }
 .neg-pill { background:#f5c842; color:#7a5c00; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
 
-/* ── Share button on card (bottom-left of image) ── */
-.share-card-btn {
-  position:absolute; bottom:8px; left:8px;
-  background:rgba(255,255,255,0.55); backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.7); border-radius:50%;
-  width:30px; height:30px; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; color:#1a2e22; transition:all 0.18s; padding:0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
+/* ── Share button on card ── */
+.share-card-btn { position:absolute; bottom:8px; left:8px; background:rgba(255,255,255,0.55); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.7); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#1a2e22; transition:all 0.18s; padding:0; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 .share-card-btn:hover { background:rgba(255,255,255,0.85); transform:scale(1.08); }
 
-/* ── Nav logo ── */
-.nav-logo svg {
-  height: 32px !important;
-  width: auto !important;
-  max-width: 100px !important;
-  flex-shrink: 0;
-}
-.nav-logo-text {
-  display: inline !important;
-  font-family: var(--font-d, serif) !important;
-  font-size: 20px !important;
-  font-weight: 800 !important;
-  color: var(--text-1, #e8ede9) !important;
-  white-space: nowrap;
-}
-.nav-logo-text em {
-  color: var(--gold, #f5c842) !important;
-  font-style: italic !important;
-}
-@media (max-width: 480px) {
-  .nav-logo svg { max-width: 72px !important; height: 26px !important; }
-  .nav-logo-text { font-size: 16px !important; }
-}
+/* ── Ad price on cards ── */
+.ad-price { font-size:18px !important; font-weight:800 !important; color:#00703f !important; line-height:1.1 !important; }
 
-/* ── Ad view count — always visible ── */
-.ad-views {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-  opacity: 0.75 !important;
-  font-size: 11px !important;
-}
-.ad-views svg {
-  width: 12px !important;
-  height: 12px !important;
-  flex-shrink: 0 !important;
-}
+/* ── Ad views always visible ── */
+.ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.75 !important; font-size:11px !important; }
 
 /* ── Grid columns ── */
-.listings-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-  gap: 14px !important;
-}
-@media (min-width: 900px) { .listings-grid { grid-template-columns: repeat(4,1fr) !important; gap:16px !important; } }
-@media (max-width: 600px) { .listings-grid { grid-template-columns: repeat(2,1fr) !important; gap:10px !important; } }
-
-/* ── Card image ── */
-.ad-card-img { aspect-ratio: 16/10 !important; overflow: hidden !important; position: relative !important; }
-.ad-card-img img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center !important; }
-
-/* ── Price on cards ── */
-.ad-price { font-size: 18px !important; font-weight: 800 !important; color: #00703f !important; line-height: 1.1 !important; }
+.listings-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
+@media (min-width:900px) { .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
+@media (max-width:600px) { .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
 
 /* ════════════════════════════════════════════════════════════
    AI SHEET — FULL UI REDESIGN
 ════════════════════════════════════════════════════════════ */
-
-/* ── Sheet container ── */
-#aiSheet {
-  position: fixed !important;
-  bottom: 0 !important; left: 0 !important; right: 0 !important;
-  max-height: 92vh !important;
-  border-radius: 24px 24px 0 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  z-index: 8000 !important;
-  background: #0e1f16 !important;
-  border-top: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 -12px 60px rgba(0,0,0,0.5) !important;
-  transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(0.32,0.72,0,1) !important;
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-#aiSheet.open {
-  transform: translateY(0) !important;
-  display: flex !important;
-}
-
-/* ── Drag handle ── */
-.ai-sheet-handle {
-  width: 36px !important; height: 4px !important;
-  background: rgba(255,255,255,0.2) !important;
-  border-radius: 2px !important;
-  margin: 12px auto 0 !important;
-  flex-shrink: 0 !important;
-}
-
-/* ── Header ── */
-.ai-sheet-header {
-  display: flex !important;
-  align-items: center !important;
-  padding: 14px 18px 12px !important;
-  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
-  flex-shrink: 0 !important;
-}
-.ai-sheet-title {
-  display: flex !important;
-  align-items: center !important;
-  gap: 11px !important;
-  flex: 1 !important;
-}
-.ai-sheet-icon {
-  font-size: 28px !important;
-  width: 44px !important; height: 44px !important;
-  background: rgba(29,185,84,0.12) !important;
-  border: 1px solid rgba(29,185,84,0.25) !important;
-  border-radius: 14px !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  flex-shrink: 0 !important;
-}
-.ai-sheet-name {
-  font-size: 17px !important;
-  font-weight: 700 !important;
-  color: #e8ede9 !important;
-  letter-spacing: -0.2px !important;
-}
-.ai-sheet-sub {
-  font-size: 12px !important;
-  color: rgba(255,255,255,0.4) !important;
-  margin-top: 1px !important;
-}
-.ai-sheet-close {
-  width: 32px !important; height: 32px !important;
-  background: rgba(255,255,255,0.08) !important;
-  border: none !important; border-radius: 50% !important;
-  color: rgba(255,255,255,0.5) !important;
-  font-size: 14px !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  cursor: pointer !important;
-  transition: background 0.15s !important;
-  flex-shrink: 0 !important;
-}
-.ai-sheet-close:hover { background: rgba(255,255,255,0.15) !important; }
-
-/* ── Scrollable body ── */
-.ai-sheet-body {
-  flex: 1 !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  padding: 16px 16px 8px !important;
-  scrollbar-width: none !important;
-}
-.ai-sheet-body::-webkit-scrollbar { display: none !important; }
-
-/* ── Recent searches ── */
-.ai-sheet-recent {
-  margin-bottom: 18px !important;
-}
-.sheet-recent-label {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.8px !important;
-  text-transform: uppercase !important;
-  color: rgba(255,255,255,0.3) !important;
-  margin-bottom: 10px !important;
-}
-.sheet-recent-list {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-}
-.sheet-recent-chip {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  background: rgba(255,255,255,0.06) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  border-radius: 20px !important;
-  padding: 6px 12px !important;
-  font-size: 13px !important;
-  color: rgba(255,255,255,0.65) !important;
-  cursor: pointer !important;
-  transition: all 0.15s !important;
-  white-space: nowrap !important;
-}
-.sheet-recent-chip::before { content: '🕐'; font-size: 11px !important; }
-.sheet-recent-chip:hover {
-  background: rgba(255,255,255,0.12) !important;
-  color: #e8ede9 !important;
-}
-
-/* ── Suggestion chips ── */
-.ai-sheet-sugs {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  margin-bottom: 4px !important;
-}
-.sheet-sug {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  border-radius: 20px !important;
-  padding: 8px 14px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  color: #c8d4cc !important;
-  cursor: pointer !important;
-  transition: all 0.15s !important;
-  white-space: nowrap !important;
-}
-.sheet-sug:hover, .sheet-sug:active {
-  background: rgba(29,185,84,0.15) !important;
-  border-color: rgba(29,185,84,0.35) !important;
-  color: #1db954 !important;
-  transform: scale(0.97) !important;
-}
-
-/* ── Chat area ── */
-.ai-sheet-chat {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
-  margin-top: 16px !important;
-}
-
-/* ── Chat bubbles ── */
-.sheet-msg-user {
-  align-self: flex-end !important;
-  background: #1db954 !important;
-  color: #fff !important;
-  border-radius: 18px 18px 4px 18px !important;
-  padding: 10px 14px !important;
-  font-size: 14px !important;
-  max-width: 82% !important;
-  line-height: 1.45 !important;
-  font-weight: 500 !important;
-}
-.sheet-msg-ai {
-  align-self: flex-start !important;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  color: #d8e4dc !important;
-  border-radius: 4px 18px 18px 18px !important;
-  padding: 10px 14px !important;
-  font-size: 14px !important;
-  max-width: 88% !important;
-  line-height: 1.55 !important;
-}
-.sheet-msg-typing {
-  align-self: flex-start !important;
-  background: rgba(255,255,255,0.06) !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 4px 18px 18px 18px !important;
-  padding: 12px 16px !important;
-  display: flex !important;
-  gap: 4px !important;
-  align-items: center !important;
-}
-.sheet-msg-typing span {
-  width: 7px !important; height: 7px !important;
-  background: rgba(255,255,255,0.35) !important;
-  border-radius: 50% !important;
-  animation: typingBounce 1.2s ease infinite !important;
-  display: block !important;
-}
-.sheet-msg-typing span:nth-child(2) { animation-delay: 0.15s !important; }
-.sheet-msg-typing span:nth-child(3) { animation-delay: 0.30s !important; }
-@keyframes typingBounce {
-  0%,60%,100% { transform: translateY(0); }
-  30% { transform: translateY(-5px); }
-}
-
-/* ── Result cards inside chat ── */
-.sheet-result-card {
-  background: rgba(255,255,255,0.06) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  border-radius: 14px !important;
-  padding: 12px !important;
-  cursor: pointer !important;
-  transition: all 0.15s !important;
-  display: flex !important;
-  gap: 10px !important;
-  align-items: center !important;
-}
-.sheet-result-card:hover, .sheet-result-card:active {
-  background: rgba(255,255,255,0.1) !important;
-  border-color: rgba(29,185,84,0.3) !important;
-}
-
-/* ── Input bar ── */
-.ai-sheet-input-wrap {
-  flex-shrink: 0 !important;
-  padding: 10px 14px 12px !important;
-  border-top: 1px solid rgba(255,255,255,0.07) !important;
-  background: #0e1f16 !important;
-}
-.ai-sheet-input-bar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1.5px solid rgba(255,255,255,0.12) !important;
-  border-radius: 28px !important;
-  padding: 6px 6px 6px 16px !important;
-  transition: border-color 0.2s !important;
-}
-.ai-sheet-input-bar:focus-within {
-  border-color: rgba(29,185,84,0.5) !important;
-  background: rgba(255,255,255,0.09) !important;
-}
-.ai-sheet-input {
-  flex: 1 !important;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  color: #e8ede9 !important;
-  font-size: 15px !important;
-  font-family: var(--font-s, sans-serif) !important;
-  padding: 6px 0 !important;
-  min-width: 0 !important;
-}
-.ai-sheet-input::placeholder { color: rgba(255,255,255,0.3) !important; }
-.ai-sheet-send {
-  width: 38px !important; height: 38px !important;
-  background: #1db954 !important;
-  border: none !important; border-radius: 50% !important;
-  color: #fff !important; font-size: 18px !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  cursor: pointer !important; flex-shrink: 0 !important;
-  transition: all 0.15s !important;
-  box-shadow: 0 2px 12px rgba(29,185,84,0.35) !important;
-}
-.ai-sheet-send:hover { transform: scale(1.08) !important; background: #1ed760 !important; }
-.ai-sheet-send:active { transform: scale(0.95) !important; }
-.ai-sheet-hint {
-  text-align: center !important;
-  font-size: 11px !important;
-  color: rgba(255,255,255,0.2) !important;
-  margin-top: 8px !important;
-  letter-spacing: 0.2px !important;
-}
-
-/* ── Overlay ── */
-.ai-sheet-overlay {
-  position: fixed !important; inset: 0 !important;
-  background: rgba(0,0,0,0.5) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  z-index: 7999 !important;
-  display: none !important;
-}
-.ai-sheet-overlay.open { display: block !important; }
+#aiSheet { position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; max-height:92vh !important; border-radius:24px 24px 0 0 !important; display:flex !important; flex-direction:column !important; overflow:hidden !important; z-index:8000 !important; background:#0e1f16 !important; border-top:1px solid rgba(255,255,255,0.1) !important; box-shadow:0 -12px 60px rgba(0,0,0,0.5) !important; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.32,0.72,0,1) !important; padding-bottom:env(safe-area-inset-bottom,0px) !important; }
+#aiSheet.open { transform:translateY(0) !important; display:flex !important; }
+.ai-sheet-handle { width:36px !important; height:4px !important; background:rgba(255,255,255,0.2) !important; border-radius:2px !important; margin:12px auto 0 !important; flex-shrink:0 !important; }
+.ai-sheet-header { display:flex !important; align-items:center !important; padding:14px 18px 12px !important; border-bottom:1px solid rgba(255,255,255,0.07) !important; flex-shrink:0 !important; }
+.ai-sheet-title { display:flex !important; align-items:center !important; gap:11px !important; flex:1 !important; }
+.ai-sheet-icon { font-size:28px !important; width:44px !important; height:44px !important; background:rgba(29,185,84,0.12) !important; border:1px solid rgba(29,185,84,0.25) !important; border-radius:14px !important; display:flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0 !important; }
+.ai-sheet-name { font-size:17px !important; font-weight:700 !important; color:#e8ede9 !important; letter-spacing:-0.2px !important; }
+.ai-sheet-sub { font-size:12px !important; color:rgba(255,255,255,0.4) !important; margin-top:1px !important; }
+.ai-sheet-close { width:32px !important; height:32px !important; background:rgba(255,255,255,0.08) !important; border:none !important; border-radius:50% !important; color:rgba(255,255,255,0.5) !important; font-size:14px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; transition:background 0.15s !important; flex-shrink:0 !important; }
+.ai-sheet-close:hover { background:rgba(255,255,255,0.15) !important; }
+.ai-sheet-body { flex:1 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; padding:16px 16px 8px !important; scrollbar-width:none !important; }
+.ai-sheet-body::-webkit-scrollbar { display:none !important; }
+.ai-sheet-recent { margin-bottom:18px !important; }
+.sheet-recent-label { font-size:10px !important; font-weight:700 !important; letter-spacing:0.8px !important; text-transform:uppercase !important; color:rgba(255,255,255,0.3) !important; margin-bottom:10px !important; }
+.sheet-recent-list { display:flex !important; flex-wrap:wrap !important; gap:8px !important; }
+.sheet-recent-chip { display:inline-flex !important; align-items:center !important; gap:5px !important; background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.1) !important; border-radius:20px !important; padding:6px 12px !important; font-size:13px !important; color:rgba(255,255,255,0.65) !important; cursor:pointer !important; transition:all 0.15s !important; white-space:nowrap !important; }
+.sheet-recent-chip::before { content:'🕐'; font-size:11px !important; }
+.sheet-recent-chip:hover { background:rgba(255,255,255,0.12) !important; color:#e8ede9 !important; }
+.ai-sheet-sugs { display:flex !important; flex-wrap:wrap !important; gap:8px !important; margin-bottom:4px !important; }
+.sheet-sug { display:inline-flex !important; align-items:center !important; gap:6px !important; background:rgba(255,255,255,0.07) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:20px !important; padding:8px 14px !important; font-size:13px !important; font-weight:500 !important; color:#c8d4cc !important; cursor:pointer !important; transition:all 0.15s !important; white-space:nowrap !important; }
+.sheet-sug:hover, .sheet-sug:active { background:rgba(29,185,84,0.15) !important; border-color:rgba(29,185,84,0.35) !important; color:#1db954 !important; transform:scale(0.97) !important; }
+.ai-sheet-chat { display:flex !important; flex-direction:column !important; gap:12px !important; margin-top:16px !important; }
+.sheet-msg-user { align-self:flex-end !important; background:#1db954 !important; color:#fff !important; border-radius:18px 18px 4px 18px !important; padding:10px 14px !important; font-size:14px !important; max-width:82% !important; line-height:1.45 !important; font-weight:500 !important; }
+.sheet-msg-ai { align-self:flex-start !important; background:rgba(255,255,255,0.07) !important; border:1px solid rgba(255,255,255,0.1) !important; color:#d8e4dc !important; border-radius:4px 18px 18px 18px !important; padding:10px 14px !important; font-size:14px !important; max-width:88% !important; line-height:1.55 !important; }
+.sheet-msg-typing { align-self:flex-start !important; background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.08) !important; border-radius:4px 18px 18px 18px !important; padding:12px 16px !important; display:flex !important; gap:4px !important; align-items:center !important; }
+.sheet-msg-typing span { width:7px !important; height:7px !important; background:rgba(255,255,255,0.35) !important; border-radius:50% !important; animation:typingBounce 1.2s ease infinite !important; display:block !important; }
+.sheet-msg-typing span:nth-child(2) { animation-delay:0.15s !important; }
+.sheet-msg-typing span:nth-child(3) { animation-delay:0.30s !important; }
+@keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+.sheet-result-card { background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.1) !important; border-top:none !important; border-radius:12px !important; padding:10px !important; cursor:pointer !important; transition:all 0.15s !important; display:flex !important; align-items:center !important; gap:10px !important; }
+.sheet-result-card:hover, .sheet-result-card:active { background:rgba(255,255,255,0.1) !important; border-color:rgba(29,185,84,0.3) !important; }
+.src-thumb { width:56px !important; height:56px !important; object-fit:cover !important; border-radius:8px !important; flex-shrink:0 !important; }
+.src-icon { width:56px !important; height:56px !important; border-radius:8px !important; background:rgba(255,255,255,0.06) !important; display:flex !important; align-items:center !important; justify-content:center !important; font-size:22px !important; flex-shrink:0 !important; }
+.src-info { flex:1 !important; min-width:0 !important; }
+.src-price { font-size:15px !important; font-weight:700 !important; color:#1db954 !important; line-height:1.2 !important; }
+.src-title { font-size:13px !important; color:#d8e4dc !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; margin-top:2px !important; }
+.src-meta { font-size:11px !important; color:rgba(255,255,255,0.35) !important; margin-top:3px !important; }
+.src-arrow { color:rgba(255,255,255,0.25) !important; font-size:18px !important; flex-shrink:0 !important; }
+.src-neg-badge { background:rgba(245,200,66,0.15) !important; color:#f5c842 !important; font-size:10px !important; font-weight:700 !important; padding:1px 6px !important; border-radius:10px !important; margin-left:4px !important; }
+.src-new-badge { background:rgba(29,185,84,0.15) !important; color:#1db954 !important; font-size:10px !important; font-weight:700 !important; padding:1px 6px !important; border-radius:10px !important; margin-left:4px !important; }
+.sheet-count-tag { font-size:12px !important; color:rgba(255,255,255,0.4) !important; background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.1) !important; border-radius:20px !important; padding:3px 10px !important; display:inline-block !important; margin:8px 0 10px !important; }
+.sheet-results { display:flex !important; flex-direction:column !important; gap:8px !important; margin-top:8px !important; }
+.sheet-view-all { width:100% !important; padding:10px !important; background:rgba(29,185,84,0.1) !important; border:1px solid rgba(29,185,84,0.25) !important; border-radius:10px !important; color:#1db954 !important; font-size:13px !important; font-weight:600 !important; cursor:pointer !important; text-align:center !important; margin-top:4px !important; transition:all 0.15s !important; font-family:var(--font-s,sans-serif) !important; }
+.sheet-view-all:hover { background:rgba(29,185,84,0.18) !important; }
+.sheet-msg-text { line-height:1.55 !important; }
+.ai-sheet-input-wrap { flex-shrink:0 !important; padding:10px 14px 12px !important; border-top:1px solid rgba(255,255,255,0.07) !important; background:#0e1f16 !important; }
+.ai-sheet-input-bar { display:flex !important; align-items:center !important; gap:10px !important; background:rgba(255,255,255,0.07) !important; border:1.5px solid rgba(255,255,255,0.12) !important; border-radius:28px !important; padding:6px 6px 6px 16px !important; transition:border-color 0.2s !important; }
+.ai-sheet-input-bar:focus-within { border-color:rgba(29,185,84,0.5) !important; background:rgba(255,255,255,0.09) !important; }
+.ai-sheet-input { flex:1 !important; background:transparent !important; border:none !important; outline:none !important; color:#e8ede9 !important; font-size:15px !important; font-family:var(--font-s,sans-serif) !important; padding:6px 0 !important; min-width:0 !important; }
+.ai-sheet-input::placeholder { color:rgba(255,255,255,0.3) !important; }
+.ai-sheet-send { width:38px !important; height:38px !important; background:#1db954 !important; border:none !important; border-radius:50% !important; color:#fff !important; font-size:18px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; flex-shrink:0 !important; transition:all 0.15s !important; box-shadow:0 2px 12px rgba(29,185,84,0.35) !important; }
+.ai-sheet-send:hover { transform:scale(1.08) !important; background:#1ed760 !important; }
+.ai-sheet-send:active { transform:scale(0.95) !important; }
+.ai-sheet-hint { text-align:center !important; font-size:11px !important; color:rgba(255,255,255,0.2) !important; margin-top:8px !important; letter-spacing:0.2px !important; }
+.ai-sheet-overlay { position:fixed !important; inset:0 !important; background:rgba(0,0,0,0.5) !important; backdrop-filter:blur(4px) !important; -webkit-backdrop-filter:blur(4px) !important; z-index:7999 !important; display:none !important; }
+.ai-sheet-overlay.open { display:block !important; }
 </style>
 <body>
 
@@ -1070,7 +680,7 @@ nav {
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="goHome()" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:32px;width:auto;max-width:100px;display:block;" aria-label="Yaad Adz">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:38px;width:auto;display:block;" aria-label="Yaad Adz">
       <defs>
         <linearGradient id="nig" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#007a45"/><stop offset="100%" style="stop-color:#003d20"/></linearGradient>
         <linearGradient id="ngg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffe45e"/><stop offset="100%" style="stop-color:#c89a00"/></linearGradient>
@@ -1101,7 +711,6 @@ nav {
       <rect x="321" y="198" width="208" height="2" rx="1" fill="#f4c300" opacity="0.65"/>
       <text x="425" y="232" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="26" fill="white" letter-spacing="12" opacity="0.95">ADZ</text>
     </svg>
-    <span class="nav-logo-text" style="margin-left:6px">Yaad <em>Adz</em></span>
   </div>
   <div class="nav-spacer"></div>
   <div class="nav-actions" id="navActions">
@@ -1176,6 +785,16 @@ nav {
       </div>
     </div>
 
+    <!-- Ad: below hero -->
+    <div class="ad-slot-banner" style="min-height:0">
+      <ins class="adsbygoogle ad-slot"
+        style="display:block"
+        data-ad-client="ca-pub-9656521698490533"
+        data-ad-slot="auto"
+        data-ad-format="horizontal"
+        data-full-width-responsive="true"></ins>
+    </div>
+
     <!-- Compact category row -->
     <div class="cat-row" id="catRow"></div>
 
@@ -1203,19 +822,6 @@ nav {
       </select>
     </div>
 
-    <!-- Price range filter -->
-    <div class="price-filter-bar" id="priceFilterBar" style="display:none">
-      <div class="price-filter-inner">
-        <span class="price-filter-label">💰 Budget</span>
-        <div class="price-filter-inputs">
-          <input type="number" id="priceMin" class="price-input" placeholder="Min J$" min="0" oninput="applyPriceFilter()">
-          <span class="price-filter-sep">–</span>
-          <input type="number" id="priceMax" class="price-input" placeholder="Max J$" min="0" oninput="applyPriceFilter()">
-        </div>
-        <button class="price-filter-clear" id="priceFilterClear" onclick="clearPriceFilter()" style="display:none">✕</button>
-      </div>
-    </div>
-
     <!-- Listings grid -->
     <div class="listings-grid" id="homeGrid">
       <noscript>
@@ -1230,15 +836,6 @@ nav {
           </p>
         </div>
       </noscript>
-    </div>
-
-    <!-- Recently viewed -->
-    <div class="recently-viewed" id="recentlyViewed" style="display:none">
-      <div class="rv-header">
-        <span class="rv-title">👁 Recently Viewed</span>
-        <button class="rv-clear" onclick="clearRecentlyViewed()">Clear</button>
-      </div>
-      <div class="rv-grid" id="rvGrid"></div>
     </div>
   </div>
 </div>
@@ -1429,16 +1026,6 @@ nav {
     <div class="step-panel" id="sp3">
       <div id="adPreviewCard" style="max-width:260px;margin:0 auto 24px"></div>
       <div id="previewDetails" style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px"></div>
-      <!-- Upload progress bar — hidden until uploading -->
-      <div id="uploadProgressWrap" style="display:none;margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);margin-bottom:6px">
-          <span id="uploadProgressLabel">Uploading photos…</span>
-          <span id="uploadProgressPct">0%</span>
-        </div>
-        <div style="background:rgba(0,0,0,0.08);border-radius:20px;height:6px;overflow:hidden">
-          <div id="uploadProgressBar" style="height:100%;background:#1db954;border-radius:20px;width:0%;transition:width 0.3s ease"></div>
-        </div>
-      </div>
       <div class="step-nav">
         <button class="btn btn-ghost" onclick="nextStep(2)" style="min-width:90px">← Back</button>
         <button class="btn btn-gold btn-lg" style="flex:1" onclick="doPostAd()">🚀 Publish Ad Free</button>
@@ -1527,6 +1114,16 @@ nav {
     </div>
     <div class="ai-sheet-hint">Powered by Claude AI · Speaks Jamaican</div>
   </div>
+</div>
+
+<!-- Ad: above footer -->
+<div class="ad-slot-banner" style="min-height:0">
+  <ins class="adsbygoogle ad-slot"
+    style="display:block"
+    data-ad-client="ca-pub-9656521698490533"
+    data-ad-slot="auto"
+    data-ad-format="horizontal"
+    data-full-width-responsive="true"></ins>
 </div>
 
 <!-- ─── SEO ABOUT SECTION (above footer — crawlable by Google) ─── -->
@@ -1806,25 +1403,18 @@ nav {
      buyer_id text, buyer_name text, buyer_init text,
      created_at timestamptz default now()
    );
-   create table if not exists reports (
-     id text primary key, ad_id text, ad_title text,
-     reason text, reporter_id text, reporter_name text,
-     created_at timestamptz default now()
-   );
-   alter table ads      enable row level security;
-   alter table users    enable row level security;
+   alter table ads    enable row level security;
+   alter table users  enable row level security;
    alter table messages enable row level security;
-   alter table reports  enable row level security;
-   create policy "Public read ads"        on ads      for select using (true);
-   create policy "Public insert ads"      on ads      for insert with check (true);
-   create policy "Public update ads"      on ads      for update using (true);
-   create policy "Public delete ads"      on ads      for delete using (true);
-   create policy "Public read users"      on users    for select using (true);
-   create policy "Public insert users"    on users    for insert with check (true);
-   create policy "Public read msgs"       on messages for select using (true);
-   create policy "Public insert msgs"     on messages for insert with check (true);
-   create policy "Public update msgs"     on messages for update using (true);
-   create policy "Public insert reports"  on reports  for insert with check (true);
+   create policy "Public read ads"     on ads      for select using (true);
+   create policy "Public insert ads"   on ads      for insert with check (true);
+   create policy "Public update ads"   on ads      for update using (true);
+   create policy "Public delete ads"   on ads      for delete using (true);
+   create policy "Public read users"   on users    for select using (true);
+   create policy "Public insert users" on users    for insert with check (true);
+   create policy "Public read msgs"    on messages for select using (true);
+   create policy "Public insert msgs"  on messages for insert with check (true);
+   create policy "Public update msgs"  on messages for update using (true);
 
    -- SUPABASE STORAGE SETUP (do this in the Storage tab):
    -- 1. Create a bucket called "ad-images" 
@@ -1869,6 +1459,17 @@ const CATS = [
 
 const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon','St. Catherine'];
 
+const DEMO = [
+  {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
+  {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
+  {id:'d3',title:'iPhone 14 Pro 256GB — Like New',category:'electronics',price:95000,parish:'St. James',desc:'Used 6 months only. Deep purple. Original box, charger & case included. No cracks. Battery 98%. Last price.',seller:'Kezia Brown',sellerInit:'KB',sellerId:'s3',phone:'876-654-3210',date:'2025-06-05',image:'',status:'active',neg:false, views:124},
+  {id:'d4',title:'Graphic Designer — Logos, Flyers & Social',category:'services',price:5000,parish:'St. Andrew',desc:'Professional designer, 5+ years experience. Logos, flyers, business cards, Instagram content. Fast turnaround. WhatsApp for portfolio.',seller:'Andre Thomas',sellerInit:'AT',sellerId:'s4',phone:'876-789-0123',date:'2025-06-06',image:'',status:'active',neg:true, views:31},
+  {id:'d5',title:'Fresh Ackee & Saltfish — Free Delivery',category:'food',price:1500,parish:'Clarendon',desc:'Fresh ackee from my own tree, cleaned and ready. Saltfish packages available. Free delivery within Clarendon.',seller:'Miss Gloria',sellerInit:'MG',sellerId:'s5',phone:'876-555-1234',date:'2025-06-07',image:'',status:'active',neg:false, views:19},
+  {id:'d6',title:'Yamaha Guitar + Amp Bundle',category:'music',price:35000,parish:'Kingston',desc:'Yamaha Pacifica 112V in sonic blue. 15W amp, cable, strap & picks included. Perfect for beginners.',seller:'Justin Lee',sellerInit:'JL',sellerId:'s6',phone:'876-234-5678',date:'2025-06-08',image:'',status:'active',neg:false, views:66},
+  {id:'d7',title:'Samsung 65" 4K Smart TV',category:'electronics',price:85000,parish:'St. Andrew',desc:'Samsung 65" 4K UHD Smart TV. Netflix, YouTube, Disney+ built-in. Bought 1 year ago, upgrading. Pickup only.',seller:'Troy Brown',sellerInit:'TB',sellerId:'s7',phone:'876-111-2222',date:'2025-06-09',image:'',status:'active',neg:true, views:91},
+  {id:'d8',title:'Vacant Lot for Sale — Portmore',category:'property',price:4500000,parish:'St. Catherine',desc:'800 sq ft residential lot in gated community. Survey done, title available. Owner moving abroad.',seller:'Pearl Watson',sellerInit:'PW',sellerId:'s8',phone:'876-777-8888',date:'2025-06-10',image:'',status:'active',neg:false, views:38},
+];
+
 /* ═══════════════════════════════════════════════════════════
    SUPABASE CLIENT
 ═══════════════════════════════════════════════════════════ */
@@ -1905,9 +1506,15 @@ async function loadAds() {
     .select('*')
     .order('created_at', { ascending: false })
     .limit(200);
-  if (error) { console.error('loadAds:', error); _ads = []; return; }
+  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
+  const prevIds = new Set(_ads.map(a => a.id));
   _ads = (data || []).map(dbToAd);
-  // No fallback to demo data — show real empty state if DB is empty
+  if (!_ads.length) _ads = DEMO;
+  // Check saved search alerts for any newly added listings
+  const newAds = _ads.filter(a => !prevIds.has(a.id));
+  if (newAds.length && prevIds.size > 0) {
+    setTimeout(function() { checkSavedSearchAlerts(newAds); }, 1500);
+  }
 }
 
 // Map DB row → app ad object
@@ -2280,7 +1887,6 @@ async function doLogin() {
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
-    gaEvent('login', { method: 'email' });
     // Ask for push permission after login (polite — user just chose to engage)
     setTimeout(requestPushPermission, 4000);
   } catch(e) {
@@ -2308,7 +1914,6 @@ async function doRegister() {
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome to Yaad Adz, ' + name.split(' ')[0] + '! 🎉', '🎉');
-    gaEvent('sign_up', { method: 'email' });
     launchConfetti();
     // Ask for push permission after registration
     setTimeout(requestPushPermission, 5000);
@@ -2773,7 +2378,9 @@ function openPostAd() {
   if (!CU) return openAuth('login');
   currentPostStep = 1; uploadPhotos = []; uploadUrl = '';
   ['aTitle','aDesc','aPrice','aPhone'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('aParish').value = '';
+  // Pre-fill parish from user profile — saves a tap every time
+  const parishEl = document.getElementById('aParish');
+  parishEl.value = (CU && CU.parish) ? CU.parish : '';
   document.getElementById('aNeg').checked = false;
   document.getElementById('postAlert').classList.remove('show');
   renderPhotoGrid(); setStep(1);
@@ -2877,35 +2484,12 @@ let currentPostStep = 1;
 async function toggleSold(id) {
   const ad = _ads.find(function(a){ return a.id===id; }); if (!ad) return;
   const newStatus = ad.status === 'sold' ? 'active' : 'sold';
-  // Confirm before marking sold (prevent accidental taps)
-  if (newStatus === 'sold') {
-    const ok = confirm(`Mark "${ad.title.slice(0,40)}" as sold?`);
-    if (!ok) return;
-  }
   try {
     await sbUpdateAdStatus(id, newStatus);
     ad.status = newStatus;
     renderHome(); renderCats(); updateStats();
-    showToast(newStatus==='sold' ? 'Marked as sold 🏷️' : 'Relisted as active ✅');
-  } catch(e) { showToast('Update failed ⚠️'); }
-}
-
-// ── Share a card listing via native share / WhatsApp fallback ─
-async function shareCard(id) {
-  const ad = _ads.find(a => a.id === id); if (!ad) return;
-  const url  = 'https://yaadadz.com/ad/' + slugify(ad);
-  const text = `${ad.title} — J$${fmtN(ad.price)} · ${ad.parish}, Jamaica`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: ad.title, text, url });
-      gaEvent('share', { method: 'native', item_id: id, item_name: ad.title });
-      return;
-    } catch(e) { /* cancelled or failed — fall through */ }
-  }
-  // Fallback: WhatsApp
-  const waText = encodeURIComponent(text + '\n' + url);
-  window.open('https://wa.me/?text=' + waText, '_blank');
-  gaEvent('share', { method: 'whatsapp', item_id: id, item_name: ad.title });
+    showToast(newStatus==='sold' ? 'Marked as sold' : 'Relisted as active', newStatus==='sold'?'🏷️':'✅');
+  } catch(e) { showToast('Update failed', '⚠️'); }
 }
 
 async function doPostAd() {
@@ -2916,29 +2500,17 @@ async function doPostAd() {
   if (!title || !parish || !price) return showPostErr('Please fill in all required fields.');
 
   const btn = document.querySelector('#sp3 .btn-gold');
-  const progressWrap = document.getElementById('uploadProgressWrap');
-  const progressBar  = document.getElementById('uploadProgressBar');
-  const progressLbl  = document.getElementById('uploadProgressLabel');
-  const progressPct  = document.getElementById('uploadProgressPct');
-
-  if (btn) { btn.textContent = '⏳ Uploading…'; btn.disabled = true; }
-  if (uploadPhotos.length > 0 && progressWrap) progressWrap.style.display = 'block';
+  if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
 
   try {
+    // Upload all photos to Supabase Storage and get public URLs
     const imageUrls = [];
     for (let i = 0; i < uploadPhotos.length; i++) {
-      const pct = Math.round((i / uploadPhotos.length) * 100);
-      if (btn) btn.textContent = `⏳ Photo ${i+1}/${uploadPhotos.length}…`;
-      if (progressBar) progressBar.style.width = pct + '%';
-      if (progressPct) progressPct.textContent = pct + '%';
-      if (progressLbl) progressLbl.textContent = `Uploading photo ${i+1} of ${uploadPhotos.length}…`;
+      if (btn) btn.textContent = `⏳ Uploading image ${i+1}/${uploadPhotos.length}…`;
       const url = await uploadToSupabase(uploadPhotos[i].file);
       if (url) imageUrls.push(url);
     }
-    // Complete
-    if (progressBar) progressBar.style.width = '100%';
-    if (progressPct) progressPct.textContent = '100%';
-    if (progressLbl) progressLbl.textContent = 'Publishing…';
+
     if (btn) btn.textContent = '⏳ Publishing…';
 
     const ad = {
@@ -2966,13 +2538,10 @@ async function doPostAd() {
     renderCats(); renderHome(); updateStats();
     showToast('Your ad is live! 🎉', '🎉');
     launchConfetti();
-    gaEvent('post_ad', { category: ad.category, parish: ad.parish, price: ad.price, currency: 'JMD' });
   } catch(e) {
     showPostErr('Failed to post: ' + (e.message||'please try again'));
   } finally {
     if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
-    if (progressWrap) progressWrap.style.display = 'none';
-    if (progressBar)  progressBar.style.width = '0%';
   }
 }
 
@@ -3003,18 +2572,6 @@ function compressImage(file, maxWidth, quality) {
     img.onerror = function() { resolve(file); };
     img.src = URL.createObjectURL(file);
   });
-}
-
-// ── Supabase Image Transform — fast thumbnails ───────────────
-// Adds ?width=400&quality=70 to Supabase Storage URLs for card thumbnails
-// Falls back to original URL for non-Supabase images
-function thumbUrl(url, width) {
-  if (!url) return '';
-  width = width || 400;
-  if (url.includes('supabase.co/storage')) {
-    return url + (url.includes('?') ? '&' : '?') + 'width=' + width + '&quality=70&format=webp';
-  }
-  return url;
 }
 
 // Upload a single file to Supabase Storage → returns public URL
@@ -3120,7 +2677,7 @@ async function init() {
       window.matchMedia('(display-mode: standalone)').matches) {
     document.body.classList.add('pwa-mode');
   }
-  setTimeout(renderRecentlyViewed, 800);
+  purgeBadTrendingData(); // clean up old numeric trending tokens
 
   showSkeletons();
   document.getElementById('resultsHeader').style.display = 'none';
@@ -3130,10 +2687,12 @@ async function init() {
     if (CU) await loadMessages();
   } catch(e) {
     console.error('Init load error:', e);
-    _ads = [];
-    // Show connection error banner on Supabase failure
-    const banner = document.getElementById('setupBanner');
-    if (banner) banner.style.display = 'block';
+    _ads = DEMO;
+    // Only show connection banner on actual Supabase failure (not demo fallback)
+    if (e && e.message && !_ads.length) {
+      const banner = document.getElementById('setupBanner');
+      if (banner) { banner.style.display = 'block'; }
+    }
   }
 
   renderCats();
@@ -3153,13 +2712,7 @@ async function init() {
     const shortId = idFromSlug(window._pendingSlug);
     if (shortId) {
       const ad = _ads.find(function(a){ return a.id.startsWith(shortId); });
-      if (ad) {
-        // Don't call openDetail — would loop. Scroll to card instead.
-        setTimeout(function() {
-          const card = document.querySelector('[onclick*="' + ad.id + '"]');
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 600);
-      }
+      if (ad) setTimeout(() => openDetail(ad.id), 300);
     }
     window._pendingSlug = null;
   }
@@ -3240,14 +2793,28 @@ function startNavPlaceholderCycle() {} // nav search removed
 
 function updateStats() {
   const el = document.getElementById('sStat');
-  if (el) el.textContent = _ads.length;
-  // Fetch user count from Supabase async (non-blocking)
+  if (el) {
+    el.textContent = _ads.length;
+    // Cache so next load shows the right number immediately, not 0
+    try { localStorage.setItem('ya_last_count', _ads.length); } catch(e) {}
+  }
   _db.from('users').select('id', { count: 'exact', head: true })
     .then(({ count }) => {
       const el = document.getElementById('uStat');
       if (el) el.textContent = (count || 1);
     });
 }
+
+// Apply cached count immediately on paint — before Supabase responds
+(function() {
+  try {
+    const cached = localStorage.getItem('ya_last_count');
+    if (cached) {
+      const el = document.getElementById('sStat');
+      if (el && el.textContent === '0') el.textContent = cached;
+    }
+  } catch(e) {}
+})();
 
 function fillParishSelects() {
   const opts = PARISHES.map(p => `<option>${p}</option>`).join('');
@@ -3430,9 +2997,8 @@ function getViews(id) {
 function cardHTML(ad, idx) {
   const cat   = CATS.find(c => c.id === ad.category);
   const catColor = cat?.color || '#f5f5f5';
-  const loadAttr = idx < 4 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
   const img   = ad.image
-    ? `<img src="${thumbUrl(ad.image, 400)}" alt="${ad.title}" ${loadAttr} decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
+    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
@@ -3447,21 +3013,12 @@ function cardHTML(ad, idx) {
   const photoCount = (ad.photos && ad.photos.length > 1)
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  // Negotiable pill
-  const negPill = ad.neg && ad.status !== 'sold'
-    ? `<span class="neg-pill">Neg.</span>` : '';
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
-      <button class="share-card-btn" onclick="event.stopPropagation();shareCard('${ad.id}')" title="Share">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      </button>
     </div>
     <div class="ad-card-body">
-      <div class="ad-price-row">
-        <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
-        ${negPill}
-      </div>
+      <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
       <div class="ad-title">${ad.title}</div>
       <div class="ad-meta">
         <span>📍 ${ad.parish}</span>
@@ -3514,18 +3071,8 @@ function renderHome() {
     if (f.categories && f.categories.length > 1) ads = ads.filter(a => f.categories.includes(a.category));
   }
 
-  // Apply manual price range filter
-  const pMin = parseFloat(document.getElementById('priceMin')?.value) || 0;
-  const pMax = parseFloat(document.getElementById('priceMax')?.value) || 0;
-  if (pMin > 0) ads = ads.filter(a => a.price >= pMin);
-  if (pMax > 0) ads = ads.filter(a => a.price <= pMax);
-
   // Hide sold filter
   if (_hideSold) ads = ads.filter(a => a.status !== 'sold');
-
-  // Show price filter bar
-  const pfBar = document.getElementById('priceFilterBar');
-  if (pfBar) pfBar.style.display = 'block';
 
   const hdr = document.getElementById('resultsHeader');
   const cnt = document.getElementById('resultsCount');
@@ -3539,6 +3086,10 @@ function renderHome() {
   if (visible.length) {
     visible.forEach(function(a, i) {
       html += cardHTML(a, i);
+      // Insert in-feed ad after every 8th card
+      if ((i + 1) % 8 === 0 && i < visible.length - 1) {
+        html += '<div class="ad-slot-infeed"><ins class="adsbygoogle ad-slot" style="display:block" data-ad-client="ca-pub-9656521698490533" data-ad-slot="auto" data-ad-format="fluid" data-ad-layout-key="-6t+ed+2i-1n-4w"></ins></div>';
+      }
     });
   } else {
     html = emptyEl('No listings match your search.',
@@ -3599,7 +3150,7 @@ function renderHome() {
 
   // Persist search state in URL
   if (typeof pushSearchState === 'function') pushSearchState();
-  renderRecentlyViewed();
+
   return ads.length;
 }
 
@@ -3982,18 +3533,9 @@ const SEO = (() => {
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  YAAD BRAIN v2 — Self-Learning Local NLP Engine             ║
    ║  Zero API calls · Gets smarter as listings grow             ║
-   ║  • Auto-vocabulary from listing content                     ║
-   ║  • Fuzzy typo-tolerant matching                             ║
-   ║  • Deep Jamaican Patois NLP                                 ║
-   ║  • Price intelligence & comparisons                         ║
-   ║  • Trending detection & smart recommendations               ║
-   ║  • Multi-turn conversational context                        ║
    ╚══════════════════════════════════════════════════════════════╝ */
 const YaadBrain = (() => {
 
-  /* ══════════════════════════════════════════
-     1. TOKENIZER & TEXT UTILS
-  ══════════════════════════════════════════ */
   const STOP_WORDS = new Set(['the','a','an','is','are','was','were','be','been','being',
     'have','has','had','do','does','did','will','would','could','should','shall','may',
     'might','can','for','and','but','or','nor','at','by','to','from','in','on','of',
@@ -4002,30 +3544,26 @@ const YaadBrain = (() => {
     'how','when','where','why','am','im','some','any','all','each','every','no','not',
     'so','very','just','also','than','then','now','up','out','if','as']);
 
+  // Short Patois words that carry meaning — must NOT be stripped by tokenizer
+  const PATOIS_KEEP = new Set(['fi','mi','di','de','ya','yah','yuh','yu','si','wi','dem','dat','dis','deh','ah','an','nuh','weh','deh']);
+
   function tokenize(text) {
-    return (text||'').toLowerCase().replace(/[^\w\s$]/g,' ').split(/\s+/).filter(t=>t.length>1 && !STOP_WORDS.has(t));
+    return (text||'').toLowerCase().replace(/[^\w\s$]/g,' ').split(/\s+/).filter(t =>
+      (t.length > 1 && !STOP_WORDS.has(t)) || PATOIS_KEEP.has(t)
+    );
   }
   function bigrams(word) {
-    const b = []; for (let i=0;i<word.length-1;i++) b.push(word[i]+word[i+1]); return b;
+    const b=[]; for(let i=0;i<word.length-1;i++) b.push(word[i]+word[i+1]); return b;
   }
-  function bigramSim(a, b) {
-    if (a===b) return 1;
-    if (a.length<2||b.length<2) return 0;
-    const ba=bigrams(a), bb=bigrams(b);
-    const setB = new Set(bb);
-    let hits = 0; for (const g of ba) if (setB.has(g)) hits++;
+  function bigramSim(a,b) {
+    if(a===b) return 1; if(a.length<2||b.length<2) return 0;
+    const ba=bigrams(a),bb=bigrams(b),setB=new Set(bb); let hits=0;
+    for(const g of ba) if(setB.has(g)) hits++;
     return (2*hits)/(ba.length+bb.length);
   }
-  function fuzzyMatch(query, target, threshold) {
-    if (target.startsWith(query) || query.startsWith(target)) return true;
-    return bigramSim(query, target) >= (threshold||0.55);
-  }
+  function fuzzyMatch(q,t,th) { if(t.startsWith(q)||q.startsWith(t)) return true; return bigramSim(q,t)>=(th||0.55); }
 
-  /* ══════════════════════════════════════════
-     2. JAMAICAN PATOIS NLP LAYER
-  ══════════════════════════════════════════ */
   const PATOIS_SYNONYMS = {
-    // intent words
     want:['waan','waah','wah','need','affi','haffi','mus','mussi','fi get'],
     find:['fine','look','search','check','peep','si','see','locate','seek','show','gimme','gimmie','gi mi','give me'],
     buy:['cop','grab','purchase','get','tek','pick up','scoop'],
@@ -4038,126 +3576,102 @@ const YaadBrain = (() => {
     used:['second hand','2nd hand','preowned','pre-owned','pre owned','slightly used','likkle use','barely used','gently used'],
     big:['large','huge','massive','nuff','spacious','roomy','wide','broad'],
     small:['likkle','tiny','compact','mini','portable','space saving'],
-    fast:['quick','speedy','rapid'],
     near:['close','nearby','around','round','inna','close to'],
     best:['top','number one','#1','greatest','finest','premium','quality','a1','first class'],
-    // vehicles
     car:['vehicle','ride','whip','machine','wheels','motor','automobile','auto','motorcar'],
-    // property
     house:['yard','home','crib','place','dwelling','residence','spot','flat','apartment','apt'],
     room:['space','board','lodging','rent','fi rent','to rent','rental'],
     land:['lot','plot','property','acre','square','vacant','piece a land'],
-    // electronics
     phone:['fone','cell','cellular','mobile','handset','smartphone','smart phone','device','gadget'],
     laptop:['computer','comp','pc','notebook','macbook','chromebook','lappy'],
     tv:['television','telly','screen','monitor','flat screen','smart tv'],
-    // people
     seller:['vendor','dealer','man','woman','person','smaddy','somebody'],
-    // general
     please:['pls','plz','beg yu','beg yuh','beggin'],
     thanks:['tanx','tank','tanks','bless up','nuff respect','respect','big up','good looking'],
     hello:['hi','hey','yo','wah gwaan','whaapen','whappen','ello','hail','greetings','good day','morning','afternoon','evening'],
   };
-
-  // Build reverse lookup: word → canonical
   const _patoisLookup = {};
-  for (const [canonical, syns] of Object.entries(PATOIS_SYNONYMS)) {
-    for (const syn of syns) {
-      // Support multi-word synonyms
-      _patoisLookup[syn] = canonical;
-    }
+  for(const [canonical,syns] of Object.entries(PATOIS_SYNONYMS)) {
+    for(const syn of syns) _patoisLookup[syn] = canonical;
     _patoisLookup[canonical] = canonical;
   }
-
   function normalizePatois(text) {
     let s = text.toLowerCase();
-    // Multi-word substitutions first (longest first)
     const multiWord = Object.keys(_patoisLookup).filter(k=>k.includes(' ')).sort((a,b)=>b.length-a.length);
-    for (const phrase of multiWord) {
-      if (s.includes(phrase)) s = s.replace(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), _patoisLookup[phrase]);
+    for(const phrase of multiWord) {
+      if(s.includes(phrase)) s = s.replace(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), _patoisLookup[phrase]);
     }
-    // Single-word substitutions
-    return s.split(/\s+/).map(w => _patoisLookup[w] || w).join(' ');
+    return s.split(/\s+/).map(w=>_patoisLookup[w]||w).join(' ');
   }
 
-  /* ══════════════════════════════════════════
-     3. PRICE PARSER (enhanced)
-  ══════════════════════════════════════════ */
-  const CHEAP_CEILING = { vehicles:2500000, property:12000000, electronics:60000, fashion:8000, furniture:25000, jobs:0, services:5000, food:2000, music:15000, sports:10000, kids:5000, other:20000 };
+  const CHEAP_CEILING = {vehicles:2500000,property:12000000,electronics:60000,fashion:8000,furniture:25000,jobs:0,services:5000,food:2000,music:15000,sports:10000,kids:5000,other:20000};
+
   function parsePrice(q) {
-    let lo = null, hi = null;
+    let lo=null,hi=null;
     const s = q.toLowerCase();
     const toNum = t => {
-      t = t.trim();
-      if (/^\d+(\.\d+)?m$/i.test(t))  return parseFloat(t)*1e6;
-      if (/^\d+(\.\d+)?k$/i.test(t))  return parseFloat(t)*1e3;
-      if (/million/i.test(t))          return parseFloat(t.replace(/[^0-9.]/g,''))*1e6;
-      if (/thousand/i.test(t))         return parseFloat(t.replace(/[^0-9.]/g,''))*1e3;
-      const n = parseFloat(t.replace(/[^0-9.]/g,''));
-      return isNaN(n) ? null : n;
+      t=t.trim();
+      if(/^\d+(\.\d+)?m$/i.test(t)) return parseFloat(t)*1e6;
+      if(/^\d+(\.\d+)?k$/i.test(t)) return parseFloat(t)*1e3;
+      if(/million/i.test(t)) return parseFloat(t.replace(/[^0-9.]/g,''))*1e6;
+      if(/thousand/i.test(t)) return parseFloat(t.replace(/[^0-9.]/g,''))*1e3;
+      const n=parseFloat(t.replace(/[^0-9.]/g,''));
+      return isNaN(n)?null:n;
+    };
+    const jmdSanity = num => {
+      if(num===null) return null;
+      if(num>0&&num<5000) return num*1e6;
+      return num;
     };
 
-    // 1. "between X and Y"
-    const bet = s.match(/between\s+([\d.kmillion]+)\s+and\s+([\d.kmillion]+)/i);
-    if (bet) { lo = toNum(bet[1]); hi = toNum(bet[2]); return {lo,hi}; }
+    // 1. between X and Y (fixed regex — proper word groups)
+    const bet = s.match(/between\s+([\d.,]+\s*(?:million|mil|thousand|k|m)?)\s+and\s+([\d.,]+\s*(?:million|mil|thousand|k|m)?)/i);
+    if(bet){lo=jmdSanity(toNum(bet[1]));hi=jmdSanity(toNum(bet[2]));return{lo,hi};}
 
-    // 2. "under / below / less than / up to X"
+    // 2. under / below / less than
     const und = s.match(/(?:under|below|less than|max|beneath|up to|no more than)\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)/i);
-    if (und) { hi = toNum(und[1]); if(hi) return {lo,hi}; }
+    if(und){
+      const rawHi=toNum(und[1]);
+      const hasUnit=/million|thousand|mil\b|[km]\b/i.test(und[1]);
+      if(hasUnit){hi=rawHi;}
+      else if(rawHi!==null){
+        if(rawHi>=1&&rawHi<=20)      hi=rawHi*1e6;   // "under 3" → 3M
+        else if(rawHi>20&&rawHi<=999) hi=rawHi*1e3;   // "under 80" → 80k
+        else                           hi=rawHi;        // "under 80000" exact
+      }
+      if(hi) return{lo,hi};
+    }
 
-    // 3. "over / above / more than / from / starting X"
+    // 3. over / above / more than
     const ov = s.match(/(?:over|above|more than|min|at least|starting from|starting at|from)\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)/i);
-    if (ov) { lo = toNum(ov[1]); if(lo) return {lo,hi}; }
+    if(ov){lo=jmdSanity(toNum(ov[1]));if(lo) return{lo,hi};}
 
-    // 4. "for X" — treat as target price (±25%)
-    const forMatch = s.match(/\bfor\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)\b/i);
-    if (forMatch) {
-      const target = toNum(forMatch[1]);
-      if (target && target >= 500) { return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target }; }
-    }
+    // 4. for X
+    const forM = s.match(/\bfor\s+([\d,.]+\s*(?:million|thousand|mil|k|m)?)\b/i);
+    if(forM){const t=jmdSanity(toNum(forM[1]));if(t&&t>=500) return{lo:Math.floor(t*0.75),hi:Math.ceil(t*1.25),target:t};}
 
-    // 5. "X million" / "X thousand" standalone (no keyword before it)
-    const millMatch = s.match(/\b(\d+(?:\.\d+)?)\s*(?:million|mil)\b/i);
-    if (millMatch) {
-      const target = parseFloat(millMatch[1])*1e6;
-      if (target) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
-    }
-    const thousMatch = s.match(/\b(\d+(?:\.\d+)?)\s*thousand\b/i);
-    if (thousMatch) {
-      const target = parseFloat(thousMatch[1])*1e3;
-      if (target) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
-    }
+    // 5. X million / X thousand standalone
+    const millM = s.match(/\b(\d+(?:\.\d+)?)\s*(?:million|mil)\b/i);
+    if(millM){const t=parseFloat(millM[1])*1e6;if(t) return{lo:Math.floor(t*0.75),hi:Math.ceil(t*1.25),target:t};}
+    const thousM = s.match(/\b(\d+(?:\.\d+)?)\s*thousand\b/i);
+    if(thousM){const t=parseFloat(thousM[1])*1e3;if(t) return{lo:Math.floor(t*0.75),hi:Math.ceil(t*1.25),target:t};}
 
-    // 6. Bare shorthand: "2m", "80k", "500k"
-    const bareShort = s.match(/\b(\d+(?:\.\d+)?)\s*([km])\b/i);
-    if (bareShort) {
-      const num = parseFloat(bareShort[1]);
-      const mult = bareShort[2].toLowerCase() === 'm' ? 1e6 : 1e3;
-      const target = num * mult;
-      if (target >= 500) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
-    }
+    // 6. Bare shorthand: 2m, 80k
+    const bareS = s.match(/\b(\d+(?:\.\d+)?)\s*([km])\b/i);
+    if(bareS){const num=parseFloat(bareS[1]),mult=bareS[2].toLowerCase()==='m'?1e6:1e3,t=num*mult;if(t>=500) return{lo:Math.floor(t*0.75),hi:Math.ceil(t*1.25),target:t};}
 
-    // 7. Bare large number (5+ digits, likely a JMD price)
-    const bareBig = s.match(/\b(\d{5,})\b/);
-    if (bareBig) {
-      const target = parseInt(bareBig[1]);
-      if (target >= 1000) return { lo: Math.floor(target*0.75), hi: Math.ceil(target*1.25), target };
-    }
+    // 7. Bare large number (5+ digits)
+    const bareB = s.match(/\b(\d{5,})\b/);
+    if(bareB){const t=parseInt(bareB[1]);if(t>=1000) return{lo:Math.floor(t*0.75),hi:Math.ceil(t*1.25),target:t};}
 
-    // 8. Keyword-based
-    if (/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|bargain|steal|good deal|nuh dear)\b/.test(s))
-      return { cheap: true };
-    if (/\b(expensive|dear|premium|luxury|high.?end|top.?shelf)\b/.test(s))
-      return { expensive: true };
-
-    return {lo,hi};
+    // 8. Keywords
+    if(/\b(cheap|budget|affordable|inexpensive|likkle money|dutty cheap|giveaway|a dash weh|fi give weh|bargain|steal|good deal|nuh dear)\b/.test(s)) return{cheap:true};
+    if(/\b(expensive|dear|premium|luxury|high.?end|top.?shelf)\b/.test(s)) return{expensive:true};
+    return{lo,hi};
   }
 
-  /* ══════════════════════════════════════════
-     4. CATEGORY MAPPER (base + auto-expand)
-  ══════════════════════════════════════════ */
   const BASE_CAT_KEYWORDS = {
-    vehicles:    ['car','truck','van','bus','bike','scooter','vehicle','drive','civic','corolla','camry','bmw','toyota','honda','hyundai','nissan','kia','suzuki','mazda','jeep','suv','pickup','auto','motor','motorcycle','mileage','sedan','hatchback','coupe','minivan','coaster','hiace','fielder','axio','vitz','fit','swift','march','note','demio','rav4','crv','cx5','hilux','tacoma','prado','fortuner','ipsum','wish','stream','ride','whip'],
+    vehicles:    ['car','truck','van','bus','bike','scooter','vehicle','drive','civic','corolla','camry','bmw','toyota','honda','hyundai','nissan','kia','suzuki','mazda','jeep','suv','pickup','auto','motor','motorcycle','mileage','sedan','hatchback','coupe','minivan','coaster','hiace','fielder','axio','vitz','fit','swift','march','note','demio','rav4','crv','cx5','hilux','tacoma','prado','fortuner','ipsum','wish','stream','ride','whip','voxy'],
     property:    ['house','home','flat','apartment','room','land','lot','rent','property','estate','sq ft','square feet','bed','bath','bedroom','studio','tenant','landlord','yard','bungalow','villa','mansion','townhouse','condo','lease','mortgage','acre','plot','vacant','commercial','warehouse','shop','office'],
     electronics: ['phone','iphone','samsung','xiaomi','laptop','computer','pc','tablet','tv','television','camera','console','playstation','xbox','ps4','ps5','airpods','earphones','speakers','headphones','charger','bluetooth','screen','monitor','android','galaxy','pixel','nintendo','switch','macbook','printer','router','wifi','gopro','drone','smartwatch','apple','redmi','oppo','huawei','tecno','infinix','jbl','marshall','bose'],
     fashion:     ['clothes','clothing','shirt','shoe','bag','dress','fashion','jeans','pants','wear','outfit','sneaker','boot','blouse','skirt','suit','jacket','handbag','jewelry','watch','accessory','nike','adidas','jordan','puma','crocs','gucci','lv','zara','polo','cap','hat','belt','ring','chain','necklace','bracelet','sunglasses','perfume','cologne','wig','hair'],
@@ -4170,852 +3684,791 @@ const YaadBrain = (() => {
     kids:        ['baby','kid','child','children','toy','stroller','pram','crib','diaper','school','uniform','backpack','crayon','bicycle','trike','playpen','formula','bottle','pacifier','car seat','doll','lego','puzzle','board game','pampers','clothes kids','walker'],
   };
 
-  // Dynamic vocabulary that auto-expands from listing content
-  let _dynVocab = {};   // { category: Set<term> }
-  let _vocabBuilt = 0;  // track when we last built
-
+  let _dynVocab={}, _vocabBuilt=0;
   function buildDynamicVocab(ads) {
-    _dynVocab = {};
-    const termCatCount = {}; // term → { category: count }
-    for (const ad of ads) {
-      if (ad.status==='sold') continue;
-      const terms = tokenize(`${ad.title} ${ad.desc||''}`);
-      for (const t of terms) {
-        if (t.length < 3) continue;
-        if (!termCatCount[t]) termCatCount[t] = {};
-        termCatCount[t][ad.category] = (termCatCount[t][ad.category]||0) + 1;
+    _dynVocab={};
+    const tcc={};
+    for(const ad of ads){
+      if(ad.status==='sold') continue;
+      for(const t of tokenize(`${ad.title} ${ad.desc||''}`)){
+        if(t.length<3) continue;
+        if(!tcc[t]) tcc[t]={};
+        tcc[t][ad.category]=(tcc[t][ad.category]||0)+1;
       }
     }
-    // A term belongs to a category if 70%+ of its appearances are in that category
-    for (const [term, cats] of Object.entries(termCatCount)) {
-      const total = Object.values(cats).reduce((s,n)=>s+n,0);
-      if (total < 2) continue; // need at least 2 occurrences
-      for (const [cat, count] of Object.entries(cats)) {
-        if (count/total >= 0.7) {
-          if (!_dynVocab[cat]) _dynVocab[cat] = new Set();
+    for(const [term,cats] of Object.entries(tcc)){
+      const total=Object.values(cats).reduce((s,n)=>s+n,0);
+      if(total<2) continue;
+      for(const [cat,count] of Object.entries(cats)){
+        if(count/total>=0.7){
+          if(!_dynVocab[cat]) _dynVocab[cat]=new Set();
           _dynVocab[cat].add(term);
         }
       }
     }
-    _vocabBuilt = ads.length;
+    _vocabBuilt=ads.length;
   }
 
   function detectCategories(q) {
-    const tokens = tokenize(q);
-    const scores = {};
-    // Score from base keywords
-    for (const [cat, keywords] of Object.entries(BASE_CAT_KEYWORDS)) {
-      for (const token of tokens) {
-        // Exact match
-        if (keywords.includes(token)) { scores[cat] = (scores[cat]||0) + 3; continue; }
-        // Fuzzy match (catches typos)
-        for (const kw of keywords) {
-          if (fuzzyMatch(token, kw, 0.6)) { scores[cat] = (scores[cat]||0) + 2; break; }
-        }
+    const tokens=tokenize(q),scores={};
+    for(const [cat,keywords] of Object.entries(BASE_CAT_KEYWORDS)){
+      if(cat==='other') continue;
+      for(const token of tokens){
+        if(keywords.includes(token)){scores[cat]=(scores[cat]||0)+3;continue;}
+        for(const kw of keywords){if(fuzzyMatch(token,kw,0.6)){scores[cat]=(scores[cat]||0)+2;break;}}
       }
     }
-    // Score from dynamic vocabulary (learned from listings)
-    for (const [cat, terms] of Object.entries(_dynVocab)) {
-      for (const token of tokens) {
-        if (terms.has(token)) { scores[cat] = (scores[cat]||0) + 1.5; }
-        else {
-          for (const t of terms) {
-            if (fuzzyMatch(token, t, 0.65)) { scores[cat] = (scores[cat]||0) + 1; break; }
-          }
-        }
+    for(const [cat,terms] of Object.entries(_dynVocab)){
+      if(cat==='other') continue;
+      for(const token of tokens){
+        if(terms.has(token)){scores[cat]=(scores[cat]||0)+1.5;}
+        else{for(const t of terms){if(fuzzyMatch(token,t,0.65)){scores[cat]=(scores[cat]||0)+1;break;}}}
       }
     }
-    // Return categories with score >= 2, sorted by score
-    return Object.entries(scores).filter(([_,s])=>s>=2).sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+    const sorted=Object.entries(scores).filter(([_,s])=>s>=2).sort((a,b)=>b[1]-a[1]);
+    if(!sorted.length) return [];
+    const topScore=sorted[0][1];
+    return sorted.filter(([_,s])=>s>=topScore*0.7).map(([c])=>c).slice(0,2);
   }
 
-  /* ══════════════════════════════════════════
-     5. PARISH MAPPER (enhanced)
-  ══════════════════════════════════════════ */
   const PARISH_MAP = {
     'kingston':['kingston','kgn','kng','downtown','town','uwi','half way tree','hwt','cross roads','constant spring'],
     'st. andrew':['st andrew','saint andrew','uptown','new kingston','liguanea','barbican','manor park','papine','red hills','stony hill','cherry gardens','hope pastures','mona','august town'],
     'st. catherine':['st catherine','saint catherine','portmore','spanish town','old harbour','linstead','bog walk','ewarton','above rocks','caymanas','bridgeport','hellshire','gregory park','waterford'],
     'st. james':['st james','saint james','montego bay','mobay','mo bay','ironshore','rose hall','catherine hall','reading','bogue'],
-    'st. ann':['st ann','saint ann','ocho rios','ochi','ocho','discovery bay','runaway bay','brown\'s town','claremont','steer town','priory'],
+    'st. ann':['st ann','saint ann','ocho rios','ochi','ocho','discovery bay','runaway bay','browns town','claremont','steer town','priory'],
     'manchester':['manchester','mandeville','christiana','williamsfield','porus'],
     'clarendon':['clarendon','may pen','chapelton','lionel town','hayes','frankfield'],
     'st. elizabeth':['st elizabeth','saint elizabeth','black river','santa cruz','junction','treasure beach','malvern'],
     'westmoreland':['westmoreland','sav','savanna','savanna-la-mar','negril','little london','bethel town'],
     'hanover':['hanover','lucea','green island','hopewell','sandy bay'],
-    'trelawny':['trelawny','falmouth','duncans','clark\'s town','albert town','wakefield'],
+    'trelawny':['trelawny','falmouth','duncans','clarks town','albert town','wakefield'],
     'st. mary':['st mary','saint mary','port maria','annotto bay','oracabessa','highgate','richmond'],
     'st. thomas':['st thomas','saint thomas','morant bay','yallahs','bath','seaforth','port morant'],
     'portland':['portland','port antonio','buff bay','hope bay','long bay','fairy hill','san san'],
   };
   function detectParish(q) {
-    const s = q.toLowerCase();
-    for (const [parish, aliases] of Object.entries(PARISH_MAP)) {
-      if (aliases.some(a => s.includes(a))) return parish.split(' ').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
+    // Normalize: remove dots so "st. andrew" and "st andrew" both match
+    const s = q.toLowerCase().replace(/\./g,' ').replace(/\s+/g,' ');
+    for(const [parish,aliases] of Object.entries(PARISH_MAP)){
+      if(aliases.some(a=>s.includes(a))) return parish.split(' ').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
     }
     return null;
   }
 
-  /* ══════════════════════════════════════════
-     6. INTENT CLASSIFIER (deep)
-  ══════════════════════════════════════════ */
+  // FAQ_ONLY: these always fire first regardless of category detection
+  const FAQ_ONLY = new Set(['how_to_post','is_free','how_contact','safety','how_it_works','manage_ads','payment','delivery','greeting','thanks','help']);
+
   const INTENT_PATTERNS = [
-    // FAQ / info
     [/how.*(post|sell|list|put up|advertise|upload|create)/i, 'how_to_post'],
+    [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],  // before is_free
     [/(is it|it is|is yaad adz|cost|fee|charge|paid|free)\b/i, 'is_free'],
     [/how.*(contact|reach|message|talk|call|whatsapp|chat with)/i, 'how_contact'],
-    [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],
     [/(how.*(work|use)|what is yaad adz|about yaad adz|explain|tell me about)/i, 'how_it_works'],
     [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
     [/(pay|payment|accept|transfer|method)/i, 'payment'],
     [/(deliver|ship|shipping|pick.?up|drop.?off|meet)/i, 'delivery'],
-
-    // Greetings / social
     [/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening|night)|wah\s*gwaan|whaapen|whappen|ello|hail|greetings|sup)\b/i, 'greeting'],
     [/^(thank|thanks|tanx|bless up|nuff respect|respect|big up|good looking|appreciate|nice|great|good job)/i, 'thanks'],
     [/(help|assist|what can you|what do you)/i, 'help'],
-
-    // Comparison / analytics
     [/(cheapest|lowest price|most affordable|best deal|best value|best price)/i, 'compare_cheapest'],
     [/(most expensive|highest price|priciest|top dollar|premium)/i, 'compare_expensive'],
     [/(most popular|trending|hot|most viewed|top listing|most wanted)/i, 'compare_popular'],
     [/(newest|latest|just posted|just listed|most recent|fresh listing)/i, 'compare_newest'],
     [/(how much|what.*price|average price|price range|going rate|market price|worth)/i, 'price_check'],
     [/(compare|versus|vs|or|better|which one|difference|recommendation|recommend|suggest)/i, 'compare_general'],
-
-    // Stats
     [/(how many|count|total|number of|stats|statistics|data)/i, 'stats'],
     [/(who|which).*(seller|top seller|best seller|most listings)/i, 'top_sellers'],
   ];
 
   const INTENT_ANSWERS = {
-    how_to_post: () => `Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details — title, price, parish, description — add up to 6 photos, and you're live in under 2 minutes. 🚀 Completely free, always!`,
-    is_free: () => `Yaad Adz is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. We mek it fi everybody. 🇯🇲`,
-    how_contact: () => `Open any listing and you'll see three options: Call 📞 (direct), WhatsApp 💬 (opens chat with a pre-written message), and Message ✉️ (in-app chat — needs a free account). Pro tip: WhatsApp usually gets the fastest reply!`,
-    safety: () => `Good question! Safety tips for buying on Yaad Adz:\n🛡️ Meet in public — Half Way Tree, a busy mall, or a police station\n👀 Check the seller's profile and ratings\n🤝 Bring a friend for expensive items\n💵 Never send money before seeing the item\n📱 Use in-app chat so there's a record\nStay safe out there! 🇯🇲`,
-    how_it_works: () => `Yaad Adz is Jamaica's free marketplace. Here's the flow:\n1️⃣ Browse or search listings across all 14 parishes\n2️⃣ Found something? Contact the seller (call, WhatsApp, or message)\n3️⃣ Arrange meetup & payment directly\n4️⃣ Want to sell? Post a free ad in under 2 minutes!\nNo middleman, no commission, no fees. Just Jamaicans buying and selling directly. 🇯🇲`,
-    manage_ads: () => `To manage your ads:\n1. Tap your name/avatar at the top (or "Account" in the bottom menu)\n2. You'll see all your listings with options to:\n   • Mark as Sold (shows "SOLD" badge)\n   • Delete (permanent)\n3. Buyers will still see sold items but can't make offers on them.\nEasy!`,
-    payment: () => `Yaad Adz doesn't handle payments — you deal directly with the seller. Common methods in Jamaica:\n💵 Cash on meetup (most common)\n📱 Bank transfer\n💳 NCB/Scotiabank transfer\n📲 Lynk or other mobile wallets\nAlways meet first, pay after you see the item!`,
-    delivery: () => `Delivery is arranged between buyer and seller. Most items are pickup, but many sellers offer:\n🚗 Local delivery (sometimes free)\n📦 Knutsford Express for cross-parish\n🏪 Meet at a safe public spot\nTip: Check the listing description — sellers usually mention if they deliver.`,
-    greeting: () => { const g=['Wah gwaan! 👋 What yuh looking for today?','Big up! 🇯🇲 How can I help?','Hey! Ask me anything — search for items, get price advice, or just chat.','Respect! 🤝 Ready to help you find exactly what you need.','Yow! Welcome to Yaad Adz AI. Search, compare, or ask me anything!']; return g[Math.floor(Math.random()*g.length)]; },
-    thanks: () => { const g=['No problem! Anything else? 😊','Anytime! That\'s what I\'m here for. 🤝','Bless up! Hit me if you need anything else. 🇯🇲','You\'re welcome! Happy searching! 🔍']; return g[Math.floor(Math.random()*g.length)]; },
-    help: () => `I'm your Yaad Adz AI assistant! Here's what I can do:\n\n🔍 **Search** — "cheap car under 2M" or "phone in Kingston"\n💰 **Price check** — "average price for iPhone 14"\n📊 **Compare** — "cheapest laptop" or "most popular listings"\n🏘️ **Filter by parish** — "furniture in Portmore"\n💬 **Answer questions** — "how do I post an ad?"\n🇯🇲 **Speak Jamaican** — "mi waan a criss phone fi likkle money"\n\nJust type naturally — I'll figure out what you mean!`,
-    stats: () => {
-      const active = _ads.filter(a=>a.status!=='sold');
-      const cats = {};
-      active.forEach(a => { cats[a.category] = (cats[a.category]||0)+1; });
-      const topCat = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
-      const topCatName = topCat ? (CATS.find(c=>c.id===topCat[0])?.name||topCat[0]) : 'N/A';
-      const totalValue = active.reduce((s,a)=>s+a.price,0);
-      return `📊 Yaad Adz right now:\n• ${active.length} active listings\n• ${_ads.filter(a=>a.status==='sold').length} sold\n• Top category: ${topCatName} (${topCat?topCat[1]:0} listings)\n• Total marketplace value: J$${fmtN(totalValue)}\n• Covering all 14 parishes\nGrowing every day! 🚀`;
+    how_to_post:()=>`Posting is super easy! Tap the green ＋ button in the bottom menu (or "+ Post Ad" at the top). Fill in your item details — title, price, parish, description — add up to 6 photos, and you're live in under 2 minutes. 🚀 Completely free, always!`,
+    is_free:()=>`Yaad Adz is 100% free — always. Free to browse, free to post, free to message sellers. No hidden charges, ever. We mek it fi everybody. 🇯🇲`,
+    how_contact:()=>`Open any listing and you'll see three options: Call 📞, WhatsApp 💬, and Message ✉️. WhatsApp usually gets the fastest reply!`,
+    safety:()=>`Safety tips for buying on Yaad Adz:\n🛡️ Meet in public — Half Way Tree, a busy mall, or a police station\n👀 Check the seller's profile\n🤝 Bring a friend for expensive items\n💵 Never send money before seeing the item\n📱 Use in-app chat so there's a record\nStay safe! 🇯🇲`,
+    how_it_works:()=>`Yaad Adz is Jamaica's free marketplace:\n1️⃣ Browse or search listings across all 14 parishes\n2️⃣ Found something? Contact the seller (call, WhatsApp, or message)\n3️⃣ Arrange meetup & payment directly\n4️⃣ Want to sell? Post a free ad in under 2 minutes!\nNo middleman, no fees. 🇯🇲`,
+    manage_ads:()=>`To manage your ads:\n1. Tap "Account" in the bottom menu\n2. See all your listings with options to Mark as Sold or Delete\nEasy!`,
+    payment:()=>`Yaad Adz doesn't handle payments — deal directly with the seller. Common methods:\n💵 Cash on meetup\n📱 Bank transfer\n📲 Lynk or mobile wallets\nAlways meet first, pay after you see the item!`,
+    delivery:()=>`Delivery is arranged between buyer and seller. Most items are pickup, but many sellers offer local delivery or Knutsford Express for cross-parish.`,
+    greeting:()=>{const g=['Wah gwaan! 👋 What yuh looking for today?','Big up! 🇯🇲 How can I help?','Hey! Ask me anything — search for items, get price advice, or just chat.','Respect! 🤝 Ready to help you find exactly what you need.'];return g[Math.floor(Math.random()*g.length)];},
+    thanks:()=>{const g=["No problem! Anything else? 😊","Anytime! That's what I'm here for. 🤝","Bless up! Hit me if you need anything else. 🇯🇲"];return g[Math.floor(Math.random()*g.length)];},
+    help:()=>`I'm your Yaad Adz AI assistant!\n\n🔍 Search — "cheap car under 2M" or "phone in Kingston"\n💰 Price check — "average price for iPhone 14"\n📊 Compare — "cheapest laptop"\n🏘️ Parish filter — "furniture in Portmore"\n💬 FAQ — "how do I post an ad?"\n🇯🇲 Patois — "mi waan a criss phone fi likkle money"\n\nJust type naturally!`,
+    stats:()=>{
+      const active=_ads.filter(a=>a.status!=='sold');
+      const cats={};active.forEach(a=>{cats[a.category]=(cats[a.category]||0)+1;});
+      const top=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+      const topName=top?(CATS.find(c=>c.id===top[0])?.name||top[0]):'N/A';
+      const val=active.reduce((s,a)=>s+a.price,0);
+      return `📊 Yaad Adz right now:\n• ${active.length} active listings\n• ${_ads.filter(a=>a.status==='sold').length} sold\n• Top category: ${topName}\n• Total value: J$${fmtN(val)}\nGrowing every day! 🚀`;
     },
-    top_sellers: () => {
-      const counts = {};
-      _ads.filter(a=>a.status!=='sold').forEach(a => { counts[a.seller] = (counts[a.seller]||0)+1; });
-      const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
-      if (!top.length) return 'No sellers yet — be the first to post! 🚀';
-      return `🏆 Top sellers on Yaad Adz:\n` + top.map(([name,n],i)=>`${['🥇','🥈','🥉'][i]} ${name} — ${n} listing${n>1?'s':''}`).join('\n') + '\n\nPost your own ads to join the ranks!';
+    top_sellers:()=>{
+      const counts={};
+      _ads.filter(a=>a.status!=='sold').forEach(a=>{counts[a.seller]=(counts[a.seller]||0)+1;});
+      const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+      if(!top.length) return 'No sellers yet — be the first to post! 🚀';
+      return '🏆 Top sellers:\n'+top.map(([n,c],i)=>`${['🥇','🥈','🥉'][i]} ${n} — ${c} listing${c>1?'s':''}`).join('\n');
     },
   };
 
-  /* ══════════════════════════════════════════
-     7. COMPARISON & ANALYTICS ENGINE
-  ══════════════════════════════════════════ */
-  function handleComparison(intent, query) {
-    const normalized = normalizePatois(query);
-    const cats = detectCategories(normalized);
-    const parish = detectParish(normalized);
-    let pool = _ads.filter(a=>a.status!=='sold');
-    if (cats.length) pool = pool.filter(a=>cats.includes(a.category));
-    if (parish) pool = pool.filter(a=>a.parish.toLowerCase()===parish.toLowerCase());
-    if (!pool.length) return null;
-
-    const catNames = cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
-    const catStr = catNames.length ? catNames.join('/') : 'listings';
-    const loc = parish ? ` in ${parish}` : '';
-
-    if (intent === 'compare_cheapest') {
-      const sorted = [...pool].sort((a,b)=>a.price-b.price);
-      const top = sorted.slice(0,6);
-      const avg = Math.round(pool.reduce((s,a)=>s+a.price,0)/pool.length);
-      return { type:'search', message: `💰 Here are the cheapest ${catStr}${loc}! Average price is J$${fmtN(avg)} — these are the best deals right now:`, results: top, allResults: sorted, filters: { categories:cats, parish } };
+  function handleComparison(intent,query) {
+    const norm=normalizePatois(query);
+    const cats=detectCategories(norm),parish=detectParish(norm);
+    let pool=_ads.filter(a=>a.status!=='sold');
+    if(cats.length) pool=pool.filter(a=>cats.includes(a.category));
+    if(parish) pool=pool.filter(a=>a.parish.toLowerCase()===parish.toLowerCase());
+    if(!pool.length) return null;
+    const catNames=cats.filter(c=>c!=='other').map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    const catStr=catNames.length?catNames.join(' & '):'listings';
+    const loc=parish?` in ${parish}`:'';
+    if(intent==='compare_cheapest'){
+      const sorted=[...pool].sort((a,b)=>a.price-b.price);
+      const avg=Math.round(pool.reduce((s,a)=>s+a.price,0)/pool.length);
+      return{type:'search',message:`💰 Cheapest ${catStr}${loc}! Average J$${fmtN(avg)}:`,results:sorted.slice(0,6),allResults:sorted,filters:{categories:cats,parish}};
     }
-    if (intent === 'compare_expensive') {
-      const sorted = [...pool].sort((a,b)=>b.price-a.price);
-      return { type:'search', message: `💎 Top premium ${catStr}${loc}:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    if(intent==='compare_expensive'){
+      const sorted=[...pool].sort((a,b)=>b.price-a.price);
+      return{type:'search',message:`💎 Premium ${catStr}${loc}:`,results:sorted.slice(0,6),allResults:sorted,filters:{categories:cats,parish}};
     }
-    if (intent === 'compare_popular') {
-      const sorted = [...pool].sort((a,b)=>(b.views||0)-(a.views||0));
-      return { type:'search', message: `🔥 Most viewed ${catStr}${loc} right now:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    if(intent==='compare_popular'){
+      const sorted=[...pool].sort((a,b)=>(b.views||0)-(a.views||0));
+      return{type:'search',message:`🔥 Most viewed ${catStr}${loc}:`,results:sorted.slice(0,6),allResults:sorted,filters:{categories:cats,parish}};
     }
-    if (intent === 'compare_newest') {
-      const sorted = [...pool].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
-      return { type:'search', message: `🆕 Freshest ${catStr}${loc} just posted:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    if(intent==='compare_newest'){
+      const sorted=[...pool].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+      return{type:'search',message:`🆕 Freshest ${catStr}${loc} just posted:`,results:sorted.slice(0,6),allResults:sorted,filters:{categories:cats,parish}};
     }
-    if (intent === 'price_check') {
-      const prices = pool.map(a=>a.price).sort((a,b)=>a-b);
-      const avg = Math.round(prices.reduce((s,p)=>s+p,0)/prices.length);
-      const median = prices[Math.floor(prices.length/2)];
-      const lo = prices[0], hi = prices[prices.length-1];
-      const sorted = [...pool].sort((a,b)=>a.price-b.price);
-      return { type:'search', message: `📊 Price analysis for ${catStr}${loc}:\n• Average: J$${fmtN(avg)}\n• Median: J$${fmtN(median)}\n• Range: J$${fmtN(lo)} — J$${fmtN(hi)}\n• ${prices.length} listings analyzed\n\nHere are some options:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+    if(intent==='price_check'){
+      const prices=pool.map(a=>a.price).sort((a,b)=>a-b);
+      const avg=Math.round(prices.reduce((s,p)=>s+p,0)/prices.length);
+      const median=prices[Math.floor(prices.length/2)];
+      const sorted=[...pool].sort((a,b)=>a.price-b.price);
+      return{type:'search',message:`📊 Price analysis for ${catStr}${loc}:\n• Average: J$${fmtN(avg)}\n• Median: J$${fmtN(median)}\n• Range: J$${fmtN(prices[0])} — J$${fmtN(prices[prices.length-1])}\n\nHere are some options:`,results:sorted.slice(0,6),allResults:sorted,filters:{categories:cats,parish}};
     }
-    if (intent === 'compare_general') {
-      const sorted = [...pool].sort((a,b)=>{
-        let sa=0, sb=0;
-        if (a.views>50) sa+=2; if (b.views>50) sb+=2;
-        const ageA = (Date.now()-new Date(a.date||0))/86400000;
-        const ageB = (Date.now()-new Date(b.date||0))/86400000;
-        if (ageA<7) sa+=2; if (ageB<7) sb+=2;
-        if (a.neg) sa+=0.5; if (b.neg) sb+=0.5;
+    if(intent==='compare_general'){
+      const sorted=[...pool].sort((a,b)=>{
+        let sa=0,sb=0;
+        if(a.views>50)sa+=2;if(b.views>50)sb+=2;
+        const ageA=(Date.now()-new Date(a.date||0))/86400000;
+        const ageB=(Date.now()-new Date(b.date||0))/86400000;
+        if(ageA<7)sa+=2;if(ageB<7)sb+=2;
+        if(a.neg)sa+=0.5;if(b.neg)sb+=0.5;
         return sb-sa;
       });
-      return { type:'search', message: `Here's my top picks for ${catStr}${loc} — sorted by freshness, popularity, and value:`, results: sorted.slice(0,6), allResults: sorted, filters: { categories:cats, parish } };
+      return{type:'search',message:`Top picks for ${catStr}${loc} — sorted by freshness, popularity, and value:`,results:sorted.slice(0,6),allResults:sorted,filters:{categories:cats,parish}};
     }
     return null;
   }
 
-  /* ══════════════════════════════════════════
-     8. TF-IDF SCORER (improved)
-  ══════════════════════════════════════════ */
-  let _idfCache = null;
-  function buildIDF(ads) {
-    const df = {}, N = ads.length || 1;
-    for (const ad of ads) {
-      const terms = new Set(tokenize(getHaystack(ad)));
-      for (const t of terms) df[t] = (df[t]||0)+1;
-    }
-    const idf = {};
-    for (const [t,n] of Object.entries(df)) idf[t] = Math.log((N+1)/(n+1))+1;
+  let _idfCache=null;
+  function buildIDF(ads){
+    const df={},N=ads.length||1;
+    for(const ad of ads){const terms=new Set(tokenize(getHaystack(ad)));for(const t of terms)df[t]=(df[t]||0)+1;}
+    const idf={};for(const [t,n] of Object.entries(df)) idf[t]=Math.log((N+1)/(n+1))+1;
     return idf;
   }
-  function getHaystack(ad) {
-    const cat = CATS.find(c=>c.id===ad.category)?.name||'';
-    return `${ad.title} ${ad.title} ${ad.title} ${cat} ${cat} ${ad.parish} ${ad.parish} ${ad.desc||''}`;
+
+  function getHaystack(ad){
+    const cat=CATS.find(c=>c.id===ad.category)?.name||'';
+    // Description + category + parish only — title scored separately at 3x
+    return `${cat} ${cat} ${ad.parish} ${ad.desc||''}`;
   }
-  function scoreAd(ad, queryTerms, idf, clickBoosts) {
-    const hayTokens = tokenize(getHaystack(ad));
-    const tf = {};
-    for (const t of hayTokens) tf[t] = (tf[t]||0)+1;
-    let score = 0;
-    for (const qt of queryTerms) {
-      // Exact match
-      if (tf[qt]) {
-        score += (tf[qt] / hayTokens.length) * (idf[qt]||1) * 2;
-        continue;
-      }
-      // Fuzzy match — catches typos and variants
-      let bestFuzzy = 0;
-      for (const w of Object.keys(tf)) {
-        const sim = bigramSim(qt, w);
-        if (sim > bestFuzzy && sim >= 0.55) bestFuzzy = sim;
-      }
-      if (bestFuzzy > 0) score += bestFuzzy * (idf[qt]||1) * 0.8;
-      // Prefix match
-      const prefix = hayTokens.some(w=>w.startsWith(qt)&&w!==qt);
-      if (prefix) score += 0.5 * (idf[qt]||1);
+  function getTitleTokens(ad){ return tokenize(ad.title); }
+
+  function scoreAd(ad,queryTerms,idf,clickBoosts){
+    const titleTokens=getTitleTokens(ad);
+    const hayTokens=tokenize(getHaystack(ad));
+    const allTokens=[...titleTokens,...hayTokens];
+    const tfAll={};for(const t of allTokens) tfAll[t]=(tfAll[t]||0)+1;
+    const tfTitle={};for(const t of titleTokens) tfTitle[t]=(tfTitle[t]||0)+1;
+    let score=0;
+    for(const qt of queryTerms){
+      const idfScore=idf[qt]||1;
+      if(tfTitle[qt]){score+=(tfTitle[qt]/Math.max(titleTokens.length,1))*idfScore*6;continue;}
+      if(tfAll[qt]){score+=(tfAll[qt]/Math.max(allTokens.length,1))*idfScore*2;continue;}
+      let bestTF=0,bestHF=0;
+      for(const w of titleTokens){const sim=bigramSim(qt,w);if(sim>bestTF&&sim>=0.55)bestTF=sim;}
+      if(bestTF>0){score+=bestTF*idfScore*2.5;continue;}
+      for(const w of Object.keys(tfAll)){const sim=bigramSim(qt,w);if(sim>bestHF&&sim>=0.55)bestHF=sim;}
+      if(bestHF>0) score+=bestHF*idfScore*0.8;
+      if(titleTokens.some(w=>w.startsWith(qt)&&w!==qt)) score+=1.0*idfScore;
+      else if(hayTokens.some(w=>w.startsWith(qt)&&w!==qt)) score+=0.4*idfScore;
     }
-    // Recency boost
-    const ageDays = (Date.now()-new Date(ad.date||0))/86400000;
-    if (ageDays<1) score*=1.5; else if (ageDays<3) score*=1.35; else if (ageDays<7) score*=1.2; else if (ageDays<30) score*=1.08;
-    // Popularity boost
-    const v = ad.views||0;
-    if (v>100) score*=1.15; else if (v>50) score*=1.1; else if (v>20) score*=1.05;
-    // Click boost from learning
-    if (clickBoosts && clickBoosts[ad.id]) score *= (1 + Math.min(clickBoosts[ad.id]*0.15, 0.6));
-    // Negotiable slight bonus (buyers like flexibility)
-    if (ad.neg) score *= 1.03;
+    const ageDays=(Date.now()-new Date(ad.date||0))/86400000;
+    if(ageDays<1)score*=1.5;else if(ageDays<3)score*=1.35;else if(ageDays<7)score*=1.2;else if(ageDays<30)score*=1.08;
+    const v=ad.views||0;
+    if(v>100)score*=1.15;else if(v>50)score*=1.1;else if(v>20)score*=1.05;
+    if(clickBoosts&&clickBoosts[ad.id]) score*=(1+Math.min(clickBoosts[ad.id]*0.15,0.6));
+    if(ad.neg) score*=1.03;
     return score;
   }
 
-  /* ══════════════════════════════════════════
-     9. LEARNING ENGINE (persists to localStorage)
-  ══════════════════════════════════════════ */
-  function getClickBoosts(queryTerms) {
-    const key = queryTerms.slice().sort().join('_');
-    const all = JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
-    return all[key] || {};
+  function getClickBoosts(queryTerms){
+    const key=queryTerms.slice().sort().join('_');
+    const all=JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
+    return all[key]||{};
   }
-  function recordClick(adId, queryTerms) {
-    if (!queryTerms.length) return;
-    const key = queryTerms.slice().sort().join('_');
-    const all = JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
-    if (!all[key]) all[key] = {};
-    all[key][adId] = (all[key][adId]||0) + 1;
-    const keys = Object.keys(all);
-    if (keys.length > 300) delete all[keys[0]];
-    localStorage.setItem('ya_brain_clicks', JSON.stringify(all));
+  function recordClick(adId,queryTerms){
+    if(!queryTerms.length) return;
+    const key=queryTerms.slice().sort().join('_');
+    const all=JSON.parse(localStorage.getItem('ya_brain_clicks')||'{}');
+    if(!all[key]) all[key]={};
+    all[key][adId]=(all[key][adId]||0)+1;
+    const keys=Object.keys(all);
+    if(keys.length>300) delete all[keys[0]];
+    localStorage.setItem('ya_brain_clicks',JSON.stringify(all));
   }
 
-  // Track search frequency for trending
-  function recordSearch(query) {
-    const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
-    const day = new Date().toISOString().slice(0,10);
-    if (!data[day]) data[day] = {};
-    const terms = tokenize(query);
-    for (const t of terms) data[day][t] = (data[day][t]||0)+1;
-    // Keep only last 7 days
-    const keys = Object.keys(data).sort();
-    while (keys.length > 7) { delete data[keys.shift()]; }
-    localStorage.setItem('ya_brain_searches', JSON.stringify(data));
+  function recordSearch(query){
+    const data=JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
+    const day=new Date().toISOString().slice(0,10);
+    if(!data[day]) data[day]={};
+    // Filter: meaningful words only, no pure numbers, min 3 chars
+    const terms=tokenize(query).filter(t=>t.length>=3&&!/^\d+$/.test(t)&&!/^(under|over|from|between|less|more|than|find|show|get|want|need|waan|look)$/.test(t));
+    for(const t of terms) data[day][t]=(data[day][t]||0)+1;
+    const keys=Object.keys(data).sort();
+    while(keys.length>7){delete data[keys.shift()];}
+    localStorage.setItem('ya_brain_searches',JSON.stringify(data));
   }
-  function getTrendingTerms() {
-    const data = JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
-    const merged = {};
-    for (const day of Object.values(data)) {
-      for (const [t,c] of Object.entries(day)) merged[t] = (merged[t]||0)+c;
+  function getTrendingTerms(){
+    const data=JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
+    const merged={};
+    for(const day of Object.values(data)){for(const [t,c] of Object.entries(day)) merged[t]=(merged[t]||0)+c;}
+    return Object.entries(merged).filter(([t])=>t.length>=3&&!/^\d/.test(t)).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([t])=>t);
+  }
+
+  function detectFollowUp(q,lastCtx){
+    if(!lastCtx) return null;
+    const s=q.toLowerCase();
+    // Price refinements — 20% reduction max, J$50k floor
+    if(/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less)\b/.test(s)&&lastCtx.hi){
+      const newHi=Math.floor(lastCtx.hi*0.8);
+      return{...lastCtx,hi:Math.max(newHi,50000),offset:0};
     }
-    return Object.entries(merged).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([t])=>t);
-  }
-
-  /* ══════════════════════════════════════════
-     10. FOLLOW-UP DETECTOR (deep context)
-  ══════════════════════════════════════════ */
-  function detectFollowUp(q, lastCtx) {
-    if (!lastCtx) return null;
-    const s = q.toLowerCase();
-    // Price refinements
-    if (/\b(cheaper|lower price|less expensive|more affordable|under that|cut the price|less|likkle less)\b/.test(s) && lastCtx.hi)
-      return { ...lastCtx, hi: Math.floor(lastCtx.hi * 0.6), offset:0 };
-    if (/\b(more expensive|higher|pricier|bigger budget|spend more|willing to pay more)\b/.test(s) && (lastCtx.hi || lastCtx.lo))
-      return { ...lastCtx, hi: lastCtx.hi ? Math.floor(lastCtx.hi * 1.5) : null, lo: lastCtx.lo ? Math.floor(lastCtx.lo * 1.5) : null, offset:0 };
-    // Pagination
-    if (/\b(more|show more|other|different|else|anything else|next|continue|keep going)\b/.test(s))
-      return { ...lastCtx, offset: (lastCtx.offset||0) + 6 };
-    // Sort changes
-    if (/\b(newer|recent|latest|fresh|just posted)\b/.test(s)) return { ...lastCtx, sort:'newest', offset:0 };
-    if (/\b(cheapest first|price low|lowest first|sort by price)\b/.test(s)) return { ...lastCtx, sort:'price_lo', offset:0 };
-    // Location refinement
-    const parish = detectParish(q);
-    if (parish && parish !== lastCtx.parish) return { ...lastCtx, parish, offset:0 };
-    // Category pivot
-    const newCats = detectCategories(normalizePatois(q));
-    if (newCats.length && JSON.stringify(newCats) !== JSON.stringify(lastCtx.cats))
-      return { ...lastCtx, cats: newCats, offset:0 };
-    // "negotiable only" / "nego only"
-    if (/\b(negotiable|nego|haggle|bargain)\b/.test(s))
-      return { ...lastCtx, negoOnly: true, offset:0 };
+    if(/\b(more expensive|higher|pricier|bigger budget|spend more|willing to pay more)\b/.test(s)&&(lastCtx.hi||lastCtx.lo))
+      return{...lastCtx,hi:lastCtx.hi?Math.floor(lastCtx.hi*1.4):null,lo:lastCtx.lo?Math.floor(lastCtx.lo*1.4):null,offset:0};
+    // Pagination — "other" removed to prevent category loop
+    if(/\b(more|show more|next|continue|keep going|anything else|else)\b/.test(s))
+      return{...lastCtx,offset:(lastCtx.offset||0)+6};
+    if(/\b(newer|recent|latest|fresh|just posted)\b/.test(s)) return{...lastCtx,sort:'newest',offset:0};
+    if(/\b(cheapest first|price low|lowest first|sort by price)\b/.test(s)) return{...lastCtx,sort:'price_lo',offset:0};
+    const parish=detectParish(q);
+    if(parish&&parish!==lastCtx.parish) return{...lastCtx,parish,offset:0};
+    const newCats=detectCategories(normalizePatois(q));
+    if(newCats.length&&JSON.stringify(newCats)!==JSON.stringify(lastCtx.cats)) return{...lastCtx,cats:newCats,offset:0};
+    if(/\b(negotiable|nego|haggle|bargain)\b/.test(s)) return{...lastCtx,negoOnly:true,offset:0};
     return null;
   }
 
-  /* ══════════════════════════════════════════
-     11. DYNAMIC SUGGESTIONS
-  ══════════════════════════════════════════ */
-  function buildSuggestions() {
-    if (!_ads.length) return [];
-    const active = _ads.filter(a=>a.status!=='sold');
-    const sugs = [];
-    // Top trending search terms
-    const trending = getTrendingTerms();
-    if (trending.length > 2) sugs.push({ label:'🔥 Trending: '+trending.slice(0,3).join(', '), query:trending.slice(0,2).join(' ') });
-    // Top categories by count
-    const catCounts = {};
-    active.forEach(a => { catCounts[a.category]=(catCounts[a.category]||0)+1; });
-    const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
-    for (const catId of topCats) {
-      const cat = CATS.find(c=>c.id===catId);
-      const prices = active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
-      const median = prices[Math.floor(prices.length/2)]||0;
-      if (cat && median) sugs.push({ label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`, query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}` });
+  function buildSuggestions(){
+    if(!_ads.length) return [];
+    const active=_ads.filter(a=>a.status!=='sold');
+    const sugs=[];
+    const trending=getTrendingTerms();
+    if(trending.length>2) sugs.push({label:'🔥 Trending: '+trending.slice(0,3).join(', '),query:trending.slice(0,2).join(' ')});
+    const catCounts={};active.forEach(a=>{catCounts[a.category]=(catCounts[a.category]||0)+1;});
+    const topCats=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+    for(const catId of topCats){
+      const cat=CATS.find(c=>c.id===catId);
+      const prices=active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
+      const median=prices[Math.floor(prices.length/2)]||0;
+      if(cat&&median) sugs.push({label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`,query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}`});
     }
-    // Newest listing
-    const newest = active[0];
-    if (newest) sugs.push({ label:`🆕 ${newest.title.slice(0,25)}…`, query:newest.title.split(' ').slice(0,3).join(' ') });
-    // "What's popular?"
-    sugs.push({ label:'📊 Most popular listings', query:'most popular' });
+    const newest=active[0];
+    if(newest) sugs.push({label:`🆕 ${newest.title.slice(0,25)}…`,query:newest.title.split(' ').slice(0,3).join(' ')});
+    sugs.push({label:'📊 Most popular listings',query:'most popular'});
     return sugs.slice(0,5);
   }
 
-  /* ══════════════════════════════════════════
-     12. SMART RESPONSE BUILDER
-  ══════════════════════════════════════════ */
-  function buildMessage(results, ctx, query) {
-    const n = results.length;
-    const catNames = ctx.cats.map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
-    const loc = ctx.parish ? ` in ${ctx.parish}` : '';
-    const catStr = catNames.length ? catNames.join('/') : 'listings';
-    const price = ctx.target ? ` around J$${fmtN(ctx.target)}` : ctx.hi ? ` under J$${fmtN(ctx.hi)}` : ctx.lo ? ` from J$${fmtN(ctx.lo)}` : '';
-
-    if (n===0) {
-      // Smart empty state — suggest alternatives
-      const allCat = ctx.cats.length ? _ads.filter(a=>a.status!=='sold'&&ctx.cats.includes(a.category)) : [];
-      if (allCat.length && ctx.hi) return `No ${catStr}${price}${loc} right now — but there are ${allCat.length} ${catStr} at other prices. Try raising your budget or removing the location filter! 💡`;
-      if (allCat.length && ctx.parish) return `No ${catStr} found${loc} — but ${allCat.length} available in other parishes. Try "show all ${catStr}" to see them! 🔍`;
-      return `No ${catStr} found${loc}${price} right now. New listings drop daily — check back soon or try different keywords! 🔍`;
+  function buildMessage(results,ctx,query){
+    const n=results.length;
+    const catNames=ctx.cats.filter(c=>c!=='other').map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean).slice(0,2);
+    const loc=ctx.parish?` in ${ctx.parish}`:'';
+    const catStr=catNames.length?catNames.join(' & '):'listings';
+    const price=ctx.target?` around J$${fmtN(ctx.target)}`:ctx.hi&&ctx.lo?` between J$${fmtN(ctx.lo)} – J$${fmtN(ctx.hi)}`:ctx.hi?` under J$${fmtN(ctx.hi)}`:ctx.lo?` from J$${fmtN(ctx.lo)}`:'';
+    if(n===0){
+      const allCat=ctx.cats.length?_ads.filter(a=>a.status!=='sold'&&ctx.cats.includes(a.category)):[];
+      if(allCat.length&&ctx.hi) return `No ${catStr}${price}${loc} right now — ${allCat.length} available at other prices. Try a higher budget! 💡`;
+      if(allCat.length&&ctx.parish) return `No ${catStr}${loc} — but ${allCat.length} available elsewhere. Try removing the parish filter! 🔍`;
+      return `No ${catStr}${price}${loc} right now. New listings drop daily — check back soon! 🔍`;
     }
-
-    // Context-aware responses
-    if (ctx.cheap) return `💰 Here are the budget-friendly ${catStr}${loc} — straight bargains! ${n > 5 ? 'Showing the best deals first.' : ''}`;
-    if (ctx.expensive) return `💎 Here's the premium ${catStr}${loc} — top shelf quality:`;
-
-    // Variety based on count
-    const templates = n === 1
-      ? [`Only 1 ${catStr} match${loc}${price} — but it looks solid! Check it out 👇`]
-      : n <= 3
-      ? [`Found ${n} ${catStr}${price}${loc}. Small selection, but quality! 👇`,
-         `${n} results${loc}${price} — here's what's available:`]
-      : n <= 10
-      ? [`Found ${n} ${catStr}${price}${loc}! 🔥 Best matches first.`,
-         `${n} ${catStr}${loc}${price} — nice selection! 🇯🇲`,
-         `Here ${n===1?'is':'are'} ${n} ${catStr}${loc}${price}. Check them! 👀`]
-      : [`Nuff options! ${n} ${catStr}${price}${loc} available. Showing top matches first. 🔥`,
-         `${n} ${catStr}${loc}${price} — I'm showing the most relevant first. Use "cheapest" or "newest" to re-sort! 📊`];
-
+    if(ctx.cheap) return `💰 Best budget ${catStr}${loc} right now — cheapest first!`;
+    if(ctx.expensive) return `💎 Premium ${catStr}${loc} — top picks:`;
+    const templates=n===1?[`Only 1 ${catStr}${price}${loc} — but it looks solid! 👇`]:n<=3?[`Found ${n} ${catStr}${price}${loc}. Small selection, but good! 👇`,`${n} results${price}${loc} — here's what's available:`]:n<=10?[`Found ${n} ${catStr}${price}${loc} 🔥 Best matches first.`,`${n} ${catStr}${loc}${price} — showing best first 🇯🇲`]:[`Nuff options! ${n} ${catStr}${price}${loc}. Showing top matches first 🔥`,`${n} ${catStr}${loc}${price} — say "cheapest" or "newest" to re-sort! 📊`];
     return templates[Math.floor(Math.random()*templates.length)];
   }
 
-  /* ══════════════════════════════════════════
-     13. MAIN PROCESS — the brain's entry point
-  ══════════════════════════════════════════ */
-  let _lastCtx = null;
+  let _lastCtx=null;
 
-  function process(query, history) {
-    const rawQ = query.trim();
-    const normalized = normalizePatois(rawQ);
-
-    // Record search for trending
+  function process(query,history){
+    const rawQ=query.trim();
+    const normalized=normalizePatois(rawQ);
     recordSearch(rawQ);
+    if(_vocabBuilt!==_ads.length) buildDynamicVocab(_ads);
 
-    // Rebuild vocab if ads changed
-    if (_vocabBuilt !== _ads.length) buildDynamicVocab(_ads);
-
-    // 1. Check intent/FAQ first (only if no product keywords detected)
-    const detectedCats = detectCategories(normalized);
-    const detectedParish = detectParish(normalized);
-    for (const [pattern, intent] of INTENT_PATTERNS) {
-      if (pattern.test(rawQ) && !detectedCats.length && !detectedParish) {
-        // FAQ answer
-        const fn = INTENT_ANSWERS[intent];
-        if (fn) return { type:'answer', message: fn() };
+    // 1. Pure FAQ intents — always fire first
+    for(const [pattern,intent] of INTENT_PATTERNS){
+      if(FAQ_ONLY.has(intent)&&pattern.test(rawQ)){
+        const fn=INTENT_ANSWERS[intent];
+        if(fn) return{type:'answer',message:fn()};
       }
     }
 
-    // 2. Check comparison intents (these return search results WITH analytics)
-    for (const [pattern, intent] of INTENT_PATTERNS) {
-      if (pattern.test(rawQ) && (intent.startsWith('compare_') || intent === 'price_check')) {
-        const result = handleComparison(intent, normalized);
-        if (result) {
-          result._qTerms = tokenize(normalized).filter(t=>t.length>2);
-          return result;
-        }
+    // 2. Category-aware FAQ
+    const detectedCats=detectCategories(normalized);
+    const detectedParish=detectParish(normalized);
+    for(const [pattern,intent] of INTENT_PATTERNS){
+      if(!FAQ_ONLY.has(intent)&&pattern.test(rawQ)&&!detectedCats.length&&!detectedParish){
+        const fn=INTENT_ANSWERS[intent];
+        if(fn) return{type:'answer',message:fn()};
       }
     }
 
-    // 3. Follow-up from previous conversation
-    const followUp = history.length ? detectFollowUp(rawQ, _lastCtx) : null;
-    const ctx = followUp || (() => {
-      const price = parsePrice(normalized);
-      const cats  = detectedCats;
-      const parish = detectedParish;
-      const terms = tokenize(normalized).filter(t=>t.length>2 && !STOP_WORDS.has(t));
-      return { cats, parish, lo: price.lo, hi: price.hi, target: price.target, cheap: price.cheap, expensive: price.expensive, terms, offset:0 };
+    // 3. Comparison intents
+    for(const [pattern,intent] of INTENT_PATTERNS){
+      if(pattern.test(rawQ)&&(intent.startsWith('compare_')||intent==='price_check')){
+        const result=handleComparison(intent,normalized);
+        if(result){result._qTerms=tokenize(normalized).filter(t=>t.length>2);return result;}
+      }
+    }
+
+    // 4. Follow-up context
+    const followUp=history.length?detectFollowUp(rawQ,_lastCtx):null;
+    const ctx=followUp||(()=>{
+      const price=parsePrice(normalized);
+      const cats=detectedCats,parish=detectedParish;
+      const terms=tokenize(normalized).filter(t=>t.length>2&&!STOP_WORDS.has(t));
+      // Detect negotiable in any single query
+      const negoOnly=/\b(negotiable|nego only|nego|bargain only|must negotiate|price negotiable)\b/i.test(rawQ);
+      return{cats,parish,lo:price.lo,hi:price.hi,target:price.target,cheap:price.cheap,expensive:price.expensive,terms,negoOnly,offset:0};
     })();
 
-    // 4. Rebuild IDF if needed
-    if (!_idfCache || _idfCache._n !== _ads.length) {
-      _idfCache = buildIDF(_ads.filter(a=>a.status!=='sold'));
-      _idfCache._n = _ads.length;
+    if(!_idfCache||_idfCache._n!==_ads.length){
+      _idfCache=buildIDF(_ads.filter(a=>a.status!=='sold'));
+      _idfCache._n=_ads.length;
     }
 
-    // 5. Filter candidate pool
-    let pool = _ads.filter(a=>a.status!=='sold');
-    if (ctx.cats.length) pool = pool.filter(a=>ctx.cats.includes(a.category));
-    if (ctx.parish) pool = pool.filter(a=>a.parish.toLowerCase()===ctx.parish.toLowerCase());
-    if (ctx.hi) pool = pool.filter(a=>a.price<=ctx.hi);
-    if (ctx.lo) pool = pool.filter(a=>a.price>=ctx.lo);
-    if (ctx.negoOnly) pool = pool.filter(a=>a.neg);
-    if (ctx.cheap) pool = pool.filter(a => {
-      const ceil = CHEAP_CEILING[a.category]||20000;
-      return a.price <= ceil;
-    });
-    if (ctx.expensive) {
-      // Top 30% by price in category
-      const sorted = [...pool].sort((a,b)=>b.price-a.price);
-      pool = sorted.slice(0, Math.max(Math.ceil(sorted.length*0.3), 3));
+    let pool=_ads.filter(a=>a.status!=='sold');
+    if(ctx.cats.length) pool=pool.filter(a=>ctx.cats.includes(a.category));
+    if(ctx.parish) pool=pool.filter(a=>a.parish.toLowerCase()===ctx.parish.toLowerCase());
+    if(ctx.hi) pool=pool.filter(a=>a.price<=ctx.hi);
+    if(ctx.lo) pool=pool.filter(a=>a.price>=ctx.lo);
+    if(ctx.negoOnly) pool=pool.filter(a=>a.neg);
+    if(ctx.cheap) pool=pool.filter(a=>{const ceil=CHEAP_CEILING[a.category]||20000;return a.price<=ceil;});
+    if(ctx.expensive){const sorted=[...pool].sort((a,b)=>b.price-a.price);pool=sorted.slice(0,Math.max(Math.ceil(sorted.length*0.3),3));}
+
+    const qTerms=ctx.terms||tokenize(normalized).filter(t=>t.length>2);
+    const boosts=getClickBoosts(qTerms);
+    let scored=pool.map(ad=>({ad,score:scoreAd(ad,qTerms,_idfCache,boosts)})).sort((a,b)=>b.score-a.score);
+
+    let broadened=false;
+    if(!scored.length&&(ctx.cats.length||ctx.parish)){
+      broadened=true;
+      let broad=_ads.filter(a=>a.status!=='sold');
+      if(ctx.hi) broad=broad.filter(a=>a.price<=ctx.hi);
+      if(ctx.lo) broad=broad.filter(a=>a.price>=ctx.lo);
+      scored=broad.map(ad=>({ad,score:scoreAd(ad,qTerms,_idfCache,boosts)})).sort((a,b)=>b.score-a.score);
     }
 
-    // 6. Score with TF-IDF + fuzzy matching
-    const qTerms = ctx.terms || tokenize(normalized).filter(t=>t.length>2);
-    const boosts = getClickBoosts(qTerms);
-    let scored = pool.map(ad=>({ ad, score:scoreAd(ad, qTerms, _idfCache, boosts) }))
-      .sort((a,b)=>b.score-a.score);
+    if(ctx.sort==='newest') scored.sort((a,b)=>new Date(b.ad.date||0)-new Date(a.ad.date||0));
+    if(ctx.sort==='price_lo') scored.sort((a,b)=>a.ad.price-b.ad.price);
 
-    // 7. Broaden search if empty
-    let broadened = false;
-    if (!scored.length && (ctx.cats.length || ctx.parish)) {
-      broadened = true;
-      let broad = _ads.filter(a=>a.status!=='sold');
-      if (ctx.hi) broad = broad.filter(a=>a.price<=ctx.hi);
-      if (ctx.lo) broad = broad.filter(a=>a.price>=ctx.lo);
-      scored = broad.map(ad=>({ ad, score:scoreAd(ad, qTerms, _idfCache, boosts) })).sort((a,b)=>b.score-a.score);
-    }
+    const offset=ctx.offset||0;
+    const results=scored.slice(offset,offset+6).map(s=>s.ad);
+    const allResults=scored.map(s=>s.ad);
+    _lastCtx={...ctx,_qTerms:qTerms};
 
-    // Apply sort override from follow-up
-    if (ctx.sort === 'newest') scored.sort((a,b)=>new Date(b.ad.date||0)-new Date(a.ad.date||0));
-    if (ctx.sort === 'price_lo') scored.sort((a,b)=>a.ad.price-b.ad.price);
-
-    const offset = ctx.offset||0;
-    const results = scored.slice(offset, offset+6).map(s=>s.ad);
-    const allResults = scored.map(s=>s.ad);
-
-    _lastCtx = { ...ctx, _qTerms: qTerms };
-
-    const msg = broadened
-      ? `No exact matches${ctx.parish?' in '+ctx.parish:''} — showing closest results across all categories. Try broader terms! 🔍`
-      : buildMessage(allResults, ctx, rawQ);
-
-    return {
-      type: 'search',
-      message: msg,
-      results,
-      allResults,
-      filters: {
-        categories: ctx.cats,
-        parish: ctx.parish,
-        minPrice: ctx.lo,
-        maxPrice: ctx.hi,
-        keywords: qTerms,
-      },
-      _qTerms: qTerms,
-    };
+    const msg=broadened?`No exact matches${ctx.parish?' in '+ctx.parish:''} — showing closest results. Try broader terms! 🔍`:buildMessage(allResults,ctx,rawQ);
+    return{type:'search',message:msg,results,allResults,filters:{categories:ctx.cats,parish:ctx.parish,minPrice:ctx.lo,maxPrice:ctx.hi,keywords:qTerms},_qTerms:qTerms};
   }
 
-  function learn(adId, qTerms) { recordClick(adId, qTerms||[]); }
-  function suggestions() { return buildSuggestions(); }
-
-  return { process, learn, suggestions };
+  function learn(adId,qTerms){recordClick(adId,qTerms||[]);}
+  function suggestions(){return buildSuggestions();}
+  return{process,learn,suggestions,bigramSim};
 })();
 
+/* ══ Purge bad trending data on boot ════════════════════════ */
+function purgeBadTrendingData(){
+  try{
+    const data=JSON.parse(localStorage.getItem('ya_brain_searches')||'{}');
+    let changed=false;
+    for(const day of Object.keys(data)){
+      for(const term of Object.keys(data[day])){
+        if(/^\d+$/.test(term)||term.length<3){delete data[day][term];changed=true;}
+      }
+    }
+    if(changed) localStorage.setItem('ya_brain_searches',JSON.stringify(data));
+  }catch(e){}
+}
+
 /* ═══════════════════════════════════════════════════════════
-   SMART SEARCH — Hero bar (instant, no API)
+   SMART SEARCH — Hero bar
 ═══════════════════════════════════════════════════════════ */
-function runAiSearch() {
-  const inp = document.getElementById('aiInput');
-  const query = (inp?.value || '').trim();
-  if (!query) return;
+function runAiSearch(){
+  const inp=document.getElementById('aiInput');
+  const query=(inp?.value||'').trim();
+  if(!query) return;
   saveRecentSearch(query);
-  gaEvent('search', { search_term: query });
-
-  const btn = document.getElementById('aiBtn');
-  const lbl = document.getElementById('aiBtnLabel');
+  gaEvent('search',{search_term:query});
+  const btn=document.getElementById('aiBtn');
+  const lbl=document.getElementById('aiBtnLabel');
   btn.classList.add('loading');
-  lbl.innerHTML = '<div class="btn-spinner"></div>';
-  hideAiResponse(); showSkeletons();
-
-  // Small RAF delay so spinner shows before synchronous work
-  requestAnimationFrame(() => {
-    const result = YaadBrain.process(query, []);
-
-    if (result.type === 'answer') {
-      activeF = 'all'; searchQ = ''; renderCats();
-      const count = renderHome();
-      showAiResponse(result.message, null);
-    } else {
-      const f = result.filters;
-      activeF = f.categories?.length===1 ? f.categories[0] : 'all';
-      searchQ = (f.keywords||[]).join(' ');
-      window._aiFilters = f;
-      compactHero(); renderCats();
-      const count = renderHome();
+  lbl.innerHTML='<div class="btn-spinner"></div>';
+  hideAiResponse();showSkeletons();
+  requestAnimationFrame(()=>{
+    const result=YaadBrain.process(query,[]);
+    if(result.type==='answer'){
+      activeF='all';searchQ='';renderCats();
+      const count=renderHome();
+      showAiResponse(result.message,null);
+    }else{
+      const f=result.filters;
+      activeF=f.categories?.length===1?f.categories[0]:'all';
+      searchQ=(f.keywords||[]).join(' ');
+      window._aiFilters=f;
+      compactHero();renderCats();
+      const count=renderHome();
       delete window._aiFilters;
-      showAiResponse(result.message, count);
+      showAiResponse(result.message,count);
     }
     scrollToResults();
-    btn.classList.remove('loading'); lbl.textContent = 'Search';
+    btn.classList.remove('loading');lbl.textContent='Search';
   });
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AI SEARCH SHEET STATE
+   AI SHEET STATE & FUNCTIONS
 ═══════════════════════════════════════════════════════════ */
-let sheetOpen    = false;
-let sheetHistory = [];  // {role, text}
-let _sheetLastQTerms = [];
+let sheetOpen=false,sheetHistory=[],_sheetLastQTerms=[];
 
-function saveRecentSearch(q) {
-  if (!q || q.length < 3) return;
-  const searches = L.searches.filter(s => s !== q);
-  L.searches = [q, ...searches];
+function saveRecentSearch(q){
+  if(!q||q.length<3) return;
+  const searches=L.searches.filter(s=>s!==q);
+  L.searches=[q,...searches];
 }
 
-function renderRecentSearches() {
-  const recent = L.searches;
-  const wrap = document.getElementById('sheetRecentWrap');
-  const list = document.getElementById('sheetRecentList');
-  if (!wrap||!list) return;
-  if (!recent.length) { wrap.style.display='none'; return; }
-  wrap.style.display = 'block';
-  list.innerHTML = recent.slice(0,6).map(s =>
-    `<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'")}')">`+
-    `<span class="src-chip-icon">🕐</span>${s}</button>`
-  ).join('');
+function renderRecentSearches(){
+  const recent=L.searches;
+  const wrap=document.getElementById('sheetRecentWrap');
+  const list=document.getElementById('sheetRecentList');
+  if(!wrap||!list) return;
+  if(!recent.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  list.innerHTML=recent.slice(0,6).map(s=>`<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'")}')"><span class="src-chip-icon">🕐</span>${s}</button>`).join('');
 }
 
-/* Update suggestion chips from live data */
-function updateSheetSugs() {
-  const sugs = YaadBrain.suggestions();
-  const wrap = document.getElementById('sheetSugs');
-  if (!wrap || !sugs.length) return;
-  const extra = sugs.map(s=>
-    `<button class="sheet-sug" onclick="sheetSearch('${s.query.replace(/'/g,"\\'")}')">` +
-    `${s.label}</button>`
-  ).join('');
-  // Append to existing chips
-  wrap.insertAdjacentHTML('beforeend', extra);
-}
-
-function openAiSheet() {
-  if (sheetOpen) return;
-  sheetOpen = true;
-  const sheet = document.getElementById('aiSheet');
-  const overlay = document.getElementById('aiSheetOverlay');
-  sheet.style.display = 'flex';
-  overlay.style.display = 'block';
-  // Double rAF ensures display change is committed before transform transition fires
-  requestAnimationFrame(function() {
-    requestAnimationFrame(function() {
-      sheet.classList.add('open');
-      overlay.classList.add('open');
+function updateSheetSugs(){
+  const sugs=YaadBrain.suggestions();
+  const wrap=document.getElementById('sheetSugs');
+  if(!wrap) return;
+  wrap.querySelectorAll('.sheet-sug-dynamic').forEach(el=>el.remove());
+  // Replace static chips with live data-driven ones
+  if(_ads&&_ads.length>0){
+    const active=_ads.filter(a=>a.status!=='sold');
+    const catCounts={};active.forEach(a=>{catCounts[a.category]=(catCounts[a.category]||0)+1;});
+    const topCats=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+    const liveChips=[];
+    topCats.forEach(catId=>{
+      const cat=CATS.find(c=>c.id===catId);if(!cat) return;
+      const prices=active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
+      const median=prices[Math.floor(prices.length/2)]||0;
+      if(median>0) liveChips.push({label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/100000)*100000)}`,query:`${cat.name.toLowerCase()} under ${Math.ceil(median/100000)*100000}`});
+      else liveChips.push({label:`${cat.icon} ${cat.name}`,query:cat.name.toLowerCase()});
     });
-  });
-  document.body.style.overflow = 'hidden';
+    const kgnCount=active.filter(a=>a.parish==='Kingston').length;
+    if(kgnCount>active.length*0.3) liveChips.push({label:'📍 Kingston deals',query:'Kingston'});
+    liveChips.push({label:'🆕 Just posted',query:'newest listings'});
+    liveChips.push({label:'🤝 Negotiable only',query:'negotiable'});
+    const staticChips=wrap.querySelectorAll('.sheet-sug:not(.sheet-sug-dynamic)');
+    staticChips.forEach((chip,i)=>{
+      if(liveChips[i]){
+        chip.textContent=liveChips[i].label;
+        chip.onclick=(function(q){return function(){sheetSearch(q);};})(liveChips[i].query);
+      }
+    });
+  }
+  if(!sugs.length) return;
+  const extra=sugs.map(s=>`<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'")}'">${s.label}</button>`).join('');
+  wrap.insertAdjacentHTML('beforeend',extra);
+}
+
+function openAiSheet(){
+  if(sheetOpen) return;
+  sheetOpen=true;
+  const sheet=document.getElementById('aiSheet');
+  const overlay=document.getElementById('aiSheetOverlay');
+  sheet.style.display='flex';
+  overlay.style.display='block';
+  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.classList.add('open');overlay.classList.add('open');});});
+  document.body.style.overflow='hidden';
   document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
   renderRecentSearches();
   updateSheetSugs();
-  setTimeout(()=>document.getElementById('sheetInput')?.focus(), 380);
+  setTimeout(()=>document.getElementById('sheetInput')?.focus(),380);
 }
 
-function closeAiSheet() {
-  sheetOpen = false;
-  const sheet = document.getElementById('aiSheet');
-  const overlay = document.getElementById('aiSheetOverlay');
-  sheet.classList.remove('open');
-  overlay.classList.remove('open');
-  document.body.style.overflow = '';
-  if (document.activeElement) document.activeElement.blur();
-  setTimeout(function() {
-    if (!sheetOpen) {
-      sheet.style.display = 'none';
-      overlay.style.display = 'none';
-    }
-  }, 380);
+function closeAiSheet(){
+  sheetOpen=false;
+  const sheet=document.getElementById('aiSheet');
+  const overlay=document.getElementById('aiSheetOverlay');
+  sheet.classList.remove('open');overlay.classList.remove('open');
+  document.body.style.overflow='';
+  if(document.activeElement) document.activeElement.blur();
+  setTimeout(function(){if(!sheetOpen){sheet.style.display='none';overlay.style.display='none';}},380);
 }
 
-function sheetSearch(query) {
-  const inp = document.getElementById('sheetInput');
-  if (inp) inp.value = query;
+function sheetSearch(query){
+  const inp=document.getElementById('sheetInput');
+  if(inp) inp.value=query;
   sheetSubmit();
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SHEET SUBMIT — Pure local brain, zero network calls
+   SHEET SUBMIT
 ═══════════════════════════════════════════════════════════ */
-function sheetSubmit() {
-  const inp     = document.getElementById('sheetInput');
-  const sendBtn = document.getElementById('sheetSendBtn');
-  const query   = (inp?.value||'').trim();
-  if (!query) return;
-  inp.value = '';
-
+function sheetSubmit(){
+  const inp=document.getElementById('sheetInput');
+  const sendBtn=document.getElementById('sheetSendBtn');
+  const query=(inp?.value||'').trim();
+  // Empty query — show helpful prompt
+  if(!query){
+    addSheetMsg('ai','What are you looking for? Try:\n• "cheap car under 2 million"\n• "iPhone in Kingston"\n• "house for rent Portmore"\n• "how do I post an ad?"',null,null);
+    return;
+  }
+  inp.value='';
   saveRecentSearch(query);
-  sendBtn.disabled = true;
-  sendBtn.classList.add('sending');
-
+  sendBtn.disabled=true;sendBtn.classList.add('sending');
   document.getElementById('sheetSugs')?.classList.add('hidden');
   document.getElementById('sheetRecentWrap')?.classList.add('hidden');
-
-  addSheetMsg('user', query);
-  const typingEl = addTyping();
-
-  // Use rAF so typing indicator renders before synchronous work
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      try {
-        const result = YaadBrain.process(query, sheetHistory);
+  addSheetMsg('user',query);
+  const typingEl=addTyping();
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      try{
+        const result=YaadBrain.process(query,sheetHistory);
         typingEl.remove();
-
-        if (result.type === 'answer') {
-          addSheetMsg('ai', result.message, null, null);
-        } else {
-          // Pass qTerms so click learning works
-          _sheetLastQTerms = result._qTerms || [];
-          addSheetMsg('ai', result.message, result.results, result.filters, result.allResults, _sheetLastQTerms);
+        if(result.type==='answer'){
+          addSheetMsg('ai',result.message,null,null);
+          // Nudge with popular listings after FAQ answers about selling/buying
+          const nudgeIntents=/how.*(post|sell|list)|how.*(contact|reach|message)|how.*(work|use)|delivery|payment/i;
+          if(nudgeIntents.test(query)&&_ads.length){
+            const active=_ads.filter(a=>a.status!=='sold');
+            const popular=[...active].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,2);
+            if(popular.length) setTimeout(function(){addSheetMsg('ai',"Here's what's listed on Yaad Adz right now 👇",popular,null,popular,[]);},400);
+          }
+        }else{
+          _sheetLastQTerms=result._qTerms||[];
+          addSheetMsg('ai',result.message,result.results,result.filters,result.allResults,_sheetLastQTerms);
         }
-
-        sheetHistory.push({ role:'user', text:query });
-        sheetHistory.push({ role:'ai', text:result.message });
-        if (sheetHistory.length > 8) sheetHistory = sheetHistory.slice(-8);
-      } catch(err) {
-        console.error('Brain error:', err);
+        sheetHistory.push({role:'user',text:query},{role:'ai',text:result.message});
+        if(sheetHistory.length>8) sheetHistory=sheetHistory.slice(-8);
+        updateSheetSugsAfterSearch(result);
+      }catch(err){
+        console.error('Brain error:',err);
         typingEl.remove();
-        addSheetMsg('ai', "Something went wrong — try rephrasing your search! 🔍", null, null);
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.classList.remove('sending');
+        addSheetMsg('ai',"Something went wrong — try rephrasing your search! 🔍",null,null);
+      }finally{
+        sendBtn.disabled=false;sendBtn.classList.remove('sending');
         document.getElementById('sheetInput')?.focus();
       }
-    }, 180); // tiny delay for UX realism
+    },180);
   });
 }
 
+/* ── Context-aware chips after each search ── */
+function updateSheetSugsAfterSearch(result){
+  const wrap=document.getElementById('sheetSugs');
+  if(!wrap) return;
+  wrap.querySelectorAll('.sheet-sug-dynamic').forEach(el=>el.remove());
+  if(!result||result.type!=='search') return;
+  const cats=result.filters?.categories||[];
+  const parish=result.filters?.parish||'';
+  const hi=result.filters?.maxPrice;
+  const catId=cats[0];
+  const cat=catId?CATS.find(c=>c.id===catId):null;
+  const catName=cat?cat.name.toLowerCase():'';
+  const chips=[];
+  if(catName){
+    chips.push({label:'💰 Cheapest '+catName,query:'cheapest '+catName});
+    chips.push({label:'🆕 Newest '+catName,query:'newest '+catName});
+    if(parish) chips.push({label:cat.icon+' '+catName+' elsewhere',query:catName});
+    else chips.push({label:'📍 '+catName+' in Kingston',query:catName+' in Kingston'});
+    if(hi) chips.push({label:'💸 Higher budget '+catName,query:catName+' under '+fmtN(Math.ceil(hi*1.5))});
+    chips.push({label:'🤝 Negotiable '+catName,query:'negotiable '+catName});
+  }else{
+    chips.push({label:'🔥 Most popular',query:'most popular'});
+    chips.push({label:'🆕 Just posted',query:'newest listings'});
+  }
+  chips.slice(0,4).forEach(function(c){
+    const btn=document.createElement('button');
+    btn.className='sheet-sug sheet-sug-dynamic';
+    btn.textContent=c.label;
+    btn.onclick=function(){sheetSearch(c.query);};
+    wrap.appendChild(btn);
+  });
+  wrap.classList.remove('hidden');
+  wrap.style.display='';
+}
 
-function addSheetMsg(role, text, results, filters, allResults, qTerms) {
-  const chat = document.getElementById('sheetChat');
-  const body = document.getElementById('aiSheetBody');
-  const el   = document.createElement('div');
+/* ── Save search / Notify me ── */
+const SAVED_SEARCHES_KEY='ya_saved_searches';
+function getSavedSearches(){try{return JSON.parse(localStorage.getItem(SAVED_SEARCHES_KEY)||'[]');}catch(e){return[];}}
+function saveSearchAlert(query,filters){
+  try{
+    const searches=getSavedSearches();
+    if(searches.find(s=>s.query===query)){showToast("Already saved! We'll notify you 🔔",'🔔');return;}
+    searches.unshift({query,filters:filters||{},saved:Date.now()});
+    if(searches.length>10) searches.length=10;
+    localStorage.setItem(SAVED_SEARCHES_KEY,JSON.stringify(searches));
+    showToast("Search saved! We'll notify you when new listings match 🔔",'🔔');
+    if(typeof requestPushPermission==='function') setTimeout(requestPushPermission,1000);
+  }catch(e){}
+}
+function checkSavedSearchAlerts(newAds){
+  if(!newAds||!newAds.length) return;
+  if(Notification.permission!=='granted') return;
+  const searches=getSavedSearches();if(!searches.length) return;
+  for(const saved of searches){
+    try{
+      const result=YaadBrain.process(saved.query,[]);
+      if(result.type!=='search'||!result.results) continue;
+      const newMatch=result.results.find(r=>newAds.some(n=>n.id===r.id));
+      if(newMatch){
+        const cat=CATS.find(c=>c.id===newMatch.category);
+        new Notification('New listing on Yaad Adz! 🇯🇲',{body:newMatch.title+' — J$'+fmtN(newMatch.price)+' · '+newMatch.parish,icon:newMatch.image||'/og-image.jpg',tag:'yaadadz-alert-'+newMatch.id});
+      }
+    }catch(e){}
+  }
+}
 
-  const scrollToBottom = function() {
-    requestAnimationFrame(function() {
-      if (body) body.scrollTop = body.scrollHeight;
-    });
-  };
+function addSheetMsg(role,text,results,filters,allResults,qTerms){
+  const chat=document.getElementById('sheetChat');
+  const body=document.getElementById('aiSheetBody');
+  const el=document.createElement('div');
+  const scrollToBottom=function(){requestAnimationFrame(function(){if(body) body.scrollTop=body.scrollHeight;});};
 
-  if (role === 'user') {
-    el.className = 'sheet-msg-user';
-    el.textContent = text;
-    chat.appendChild(el);
-    scrollToBottom();
-    return el;
+  if(role==='user'){
+    el.className='sheet-msg-user';el.textContent=text;
+    chat.appendChild(el);scrollToBottom();return el;
   }
 
-  // AI message
-  el.className = 'sheet-msg-ai';
-  el.innerHTML = '<div class="sheet-msg-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>';
+  el.className='sheet-msg-ai';
+  el.innerHTML='<div class="sheet-msg-text">'+escHtml(text).replace(/\n/g,'<br>')+'</div>';
 
-  if (results !== null) {
-    const count      = results ? results.length : 0;
-    const totalCount = allResults ? allResults.length : count;
-
-    // Count badge
-    const tag = document.createElement('div');
-    tag.className = 'sheet-count-tag';
-    if (count === 0) {
-      tag.textContent = 'No listings found';
-    } else {
-      tag.textContent = totalCount + ' result' + (totalCount!==1?'s':'') + ' — top ' + Math.min(count,totalCount) + ' shown';
-    }
+  if(results!==null){
+    const count=results?results.length:0;
+    const totalCount=allResults?allResults.length:count;
+    const tag=document.createElement('div');
+    tag.className='sheet-count-tag';
+    tag.textContent=count===0?'No listings found':totalCount+' result'+(totalCount!==1?'s':'')+' — top '+Math.min(count,totalCount)+' shown';
     el.appendChild(tag);
 
-    if (results && results.length > 0) {
-      const resWrap = document.createElement('div');
-      resWrap.className = 'sheet-results';
-
-      results.forEach(function(ad) {
-        const cat  = CATS.find(function(c){ return c.id === ad.category; });
-        const card = document.createElement('div');
-        card.className = 'sheet-result-card';
-        const isNew  = ((Date.now() - new Date(ad.date||0)) / 86400000) < 3;
-        const negBadge = ad.neg ? '<span class="src-neg-badge">neg.</span>' : '';
-        const newBadge = isNew  ? '<span class="src-new-badge">New</span>'  : '';
-        const thumb = ad.image
-          ? '<img class="src-thumb" src="' + thumbUrl(ad.image, 120) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-          : '<div class="src-icon">' + (cat ? cat.icon : '📦') + '</div>';
-        card.innerHTML =
-          thumb +
-          '<div class="src-info">' +
-            '<div class="src-price">J$' + fmtN(ad.price) + ' ' + negBadge + newBadge + '</div>' +
-            '<div class="src-title">' + escHtml(ad.title) + '</div>' +
-            '<div class="src-meta">📍 ' + ad.parish + ' · ' + (cat ? cat.name : 'Other') + '</div>' +
-          '</div>' +
-          '<div class="src-arrow">›</div>';
-
-        // Closure so ad ref is captured correctly
-        card.onclick = (function(adCopy) {
-          return function() {
-            if (qTerms && qTerms.length) YaadBrain.learn(adCopy.id, qTerms);
-            closeAiSheet();
-            setTimeout(function(){ openDetail(adCopy.id); }, 200);
-          };
-        })(ad);
+    if(results&&results.length>0){
+      const resWrap=document.createElement('div');resWrap.className='sheet-results';
+      results.forEach(function(ad){
+        const cat=CATS.find(function(c){return c.id===ad.category;});
+        const card=document.createElement('div');card.className='sheet-result-card';
+        const isNew=((Date.now()-new Date(ad.date||0))/86400000)<3;
+        const negBadge=ad.neg?'<span class="src-neg-badge">neg.</span>':'';
+        const newBadge=isNew?'<span class="src-new-badge">New</span>':'';
+        const thumb=ad.image?'<img class="src-thumb" src="'+thumbUrl(ad.image,120)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<div class="src-icon">'+(cat?cat.icon:'📦')+'</div>';
+        card.innerHTML=thumb+'<div class="src-info"><div class="src-price">J$'+fmtN(ad.price)+' '+negBadge+newBadge+'</div><div class="src-title">'+escHtml(ad.title)+'</div><div class="src-meta">📍 '+ad.parish+' · '+(cat?cat.name:'Other')+'</div></div><div class="src-arrow">›</div>';
+        card.onclick=(function(adCopy){return function(){if(qTerms&&qTerms.length)YaadBrain.learn(adCopy.id,qTerms);closeAiSheet();setTimeout(function(){openDetail(adCopy.id);},200);};})(ad);
         resWrap.appendChild(card);
       });
 
-      // View All on home button
-      if (filters && totalCount > 0) {
-        const viewAll = document.createElement('button');
-        viewAll.className = 'sheet-view-all';
-        viewAll.textContent = 'View all ' + totalCount + ' results on home →';
-        viewAll.onclick = function() {
+      // View All + Notify Me button row
+      if(filters&&totalCount>0){
+        const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;margin-top:4px';
+        const viewAll=document.createElement('button');viewAll.className='sheet-view-all';viewAll.style.flex='1';
+        viewAll.textContent='View all '+totalCount+' results →';
+        viewAll.onclick=function(){
           closeAiSheet();
-          activeF = (filters.categories && filters.categories.length === 1) ? filters.categories[0] : 'all';
-          searchQ = (filters.keywords || []).join(' ');
-          window._aiFilters = filters;
-          compactHero();
-          const inp = document.getElementById('aiInput');
-          if (inp) inp.value = searchQ;
-          renderCats(); renderHome(); delete window._aiFilters;
-          showAiResponse(text, totalCount);
-          scrollToResults();
+          activeF=(filters.categories&&filters.categories.length===1)?filters.categories[0]:'all';
+          searchQ=(filters.keywords||[]).join(' ');
+          window._aiFilters=filters;compactHero();
+          const inp=document.getElementById('aiInput');if(inp) inp.value=searchQ;
+          renderCats();renderHome();delete window._aiFilters;
+          showAiResponse(text,totalCount);scrollToResults();
         };
-        resWrap.appendChild(viewAll);
+        btnRow.appendChild(viewAll);
+        const notifyBtn=document.createElement('button');notifyBtn.className='sheet-view-all';
+        notifyBtn.style.cssText='flex:0 0 auto;padding:10px 14px;font-size:12px;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6)';
+        notifyBtn.title='Get notified when new listings match';
+        const currentQuery=sheetHistory.length?sheetHistory[sheetHistory.length-2]?.text||'':'';
+        const isSaved=getSavedSearches().find(s=>s.query===currentQuery);
+        notifyBtn.textContent=isSaved?'🔔 Saved':'🔔 Notify me';
+        notifyBtn.onclick=function(){
+          if(!currentQuery) return;
+          saveSearchAlert(currentQuery,filters);
+          notifyBtn.textContent='🔔 Saved';notifyBtn.style.color='#1db954';notifyBtn.style.borderColor='rgba(29,185,84,0.3)';
+        };
+        btnRow.appendChild(notifyBtn);
+        resWrap.appendChild(btnRow);
       }
       el.appendChild(resWrap);
 
-    } else {
-      // No results — helpful empty state with suggestions
-      const emptyWrap = document.createElement('div');
-      emptyWrap.style.cssText = 'text-align:center;padding:12px 0 4px';
-      emptyWrap.innerHTML = '<div style="font-size:32px;margin-bottom:8px">🔍</div>' +
-        '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Try different keywords or check these popular searches:</div>';
-      
-      const sugWrap = document.createElement('div');
-      sugWrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
-      const suggestions = ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'];
-      suggestions.forEach(function(s) {
-        const chip = document.createElement('button');
-        chip.className = 'sheet-sug';
-        chip.textContent = s;
-        chip.onclick = function() { sheetSearch(s); };
-        sugWrap.appendChild(chip);
+    }else{
+      // Zero results — "Did you mean?" fuzzy suggestions
+      const emptyWrap=document.createElement('div');emptyWrap.style.cssText='text-align:center;padding:12px 0 4px';
+      const qTokens=qTerms||[];
+      const candidates=_ads.filter(a=>a.status!=='sold').map(ad=>{
+        const words=ad.title.toLowerCase().split(/\s+/);
+        let best=0;
+        for(const qt of qTokens){for(const tw of words){const sim=YaadBrain.bigramSim(qt,tw);if(sim>best)best=sim;}}
+        return{ad,score:best};
+      }).filter(c=>c.score>=0.55).sort((a,b)=>b.score-a.score).slice(0,3);
+
+      if(candidates.length){
+        emptyWrap.innerHTML='<div style="font-size:28px;margin-bottom:8px">🤔</div><div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px">Nothing exact — did you mean one of these?</div>';
+        const dymWrap=document.createElement('div');dymWrap.style.cssText='display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:left';
+        candidates.forEach(function(c){
+          const btn=document.createElement('button');btn.className='sheet-result-card';
+          btn.style.cssText='background:rgba(29,185,84,0.06);border-color:rgba(29,185,84,0.2);cursor:pointer;width:100%';
+          const cat=CATS.find(function(x){return x.id===c.ad.category;});
+          btn.innerHTML='<div style="font-size:20px;width:36px;text-align:center;flex-shrink:0">'+(cat?cat.icon:'📦')+'</div><div class="src-info"><div class="src-price">J$'+fmtN(c.ad.price)+'</div><div class="src-title">'+escHtml(c.ad.title)+'</div></div><div class="src-arrow" style="color:rgba(29,185,84,0.6)">›</div>';
+          btn.onclick=(function(adCopy){return function(){if(qTerms&&qTerms.length)YaadBrain.learn(adCopy.id,qTerms);closeAiSheet();setTimeout(function(){openDetail(adCopy.id);},200);};})(c.ad);
+          dymWrap.appendChild(btn);
+        });
+        emptyWrap.appendChild(dymWrap);
+      }else{
+        emptyWrap.innerHTML='<div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Nothing found — try these popular searches:</div>';
+      }
+      const sugWrap=document.createElement('div');sugWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
+      ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'].forEach(function(s){
+        const chip=document.createElement('button');chip.className='sheet-sug';chip.textContent=s;chip.onclick=function(){sheetSearch(s);};sugWrap.appendChild(chip);
       });
       emptyWrap.appendChild(sugWrap);
-
-      const browseBtn = document.createElement('button');
-      browseBtn.className = 'sheet-view-all';
-      browseBtn.textContent = 'Browse all listings →';
-      browseBtn.onclick = function(){ closeAiSheet(); goHome(); };
-      emptyWrap.appendChild(browseBtn);
-      el.appendChild(emptyWrap);
+      const browseBtn=document.createElement('button');browseBtn.className='sheet-view-all';browseBtn.textContent='Browse all listings →';browseBtn.onclick=function(){closeAiSheet();goHome();};
+      emptyWrap.appendChild(browseBtn);el.appendChild(emptyWrap);
     }
   }
 
+  chat.appendChild(el);scrollToBottom();return el;
+}
+
+function addTyping(){
+  const chat=document.getElementById('sheetChat');
+  const body=document.getElementById('aiSheetBody');
+  const el=document.createElement('div');
+  el.className='sheet-msg-typing';
+  el.innerHTML='<span></span><span></span><span></span>';
   chat.appendChild(el);
-  scrollToBottom();
+  requestAnimationFrame(function(){if(body) body.scrollTop=body.scrollHeight;});
   return el;
 }
 
-function addTyping() {
-  const chat = document.getElementById('sheetChat');
-  const body = document.getElementById('aiSheetBody');
-  const el = document.createElement('div');
-  el.className = 'sheet-msg-typing';
-  el.innerHTML = '<span></span><span></span><span></span>';
-  chat.appendChild(el);
-  requestAnimationFrame(function() { if (body) body.scrollTop = body.scrollHeight; });
-  return el;
-}
-
-function escHtml(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 /* ═══════════════════════════════════════════════════════════
+   AD DETAIL
+   /* ═══════════════════════════════════════════════════════════
    AD DETAIL — openDetail + openProfile
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   sbIncrView(id);
-  trackRecentlyViewed(id);
-  // Track listing view in GA4
-  gaEvent('view_item', {
-    item_id:       ad.id,
-    item_name:     ad.title,
-    item_category: ad.category,
-    price:         ad.price,
-    currency:      'JMD',
-    item_list_name: ad.parish,
-  });
+  // Navigate directly to the static ad page — consistent experience every time
   window.location.href = '/ad/' + slugify(ad);
 }
 
@@ -5129,32 +4582,13 @@ function selectReport(el, reason) {
   el.classList.add('selected');
   document.getElementById('reportSubmitBtn').disabled = false;
 }
-async function submitReport() {
+function submitReport() {
   if (!_reportReason || !_reportAdId) return;
-  const btn = document.getElementById('reportSubmitBtn');
-  if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
-
-  const ad = _ads.find(a => a.id === _reportAdId);
-  const report = {
-    id:            'rpt_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-    ad_id:         _reportAdId,
-    ad_title:      ad?.title || '',
-    reason:        _reportReason,
-    reporter_id:   CU?.id || 'guest',
-    reporter_name: CU?.name || 'Anonymous',
-  };
-
-  try {
-    const { error } = await _db.from('reports').insert(report);
-    if (error) throw error;
-  } catch(e) {
-    // Silently fail — still close and thank the user
-    console.warn('Report save failed:', e.message);
-  }
-
+  const reports = JSON.parse(localStorage.getItem('ya_reports')||'[]');
+  reports.push({ adId: _reportAdId, reason: _reportReason, ts: Date.now(), reporterId: CU?.id||'guest' });
+  localStorage.setItem('ya_reports', JSON.stringify(reports));
   closeOverlay('ovReport');
-  showToast('Report submitted — we\'ll review it. 🙏', '🚩');
-  if (btn) { btn.textContent = 'Submit Report'; btn.disabled = false; }
+  showToast('Report submitted — we\'ll review it.', '🚩');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -5254,81 +4688,6 @@ if (!document.getElementById('confettiStyles')) {
   s.id = 'confettiStyles';
   s.textContent = '@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
   document.head.appendChild(s);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   PRICE RANGE FILTER
-═══════════════════════════════════════════════════════════ */
-function applyPriceFilter() {
-  const min = document.getElementById('priceMin');
-  const max = document.getElementById('priceMax');
-  const clearBtn = document.getElementById('priceFilterClear');
-  const hasValue = (min?.value && parseFloat(min.value) > 0) || (max?.value && parseFloat(max.value) > 0);
-  if (clearBtn) clearBtn.style.display = hasValue ? 'flex' : 'none';
-  clearTimeout(window._priceFilterTimer);
-  window._priceFilterTimer = setTimeout(function() {
-    _homeShowCount = _homePageSize;
-    renderHome();
-  }, 400);
-}
-
-function clearPriceFilter() {
-  const min = document.getElementById('priceMin');
-  const max = document.getElementById('priceMax');
-  const clearBtn = document.getElementById('priceFilterClear');
-  if (min) min.value = '';
-  if (max) max.value = '';
-  if (clearBtn) clearBtn.style.display = 'none';
-  _homeShowCount = _homePageSize;
-  renderHome();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RECENTLY VIEWED
-   Stores last 8 ad IDs in localStorage, shows 5 on home page
-═══════════════════════════════════════════════════════════ */
-const RV_KEY = 'ya_rv';
-const RV_MAX = 8;
-
-function trackRecentlyViewed(id) {
-  try {
-    let rv = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
-    rv = rv.filter(i => i !== id);
-    rv.unshift(id);
-    if (rv.length > RV_MAX) rv = rv.slice(0, RV_MAX);
-    localStorage.setItem(RV_KEY, JSON.stringify(rv));
-  } catch(e) {}
-}
-
-function renderRecentlyViewed() {
-  const section = document.getElementById('recentlyViewed');
-  const grid    = document.getElementById('rvGrid');
-  if (!section || !grid) return;
-  try {
-    const rv  = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
-    const ads = rv.map(id => _ads.find(a => a.id === id)).filter(Boolean).slice(0, 5);
-    if (ads.length < 2) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
-    grid.innerHTML = ads.map(ad => {
-      const cat = CATS.find(c => c.id === ad.category);
-      const img = ad.image
-        ? `<img class="rv-card-img" src="${ad.image}" alt="${ad.title}" loading="lazy">`
-        : `<div class="rv-card-img" style="display:flex;align-items:center;justify-content:center;font-size:28px">${cat?.icon||'📦'}</div>`;
-      return `<div class="rv-card" onclick="openDetail('${ad.id}')">
-        ${img}
-        <div class="rv-card-body">
-          <div class="rv-card-price">J$${fmtN(ad.price)}</div>
-          <div class="rv-card-title">${ad.title}</div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) { section.style.display = 'none'; }
-}
-
-function clearRecentlyViewed() {
-  try { localStorage.removeItem(RV_KEY); } catch(e) {}
-  const s = document.getElementById('recentlyViewed');
-  if (s) s.style.display = 'none';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -5734,17 +5093,10 @@ function checkUrlAdParam() {
   if (pathParts[1] === 'ad' && pathParts[2]) {
     const shortId = idFromSlug(pathParts[2]);
     if (shortId) {
+      // Find ad whose id starts with shortId
       const ad = _ads.find(function(a){ return a.id.startsWith(shortId); });
-      if (ad) {
-        // We arrived here via 404.html redirect — the static page doesn't exist yet.
-        // Don't call openDetail (would navigate back to /ad/slug and loop).
-        // Just scroll to the card on the home grid so the user can see it.
-        setTimeout(function() {
-          const card = document.querySelector('[onclick*="' + ad.id + '"]');
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 800);
-        return;
-      }
+      if (ad) { setTimeout(() => openDetail(ad.id), 600); return; }
+      // Ads not yet loaded — retry after load
       window._pendingSlug = pathParts[2];
       return;
     }
@@ -5755,12 +5107,10 @@ function checkUrlAdParam() {
   if (id) { setTimeout(() => openDetail(id), 600); return; }
 
   // Restore search state from URL
-  const q      = params.get('q');
-  const cat    = params.get('cat');
+  const q = params.get('q');
+  const cat = params.get('cat');
   const parish = params.get('parish');
-  const pMin   = params.get('min');
-  const pMax   = params.get('max');
-  if (q || cat || parish || pMin || pMax) {
+  if (q || cat || parish) {
     if (q) {
       searchQ = q;
       const inp = document.getElementById('aiInput');
@@ -5768,8 +5118,6 @@ function checkUrlAdParam() {
     }
     if (cat && CATS.find(c=>c.id===cat)) activeF = cat;
     if (parish) window._aiFilters = { parish };
-    if (pMin) { const el = document.getElementById('priceMin'); if (el) el.value = pMin; }
-    if (pMax) { const el = document.getElementById('priceMax'); if (el) el.value = pMax; }
     setTimeout(() => { renderCats(); renderHome(); scrollToResults(); }, 700);
   }
 }
@@ -5822,11 +5170,6 @@ function pushSearchState() {
   const params = new URLSearchParams();
   if (searchQ) params.set('q', searchQ);
   if (activeF && activeF !== 'all') params.set('cat', activeF);
-  // Persist price filter in URL so it's shareable
-  const pMin = document.getElementById('priceMin')?.value;
-  const pMax = document.getElementById('priceMax')?.value;
-  if (pMin && parseFloat(pMin) > 0) params.set('min', pMin);
-  if (pMax && parseFloat(pMax) > 0) params.set('max', pMax);
   const qs = params.toString();
   const url = location.pathname + (qs ? '?' + qs : '');
   if (history.replaceState) history.replaceState({}, '', url);
