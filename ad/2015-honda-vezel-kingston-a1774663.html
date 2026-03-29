@@ -1020,46 +1020,43 @@
     onScroll(); // run once on load
   })();
 
-  // ── View counter — increment on page load, update display ──────
-  // Uses sessionStorage to avoid double-counting refreshes.
+  // ── View counter — RPC increment + display ───────────────────
+  // Calls a Postgres function (security definer) that bypasses RLS.
+  // sessionStorage dedupes refreshes — counts once per browser session.
   (function() {
-    var el    = document.getElementById('viewCountEl');
-    var adId  = 'a1774663263381';
-    var SBASE = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
-    var KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
-    var HDRS  = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+    var el   = document.getElementById('viewCountEl');
+    var adId = 'a1774663263381';
+    var SBASE = 'https://cquwshpsfybvgqodbxsf.supabase.co';
+    var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+    var HDRS = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+    var sessKey = 'ya_viewed_' + adId;
 
-    // Dedupe: only count once per session per ad
-    var sessKey = 'viewed_' + adId;
-    var alreadyCounted = sessionStorage.getItem(sessKey);
-
-    // Step 1: fetch current view count to display immediately
-    fetch(SBASE + '/ads?id=eq.' + adId + '&select=views', { headers: HDRS })
+    // Always fetch current count to display
+    fetch(SBASE + '/rest/v1/ads?id=eq.' + adId + '&select=views', { headers: HDRS })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        var current = (data && data[0] && data[0].views != null) ? Number(data[0].views) : null;
-        if (current === null) return;
+        var current = (data && data[0] && data[0].views != null) ? Number(data[0].views) : 0;
+        // Show current + 1 optimistically if we are about to increment
+        var willIncrement = !sessionStorage.getItem(sessKey);
+        if (el) el.textContent = (willIncrement ? current + 1 : current).toLocaleString('en-JM');
 
-        if (!alreadyCounted) {
-          // Step 2: increment by 1 using PATCH with the new value
-          var newViews = current + 1;
-          fetch(SBASE + '/ads?id=eq.' + adId, {
-            method: 'PATCH',
-            headers: Object.assign({}, HDRS, { 'Prefer': 'return=representation' }),
-            body: JSON.stringify({ views: newViews })
+        if (willIncrement) {
+          // Call the security-definer RPC — bypasses RLS, atomic increment
+          fetch(SBASE + '/rest/v1/rpc/increment_view', {
+            method: 'POST',
+            headers: HDRS,
+            body: JSON.stringify({ ad_id: adId })
           }).then(function(r) {
             if (r.ok) {
               sessionStorage.setItem(sessKey, '1');
-              if (el) el.textContent = newViews.toLocaleString('en-JM');
             } else {
+              // RPC failed — revert optimistic display
               if (el) el.textContent = current.toLocaleString('en-JM');
+              r.text().then(function(t) { console.warn('view rpc:', t); });
             }
           }).catch(function() {
             if (el) el.textContent = current.toLocaleString('en-JM');
           });
-        } else {
-          // Already counted this session — just display current
-          if (el) el.textContent = current.toLocaleString('en-JM');
         }
       }).catch(function() {});
   })();
