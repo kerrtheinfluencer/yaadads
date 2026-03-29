@@ -4421,8 +4421,8 @@ function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
-  sbIncrView(id);
-  // Navigate directly to the static ad page — consistent experience every time
+  // View increment happens on the static ad page itself —
+  // doing it here gets cancelled by the navigation before the fetch completes.
   window.location.href = '/ad/' + slugify(ad);
 }
 
