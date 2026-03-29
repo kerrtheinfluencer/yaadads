@@ -998,37 +998,44 @@
     }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
+    function dbg(msg) { console.log('[YaadAdz views]', msg); }
 
     // Fetch current count first
     fetch(BASE + '/ads?id=eq.' + adId + '&select=views', { headers: H })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         var cur = (d && d[0] && d[0].views != null) ? Number(d[0].views) : 0;
-        show(seen ? cur : cur + 1); // optimistic +1
+        dbg('current views in DB: ' + cur + ' | seen this session: ' + !!seen);
+        show(seen ? cur : cur + 1);
 
-        if (seen) return; // already counted this session
+        if (seen) { dbg('already counted, skipping'); return; }
 
-        // Try RPC first (security definer — bypasses RLS)
+        // Try RPC first
+        dbg('calling increment_view RPC...');
         fetch(BASE + '/rpc/increment_view', {
           method: 'POST', headers: H,
           body: JSON.stringify({ ad_id: adId })
         }).then(function(r) {
-          if (r.ok) {
-            sessionStorage.setItem(sKey, '1');
-          } else {
-            // RPC not available — fall back to direct PATCH
-            // (works if anon_update_views RLS policy is in place)
-            fetch(BASE + '/ads?id=eq.' + adId, {
-              method: 'PATCH',
-              headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
-              body: JSON.stringify({ views: cur + 1 })
-            }).then(function(r2) {
-              if (r2.ok) sessionStorage.setItem(sKey, '1');
-              else show(cur); // both failed — revert
-            }).catch(function() { show(cur); });
-          }
-        }).catch(function() { show(cur); });
-      }).catch(function() {});
+          r.text().then(function(body) {
+            dbg('RPC status: ' + r.status + ' body: ' + body);
+            if (r.ok) {
+              sessionStorage.setItem(sKey, '1');
+              dbg('RPC success ✅');
+            } else {
+              dbg('RPC failed, trying PATCH...');
+              fetch(BASE + '/ads?id=eq.' + adId, {
+                method: 'PATCH',
+                headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
+                body: JSON.stringify({ views: cur + 1 })
+              }).then(function(r2) {
+                dbg('PATCH status: ' + r2.status);
+                if (r2.ok) { sessionStorage.setItem(sKey, '1'); dbg('PATCH success ✅'); }
+                else { show(cur); dbg('PATCH also failed ❌'); }
+              }).catch(function(e) { show(cur); dbg('PATCH error: ' + e); });
+            }
+          });
+        }).catch(function(e) { dbg('RPC error: ' + e); show(cur); });
+      }).catch(function(e) { dbg('GET error: ' + e); });
   })();
 </script>
 </body>
