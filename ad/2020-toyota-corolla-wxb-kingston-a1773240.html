@@ -1032,20 +1032,46 @@ Fully loaded
     onScroll(); // run once on load
   })();
 
-  // ── Live view count — fetch from Supabase and update display ─
+  // ── View counter — increment on page load, update display ──────
+  // Uses sessionStorage to avoid double-counting refreshes.
   (function() {
-    var el = document.getElementById('viewCountEl');
-    if (!el) return;
-    var adId = 'a1773240249522';
-    fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/ads?id=eq.' + adId + '&select=views', {
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE'
-      }
-    }).then(function(r) { return r.json(); })
+    var el    = document.getElementById('viewCountEl');
+    var adId  = 'a1773240249522';
+    var SBASE = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
+    var KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+    var HDRS  = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+
+    // Dedupe: only count once per session per ad
+    var sessKey = 'viewed_' + adId;
+    var alreadyCounted = sessionStorage.getItem(sessKey);
+
+    // Step 1: fetch current view count to display immediately
+    fetch(SBASE + '/ads?id=eq.' + adId + '&select=views', { headers: HDRS })
+      .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data && data[0] && data[0].views != null) {
-          el.textContent = Number(data[0].views).toLocaleString('en-JM');
+        var current = (data && data[0] && data[0].views != null) ? Number(data[0].views) : null;
+        if (current === null) return;
+
+        if (!alreadyCounted) {
+          // Step 2: increment by 1 using PATCH with the new value
+          var newViews = current + 1;
+          fetch(SBASE + '/ads?id=eq.' + adId, {
+            method: 'PATCH',
+            headers: Object.assign({}, HDRS, { 'Prefer': 'return=representation' }),
+            body: JSON.stringify({ views: newViews })
+          }).then(function(r) {
+            if (r.ok) {
+              sessionStorage.setItem(sessKey, '1');
+              if (el) el.textContent = newViews.toLocaleString('en-JM');
+            } else {
+              if (el) el.textContent = current.toLocaleString('en-JM');
+            }
+          }).catch(function() {
+            if (el) el.textContent = current.toLocaleString('en-JM');
+          });
+        } else {
+          // Already counted this session — just display current
+          if (el) el.textContent = current.toLocaleString('en-JM');
         }
       }).catch(function() {});
   })();
