@@ -1568,14 +1568,23 @@ async function sbUpdateAd(id, fields) {
   if (error) throw error;
 }
 
-// Increment views via security-definer RPC (bypasses RLS)
-async function sbIncrView(id) {
+// Increment views — keepalive fetch survives page navigation
+function sbIncrView(id) {
   const ad = _ads.find(a => a.id === id);
   if (!ad) return;
   ad.views = (ad.views || 0) + 1; // optimistic local update
-  _db.rpc('increment_view', { ad_id: id }).then(({ error }) => {
-    if (error) console.warn('view rpc:', error.message);
-  });
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+  // keepalive:true = browser MUST complete this request even after navigation
+  fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/rpc/increment_view', {
+    method: 'POST',
+    keepalive: true,
+    headers: {
+      'apikey': KEY,
+      'Authorization': 'Bearer ' + KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ ad_id: id })
+  }).catch(function() {});
 }
 
 // ── USER AUTH ──────────────────────────────────────────
@@ -4420,8 +4429,7 @@ function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
-  // View increment happens on the static ad page itself —
-  // doing it here gets cancelled by the navigation before the fetch completes.
+  sbIncrView(id); // keepalive fetch — completes even after navigation
   window.location.href = '/ad/' + slugify(ad);
 }
 

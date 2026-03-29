@@ -1232,6 +1232,13 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
     var H     = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
     var sKey  = 'ya_v_' + adId;
     var seen  = sessionStorage.getItem(sKey);
+    // If navigating from yaadadz.com, index.html already fired the increment
+    // via keepalive fetch — mark as seen to avoid double-counting
+    if (!seen && document.referrer && document.referrer.includes('yaadadz.com') &&
+        !document.referrer.includes('/ad/')) {
+      sessionStorage.setItem(sKey, '1');
+      seen = '1';
+    }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
 
