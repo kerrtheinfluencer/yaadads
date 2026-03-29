@@ -17,7 +17,7 @@ const path = require('path');
 
 // ── Config ────────────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cquwshpsfybvgqodbxsf.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_j9j7NG5GhMeXqiiFnEAO-w_jeMnyY1n';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
 const BASE_URL     = 'https://yaadadz.com';
 const OUT_DIR      = path.join(__dirname, 'ad');
 
@@ -1228,7 +1228,7 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
     var el    = document.getElementById('viewCountEl');
     var adId  = '${ad.id}';
     var BASE  = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
-    var KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+    var KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
     var H     = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
     var sKey  = 'ya_v_' + adId;
     var seen  = sessionStorage.getItem(sKey);

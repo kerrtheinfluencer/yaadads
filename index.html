@@ -1387,7 +1387,7 @@ nav {
 const CFG = {
   supabase: {
     url: 'https://cquwshpsfybvgqodbxsf.supabase.co',
-    key: 'sb_publishable_j9j7NG5GhMeXqiiFnEAO-w_jeMnyY1n',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw',
     storageBucket: 'ad-images',  // Supabase Storage bucket name
   },
 };
@@ -1574,7 +1574,7 @@ function sbIncrView(id) {
   if (!ad) return;
   ad.views = (ad.views || 0) + 1;
   const newViews = ad.views;
-  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
   const BASE = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
   const H    = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
@@ -4440,7 +4440,7 @@ function openDetail(id) {
   ad.views = newViews;
 
   // Direct REST PATCH — most reliable, bypasses Supabase JS client quirks
-  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
   fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/ads?id=eq.' + id, {
     method: 'PATCH',
     keepalive: true,
