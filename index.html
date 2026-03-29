@@ -4435,10 +4435,21 @@ function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
    /* ═══════════════════════════════════════════════════════════
    AD DETAIL — openDetail + openProfile
 ═══════════════════════════════════════════════════════════ */
-function openDetail(id) {
+async function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
-  sbIncrView(id); // keepalive fetch — completes even after navigation
-  window.location.href = '/ad/' + slugify(ad);
+  const dest = '/ad/' + slugify(ad);
+  try {
+    const newViews = (ad.views || 0) + 1;
+    const { error } = await _db.from('ads').update({ views: newViews }).eq('id', id);
+    if (error) {
+      alert('View error: ' + error.message + ' | code: ' + error.code);
+    } else {
+      ad.views = newViews;
+    }
+  } catch(e) {
+    alert('View exception: ' + e.message);
+  }
+  window.location.href = dest;
 }
 
 function openProfile(sellerId) {
