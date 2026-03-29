@@ -765,7 +765,7 @@ Price: $4,500,000.00</p>
         <div class="ad-meta-tags">
           <span class="meta-tag">📍 Kingston</span>
           <span class="meta-tag">🚗 Vehicles</span>
-          <span class="meta-tag">🕐 13 days ago</span>
+          <span class="meta-tag">🕐 14 days ago</span>
           <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">11</span> views</span>
           <span class="status-badge active">● Available</span>
         </div>
@@ -1047,6 +1047,13 @@ Price: $4,500,000.00</p>
     var H     = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
     var sKey  = 'ya_v_' + adId;
     var seen  = sessionStorage.getItem(sKey);
+    // If navigating from yaadadz.com, index.html already fired the increment
+    // via keepalive fetch — mark as seen to avoid double-counting
+    if (!seen && document.referrer && document.referrer.includes('yaadadz.com') &&
+        !document.referrer.includes('/ad/')) {
+      sessionStorage.setItem(sKey, '1');
+      seen = '1';
+    }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
 

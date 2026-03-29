@@ -815,7 +815,7 @@ Price: $2,150,000.00</p>
         <div class="sim-body">
           <div class="sim-price">J$2,990,000</div>
           <div class="sim-title">2020 Subaru XV Hybrid Advanced package</div>
-          <div class="sim-meta">📍 Kingston · 13 days ago</div>
+          <div class="sim-meta">📍 Kingston · 14 days ago</div>
         </div>
       </a>
       <a class="sim-card" href="https://yaadadz.com/ad/2020-honda-fit-shuttle-z-pkg-kingston-a1774662">
@@ -1049,6 +1049,13 @@ Price: $2,150,000.00</p>
     var H     = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
     var sKey  = 'ya_v_' + adId;
     var seen  = sessionStorage.getItem(sKey);
+    // If navigating from yaadadz.com, index.html already fired the increment
+    // via keepalive fetch — mark as seen to avoid double-counting
+    if (!seen && document.referrer && document.referrer.includes('yaadadz.com') &&
+        !document.referrer.includes('/ad/')) {
+      sessionStorage.setItem(sKey, '1');
+      seen = '1';
+    }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
 
