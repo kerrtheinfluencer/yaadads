@@ -1568,14 +1568,13 @@ async function sbUpdateAd(id, fields) {
   if (error) throw error;
 }
 
-// Increment views
+// Increment views via security-definer RPC (bypasses RLS)
 async function sbIncrView(id) {
   const ad = _ads.find(a => a.id === id);
   if (!ad) return;
-  ad.views = (ad.views || 0) + 1;
-  // Fire-and-forget — don't block UI
-  _db.from('ads').update({ views: ad.views }).eq('id', id).then(({error}) => {
-    if (error) console.warn('view update:', error);
+  ad.views = (ad.views || 0) + 1; // optimistic local update
+  _db.rpc('increment_view', { ad_id: id }).then(({ error }) => {
+    if (error) console.warn('view rpc:', error.message);
   });
 }
 
