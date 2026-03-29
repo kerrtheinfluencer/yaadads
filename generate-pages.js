@@ -470,48 +470,95 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
   /* ── NAV ── */
   nav {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(12,30,20,0.92);
-    backdrop-filter: blur(16px);
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(12,30,20,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
+    padding: 0 16px;
     height: 56px;
-    display: flex; align-items: center; gap: 16px;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
   }
-  /* Safe area only applied when .pwa-mode class is set by JS (standalone PWA only) */
   body.pwa-mode nav {
     height: calc(56px + env(safe-area-inset-top, 0px));
     padding-top: env(safe-area-inset-top, 0px);
     padding-left: max(16px, env(safe-area-inset-left, 16px));
     padding-right: max(16px, env(safe-area-inset-right, 16px));
   }
-  .nav-logo {
-    font-family: var(--font-d);
-    font-weight: 800; font-size: 22px;
-    color: var(--text-1);
-    text-decoration: none;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .nav-logo em { color: var(--gold); font-style: italic; }
-  .nav-spacer { flex: 1; }
   .nav-back {
-    display: flex; align-items: center; gap: 6px;
-    color: var(--text-2); font-size: 14px;
+    display: flex; align-items: center; gap: 2px;
+    color: var(--green); font-size: 17px;
     text-decoration: none;
-    padding: 6px 12px; border-radius: 8px;
-    border: 1px solid var(--border);
-    transition: all 0.2s;
+    padding: 6px 4px 6px 0;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
-  .nav-back:hover { color: var(--text-1); border-color: var(--green); }
+  .nav-back:hover { opacity: 0.75; }
+  .nav-back-chevron {
+    font-size: 26px; line-height: 1; font-weight: 200;
+    margin-right: 1px; margin-left: -4px;
+  }
+  .nav-back-label { font-size: 17px; font-weight: 400; }
+  .nav-center {
+    text-align: center; overflow: hidden;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.22s, transform 0.22s;
+    pointer-events: none; min-width: 0;
+  }
+  .nav-center.visible { opacity: 1; transform: translateY(0); }
+  .nav-center-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-1); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    padding: 0 4px;
+  }
+  .nav-center-price { font-size: 12px; color: var(--green); font-weight: 700; }
   .nav-post {
     background: var(--gold); color: #1a1a1a;
     font-weight: 700; font-size: 13px;
-    padding: 7px 14px; border-radius: 8px;
+    padding: 7px 12px; border-radius: 8px;
     text-decoration: none; white-space: nowrap;
     transition: opacity 0.2s;
   }
   .nav-post:hover { opacity: 0.88; }
+  /* ── FLOATING CONTACT BAR ── */
+  .float-contact {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+    background: rgba(11,26,17,0.98);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 10px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    display: flex; gap: 10px; align-items: center;
+    transform: translateY(110%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    pointer-events: none;
+  }
+  .float-contact.visible { transform: translateY(0); pointer-events: auto; }
+  .float-contact-info { flex: 1; min-width: 0; overflow: hidden; }
+  .float-contact-price {
+    font-family: var(--font-d); font-size: 17px; font-weight: 800;
+    color: var(--green); line-height: 1.2;
+  }
+  .float-contact-title {
+    font-size: 11px; color: var(--text-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .float-btns { display: flex; gap: 8px; flex-shrink: 0; }
+  .float-contact-btn {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 11px 14px; border-radius: 10px;
+    font-weight: 700; font-size: 14px;
+    text-decoration: none; white-space: nowrap;
+    transition: opacity 0.15s; border: none; cursor: pointer;
+  }
+  .float-contact-btn:active { opacity: 0.75; transform: scale(0.97); }
+  .float-btn-call { background: var(--green); color: #fff; }
+  .float-btn-wa   { background: #25d366; color: #fff; }
 
   /* ── BREADCRUMB ── */
   .breadcrumb {
@@ -866,11 +913,10 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     .ad-layout { grid-template-columns: 1fr; }
     .ad-panel { position: static; }
     .page-wrap { padding: 16px 16px 48px; }
-    nav { padding: 0 16px; gap: 10px; }
-    /* Hide logo text on mobile — icon only, saves space for buttons */
-    .nav-logo-text { display: none; }
-    .nav-back { font-size: 13px; padding: 6px 10px; }
-    .nav-post { font-size: 12px; padding: 6px 11px; }
+    nav { padding: 0 12px; }
+    .nav-back-label { font-size: 15px; }
+    .nav-back-chevron { font-size: 22px; }
+    .nav-post { font-size: 12px; padding: 6px 10px; }
     .breadcrumb { padding: 12px 16px 0; }
     .price-main { font-size: 26px; }
     .similar-section { padding: 0 16px 48px; }
@@ -881,12 +927,18 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 </head>
 <body>
 
-<nav>
-  <a class="nav-logo" href="${BASE_URL}">
-    <span>🇯🇲</span><span class="nav-logo-text">Yaad <em>Adz</em></span>
+<nav id="topNav">
+  <!-- Left: iPhone-style back -->
+  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}" onclick="if(history.length>1&&document.referrer.includes('yaadadz.com')){history.back();return false;}">
+    <span class="nav-back-chevron">‹</span>
+    <span class="nav-back-label">${catName}</span>
   </a>
-  <div class="nav-spacer"></div>
-  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}">← ${catName}</a>
+  <!-- Centre: title+price (fades in on scroll) -->
+  <div class="nav-center" id="navCenter">
+    <div class="nav-center-title">${esc(ad.title)}</div>
+    <div class="nav-center-price">${price}</div>
+  </div>
+  <!-- Right: Post Ad -->
   <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
 </nav>
 
@@ -990,6 +1042,19 @@ ${similarHTML}
   </div>
   <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
+
+<!-- FLOATING CONTACT BAR — slides up when contact box scrolls off screen -->
+${ad.status !== 'sold' && (ad.phone || waLink) ? `
+<div class="float-contact" id="floatContact">
+  <div class="float-contact-info">
+    <div class="float-contact-price">${price}</div>
+    <div class="float-contact-title">${esc(ad.title)}</div>
+  </div>
+  <div class="float-btns">
+    ${ad.phone ? `<a class="float-contact-btn float-btn-call" href="tel:${esc(ad.phone)}">📞 Call</a>` : ''}
+    ${waLink   ? `<a class="float-contact-btn float-btn-wa"   href="${waLink}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
+  </div>
+</div>` : ''}
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
@@ -1112,6 +1177,49 @@ ${similarHTML}
     document.body.removeChild(ta);
     setTimeout(function() { btn.textContent = '🔗 Copy Link'; }, 2000);
   }
+
+  // ── Nav centre title + floating contact bar scroll logic ────
+  (function() {
+    var priceCard   = document.querySelector('.price-card');
+    var contactBox  = document.querySelector('.contact-box');
+    var navCenter   = document.getElementById('navCenter');
+    var floatBar    = document.getElementById('floatContact');
+
+    if (!priceCard && !contactBox) return;
+
+    var priceShown   = false;
+    var floatShown   = false;
+
+    function onScroll() {
+      // Show nav title+price once price card scrolls off top
+      if (priceCard && navCenter) {
+        var pcBottom = priceCard.getBoundingClientRect().bottom;
+        if (pcBottom < 60 && !priceShown) {
+          navCenter.classList.add('visible'); priceShown = true;
+        } else if (pcBottom >= 60 && priceShown) {
+          navCenter.classList.remove('visible'); priceShown = false;
+        }
+      }
+
+      // Show float bar once contact box scrolls out of view
+      if (contactBox && floatBar) {
+        var rect = contactBox.getBoundingClientRect();
+        var pastContact = rect.bottom < 0;   // scrolled above viewport
+        var beforeContact = rect.top > window.innerHeight; // not yet reached
+        var shouldShow = pastContact || beforeContact;
+        if (shouldShow && !floatShown) {
+          floatBar.classList.add('visible'); floatShown = true;
+          document.body.style.paddingBottom = '80px';
+        } else if (!shouldShow && floatShown) {
+          floatBar.classList.remove('visible'); floatShown = false;
+          document.body.style.paddingBottom = '';
+        }
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // run once on load
+  })();
 
   // ── Live view count — fetch from Supabase and update display ─
   (function() {
