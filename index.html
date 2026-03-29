@@ -4431,25 +4431,30 @@ function addTyping(){
 function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 /* ═══════════════════════════════════════════════════════════
-   AD DETAIL
-   /* ═══════════════════════════════════════════════════════════
    AD DETAIL — openDetail + openProfile
 ═══════════════════════════════════════════════════════════ */
-async function openDetail(id) {
+function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
   const dest = '/ad/' + slugify(ad);
-  try {
-    const newViews = (ad.views || 0) + 1;
-    const { error } = await _db.from('ads').update({ views: newViews }).eq('id', id);
-    if (error) {
-      alert('View error: ' + error.message + ' | code: ' + error.code);
-    } else {
-      ad.views = newViews;
-    }
-  } catch(e) {
-    alert('View exception: ' + e.message);
-  }
-  window.location.href = dest;
+  const newViews = (ad.views || 0) + 1;
+  ad.views = newViews;
+
+  // Direct REST PATCH — most reliable, bypasses Supabase JS client quirks
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDI3MzMsImV4cCI6MjA1NzkxODczM30.IKqAuBpwlxkRkZvAMDwHpNFCHb9aBQjXQiUOXjJWMXE';
+  fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/ads?id=eq.' + id, {
+    method: 'PATCH',
+    keepalive: true,
+    headers: {
+      'apikey': KEY,
+      'Authorization': 'Bearer ' + KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ views: newViews })
+  });
+
+  // Navigate after tiny delay to let fetch initiate
+  setTimeout(function() { window.location.href = dest; }, 60);
 }
 
 function openProfile(sellerId) {
@@ -5060,11 +5065,14 @@ function checkUrlAdParam() {
   let activePath = location.pathname;
   try {
     const stored = sessionStorage.getItem('yaad_redirect_path');
-    if (stored && stored !== '/') {
+    // Only use redirect path if it's different from current path (avoid loops)
+    if (stored && stored !== '/' && stored !== location.pathname) {
       activePath = stored;
       sessionStorage.removeItem('yaad_redirect_path');
-      // Silently rewrite the browser URL to the pretty path (no reload)
       if (history.replaceState) history.replaceState({}, '', stored + location.search + location.hash);
+    } else if (stored) {
+      // Stale redirect path — clear it to prevent loops
+      sessionStorage.removeItem('yaad_redirect_path');
     }
   } catch(e) {}
 
@@ -5106,15 +5114,9 @@ function checkUrlAdParam() {
 window.addEventListener('popstate', function(e) {
   const params = new URLSearchParams(location.search);
 
-  // Pretty URL: /ad/slug
+  // Pretty URL: /ad/slug — these are static pages now, let browser handle navigation
   const pathParts = location.pathname.split('/');
-  if (pathParts[1] === 'ad' && pathParts[2]) {
-    const shortId = idFromSlug(pathParts[2]);
-    if (shortId) {
-      const ad = _ads.find(function(a){ return a.id.startsWith(shortId); });
-      if (ad) { openDetail(ad.id); return; }
-    }
-  }
+  if (pathParts[1] === 'ad') return; // static page, no action needed
 
   // Legacy ?ad= param
   const adId = params.get('ad');
