@@ -468,7 +468,7 @@ select.finp option { background: #222; }
 
 <!-- ── EX-REFINERY PRICES ── -->
 <div class="section">
-  <div class="section-label">Ex-Refinery Prices (Petrojam)</div>
+  <div class="section-label">Estimated Pump Prices — incl. ~J$30 markup</div>
 
   <div class="price-grid" id="priceGrid">
     <!-- Filled by JS -->
@@ -478,12 +478,8 @@ select.finp option { background: #222; }
   <div class="section-label" style="margin-top:8px">Featured on Yaad Adz</div>
   <div class="yaad-strip" id="yaadStrip1"></div>
 
-  <!-- ── PUMP PRICES ── -->
-  <div class="section-label">Estimated Pump Prices (with markup)</div>
-  <div class="markup-info">
-    ⚠️ Petrojam publishes <strong>ex-refinery</strong> prices. Retailers add their own markup — typically <strong>J$25–J$35/L</strong>. The prices below reflect an estimated <strong>J$30/L markup</strong> as a guide. Actual pump prices vary by station.
-  </div>
-  <div id="pumpPrices"><!-- Filled by JS --></div>
+  <!-- pumpPrices now rendered inside price cards above -->
+  <div id="pumpPrices" style="display:none"></div>
 
   <!-- ── TREND CHART ── -->
   <div class="section-label">87-Octane Price Trend (J$/L)</div>
@@ -612,39 +608,33 @@ const PARISH_COORDS = {
 // ── RENDER PRICES ──
 function renderPrices() {
   const grid = document.getElementById('priceGrid');
+  // Lead with PUMP price — that's what people actually pay
   grid.innerHTML = PRICES.map(p => {
-    const diff = (p.price - p.prev).toFixed(2);
+    const pump = p.price + MARKUP;
+    const pumpPrev = p.prev + MARKUP;
+    const diff = (pump - pumpPrev).toFixed(2);
     const isUp = diff > 0, isDn = diff < 0;
     const changeCls = isUp ? 'change-up' : isDn ? 'change-dn' : 'change-flat';
     const changeStr = isUp ? '▲ +' + diff : isDn ? '▼ ' + diff : '— 0.00';
+    // LPG (propane/butane) don't have retail markup the same way
+    const isLpg = p.key === 'propane' || p.key === 'butane';
+    const displayPrice = isLpg ? p.price : pump;
+    const displayNote  = isLpg ? 'per litre · retail' : 'per litre · est. pump price';
     return `
       <div class="price-card ${p.type}">
         <div class="fuel-icon">${p.icon}</div>
         <div class="fuel-name">${p.name}</div>
         <div class="fuel-grade">${p.grade}</div>
-        <div class="fuel-price">J$${p.price.toFixed(2)}</div>
-        <div class="fuel-unit">per litre · ex-refinery</div>
+        <div class="fuel-price">J$${displayPrice.toFixed(2)}</div>
+        <div class="fuel-unit">${displayNote}</div>
+        ${!isLpg ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">Ex-refinery: J$${p.price.toFixed(2)}</div>` : ''}
         <div class="fuel-change ${changeCls}">${changeStr}</div>
       </div>`;
   }).join('');
 
-  // Pump prices
+  // Remove old separate pump prices section — now shown in cards
   const pumpEl = document.getElementById('pumpPrices');
-  const pumpFuels = PRICES.filter(p => p.key !== 'propane');
-  pumpEl.innerHTML = pumpFuels.map(p => {
-    const pump = (p.price + MARKUP).toFixed(2);
-    return `
-      <div class="pump-row">
-        <div class="pump-label">
-          <strong>${p.icon} ${p.name}</strong>
-          ${p.grade}
-        </div>
-        <div>
-          <div class="pump-price" style="color:var(--${p.type==='petrol'?'green':p.type==='diesel'?'amber':'blue'})">J$${pump}</div>
-          <div class="pump-note">+J$${MARKUP}/L markup est.</div>
-        </div>
-      </div>`;
-  }).join('');
+  if (pumpEl) pumpEl.innerHTML = '';
 }
 
 // ── RENDER TREND ──

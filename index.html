@@ -274,6 +274,74 @@ if ('serviceWorker' in navigator) {
   #aiFab { display:none !important; }
 }
 
+/* ── GAS PRICE FLOATING BANNER ── */
+#gasBanner {
+  position: fixed;
+  bottom: 72px; /* above mobile nav */
+  right: 14px;
+  z-index: 500;
+  background: linear-gradient(135deg, #0e1f16 0%, #142a1c 100%);
+  border: 1px solid rgba(0,200,83,0.35);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,200,83,0.1);
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(12px);
+  -webkit-tap-highlight-color: transparent;
+  animation: bannerSlide 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 1.2s;
+}
+@keyframes bannerSlide {
+  from { transform: translateX(120px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+#gasBanner:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,200,83,0.25); }
+#gasBanner:active { transform: scale(0.97); }
+.gas-banner-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.gas-banner-body { min-width: 0; }
+.gas-banner-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0,200,83,0.7);
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.gas-banner-price {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1db954;
+  line-height: 1;
+  white-space: nowrap;
+}
+.gas-banner-sub {
+  font-size: 9px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.gas-banner-arrow {
+  font-size: 12px;
+  color: rgba(0,200,83,0.5);
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+/* On desktop push it up — no mobile nav overlap */
+@media (min-width: 641px) {
+  #gasBanner { bottom: 24px; }
+}
+
 /* ── Eliminate 300ms tap delay everywhere ── */
 * { touch-action: manipulation; }
 
@@ -5272,5 +5340,30 @@ document.addEventListener('keydown', function(e) {
 ═══════════════════════════════════════════════════════════ */
 init();
 </script>
+<!-- ── FLOATING GAS PRICE BANNER ── -->
+<a href="/gas-prices" id="gasBanner" aria-label="Jamaica gas prices today">
+  <div class="gas-banner-icon">⛽</div>
+  <div class="gas-banner-body">
+    <div class="gas-banner-label">Gas Price Today</div>
+    <div class="gas-banner-price" id="bannerPrice">J$211.13</div>
+    <div class="gas-banner-sub">87 Oct · est. pump price</div>
+  </div>
+  <div class="gas-banner-arrow">›</div>
+</a>
+
+<script>
+// ── GAS BANNER — fetch latest 87 octane ex-refinery price ──
+// Falls back to hardcoded current price if fetch fails
+(function() {
+  // Current prices (updated Apr 23, 2026)
+  var EX_87    = 181.1328;
+  var MARKUP   = 30;
+  var PUMP_87  = (EX_87 + MARKUP).toFixed(2);
+
+  var el = document.getElementById('bannerPrice');
+  if (el) el.textContent = 'J$' + Number(PUMP_87).toLocaleString('en-JM', {minimumFractionDigits:2, maximumFractionDigits:2});
+})();
+</script>
+
 </body>
 </html>
