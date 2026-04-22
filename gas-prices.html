@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jamaica Gas Prices Today 2026 — Live Petrojam Pump Prices | Yaad Adz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Jamaica Gas Prices Today — Live Petrojam Pump Prices | Yaad Adz</title>
 <meta name="description" content="Live Jamaica gas prices updated every Wednesday from Petrojam. Check E10-87, E10-90, diesel and kerosene pump prices across all parishes. Report your local gas station price.">
-<meta name="keywords" content="Jamaica gas prices, Petrojam prices today, fuel prices Jamaica 2026, gas price Kingston, diesel price Jamaica, E10-87 price, petrol price Jamaica">
+<meta name="keywords" content="Jamaica gas prices, Petrojam prices today, fuel prices Jamaica, gas price Kingston, diesel price Jamaica, E10-87 price, petrol price Jamaica">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://yaadadz.com/gas-prices">
 <meta property="og:title" content="Jamaica Gas Prices Today — Live Petrojam Prices">
@@ -14,24 +14,39 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://yaadadz.com/og-image.jpg">
 <link rel="icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.json">
 
-<!-- Leaflet for map -->
+<!-- Preconnect -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cquwshpsfybvgqodbxsf.supabase.co">
+
+<!-- Leaflet -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KE3X5BMY63');
+</script>
+
+<!-- AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9656521698490533" crossorigin="anonymous"></script>
 
 <!-- JSON-LD -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
-  "name": "Jamaica Gas Prices Today 2026",
+  "name": "Jamaica Gas Prices Today",
   "description": "Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel, and kerosene pump prices.",
   "url": "https://yaadadz.com/gas-prices",
   "publisher": { "@type": "Organization", "name": "Yaad Adz", "url": "https://yaadadz.com" },
@@ -40,7 +55,8 @@
     "name": "Jamaica Petrojam Fuel Prices",
     "description": "Weekly ex-refinery prices from Petrojam Limited plus retailer markup estimates",
     "creator": { "@type": "Organization", "name": "Petrojam Limited", "url": "https://petrojam.com" },
-    "frequency": "Weekly"
+    "temporalCoverage": "2026-01-01/2026-12-31",
+    "spatialCoverage": { "@type": "Place", "name": "Jamaica" }
   }
 }
 </script>
@@ -76,6 +92,7 @@ body {
   color: var(--text-1);
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── HEADER ── */
@@ -96,7 +113,9 @@ body {
 .header-back {
   color: var(--green); font-size: 15px;
   text-decoration: none; display: flex; align-items: center; gap: 4px;
+  transition: opacity 0.15s;
 }
+.header-back:hover { opacity: 0.75; }
 .header-spacer { flex: 1; }
 .header-pill {
   background: var(--green-dim);
@@ -145,7 +164,7 @@ body {
   margin: 0 auto 20px; line-height: 1.6;
 }
 .update-badge {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
   background: var(--card); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 14px;
   font-size: 12px; color: var(--text-2);
@@ -153,7 +172,7 @@ body {
 }
 .update-badge strong { color: var(--amber); }
 
-/* ── PRICE GRID ── */
+/* ── SECTIONS ── */
 .section { padding: 32px 20px; max-width: 900px; margin: 0 auto; }
 .section-label {
   font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
@@ -164,9 +183,10 @@ body {
   content: ''; flex: 1; height: 1px; background: var(--border);
 }
 
+/* ── PRICE GRID ── */
 .price-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px; margin-bottom: 24px;
 }
 
@@ -219,44 +239,42 @@ body {
 .change-dn { background: var(--green-dim); color: var(--green); }
 .change-flat { background: rgba(255,255,255,0.05); color: var(--text-3); }
 
-/* Pump price (with markup) */
-.pump-row {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
-  border-radius: 12px; padding: 14px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
-}
-.pump-label { font-size: 13px; color: var(--text-2); }
-.pump-label strong { color: var(--text-1); display: block; font-size: 14px; }
-.pump-price {
-  font-family: var(--font-mono); font-size: 18px; font-weight: 600;
-}
-.pump-note { font-size: 10px; color: var(--text-3); margin-top: 2px; text-align: right; }
-.markup-info {
-  background: var(--amber-dim); border: 1px solid rgba(255,179,0,0.2);
-  border-radius: 10px; padding: 10px 14px;
-  font-size: 12px; color: var(--amber);
-  margin-bottom: 24px; line-height: 1.5;
-}
-
-/* ── TREND CHART ── */
+/* ── SVG TREND CHART ── */
 .trend-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 16px; padding: 20px; margin-bottom: 24px;
 }
-.trend-title { font-size: 13px; color: var(--text-2); margin-bottom: 14px; }
-.trend-bars { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
-.trend-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.trend-bar {
-  width: 100%; border-radius: 4px 4px 0 0;
-  background: linear-gradient(180deg, var(--green) 0%, rgba(0,200,83,0.3) 100%);
-  transition: height 0.6s cubic-bezier(0.34,1.56,0.64,1);
-  min-height: 4px;
+.trend-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
 }
-.trend-bar.current { background: linear-gradient(180deg, var(--amber) 0%, rgba(255,179,0,0.3) 100%); }
-.trend-week { font-size: 9px; color: var(--text-3); font-family: var(--font-mono); }
-.trend-val { font-size: 9px; color: var(--text-2); font-family: var(--font-mono); }
+.trend-title { font-size: 13px; color: var(--text-2); }
+.trend-legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-3); }
+.trend-legend span { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.trend-svg-wrap { width: 100%; overflow-x: auto; }
+.trend-svg { width: 100%; min-width: 600px; height: 160px; }
+
+/* ── CALCULATOR ── */
+.calc-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px; margin-bottom: 24px;
+}
+.calc-card h3 {
+  font-family: var(--font-display); font-size: 20px;
+  letter-spacing: 0.5px; margin-bottom: 12px;
+}
+.calc-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;
+}
+.calc-result {
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; text-align: center;
+}
+.calc-result-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+.calc-result-val {
+  font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--green);
+}
 
 /* ── ADSENSE ── */
 .ad-slot {
@@ -270,15 +288,16 @@ body {
   color: var(--text-3); text-align: center; margin-bottom: 6px;
 }
 
-/* ── PUMP REPORTS ── */
+/* ── MAP ── */
 .map-wrap {
   border-radius: 16px; overflow: hidden;
   border: 1px solid var(--border);
-  height: 320px; margin-bottom: 16px;
+  height: 340px; margin-bottom: 16px;
   position: relative;
 }
 #gasMap { height: 100%; width: 100%; background: #1a1a1a; }
 
+/* ── REPORT FORM ── */
 .report-form {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 16px; padding: 20px; margin-bottom: 12px;
@@ -296,23 +315,44 @@ body {
   border-radius: 10px; padding: 11px 14px;
   color: var(--text-1); font-family: var(--font-body);
   font-size: 14px; width: 100%; outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.finp:focus { border-color: rgba(0,200,83,0.5); }
+.finp:focus { border-color: rgba(0,200,83,0.5); box-shadow: 0 0 0 3px rgba(0,200,83,0.08); }
 .finp::placeholder { color: var(--text-3); }
 select.finp option { background: #222; }
+.finp.error { border-color: var(--red); }
 .submit-btn {
   width: 100%; padding: 13px;
   background: var(--green); color: #000;
   font-family: var(--font-display); font-size: 18px;
   letter-spacing: 1px; border: none; border-radius: 10px;
-  cursor: pointer; transition: opacity 0.2s;
+  cursor: pointer; transition: opacity 0.2s, transform 0.1s;
   margin-top: 4px;
 }
 .submit-btn:hover { opacity: 0.85; }
-.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.submit-btn:active { transform: scale(0.99); }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-/* Reports list */
+/* ── REPORT FILTERS ── */
+.report-filters {
+  display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.filter-chip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 12px; font-weight: 500;
+  padding: 5px 12px; border-radius: 20px;
+  cursor: pointer; transition: all 0.15s;
+}
+.filter-chip:hover { border-color: rgba(255,255,255,0.2); color: var(--text-1); }
+.filter-chip.active {
+  background: var(--green-dim);
+  border-color: rgba(0,200,83,0.4);
+  color: var(--green);
+}
+
+/* ── REPORTS LIST ── */
 .reports-list { display: flex; flex-direction: column; gap: 10px; }
 .report-item {
   background: var(--card); border: 1px solid var(--border);
@@ -342,8 +382,24 @@ select.finp option { background: #222; }
 .report-price.avg { color: var(--amber); }
 .report-price.pricey { color: var(--red); }
 .report-ago { font-size: 10px; color: var(--text-3); }
+.report-empty {
+  text-align: center; color: var(--text-3);
+  padding: 32px; font-size: 14px;
+}
 
-/* ── YAAD ADZ LISTING STRIP ── */
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── YAAD ADZ LISTINGS ── */
 .yaad-strip {
   display: flex; gap: 10px; overflow-x: auto;
   padding-bottom: 8px; margin-bottom: 24px;
@@ -364,7 +420,7 @@ select.finp option { background: #222; }
   background: #222; display: flex; align-items: center;
   justify-content: center; font-size: 28px; color: var(--text-3);
 }
-.yaad-card-mini-img img { width: 100%; height: 100%; object-fit: cover; }
+.yaad-card-mini-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .yaad-card-mini-body { padding: 8px 10px; }
 .yaad-card-mini-price {
   font-family: var(--font-mono); font-size: 13px;
@@ -376,7 +432,6 @@ select.finp option { background: #222; }
   white-space: nowrap; text-overflow: ellipsis;
 }
 
-/* ── YAAD ADZ GRID (bottom) ── */
 .yaad-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -396,7 +451,7 @@ select.finp option { background: #222; }
   align-items: center; justify-content: center;
   font-size: 36px; overflow: hidden;
 }
-.yaad-grid-img img { width: 100%; height: 100%; object-fit: cover; }
+.yaad-grid-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .yaad-grid-body { padding: 10px 12px; }
 .yaad-grid-price {
   font-family: var(--font-mono); font-size: 14px;
@@ -439,10 +494,12 @@ select.finp option { background: #222; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .price-grid { grid-template-columns: repeat(2, 1fr); }
   .form-row { grid-template-columns: 1fr; }
   .hero-title { font-size: 42px; }
+  .calc-row { grid-template-columns: 1fr; }
+  .trend-svg { height: 130px; }
 }
 </style>
 </head>
@@ -466,30 +523,80 @@ select.finp option { background: #222; }
   </div>
 </div>
 
-<!-- ── EX-REFINERY PRICES ── -->
+<!-- ── PRICE GRID ── -->
 <div class="section">
-  <div class="section-label">Estimated Pump Prices — incl. ~J$30 markup</div>
+  <div class="section-label">Estimated Pump Prices — incl. retailer markup</div>
 
   <div class="price-grid" id="priceGrid">
     <!-- Filled by JS -->
   </div>
 
+  <!-- AdSense in-content -->
+  <div class="ad-label">Advertisement</div>
+  <div class="ad-slot">
+    <ins class="adsbygoogle"
+      style="display:block"
+      data-ad-client="ca-pub-9656521698490533"
+      data-ad-slot="1111111111"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+  </div>
+
   <!-- Yaad Adz listings strip -->
   <div class="section-label" style="margin-top:8px">Featured on Yaad Adz</div>
-  <div class="yaad-strip" id="yaadStrip1"></div>
-
-  <!-- pumpPrices now rendered inside price cards above -->
-  <div id="pumpPrices" style="display:none"></div>
+  <div class="yaad-strip" id="yaadStrip1">
+    <div class="skeleton" style="width:150px;height:140px;flex-shrink:0"></div>
+    <div class="skeleton" style="width:150px;height:140px;flex-shrink:0"></div>
+    <div class="skeleton" style="width:150px;height:140px;flex-shrink:0"></div>
+    <div class="skeleton" style="width:150px;height:140px;flex-shrink:0"></div>
+  </div>
 
   <!-- ── TREND CHART ── -->
-  <div class="section-label">87-Octane Price Trend (J$/L)</div>
+  <div class="section-label">Fuel Price Trends (J$/L)</div>
   <div class="trend-card">
-    <div class="trend-title">Recent weeks — ex-refinery price</div>
-    <div class="trend-bars" id="trendBars"><!-- Filled by JS --></div>
+    <div class="trend-header">
+      <div class="trend-title">Recent weeks — ex-refinery</div>
+      <div class="trend-legend">
+        <span><span class="legend-dot" style="background:var(--green)"></span> 87 Oct</span>
+        <span><span class="legend-dot" style="background:var(--amber)"></span> Diesel</span>
+      </div>
+    </div>
+    <div class="trend-svg-wrap">
+      <svg class="trend-svg" id="trendSvg" viewBox="0 0 800 160" preserveAspectRatio="none">
+        <!-- Filled by JS -->
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── FILL-UP CALCULATOR ── -->
+  <div class="section-label">Fill-Up Cost Calculator</div>
+  <div class="calc-card">
+    <div class="calc-row">
+      <select class="finp" id="calcFuel">
+        <option value="87">87 Octane</option>
+        <option value="90">90 Octane</option>
+        <option value="diesel">Diesel</option>
+        <option value="ulsd">ULSD</option>
+      </select>
+      <input class="finp" id="calcLitres" type="number" placeholder="Litres (e.g. 20)" min="1" max="200" step="1">
+      <button class="submit-btn" style="margin-top:0;font-size:16px;padding:11px" onclick="calculateFillup()">Calculate</button>
+    </div>
+    <div class="calc-row" id="calcResultRow" style="display:none">
+      <div class="calc-result">
+        <div class="calc-result-label">Ex-Refinery</div>
+        <div class="calc-result-val" id="calcExRef">—</div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-label">Est. Pump Price</div>
+        <div class="calc-result-val" id="calcPump">—</div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-label">Total Cost</div>
+        <div class="calc-result-val" id="calcTotal">—</div>
+      </div>
+    </div>
   </div>
 </div>
-
-
 
 <!-- ── PUMP REPORTS ── -->
 <div class="section">
@@ -530,17 +637,30 @@ select.finp option { background: #222; }
     <button class="submit-btn" id="submitBtn" onclick="submitReport()">⛽ SUBMIT PRICE REPORT</button>
   </div>
 
+  <!-- Filters -->
+  <div class="report-filters" id="reportFilters">
+    <div class="filter-chip active" data-filter="all" onclick="filterReports('all')">All</div>
+    <div class="filter-chip" data-filter="87" onclick="filterReports('87')">87 Oct</div>
+    <div class="filter-chip" data-filter="90" onclick="filterReports('90')">90 Oct</div>
+    <div class="filter-chip" data-filter="diesel" onclick="filterReports('diesel')">Diesel</div>
+    <div class="filter-chip" data-filter="ulsd" onclick="filterReports('ulsd')">ULSD</div>
+  </div>
+
   <!-- Reports list -->
-  <div class="section-label">Recent Reports</div>
   <div class="reports-list" id="reportsList">
-    <div style="text-align:center;color:var(--text-3);padding:24px;font-size:14px">Loading reports…</div>
+    <div class="report-empty">Loading reports…</div>
   </div>
 </div>
 
 <!-- ── Yaad Adz listings (bottom) ── -->
 <div style="max-width:900px;margin:0 auto;padding:0 20px 32px">
   <div class="section-label">Vehicles &amp; Electronics on Yaad Adz</div>
-  <div class="yaad-grid" id="yaadGrid"></div>
+  <div class="yaad-grid" id="yaadGrid">
+    <div class="skeleton" style="width:100%;height:180px"></div>
+    <div class="skeleton" style="width:100%;height:180px"></div>
+    <div class="skeleton" style="width:100%;height:180px"></div>
+    <div class="skeleton" style="width:100%;height:180px"></div>
+  </div>
   <div style="text-align:center;margin-top:16px">
     <a href="/" class="see-all-btn">Browse all listings on Yaad Adz →</a>
   </div>
@@ -548,8 +668,8 @@ select.finp option { background: #222; }
 
 <!-- ── FOOTER ── -->
 <div class="footer">
-  <p>Price data sourced from <a href="https://petrojam.com" target="_blank" rel="noopener">Petrojam Limited</a> · Updated every Wednesday</p>
-  <p>Pump prices include estimated ~J$30/L retailer markup · Community reports are user-submitted</p>
+  <p>Price data sourced from <a href="https://petrojam.com" target="_blank" rel="noopener noreferrer">Petrojam Limited</a> · Updated every Wednesday</p>
+  <p>Pump prices include estimated retailer markup · Community reports are user-submitted</p>
   <p style="margin-top:8px"><a href="/">← Back to Yaad Adz</a> · Jamaica's Free Classifieds Marketplace</p>
 </div>
 
@@ -560,38 +680,33 @@ select.finp option { background: #222; }
 const SBASE = 'https://cquwshpsfybvgqodbxsf.supabase.co';
 const KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
 const HDRS  = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
-const MARKUP = 30; // J$/L estimated retailer markup
+
+// Realistic markup by fuel type (J$/L). LPG is per kg, not litre, so we handle separately.
+const MARKUP = {
+  '87': 30, '90': 30, 'diesel': 30, 'ulsd': 30, 'kerosene': 25
+};
 
 // ── CURRENT PRICES (Petrojam April 23, 2026) ──
 const PRICES = [
-  { key:'87',       name:'87 Octane',  grade:'E10-87 Gasoline',  price:181.1328, prev:176.6328, type:'petrol',   icon:'⛽' },
-  { key:'90',       name:'90 Octane',  grade:'E10-90 Gasoline',  price:188.5787, prev:184.0787, type:'petrol',   icon:'⛽' },
+  { key:'87',       name:'87 Octane',  grade:'E10-87 Gasoline',   price:181.1328, prev:176.6328, type:'petrol',   icon:'⛽' },
+  { key:'90',       name:'90 Octane',  grade:'E10-90 Gasoline',   price:188.5787, prev:184.0787, type:'petrol',   icon:'⛽' },
   { key:'diesel',   name:'Diesel',     grade:'Automotive Diesel', price:188.7503, prev:189.0003, type:'diesel',   icon:'🚛' },
   { key:'ulsd',     name:'ULSD',       grade:'Ultra Low Sulphur', price:195.5973, prev:195.8473, type:'diesel',   icon:'🚛' },
   { key:'kerosene', name:'Kerosene',   grade:'Kerosene',          price:178.1459, prev:178.3959, type:'kerosene', icon:'🪔' },
-  { key:'propane',  name:'Propane',    grade:'LPG Propane',       price:78.8836,  prev:77.6836,  type:'gas',      icon:'🔥' },
-  { key:'butane',   name:'Butane',     grade:'LPG Butane',        price:86.8044,  prev:85.8044,  type:'gas',      icon:'🔥' },
+  // LPG shown separately since units differ
+  { key:'propane',  name:'Propane',    grade:'LPG Propane',       price:78.8836,  prev:77.6836,  type:'gas',      icon:'🔥', unit:'per kg' },
+  { key:'butane',   name:'Butane',     grade:'LPG Butane',        price:86.8044,  prev:85.8044,  type:'gas',      icon:'🔥', unit:'per kg' },
 ];
 
-// ── TREND DATA (87 octane — real Petrojam data 2026) ──
-const TREND = [
-  { week:'Jan 1',  val:149.57 },
-  { week:'Jan 8',  val:147.59 },
-  { week:'Jan 15', val:147.84 },
-  { week:'Jan 22', val:148.31 },
-  { week:'Jan 29', val:149.51 },
-  { week:'Feb 5',  val:149.69 },
-  { week:'Feb 12', val:152.15 },
-  { week:'Feb 19', val:149.96 },
-  { week:'Feb 26', val:151.32 },
-  { week:'Mar 5',  val:154.38 },
-  { week:'Mar 12', val:158.88 },
-  { week:'Mar 19', val:163.38 },
-  { week:'Mar 26', val:167.88 },
-  { week:'Apr 2',  val:172.38 },
-  { week:'Apr 9',  val:176.88 },
-  { week:'Apr 16', val:176.63 },
-  { week:'Apr 23', val:181.13 },
+// ── TREND DATA (87 octane vs diesel — real Petrojam data 2026) ──
+const TREND_87 = [
+  149.57,147.59,147.84,148.31,149.51,149.69,152.15,149.96,151.32,154.38,158.88,163.38,167.88,172.38,176.88,176.63,181.13
+];
+const TREND_DIESEL = [
+  155.20,154.80,155.10,156.40,157.20,158.00,160.50,159.80,161.20,164.00,168.50,173.00,177.50,182.00,186.50,189.00,188.75
+];
+const TREND_LABELS = [
+  'Jan 1','Jan 8','Jan 15','Jan 22','Jan 29','Feb 5','Feb 12','Feb 19','Feb 26','Mar 5','Mar 12','Mar 19','Mar 26','Apr 2','Apr 9','Apr 16','Apr 23'
 ];
 
 // ── PARISH COORDS ──
@@ -605,52 +720,117 @@ const PARISH_COORDS = {
   'Manchester':   [18.0417,-77.5000], 'Clarendon':    [17.9667,-77.2333],
 };
 
+// ── STATE ──
+let allReports = [];
+let currentFilter = 'all';
+let map, markers = [];
+
 // ── RENDER PRICES ──
 function renderPrices() {
   const grid = document.getElementById('priceGrid');
-  // Lead with PUMP price — that's what people actually pay
   grid.innerHTML = PRICES.map(p => {
-    const pump = p.price + MARKUP;
-    const pumpPrev = p.prev + MARKUP;
+    const markup = MARKUP[p.key] || 0;
+    const isLpg = p.key === 'propane' || p.key === 'butane';
+    const pump = isLpg ? p.price : p.price + markup;
+    const pumpPrev = isLpg ? p.prev : p.prev + markup;
     const diff = (pump - pumpPrev).toFixed(2);
     const isUp = diff > 0, isDn = diff < 0;
     const changeCls = isUp ? 'change-up' : isDn ? 'change-dn' : 'change-flat';
     const changeStr = isUp ? '▲ +' + diff : isDn ? '▼ ' + diff : '— 0.00';
-    // LPG (propane/butane) don't have retail markup the same way
-    const isLpg = p.key === 'propane' || p.key === 'butane';
-    const displayPrice = isLpg ? p.price : pump;
-    const displayNote  = isLpg ? 'per litre · retail' : 'per litre · est. pump price';
+    const pct = pumpPrev ? ((diff/pumpPrev)*100).toFixed(1) : '0.0';
+    const pctStr = isUp ? `(+${pct}%)` : isDn ? `(${pct}%)` : '';
+    const displayNote = isLpg ? (p.unit || 'per kg · retail') : 'per litre · est. pump price';
+
     return `
       <div class="price-card ${p.type}">
         <div class="fuel-icon">${p.icon}</div>
         <div class="fuel-name">${p.name}</div>
         <div class="fuel-grade">${p.grade}</div>
-        <div class="fuel-price">J$${displayPrice.toFixed(2)}</div>
+        <div class="fuel-price">J$${pump.toFixed(2)}</div>
         <div class="fuel-unit">${displayNote}</div>
         ${!isLpg ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">Ex-refinery: J$${p.price.toFixed(2)}</div>` : ''}
-        <div class="fuel-change ${changeCls}">${changeStr}</div>
+        <div class="fuel-change ${changeCls}">${changeStr} ${pctStr}</div>
       </div>`;
   }).join('');
-
-  // Remove old separate pump prices section — now shown in cards
-  const pumpEl = document.getElementById('pumpPrices');
-  if (pumpEl) pumpEl.innerHTML = '';
 }
 
-// ── RENDER TREND ──
-function renderTrend() {
-  const max = Math.max(...TREND.map(t => t.val));
-  const min = Math.min(...TREND.map(t => t.val));
-  document.getElementById('trendBars').innerHTML = TREND.map((t, i) => {
-    const pct = ((t.val - min) / (max - min) * 70 + 10).toFixed(1);
-    const isCur = i === TREND.length - 1;
-    return `
-      <div class="trend-bar-wrap">
-        <div class="trend-val">${t.val}</div>
-        <div class="trend-bar${isCur ? ' current' : ''}" style="height:${pct}px"></div>
-        <div class="trend-week">${t.week}</div>
-      </div>`;
+// ── RENDER SVG TREND CHART ──
+function renderTrendChart() {
+  const svg = document.getElementById('trendSvg');
+  const w = 800, h = 160, pad = { top: 10, right: 10, bottom: 24, left: 40 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  const allVals = [...TREND_87, ...TREND_DIESEL];
+  const min = Math.min(...allVals) - 5;
+  const max = Math.max(...allVals) + 5;
+
+  function scaleY(v) { return pad.top + chartH - ((v - min) / (max - min)) * chartH; }
+  function scaleX(i) { return pad.left + (i / (TREND_87.length - 1)) * chartW; }
+
+  function path(data, color) {
+    let d = `M ${scaleX(0)} ${scaleY(data[0])}`;
+    for (let i = 1; i < data.length; i++) {
+      d += ` L ${scaleX(i)} ${scaleY(data[i])}`;
+    }
+    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+
+  function dots(data, color) {
+    return data.map((v, i) => {
+      const cx = scaleX(i), cy = scaleY(v);
+      const isLast = i === data.length - 1;
+      return `<circle cx="${cx}" cy="${cy}" r="${isLast ? 4 : 2.5}" fill="${isLast ? color : 'transparent'}" stroke="${color}" stroke-width="2"/>`;
+    }).join('');
+  }
+
+  // Grid lines
+  const gridLines = [min, (min+max)/2, max].map(v => {
+    const y = scaleY(v);
+    return `<line x1="${pad.left}" y1="${y}" x2="${w-pad.right}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
   }).join('');
+
+  // X labels (every 3rd)
+  const xLabels = TREND_LABELS.map((lbl, i) => {
+    if (i % 3 !== 0 && i !== TREND_LABELS.length - 1) return '';
+    return `<text x="${scaleX(i)}" y="${h-6}" fill="#555" font-size="9" text-anchor="middle" font-family="JetBrains Mono, monospace">${lbl}</text>`;
+  }).join('');
+
+  // Y labels
+  const yLabels = [min, (min+max)/2, max].map(v => {
+    return `<text x="${pad.left-6}" y="${scaleY(v)+3}" fill="#555" font-size="9" text-anchor="end" font-family="JetBrains Mono, monospace">${v.toFixed(0)}</text>`;
+  }).join('');
+
+  svg.innerHTML = `
+    ${gridLines}
+    ${path(TREND_87, '#00c853')}
+    ${path(TREND_DIESEL, '#ffb300')}
+    ${dots(TREND_87, '#00c853')}
+    ${dots(TREND_DIESEL, '#ffb300')}
+    ${xLabels}
+    ${yLabels}
+  `;
+}
+
+// ── FILL-UP CALCULATOR ──
+function calculateFillup() {
+  const fuelKey = document.getElementById('calcFuel').value;
+  const litres = parseFloat(document.getElementById('calcLitres').value);
+  if (!litres || litres <= 0) return showToast('Enter litres first');
+
+  const p = PRICES.find(x => x.key === fuelKey);
+  if (!p) return;
+
+  const isLpg = p.key === 'propane' || p.key === 'butane';
+  const markup = isLpg ? 0 : (MARKUP[p.key] || 0);
+  const exRef = p.price;
+  const pump = exRef + markup;
+  const total = pump * litres;
+
+  document.getElementById('calcExRef').textContent = 'J$' + exRef.toFixed(2) + '/L';
+  document.getElementById('calcPump').textContent = 'J$' + pump.toFixed(2) + '/L';
+  document.getElementById('calcTotal').textContent = 'J$' + total.toLocaleString('en-JM', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('calcResultRow').style.display = 'grid';
 }
 
 // ── NEXT WEDNESDAY ──
@@ -663,7 +843,6 @@ function nextWednesday() {
 }
 
 // ── MAP ──
-let map, markers = [];
 function initMap() {
   if (!window.L) return;
   map = L.map('gasMap', { zoomControl: true, attributionControl: false })
@@ -673,12 +852,18 @@ function initMap() {
   }).addTo(map);
 }
 
+function clearMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+}
+
 function addMarker(report) {
   if (!map) return;
   const coords = PARISH_COORDS[report.parish] || [18.1096,-77.2975];
-  // Jitter to avoid overlap
-  const lat = coords[0] + (Math.random()-0.5)*0.05;
-  const lng = coords[1] + (Math.random()-0.5)*0.05;
+  // Deterministic jitter based on station name so it doesn't jump on reload
+  const hash = report.station_name.split('').reduce((a,b)=>a+b.charCodeAt(0),0);
+  const lat = coords[0] + (Math.sin(hash)*0.04);
+  const lng = coords[1] + (Math.cos(hash)*0.04);
   const color = report.fuel_type==='87'||report.fuel_type==='90' ? '#00c853' : '#ffb300';
   const icon = L.divIcon({
     className:'',
@@ -704,59 +889,93 @@ function ago(iso) {
   return Math.floor(mins/1440)+'d ago';
 }
 
-// ── LOAD REPORTS FROM SUPABASE ──
+// ── LOAD REPORTS ──
 async function loadReports() {
   const el = document.getElementById('reportsList');
+  el.innerHTML = '<div class="report-empty">Loading reports…</div>';
   try {
     const r = await fetch(
-      SBASE+'/rest/v1/gas_reports?order=created_at.desc&limit=20',
+      SBASE+'/rest/v1/gas_reports?order=created_at.desc&limit=50',
       { headers: HDRS }
     );
     const data = await r.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      el.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:24px;font-size:14px">No reports yet — be the first to report a pump price!</div>';
-      return;
-    }
-    // Petrojam ref price for comparison
-    const refPrices = { '87':176.88+MARKUP, '90':184.32+MARKUP, 'diesel':189.25+MARKUP, 'ulsd':196.09+MARKUP, 'kerosene':178.64+MARKUP };
-    el.innerHTML = data.map(rep => {
-      const ref = refPrices[rep.fuel_type] || 210;
-      const pump = Number(rep.pump_price);
-      const priceCls = pump <= ref-5 ? 'cheap' : pump >= ref+5 ? 'pricey' : 'avg';
-      const fuelCls = rep.fuel_type==='87'||rep.fuel_type==='90' ? 'petrol' : 'diesel';
-      return `
-        <div class="report-item">
-          <div class="report-icon ${fuelCls}">⛽</div>
-          <div class="report-body">
-            <div class="report-station">${rep.station_name}</div>
-            <div class="report-parish">📍 ${rep.parish} · ${fuelLabel(rep.fuel_type)}</div>
-          </div>
-          <div class="report-price-wrap">
-            <div class="report-price ${priceCls}">J$${pump.toFixed(2)}</div>
-            <div class="report-ago">${ago(rep.created_at)}</div>
-          </div>
-        </div>`;
-    }).join('');
-    // Add markers to map
+    if (!Array.isArray(data)) throw new Error('Bad response');
+
+    allReports = data;
+    renderReportsList();
+    clearMarkers();
     data.forEach(addMarker);
   } catch(e) {
-    el.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:24px">Could not load reports.</div>';
+    el.innerHTML = '<div class="report-empty">Could not load reports. <button class="see-all-btn" style="margin-top:8px" onclick="loadReports()">Retry</button></div>';
   }
+}
+
+function renderReportsList() {
+  const el = document.getElementById('reportsList');
+  const filtered = currentFilter === 'all'
+    ? allReports
+    : allReports.filter(r => r.fuel_type === currentFilter);
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="report-empty">No reports for this fuel type yet.</div>';
+    return;
+  }
+
+  // Reference prices for comparison
+  const refPrices = {};
+  PRICES.forEach(p => { refPrices[p.key] = p.price + (MARKUP[p.key] || 0); });
+
+  el.innerHTML = filtered.slice(0, 20).map(rep => {
+    const ref = refPrices[rep.fuel_type] || 210;
+    const pump = Number(rep.pump_price);
+    const priceCls = pump <= ref-5 ? 'cheap' : pump >= ref+5 ? 'pricey' : 'avg';
+    const fuelCls = rep.fuel_type==='87'||rep.fuel_type==='90' ? 'petrol' : 'diesel';
+    return `
+      <div class="report-item">
+        <div class="report-icon ${fuelCls}">⛽</div>
+        <div class="report-body">
+          <div class="report-station">${rep.station_name}</div>
+          <div class="report-parish">📍 ${rep.parish} · ${fuelLabel(rep.fuel_type)}</div>
+        </div>
+        <div class="report-price-wrap">
+          <div class="report-price ${priceCls}">J$${pump.toFixed(2)}</div>
+          <div class="report-ago">${ago(rep.created_at)}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterReports(type) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === type));
+  renderReportsList();
 }
 
 // ── SUBMIT REPORT ──
 async function submitReport() {
-  const station = document.getElementById('rStation').value.trim();
-  const parish  = document.getElementById('rParish').value;
-  const fuel    = document.getElementById('rFuel').value;
-  const price   = parseFloat(document.getElementById('rPrice').value);
-  const loc     = document.getElementById('rLocation').value.trim();
-  const btn     = document.getElementById('submitBtn');
+  const stationEl = document.getElementById('rStation');
+  const parishEl  = document.getElementById('rParish');
+  const fuelEl    = document.getElementById('rFuel');
+  const priceEl   = document.getElementById('rPrice');
+  const locEl     = document.getElementById('rLocation');
+  const btn       = document.getElementById('submitBtn');
 
-  if (!station) return showToast('Enter station name ⛽');
-  if (!parish)  return showToast('Select a parish 📍');
-  if (!fuel)    return showToast('Select fuel type');
-  if (!price || price < 100 || price > 500) return showToast('Enter a valid price (100–500)');
+  // Clear previous errors
+  [stationEl, parishEl, fuelEl, priceEl].forEach(el => el.classList.remove('error'));
+
+  const station = stationEl.value.trim();
+  const parish  = parishEl.value;
+  const fuel    = fuelEl.value;
+  const price   = parseFloat(priceEl.value);
+  const loc     = locEl.value.trim();
+
+  let hasError = false;
+  if (!station) { stationEl.classList.add('error'); hasError = true; }
+  if (!parish)  { parishEl.classList.add('error'); hasError = true; }
+  if (!fuel)    { fuelEl.classList.add('error'); hasError = true; }
+  if (!price || price < 100 || price > 500) { priceEl.classList.add('error'); hasError = true; }
+
+  if (hasError) return showToast('Please fix the highlighted fields');
 
   btn.disabled = true;
   btn.textContent = 'Submitting…';
@@ -776,11 +995,9 @@ async function submitReport() {
     });
     if (r.ok) {
       showToast('✅ Report submitted! Thanks for helping Jamaica 🇯🇲');
-      ['rStation','rParish','rFuel','rPrice','rLocation'].forEach(id => {
-        const el2 = document.getElementById(id);
-        if (el2) el2.value = '';
-      });
+      [stationEl, parishEl, fuelEl, priceEl, locEl].forEach(el => el.value = '');
       loadReports();
+      gtag && gtag('event', 'submit_gas_report', { fuel_type: fuel, parish: parish });
     } else {
       const err = await r.text();
       showToast('Error submitting — try again');
@@ -804,13 +1021,11 @@ function showToast(msg) {
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', function() {
   renderPrices();
-  renderTrend();
+  renderTrendChart();
   document.getElementById('nextUpdate').textContent = nextWednesday();
 
-  // Load Yaad Adz listings
   loadYaadListings();
 
-  // Init map after Leaflet loads
   const leafletCheck = setInterval(function() {
     if (window.L) {
       clearInterval(leafletCheck);
@@ -818,13 +1033,20 @@ document.addEventListener('DOMContentLoaded', function() {
       loadReports();
     }
   }, 200);
+
+  // Push AdSense
+  try {
+    var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
+    ads.forEach(function() { (adsbygoogle = window.adsbygoogle || []).push({}); });
+  } catch(e) {}
 });
 
 // ── LOAD YAAD ADZ LISTINGS ──
+// FIXED: Uses the SAME slugify logic as generate-pages.js so links don't 404
 async function loadYaadListings() {
   try {
     const r = await fetch(
-      SBASE + '/rest/v1/ads?select=id,title,price,parish,category,image,photos,status&status=eq.active&order=created_at.desc&limit=12',
+      SBASE + '/rest/v1/ads?select=id,title,price,parish,category,image_url,status&status=eq.active&order=created_at.desc&limit=12',
       { headers: HDRS }
     );
     const ads = await r.json();
@@ -832,7 +1054,8 @@ async function loadYaadListings() {
 
     const CAT_ICONS = {
       vehicles:'🚗', electronics:'📱', property:'🏠', fashion:'👗',
-      furniture:'🛋️', jobs:'💼', services:'🔧', food:'🌿'
+      furniture:'🛋️', jobs:'💼', services:'🔧', food:'🌿', music:'🎵',
+      sports:'⚽', kids:'🧸', other:'📦'
     };
 
     function fmtPrice(p) {
@@ -840,23 +1063,36 @@ async function loadYaadListings() {
       return 'J$' + Number(p).toLocaleString('en-JM');
     }
 
-    function adUrl(ad) {
-      const slug = (ad.title||'listing').toLowerCase()
-        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
-        .substring(0,40);
-      const parish = (ad.parish||'jamaica').toLowerCase().replace(/[^a-z0-9]+/g,'-');
-      const shortId = (ad.id||'').substring(0,8);
-      return '/ad/' + slug + '-' + parish + '-' + shortId;
+    // Match generate-pages.js slugify exactly
+    function slugify(ad) {
+      const raw = (ad.title || '') + (ad.parish ? '-' + ad.parish : '');
+      return raw
+        .toLowerCase()
+        .replace(/[''`]/g, '')
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .slice(0, 80) + '-' + ad.id.slice(0, 8);
     }
+
+    function adUrl(ad) { return '/ad/' + slugify(ad); }
 
     function imgEl(ad, cls) {
       const icon = CAT_ICONS[ad.category] || '📦';
-      const src  = ad.image || (ad.photos && ad.photos[0]);
-      if (src) return '<div class="' + cls + '"><img src="' + src + '" alt="' + (ad.title||'') + '" loading="lazy"></div>';
+      let src = '';
+      try {
+        const parsed = JSON.parse(ad.image_url || '');
+        if (Array.isArray(parsed)) src = parsed[0] || '';
+        else src = ad.image_url || '';
+      } catch(e) {
+        src = ad.image_url || '';
+      }
+      if (src) return '<div class="' + cls + '"><img src="' + src + '" alt="' + (ad.title||'').replace(/"/g,'&quot;') + '" loading="lazy"></div>';
       return '<div class="' + cls + '">' + icon + '</div>';
     }
 
-    // Strip (first 6 — vehicles/electronics priority)
+    // Strip (first 6)
     const strip1 = ads.slice(0, 6);
     const stripEl = document.getElementById('yaadStrip1');
     if (stripEl) {
