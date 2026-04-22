@@ -1,0 +1,92 @@
+name: Update Jamaica Gas Prices
+
+on:
+  schedule:
+    # Run every Wednesday at 2pm Jamaica time (7pm UTC)
+    - cron: '0 19 * * 3'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest Petrojam prices and update page
+        run: |
+          node -e "
+          const fs = require('fs');
+          const https = require('https');
+
+          // Fetch Petrojam price page
+          function fetchPage(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve(data));
+              }).on('error', reject);
+            });
+          }
+
+          async function main() {
+            try {
+              const html = await fetchPage('https://petrojam.com/price/');
+              
+              // Parse prices using regex patterns
+              const patterns = {
+                '87':       /E10-87[^\\d]*(\\d{3}\\.\\d{2})/i,
+                '90':       /E10-90[^\\d]*(\\d{3}\\.\\d{2})/i,
+                'diesel':   /automotive diesel[^\\d]*(\\d{3}\\.\\d{2})/i,
+                'ulsd':     /ultra low sulphur[^\\d]*(\\d{3}\\.\\d{2})/i,
+                'kerosene': /kerosene[^\\d]*(\\d{3}\\.\\d{2})/i,
+                'propane':  /propane[^\\d]*(\\d{2,3}\\.\\d{2})/i,
+              };
+
+              let found = {};
+              for (const [key, rx] of Object.entries(patterns)) {
+                const m = html.match(rx);
+                if (m) found[key] = parseFloat(m[1]);
+              }
+
+              if (Object.keys(found).length < 3) {
+                console.log('Could not parse enough prices from Petrojam, skipping update');
+                console.log('Parsed:', JSON.stringify(found));
+                return;
+              }
+
+              console.log('Scraped prices:', JSON.stringify(found));
+
+              // Read current gas-prices.html
+              let content = fs.readFileSync('gas-prices.html', 'utf8');
+
+              // Update the date badge
+              const today = new Date().toLocaleDateString('en-JM', { month:'short', day:'numeric', year:'numeric' });
+              content = content.replace(/id=\"lastUpdated\">[^<]+</, 'id=\"lastUpdated\">' + today + '<');
+
+              // Update PRICES array in JS — replace price values
+              if (found['87'])       content = content.replace(/key:'87'[^}]+price:([\d.]+)/, m => m.replace(/price:[\d.]+/, 'price:' + found['87']));
+              if (found['90'])       content = content.replace(/key:'90'[^}]+price:([\d.]+)/, m => m.replace(/price:[\d.]+/, 'price:' + found['90']));
+              if (found['diesel'])   content = content.replace(/key:'diesel'[^}]+price:([\d.]+)/, m => m.replace(/price:[\d.]+/, 'price:' + found['diesel']));
+              if (found['ulsd'])     content = content.replace(/key:'ulsd'[^}]+price:([\d.]+)/, m => m.replace(/price:[\d.]+/, 'price:' + found['ulsd']));
+              if (found['kerosene']) content = content.replace(/key:'kerosene'[^}]+price:([\d.]+)/, m => m.replace(/price:[\d.]+/, 'price:' + found['kerosene']));
+              if (found['propane'])  content = content.replace(/key:'propane'[^}]+price:([\d.]+)/, m => m.replace(/price:[\d.]+/, 'price:' + found['propane']));
+
+              fs.writeFileSync('gas-prices.html', content);
+              console.log('✅ gas-prices.html updated with new prices');
+
+            } catch(e) {
+              console.error('Error:', e.message);
+              process.exit(0); // Don't fail the action if scraping fails
+            }
+          }
+          main();
+          "
+
+      - name: Commit updated prices
+        run: |
+          git config user.name "Yaad Adz Bot"
+          git config user.email "bot@yaadadz.com"
+          git add gas-prices.html
+          git diff --staged --quiet || git commit -m "⛽ Update Jamaica gas prices [$(date '+%Y-%m-%d')]"
+          git push
