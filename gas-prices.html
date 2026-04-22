@@ -13,12 +13,9 @@
 <meta property="og:image" content="https://yaadadz.com/og-image.jpg">
 <link rel="icon" href="/icon-192.png">
 
-<!-- Leaflet + MarkerCluster -->
+<!-- Leaflet -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js" defer></script>
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,18 +32,6 @@
 
 <!-- AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9656521698490533" crossorigin="anonymous"></script>
-
-<!-- JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "Jamaica Gas Prices Today",
-  "description": "Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel, and kerosene pump prices.",
-  "url": "https://yaadadz.com/gas-prices",
-  "publisher": { "@type": "Organization", "name": "Yaad Adz", "url": "https://yaadadz.com" }
-}
-</script>
 
 <style>
 :root {
@@ -65,7 +50,6 @@
 html { scroll-behavior: smooth; }
 body { font-family: var(--font-b); background: var(--black); color: var(--text-1); min-height: 100vh; overflow-x: hidden; }
 
-/* Header */
 .site-header { background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
 .header-logo { font-family: var(--font-d); font-size: 22px; letter-spacing: 1px; color: var(--text-1); text-decoration: none; }
 .header-logo span { color: var(--amber); }
@@ -75,7 +59,6 @@ body { font-family: var(--font-b); background: var(--black); color: var(--text-1
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
 
-/* Hero */
 .hero { padding: 48px 20px 32px; text-align: center; background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,200,83,0.08) 0%, transparent 70%); border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
 .hero::before { content: '⛽'; position: absolute; font-size: 200px; opacity: 0.03; top: -20px; right: -30px; pointer-events: none; }
 .hero-eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 10px; }
@@ -85,12 +68,10 @@ body { font-family: var(--font-b); background: var(--black); color: var(--text-1
 .update-badge { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; color: var(--text-2); font-family: var(--font-m); }
 .update-badge strong { color: var(--amber); }
 
-/* Sections */
 .section { padding: 32px 20px; max-width: 960px; margin: 0 auto; }
 .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-3); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-/* Price Grid */
 .price-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 24px; }
 .price-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 16px; position: relative; overflow: hidden; transition: transform 0.2s, border-color 0.2s; }
 .price-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
@@ -112,7 +93,6 @@ body { font-family: var(--font-b); background: var(--black); color: var(--text-1
 .change-dn { background: var(--green-dim); color: var(--green); }
 .change-flat { background: rgba(255,255,255,0.05); color: var(--text-3); }
 
-/* Trend Chart */
 .trend-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
 .trend-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
 .trend-title { font-size: 13px; color: var(--text-2); }
@@ -122,7 +102,6 @@ body { font-family: var(--font-b); background: var(--black); color: var(--text-1
 .trend-svg-wrap { width: 100%; overflow-x: auto; }
 .trend-svg { width: 100%; min-width: 600px; height: 160px; }
 
-/* Calculator */
 .calc-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
 .calc-card h3 { font-family: var(--font-d); font-size: 20px; letter-spacing: 0.5px; margin-bottom: 12px; }
 .calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
@@ -130,21 +109,16 @@ body { font-family: var(--font-b); background: var(--black); color: var(--text-1
 .calc-result-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
 .calc-result-val { font-family: var(--font-m); font-size: 22px; font-weight: 600; color: var(--green); }
 
-/* AdSense */
 .ad-slot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; overflow: hidden; }
 .ad-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-3); text-align: center; margin-bottom: 6px; }
 
-/* Map & Stations */
 .map-toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .map-search { flex: 1; min-width: 200px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text-1); font-size: 14px; outline: none; }
 .map-search:focus { border-color: rgba(0,200,83,0.5); }
 .map-filter { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-2); border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none; }
 .map-wrap { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); height: 420px; margin-bottom: 16px; position: relative; }
 #gasMap { height: 100%; width: 100%; background: #1a1a1a; }
-.marker-cluster-small { background-color: rgba(0,200,83,0.3); }
-.marker-cluster-small div { background-color: rgba(0,200,83,0.6); color: #000; font-weight: 700; }
 
-/* Report Form */
 .report-form { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 12px; }
 .report-form h3 { font-family: var(--font-d); font-size: 22px; letter-spacing: 0.5px; margin-bottom: 4px; }
 .report-form p { font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
@@ -160,18 +134,14 @@ select.finp option { background: #222; }
 .submit-btn:active { transform: scale(0.99); }
 .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-/* Toggle for new station */
 .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; color: var(--text-2); }
 .toggle-row input { accent-color: var(--green); width: 16px; height: 16px; cursor: pointer; }
 .new-station-hint { font-size: 12px; color: var(--amber); margin-bottom: 10px; display: none; }
 .new-station-hint.visible { display: block; }
 
-/* Station selector */
 .station-select-wrap { position: relative; margin-bottom: 10px; }
-.station-select { width: 100%; }
 .station-count { font-size: 11px; color: var(--text-3); margin-top: 4px; }
 
-/* Reports list */
 .report-filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .filter-chip { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-2); font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.15s; }
 .filter-chip:hover { border-color: rgba(255,255,255,0.2); color: var(--text-1); }
@@ -193,11 +163,9 @@ select.finp option { background: #222; }
 .report-ago { font-size: 10px; color: var(--text-3); }
 .report-empty { text-align: center; color: var(--text-3); padding: 32px; font-size: 14px; }
 
-/* Skeleton */
 .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 8px; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-/* Yaad listings */
 .yaad-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; scrollbar-width: none; }
 .yaad-strip::-webkit-scrollbar { display: none; }
 .yaad-card-mini { flex-shrink: 0; width: 150px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; color: var(--text-1); transition: transform 0.18s, border-color 0.18s; display: block; }
@@ -220,15 +188,12 @@ select.finp option { background: #222; }
 .see-all-btn { display: inline-block; padding: 10px 24px; background: var(--green-dim); border: 1px solid rgba(0,200,83,0.3); color: var(--green); border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; transition: background 0.2s; }
 .see-all-btn:hover { background: rgba(0,200,83,0.2); }
 
-/* Footer */
 .footer { border-top: 1px solid var(--border); padding: 24px 20px; text-align: center; color: var(--text-3); font-size: 12px; line-height: 1.8; max-width: 960px; margin: 0 auto; }
 .footer a { color: var(--green); text-decoration: none; }
 
-/* Toast */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e1e1e; border: 1px solid var(--border); color: var(--text-1); padding: 12px 20px; border-radius: 10px; font-size: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); transition: transform 0.3s; z-index: 999; white-space: nowrap; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
-/* Responsive */
 @media (max-width: 640px) {
   .price-grid { grid-template-columns: repeat(2, 1fr); }
   .form-row, .calc-row { grid-template-columns: 1fr; }
@@ -257,12 +222,7 @@ select.finp option { background: #222; }
 
 <div class="section">
   <div class="section-label">Estimated Pump Prices — incl. retailer markup</div>
-  <div class="price-grid" id="priceGrid">
-    <div class="skeleton" style="height:180px"></div>
-    <div class="skeleton" style="height:180px"></div>
-    <div class="skeleton" style="height:180px"></div>
-    <div class="skeleton" style="height:180px"></div>
-  </div>
+  <div class="price-grid" id="priceGrid"></div>
 
   <div class="ad-label">Advertisement</div>
   <div class="ad-slot">
@@ -315,7 +275,7 @@ select.finp option { background: #222; }
   <div class="section-label">Community Pump Reports</div>
 
   <div class="map-toolbar">
-    <input class="map-search" id="stationSearch" placeholder="🔍 Search station name (e.g. Total, Rubis)…" oninput="filterStations(this.value)">
+    <input class="map-search" id="stationSearch" placeholder="🔍 Search station name…" oninput="filterStations(this.value)">
     <select class="map-filter" id="parishFilter" onchange="filterParish(this.value)">
       <option value="">All Parishes</option>
       <option>Kingston</option><option>St. Andrew</option><option>St. Catherine</option>
@@ -332,7 +292,7 @@ select.finp option { background: #222; }
 
   <div class="report-form">
     <h3>REPORT A PUMP PRICE</h3>
-    <p>Pick a station from the map above or search below. Help Jamaica know who's charging what.</p>
+    <p>Pick a station from the map or search below. Can't find it? Check "Add new station" and click the map.</p>
 
     <div class="toggle-row">
       <input type="checkbox" id="newStationToggle" onchange="toggleNewStation()">
@@ -340,11 +300,11 @@ select.finp option { background: #222; }
     </div>
 
     <div class="new-station-hint" id="newStationHint">
-      📍 Click anywhere on the map to drop a pin for the new station, then fill in the name below.
+      📍 Click anywhere on the map to drop a pin, then fill in the name below.
     </div>
 
     <div class="station-select-wrap" id="existingStationWrap">
-      <select class="finp station-select" id="rStationId">
+      <select class="finp" id="rStationId">
         <option value="">Select a gas station…</option>
       </select>
       <div class="station-count" id="stationCount">Loading stations…</div>
@@ -423,24 +383,39 @@ const KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 const HDRS  = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 const MARKUP = { '87':30, '90':30, 'diesel':30, 'ulsd':30, 'kerosene':25 };
 
+// ── FALLBACK PRICES (shown immediately, replaced by DB if available) ──
+const FALLBACK_PRICES = {
+  '87': { price: 181.1328, prev: 176.6328, name:'87 Octane', grade:'E10-87 Gasoline', type:'petrol', icon:'⛽' },
+  '90': { price: 188.5787, prev: 184.0787, name:'90 Octane', grade:'E10-90 Gasoline', type:'petrol', icon:'⛽' },
+  'diesel': { price: 188.7503, prev: 189.0003, name:'Diesel', grade:'Automotive Diesel', type:'diesel', icon:'🚛' },
+  'ulsd': { price: 195.5973, prev: 195.8473, name:'ULSD', grade:'Ultra Low Sulphur', type:'diesel', icon:'🚛' },
+  'kerosene': { price: 178.1459, prev: 178.3959, name:'Kerosene', grade:'Kerosene', type:'kerosene', icon:'🪔' },
+  'propane': { price: 78.8836, prev: 77.6836, name:'Propane', grade:'LPG Propane', type:'gas', icon:'🔥', unit:'per kg' },
+  'butane': { price: 86.8044, prev: 85.8044, name:'Butane', grade:'LPG Butane', type:'gas', icon:'🔥', unit:'per kg' }
+};
+
 // ── STATE ──
 let allStations = [];
 let filteredStations = [];
 let allReports = [];
 let currentFilter = 'all';
-let map, markers, clusterGroup, tempMarker;
+let map, markers = [], tempMarker;
 let latestPrices = {};
-let priceHistory = [];
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
-  loadPrices();
-  loadStations();
-  loadYaadListings();
+  // Show fallback prices immediately so page never looks broken
+  renderPriceGrid(FALLBACK_PRICES, 'Apr 23, 2026');
   document.getElementById('nextUpdate').textContent = nextWednesday();
 
+  // Then try to load live data from Supabase
+  loadPrices();
+  loadStations();
+  loadReports();
+  loadYaadListings();
+
   const leafletCheck = setInterval(() => {
-    if (window.L && window.L.markerClusterGroup) {
+    if (window.L) {
       clearInterval(leafletCheck);
       initMap();
     }
@@ -453,55 +428,52 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch(e) {}
 });
 
-// ── LOAD PETROJAM PRICES ──
+// ── PRICES ──
 async function loadPrices() {
   try {
-    const { data, error } = await fetchSupa('petrojam_prices?order=week_of.desc&limit=50');
-    if (error || !data) throw error;
+    const r = await fetch(SBASE + '/rest/v1/petrojam_prices?order=week_of.desc&limit=50', { headers: HDRS });
+    const data = await r.json();
+    if (!Array.isArray(data) || !data.length) throw new Error('Empty');
 
-    // Group by week
+    // Build latest + previous
     const byWeek = {};
-    data.forEach(r => {
-      if (!byWeek[r.week_of]) byWeek[r.week_of] = {};
-      byWeek[r.week_of][r.fuel_type] = r.ex_refinery_price;
+    data.forEach(row => {
+      if (!byWeek[row.week_of]) byWeek[row.week_of] = {};
+      byWeek[row.week_of][row.fuel_type] = row.ex_refinery_price;
     });
     const weeks = Object.keys(byWeek).sort();
-    const latestWeek = weeks[weeks.length - 1];
-    const prevWeek = weeks[weeks.length - 2];
+    const latest = byWeek[weeks[weeks.length-1]];
+    const prev = weeks.length > 1 ? byWeek[weeks[weeks.length-2]] : {};
 
-    latestPrices = byWeek[latestWeek] || {};
-    priceHistory = weeks.map(w => ({ week: w, ...byWeek[w] }));
+    // Convert to our format
+    const live = {};
+    Object.keys(FALLBACK_PRICES).forEach(k => {
+      if (latest[k] != null) {
+        live[k] = { ...FALLBACK_PRICES[k], price: latest[k], prev: prev[k] || latest[k] };
+      }
+    });
 
-    document.getElementById('lastUpdated').textContent = fmtDate(latestWeek);
-    renderPriceGrid(latestWeek, prevWeek ? byWeek[prevWeek] : {});
-    renderTrendChart();
+    latestPrices = live;
+    const dateStr = new Date(weeks[weeks.length-1]).toLocaleDateString('en-JM', {month:'short', day:'numeric', year:'numeric'});
+    renderPriceGrid(live, dateStr);
+    renderTrendChart(byWeek, weeks);
   } catch(e) {
-    console.error('Prices error:', e);
-    document.getElementById('priceGrid').innerHTML = '<div class="report-empty" style="grid-column:1/-1">Could not load prices. <button class="see-all-btn" style="margin-top:8px" onclick="loadPrices()">Retry</button></div>';
+    console.log('Using fallback prices');
+    latestPrices = FALLBACK_PRICES;
   }
 }
 
-function renderPriceGrid(current, previous) {
-  const fuels = [
-    { key:'87', name:'87 Octane', grade:'E10-87 Gasoline', type:'petrol', icon:'⛽' },
-    { key:'90', name:'90 Octane', grade:'E10-90 Gasoline', type:'petrol', icon:'⛽' },
-    { key:'diesel', name:'Diesel', grade:'Automotive Diesel', type:'diesel', icon:'🚛' },
-    { key:'ulsd', name:'ULSD', grade:'Ultra Low Sulphur', type:'diesel', icon:'🚛' },
-    { key:'kerosene', name:'Kerosene', grade:'Kerosene', type:'kerosene', icon:'🪔' },
-    { key:'propane', name:'Propane', grade:'LPG Propane', type:'gas', icon:'🔥', unit:'per kg' },
-    { key:'butane', name:'Butane', grade:'LPG Butane', type:'gas', icon:'🔥', unit:'per kg' },
-  ];
-
+function renderPriceGrid(prices, dateStr) {
   const grid = document.getElementById('priceGrid');
-  grid.innerHTML = fuels.map(p => {
-    const ex = current[p.key];
-    if (ex == null) return '';
-    const markup = MARKUP[p.key] || 0;
-    const isLpg = p.key === 'propane' || p.key === 'butane';
-    const pump = isLpg ? ex : ex + markup;
-    const prevEx = previous[p.key];
-    const prevPump = isLpg ? prevEx : (prevEx ? prevEx + markup : null);
-    const diff = prevPump ? (pump - prevPump).toFixed(2) : '0.00';
+  document.getElementById('lastUpdated').textContent = dateStr;
+
+  grid.innerHTML = Object.keys(prices).map(k => {
+    const p = prices[k];
+    const markup = MARKUP[k] || 0;
+    const isLpg = k === 'propane' || k === 'butane';
+    const pump = isLpg ? p.price : p.price + markup;
+    const prevPump = isLpg ? p.prev : p.prev + markup;
+    const diff = (pump - prevPump).toFixed(2);
     const isUp = diff > 0, isDn = diff < 0;
     const changeCls = isUp ? 'change-up' : isDn ? 'change-dn' : 'change-flat';
     const changeStr = isUp ? '▲ +' + diff : isDn ? '▼ ' + diff : '— 0.00';
@@ -514,86 +486,64 @@ function renderPriceGrid(current, previous) {
         <div class="fuel-grade">${p.grade}</div>
         <div class="fuel-price">J$${pump.toFixed(2)}</div>
         <div class="fuel-unit">${displayNote}</div>
-        ${!isLpg ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">Ex-refinery: J$${ex.toFixed(2)}</div>` : ''}
+        ${!isLpg ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">Ex-refinery: J$${p.price.toFixed(2)}</div>` : ''}
         <div class="fuel-change ${changeCls}">${changeStr}</div>
       </div>`;
   }).join('');
 }
 
 // ── TREND CHART ──
-function renderTrendChart() {
+function renderTrendChart(byWeek, weeks) {
   const svg = document.getElementById('trendSvg');
-  if (!priceHistory.length) return;
-
-  const w = 800, h = 160, pad = { top: 10, right: 10, bottom: 24, left: 40 };
-  const chartW = w - pad.left - pad.right;
-  const chartH = h - pad.top - pad.bottom;
-
-  const recent = priceHistory.slice(-12); // last 12 weeks
-  const allVals = recent.flatMap(d => [d['87'], d['diesel']].filter(v => v != null));
-  const min = Math.min(...allVals) - 5;
-  const max = Math.max(...allVals) + 5;
-
-  const scaleY = v => pad.top + chartH - ((v - min) / (max - min)) * chartH;
-  const scaleX = i => pad.left + (i / (recent.length - 1)) * chartW;
-
-  function path(dataKey, color) {
-    const pts = recent.map((d, i) => [scaleX(i), scaleY(d[dataKey])]).filter(p => !isNaN(p[1]));
-    if (pts.length < 2) return '';
-    let d = `M ${pts[0][0]} ${pts[0][1]}`;
-    for (let i = 1; i < pts.length; i++) d += ` L ${pts[i][0]} ${pts[i][1]}`;
-    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if (!weeks || weeks.length < 2) {
+    // Fallback static chart
+    const data87 = [149.57,147.59,147.84,148.31,149.51,149.69,152.15,149.96,151.32,154.38,158.88,163.38,167.88,172.38,176.88,176.63,181.13];
+    const labels = ['Jan 1','Jan 8','Jan 15','Jan 22','Jan 29','Feb 5','Feb 12','Feb 19','Feb 26','Mar 5','Mar 12','Mar 19','Mar 26','Apr 2','Apr 9','Apr 16','Apr 23'];
+    drawChart(svg, data87, labels);
+    return;
   }
 
-  function dots(dataKey, color) {
-    return recent.map((d, i) => {
-      const v = d[dataKey];
-      if (v == null) return '';
-      const cx = scaleX(i), cy = scaleY(v);
-      const isLast = i === recent.length - 1;
-      return `<circle cx="${cx}" cy="${cy}" r="${isLast ? 4 : 2.5}" fill="${isLast ? color : 'transparent'}" stroke="${color}" stroke-width="2"/>`;
-    }).join('');
-  }
+  const recent = weeks.slice(-12);
+  const data87 = recent.map(w => byWeek[w]['87']).filter(v => v != null);
+  const labels = recent.map(w => new Date(w).toLocaleDateString('en-JM', {month:'short', day:'numeric'}));
+  drawChart(svg, data87, labels);
+}
 
-  const gridLines = [min, (min+max)/2, max].map(v => {
-    const y = scaleY(v);
-    return `<line x1="${pad.left}" y1="${y}" x2="${w-pad.right}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+function drawChart(svg, data, labels) {
+  const w = 800, h = 160, pad = {top:10, right:10, bottom:24, left:40};
+  const cw = w - pad.left - pad.right;
+  const ch = h - pad.top - pad.bottom;
+  const min = Math.min(...data) - 5;
+  const max = Math.max(...data) + 5;
+
+  const sx = i => pad.left + (i / (data.length - 1)) * cw;
+  const sy = v => pad.top + ch - ((v - min) / (max - min)) * ch;
+
+  let path = `M ${sx(0)} ${sy(data[0])}`;
+  for (let i = 1; i < data.length; i++) path += ` L ${sx(i)} ${sy(data[i])}`;
+
+  const dots = data.map((v, i) => {
+    const last = i === data.length - 1;
+    return `<circle cx="${sx(i)}" cy="${sy(v)}" r="${last?4:2.5}" fill="${last?'#00c853':'transparent'}" stroke="#00c853" stroke-width="2"/>`;
   }).join('');
 
-  const xLabels = recent.map((d, i) => {
-    if (i % 2 !== 0 && i !== recent.length - 1) return '';
-    const date = new Date(d.week);
-    const lbl = date.toLocaleDateString('en-JM', { month:'short', day:'numeric' });
-    return `<text x="${scaleX(i)}" y="${h-6}" fill="#555" font-size="9" text-anchor="middle" font-family="JetBrains Mono, monospace">${lbl}</text>`;
+  const xLabels = labels.map((l, i) => {
+    if (i % 2 !== 0 && i !== labels.length - 1) return '';
+    return `<text x="${sx(i)}" y="${h-6}" fill="#555" font-size="9" text-anchor="middle" font-family="JetBrains Mono">${l}</text>`;
   }).join('');
 
   const yLabels = [min, (min+max)/2, max].map(v => {
-    return `<text x="${pad.left-6}" y="${scaleY(v)+3}" fill="#555" font-size="9" text-anchor="end" font-family="JetBrains Mono, monospace">${v.toFixed(0)}</text>`;
+    return `<text x="${pad.left-6}" y="${sy(v)+3}" fill="#555" font-size="9" text-anchor="end" font-family="JetBrains Mono">${v.toFixed(0)}</text>`;
   }).join('');
 
-  svg.innerHTML = gridLines + path('87', '#00c853') + path('diesel', '#ffb300') + dots('87', '#00c853') + dots('diesel', '#ffb300') + xLabels + yLabels;
+  svg.innerHTML = `<path d="${path}" fill="none" stroke="#00c853" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xLabels}${yLabels}`;
 }
 
-// ── MAP & STATIONS ──
+// ── MAP ──
 function initMap() {
   map = L.map('gasMap', { zoomControl: true, attributionControl: false }).setView([18.1096, -77.2975], 9);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
 
-  clusterGroup = L.markerClusterGroup({
-    spiderfyOnMaxZoom: true,
-    showCoverageOnHover: false,
-    maxClusterRadius: 50,
-    iconCreateFunction: cluster => {
-      return L.divIcon({
-        html: `<div style="background:rgba(0,200,83,0.8);color:#000;font-weight:700;font-size:12px;padding:6px 10px;border-radius:50%;border:2px solid rgba(0,200,83,0.4)">${cluster.getChildCount()}</div>`,
-        className: 'marker-cluster',
-        iconSize: L.point(40, 40)
-      });
-    }
-  });
-  map.addLayer(clusterGroup);
-
-  // Click to add new station
   map.on('click', e => {
     if (!document.getElementById('newStationToggle').checked) return;
     const lat = e.latlng.lat.toFixed(6);
@@ -609,7 +559,7 @@ function initMap() {
       })
     }).addTo(map);
 
-    showToast(`📍 Pin dropped at ${lat}, ${lng}`);
+    showToast(`📍 Pin dropped`);
   });
 
   renderStationsOnMap();
@@ -617,16 +567,15 @@ function initMap() {
 
 async function loadStations() {
   try {
-    const { data, error } = await fetchSupa('gas_stations?select=*&order=name.asc');
-    if (error) throw error;
-    allStations = data || [];
+    const r = await fetch(SBASE + '/rest/v1/gas_stations?select=*&order=name.asc', { headers: HDRS });
+    const data = await r.json();
+    allStations = Array.isArray(data) ? data : [];
     filteredStations = [...allStations];
     populateStationSelect();
     renderStationsOnMap();
-    document.getElementById('stationCount').textContent = `${allStations.length} stations loaded`;
+    document.getElementById('stationCount').textContent = allStations.length + ' stations';
   } catch(e) {
-    console.error('Stations error:', e);
-    document.getElementById('stationCount').textContent = 'Could not load stations';
+    document.getElementById('stationCount').textContent = 'Search and add stations below';
   }
 }
 
@@ -639,31 +588,25 @@ function populateStationSelect() {
 function filterStations(query) {
   const q = query.toLowerCase();
   filteredStations = allStations.filter(s =>
-    (s.name || '').toLowerCase().includes(q) ||
-    (s.brand || '').toLowerCase().includes(q) ||
-    (s.parish || '').toLowerCase().includes(q)
+    (s.name||'').toLowerCase().includes(q) ||
+    (s.brand||'').toLowerCase().includes(q) ||
+    (s.parish||'').toLowerCase().includes(q)
   );
   populateStationSelect();
   renderStationsOnMap();
 }
 
 function filterParish(parish) {
-  if (!parish) {
-    filteredStations = [...allStations];
-  } else {
-    filteredStations = allStations.filter(s => s.parish === parish);
-  }
+  filteredStations = parish ? allStations.filter(s => s.parish === parish) : [...allStations];
   populateStationSelect();
   renderStationsOnMap();
-
-  // Fly map to parish
   const coords = PARISH_COORDS[parish];
   if (coords && map) map.flyTo(coords, 12);
 }
 
 function renderStationsOnMap() {
-  if (!clusterGroup) return;
-  clusterGroup.clearLayers();
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
 
   filteredStations.forEach(s => {
     if (!s.lat || !s.lng) return;
@@ -671,91 +614,73 @@ function renderStationsOnMap() {
                   s.brand?.toLowerCase().includes('rubis') ? '#ff3d3d' :
                   s.brand?.toLowerCase().includes('texaco') ? '#ffb300' : '#2196f3';
 
-    const marker = L.marker([s.lat, s.lng], {
+    const m = L.marker([s.lat, s.lng], {
       icon: L.divIcon({
         className: '',
         html: `<div style="background:${color};width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
+        iconSize: [14, 14], iconAnchor: [7, 7]
       })
-    });
+    }).addTo(map);
 
-    const popup = `
+    m.bindPopup(`
       <div style="font-family:DM Sans,sans-serif;color:#111;min-width:180px">
         <div style="font-weight:700;font-size:14px;margin-bottom:4px">${s.name}</div>
         ${s.brand ? `<div style="font-size:11px;color:#666;margin-bottom:4px">${s.brand}</div>` : ''}
         <div style="font-size:11px;color:#666;margin-bottom:8px">📍 ${s.parish || 'Jamaica'}</div>
-        <button onclick="selectStationForReport('${s.id}')" style="background:#00c853;color:#000;border:none;padding:6px 12px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;width:100%">⛽ Report Price</button>
-      </div>`;
-    marker.bindPopup(popup);
-    clusterGroup.addLayer(marker);
+        <button onclick="selectStation('${s.id}')" style="background:#00c853;color:#000;border:none;padding:6px 12px;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;width:100%">⛽ Report Price</button>
+      </div>`);
+    markers.push(m);
   });
 }
 
-function selectStationForReport(stationId) {
-  const sel = document.getElementById('rStationId');
-  sel.value = stationId;
+function selectStation(id) {
+  document.getElementById('rStationId').value = id;
   document.getElementById('newStationToggle').checked = false;
   toggleNewStation();
   document.querySelector('.report-form').scrollIntoView({ behavior: 'smooth' });
-  showToast('Station selected — fill in the price below');
+  showToast('Station selected — add price below');
 }
 
 function toggleNewStation() {
   const isNew = document.getElementById('newStationToggle').checked;
   document.getElementById('existingStationWrap').style.display = isNew ? 'none' : 'block';
-  document.getElementById('newStationWrap').style.display = isNew ? 'block' : 'block'; // always block but hidden via css? No, use display
+  document.getElementById('newStationWrap').style.display = isNew ? 'block' : 'none';
   document.getElementById('newStationHint').classList.toggle('visible', isNew);
-
-  if (isNew) {
-    document.getElementById('newStationWrap').style.display = 'block';
-  } else {
-    document.getElementById('newStationWrap').style.display = 'none';
-    if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
-  }
+  if (!isNew && tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
 }
 
 // ── REPORTS ──
 async function loadReports() {
   const el = document.getElementById('reportsList');
   try {
-    const { data, error } = await fetchSupa('gas_reports?select=*,station:station_id(name,brand,parish)&order=created_at.desc&limit=50');
-    if (error) throw error;
-    allReports = data || [];
+    const r = await fetch(SBASE + '/rest/v1/gas_reports?select=*,station:station_id(name,brand,parish)&order=created_at.desc&limit=50', { headers: HDRS });
+    const data = await r.json();
+    allReports = Array.isArray(data) ? data : [];
     renderReportsList();
   } catch(e) {
-    el.innerHTML = '<div class="report-empty">Could not load reports. <button class="see-all-btn" style="margin-top:8px" onclick="loadReports()">Retry</button></div>';
+    el.innerHTML = '<div class="report-empty">No reports yet — be the first to report a price!</div>';
   }
 }
 
 function renderReportsList() {
   const el = document.getElementById('reportsList');
   const filtered = currentFilter === 'all' ? allReports : allReports.filter(r => r.fuel_type === currentFilter);
-
-  if (!filtered.length) {
-    el.innerHTML = '<div class="report-empty">No reports yet — be the first!</div>';
-    return;
-  }
-
-  const refPrices = {};
-  Object.keys(MARKUP).forEach(k => {
-    if (latestPrices[k]) refPrices[k] = latestPrices[k] + MARKUP[k];
-  });
+  if (!filtered.length) { el.innerHTML = '<div class="report-empty">No reports yet — be the first!</div>'; return; }
 
   el.innerHTML = filtered.slice(0, 30).map(rep => {
-    const ref = refPrices[rep.fuel_type] || 210;
+    const ref = (latestPrices[rep.fuel_type]?.price || 180) + (MARKUP[rep.fuel_type] || 0);
     const pump = Number(rep.pump_price);
     const priceCls = pump <= ref-5 ? 'cheap' : pump >= ref+5 ? 'pricey' : 'avg';
     const fuelCls = rep.fuel_type==='87'||rep.fuel_type==='90' ? 'petrol' : 'diesel';
-    const stationName = rep.station?.name || 'Unknown Station';
-    const stationParish = rep.station?.parish || rep.parish || '';
+    const name = rep.station?.name || 'Unknown Station';
+    const parish = rep.station?.parish || rep.parish || '';
 
     return `
       <div class="report-item">
         <div class="report-icon ${fuelCls}">⛽</div>
         <div class="report-body">
-          <div class="report-station">${stationName}</div>
-          <div class="report-parish">📍 ${stationParish} · ${fuelLabel(rep.fuel_type)}</div>
+          <div class="report-station">${name}</div>
+          <div class="report-parish">📍 ${parish} · ${fuelLabel(rep.fuel_type)}</div>
         </div>
         <div class="report-price-wrap">
           <div class="report-price ${priceCls}">J$${pump.toFixed(2)}</div>
@@ -771,7 +696,7 @@ function filterReports(type) {
   renderReportsList();
 }
 
-// ── SUBMIT REPORT ──
+// ── SUBMIT ──
 async function submitReport() {
   const isNew = document.getElementById('newStationToggle').checked;
   const fuelEl = document.getElementById('rFuel');
@@ -798,47 +723,50 @@ async function submitReport() {
     if (!lat || !lng) return showToast('Click on the map to drop a pin first');
 
     btn.disabled = true; btn.textContent = 'Adding station…';
-    const { data: newStation, error: sErr } = await supaInsert('gas_stations', {
-      name: nameEl.value.trim(),
-      brand: document.getElementById('rNewStationBrand').value.trim() || null,
-      parish: parishEl.value,
-      lat: parseFloat(lat),
-      lng: parseFloat(lng),
-      is_verified: false
+    const r = await fetch(SBASE + '/rest/v1/gas_stations', {
+      method: 'POST',
+      headers: Object.assign({}, HDRS, { 'Prefer': 'return=representation' }),
+      body: JSON.stringify({
+        name: nameEl.value.trim(),
+        brand: document.getElementById('rNewStationBrand').value.trim() || null,
+        parish: parishEl.value,
+        lat: parseFloat(lat),
+        lng: parseFloat(lng)
+      })
     });
-    if (sErr) { showToast('Error adding station'); btn.disabled = false; btn.textContent = '⛽ SUBMIT PRICE REPORT'; return; }
+    const newStation = await r.json();
+    if (!r.ok || !Array.isArray(newStation)) { showToast('Error adding station'); btn.disabled = false; btn.textContent = '⛽ SUBMIT PRICE REPORT'; return; }
     stationId = newStation[0].id;
+    allStations.push(newStation[0]);
+    filteredStations = [...allStations];
+    populateStationSelect();
+    renderStationsOnMap();
   } else {
     stationId = document.getElementById('rStationId').value;
     if (!stationId) return showToast('Select a station from the list');
   }
 
   btn.disabled = true; btn.textContent = 'Submitting…';
-  const { error } = await supaInsert('gas_reports', {
-    station_id: stationId,
-    fuel_type: fuel,
-    pump_price: price
+  const r = await fetch(SBASE + '/rest/v1/gas_reports', {
+    method: 'POST',
+    headers: Object.assign({}, HDRS, { 'Prefer': 'return=representation' }),
+    body: JSON.stringify({ station_id: stationId, fuel_type: fuel, pump_price: price })
   });
 
-  if (error) {
-    showToast('Error submitting report');
-    console.error(error);
-  } else {
+  if (r.ok) {
     showToast('✅ Report submitted! Thanks 🇯🇲');
     gtag && gtag('event', 'submit_gas_report', { fuel_type: fuel });
-    // Reset form
     fuelEl.value = ''; priceEl.value = '';
     document.getElementById('rStationId').value = '';
     if (isNew) {
       document.getElementById('newStationToggle').checked = false;
       toggleNewStation();
-      ['rNewStationName','rNewStationParish','rNewStationBrand','rNewLat','rNewLng'].forEach(id => {
-        document.getElementById(id).value = '';
-      });
+      ['rNewStationName','rNewStationParish','rNewStationBrand','rNewLat','rNewLng'].forEach(id => document.getElementById(id).value = '');
       if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
     }
     loadReports();
-    loadStations(); // refresh in case new station added
+  } else {
+    showToast('Error submitting — try again');
   }
   btn.disabled = false; btn.textContent = '⛽ SUBMIT PRICE REPORT';
 }
@@ -849,8 +777,7 @@ function calculateFillup() {
   const litres = parseFloat(document.getElementById('calcLitres').value);
   if (!litres || litres <= 0) return showToast('Enter litres first');
 
-  const ex = latestPrices[fuelKey];
-  if (!ex) return showToast('Price data not loaded yet');
+  const ex = (latestPrices[fuelKey] || FALLBACK_PRICES[fuelKey]).price;
   const pump = ex + (MARKUP[fuelKey] || 0);
   const total = pump * litres;
 
@@ -861,20 +788,6 @@ function calculateFillup() {
 }
 
 // ── HELPERS ──
-async function fetchSupa(path) {
-  const r = await fetch(`${SBASE}/rest/v1/${path}`, { headers: HDRS });
-  const data = await r.json();
-  return { data, error: r.ok ? null : data };
-}
-async function supaInsert(table, row) {
-  const r = await fetch(`${SBASE}/rest/v1/${table}`, {
-    method: 'POST',
-    headers: Object.assign({}, HDRS, { 'Prefer': 'return=representation' }),
-    body: JSON.stringify(row)
-  });
-  const data = await r.json();
-  return { data, error: r.ok ? null : data };
-}
 function fuelLabel(key) {
   const m = {'87':'87 Oct','90':'90 Oct','diesel':'Diesel','ulsd':'ULSD','kerosene':'Kerosene'};
   return m[key] || key;
@@ -885,9 +798,6 @@ function ago(iso) {
   if (mins < 60) return mins + 'm ago';
   if (mins < 1440) return Math.floor(mins/60) + 'h ago';
   return Math.floor(mins/1440) + 'd ago';
-}
-function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString('en-JM', { month:'short', day:'numeric', year:'numeric' });
 }
 function nextWednesday() {
   const d = new Date();
@@ -901,7 +811,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── PARISH COORDS ──
 const PARISH_COORDS = {
   'Kingston':[17.9970,-76.7936], 'St. Andrew':[18.0179,-76.7997],
   'St. Catherine':[17.9916,-76.9564], 'St. Thomas':[17.9273,-76.3445],
