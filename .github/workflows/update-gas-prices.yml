@@ -2,14 +2,8 @@ name: Update Jamaica Gas Prices
 
 on:
   schedule:
-    # Every Wednesday at 2:00 PM Jamaica time (7:00 PM UTC)
     - cron: '0 19 * * 3'
   workflow_dispatch:
-    inputs:
-      reason:
-        description: 'Manual trigger reason'
-        required: false
-        default: 'Manual update'
 
 jobs:
   update-prices:
@@ -22,22 +16,17 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install @supabase/supabase-js
-
-      - name: Scrape Petrojam & update Supabase
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: node <<'EOF'
+      - name: Create scraper script
+        run: |
+          cat > scraper.js << 'SCRIPTEOF'
           const { createClient } = require('@supabase/supabase-js');
           const https = require('https');
 
-          const URL = process.env.SUPABASE_URL || 'https://cquwshpsfybvgqodbxsf.supabase.co';
-          const KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+          const URL = process.env.SUPABASE_URL;
+          const KEY = process.env.SUPABASE_KEY;
           const db = createClient(URL, KEY);
 
-          function fetch(url) {
+          function fetchPage(url) {
             return new Promise((resolve, reject) => {
               https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YaadAdzBot/1.0)' } }, res => {
                 let data = '';
@@ -48,26 +37,23 @@ jobs:
           }
 
           async function main() {
-            console.log('⛽ Fetching Petrojam…');
-            const html = await fetch('https://petrojam.com/price/');
+            console.log('Fetching Petrojam...');
+            const html = await fetchPage('https://petrojam.com/price/');
 
-            // Extract date
             const dateMatch = html.match(/Date:\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i)
-              || html.match(/Date:\s*([^<
-]+)/i)
+              || html.match(/Date:\s*([^<\n]+)/i)
               || html.match(/(\w+\s+\d{1,2},?\s+\d{4})/);
             if (!dateMatch) throw new Error('Could not find price date');
             const weekOf = new Date(dateMatch[1].trim()).toISOString().split('T')[0];
-            console.log('📅 Week of:', weekOf);
+            console.log('Week of:', weekOf);
 
-            // Fuel patterns
             const fuels = [
-              { regex: /E10-87[^\d]*(\d{3}\.\d{2})/i, key: '87', name: 'Gasolene 87' },
-              { regex: /E10-90[^\d]*(\d{3}\.\d{2})/i, key: '90', name: 'Gasolene 90' },
-              { regex: /Auto\s*Diesel[^\d]*(\d{3}\.\d{2})/i, key: 'diesel', name: 'Auto Diesel' },
-              { regex: /ULSD[^\d]*(\d{3}\.\d{2})/i, key: 'ulsd', name: 'ULSD' },
-              { regex: /Kerosene[^\d]*(\d{3}\.\d{2})/i, key: 'kerosene', name: 'Kerosene' },
-              { regex: /Propane[^\d]*(\d{2,3}\.\d{2})/i, key: 'propane', name: 'Propane' },
+              { regex: /E10-87[^\d]*(\d{3}\.\d{2})/i, key: '87' },
+              { regex: /E10-90[^\d]*(\d{3}\.\d{2})/i, key: '90' },
+              { regex: /Auto\s*Diesel[^\d]*(\d{3}\.\d{2})/i, key: 'diesel' },
+              { regex: /ULSD[^\d]*(\d{3}\.\d{2})/i, key: 'ulsd' },
+              { regex: /Kerosene[^\d]*(\d{3}\.\d{2})/i, key: 'kerosene' },
+              { regex: /Propane[^\d]*(\d{2,3}\.\d{2})/i, key: 'propane' },
             ];
 
             const prices = [];
@@ -76,39 +62,47 @@ jobs:
               if (m) {
                 const price = parseFloat(m[1]);
                 prices.push({ week_of: weekOf, fuel_type: f.key, ex_refinery_price: price });
-                console.log(`  ✅ ${f.key}: J$${price}`);
+                console.log('  ' + f.key + ': J$' + price);
               } else {
-                console.log(`  ⚠️ ${f.key}: not found`);
+                console.log('  ' + f.key + ': not found');
               }
             }
 
             if (prices.length < 3) {
-              console.log('❌ Too few prices parsed. Aborting.');
+              console.log('Too few prices parsed. Aborting.');
               process.exit(0);
             }
 
-            // Upsert to Supabase
             for (const p of prices) {
               const { error } = await db
                 .from('petrojam_prices')
                 .upsert(p, { onConflict: 'week_of,fuel_type', ignoreDuplicates: false });
-              if (error) console.error('❌ Upsert error:', error.message);
+              if (error) console.error('Upsert error:', error.message);
             }
 
-            console.log(`✅ Done. Updated ${prices.length} prices for week of ${weekOf}.`);
+            console.log('Done. Updated ' + prices.length + ' prices for week of ' + weekOf);
           }
 
           main().catch(err => {
-            console.error('💥 Fatal:', err.message);
+            console.error('Fatal:', err.message);
             process.exit(1);
           });
-        EOF
+          SCRIPTEOF
 
-      - name: Update static page date stamp
+      - name: Install dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Run scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: node scraper.js
+
+      - name: Update page date stamp
         run: |
           sed -i "s/Last updated:.*$/Last updated: $(date +'%b %d, %Y')/" gas-prices.html || true
           git config user.name "Yaad Adz Bot"
           git config user.email "bot@yaadadz.com"
           git add gas-prices.html
-          git diff --staged --quiet || git commit -m "⛽ Update gas prices stamp [$(date +'%Y-%m-%d')]"
+          git diff --staged --quiet || git commit -m "Update gas prices stamp [$(date +'%Y-%m-%d')]"
           git push
