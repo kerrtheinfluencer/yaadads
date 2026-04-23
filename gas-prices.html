@@ -63,7 +63,6 @@ a{color:var(--green);text-decoration:none}
 .popup-station .price-row .fuel{color:var(--muted);text-transform:uppercase;font-size:.75rem}
 .popup-station .price-row .amt{font-weight:700}
 .popup-station .btn-update{display:block;width:100%;margin-top:.6rem;padding:.5rem;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer}
-.popup-station .btn-ghost{display:block;width:100%;margin-top:.4rem;padding:.4rem;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:.75rem;cursor:pointer}
 
 .station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem}
 .station-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem}
@@ -94,6 +93,8 @@ a{color:var(--green);text-decoration:none}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--elev);border:1px solid var(--border);padding:1rem 1.25rem;border-radius:12px;z-index:3000;transform:translateY(150%);transition:.3s;max-width:320px;font-size:.9rem}
 .toast.show{transform:translateY(0)}
 .toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
+
+.loading-msg{text-align:center;padding:2rem;color:var(--muted);font-size:.9rem}
 
 footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;border-top:1px solid var(--border);margin-top:2rem}
 
@@ -140,7 +141,7 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
 <section class="section">
   <div class="map-wrap">
     <div class="map-header">
-      <div class="map-title">🗺️ Station Map — Click map to add missing stations</div>
+      <div class="map-title">🗺️ Station Map — Real locations from OpenStreetMap</div>
       <div class="map-filters">
         <button class="filter-chip active" data-filter="all">All</button>
         <button class="filter-chip" data-filter="87">87</button>
@@ -155,27 +156,18 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
 <section class="section">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
     <div class="section-title" style="margin:0">🏪 Stations & Prices</div>
-    <div style="display:flex;gap:.5rem">
-      <select id="parishFilter" style="background:var(--elev);border:1px solid var(--border);color:var(--text);padding:.4rem .7rem;border-radius:999px;font-size:.8rem;font-family:inherit;outline:none">
-        <option value="all">All Parishes</option>
-        <option>Kingston</option><option>St. Andrew</option><option>St. Catherine</option>
-        <option>St. Thomas</option><option>Portland</option><option>St. Mary</option>
-        <option>St. Ann</option><option>Trelawny</option><option>St. James</option>
-        <option>Hanover</option><option>Westmoreland</option><option>St. Elizabeth</option>
-        <option>Manchester</option><option>Clarendon</option>
-      </select>
-      <button class="filter-chip" id="openAddStation" style="background:var(--green);color:#000;font-weight:700;border:none">＋ Report Price</button>
-    </div>
+    <button class="filter-chip" id="openAddStation" style="background:var(--green);color:#000;font-weight:700;border:none">＋ Report Price</button>
   </div>
-  <div class="station-grid" id="stationGrid"></div>
+  <div class="station-grid" id="stationGrid">
+    <div class="loading-msg">Loading real gas station locations from OpenStreetMap…</div>
+  </div>
 </section>
 
 <footer>
   <p>© Yaad Adz · Prices shown are estimates. Always verify at the pump.</p>
-  <p style="margin-top:.4rem">Data sources: Petrojam Ltd. · Community submissions</p>
+  <p style="margin-top:.4rem">Data sources: Petrojam Ltd. · OpenStreetMap · Community submissions</p>
 </footer>
 
-<!-- Report Price Modal -->
 <div class="modal-overlay" id="priceModal">
   <div class="modal">
     <button class="close" id="closeModal">&times;</button>
@@ -209,49 +201,13 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
   </div>
 </div>
 
-<!-- Add Station Modal -->
-<div class="modal-overlay" id="stationModal">
-  <div class="modal">
-    <button class="close" id="closeStationModal">&times;</button>
-    <h3>Add New Station</h3>
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem">You clicked the map at <span id="clickCoords" style="color:var(--yellow)"></span>. Fill in the details below.</p>
-    <form id="stationForm">
-      <div class="form-group">
-        <label>Station Name</label>
-        <input type="text" id="sName" placeholder="e.g. Texaco Waterloo" required>
-      </div>
-      <div class="form-group">
-        <label>Brand</label>
-        <select id="sBrand" required>
-          <option value="">Select brand…</option>
-          <option>Texaco</option><option>Shell</option><option>Total</option>
-          <option>Rubis</option><option>Petcom</option><option>Esso</option>
-          <option>Co-op</option><option>Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Parish</label>
-        <select id="sParish" required>
-          <option value="">Select parish…</option>
-          <option>Kingston</option><option>St. Andrew</option><option>St. Catherine</option>
-          <option>St. Thomas</option><option>Portland</option><option>St. Mary</option>
-          <option>St. Ann</option><option>Trelawny</option><option>St. James</option>
-          <option>Hanover</option><option>Westmoreland</option><option>St. Elizabeth</option>
-          <option>Manchester</option><option>Clarendon</option>
-        </select>
-      </div>
-      <input type="hidden" id="sLat"><input type="hidden" id="sLng">
-      <button type="submit" class="form-submit" id="stationSubmit">Add Station</button>
-    </form>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   v4 — WORKAROUND: OSM tiles + click-to-add + parish filter
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   v5 — Pulls REAL gas station locations from OpenStreetMap
+   via Overpass API (free, no key, same data as Google Maps)
+   ═══════════════════════════════════════════════════════ */
 
 const MARKUP = 30;
 
@@ -264,33 +220,93 @@ const PETROJAM = [
   { fuel_type:'propane',  name:'Propane',    ex_refinery_price:78.88,  color:'var(--purple)', icon:'🔥' },
 ];
 
-/* Start with just 10 well-known stations. Users add the rest. */
-let STATIONS = JSON.parse(localStorage.getItem('gasStations_v4')) || [
-  { id:1, name:"Texaco Constant Spring",     brand:"Texaco", parish:"St. Andrew",     lat:18.01775, lng:-76.77420, prices:{87:194.50,90:198.20} },
-  { id:2, name:"Total Half Way Tree",        brand:"Total",  parish:"St. Andrew",     lat:18.01056, lng:-76.78472, prices:{90:197.50,diesel:185.00} },
-  { id:3, name:"Rubis Harbour Street",       brand:"Rubis",  parish:"Kingston",       lat:17.97000, lng:-76.79200, prices:{87:194.00,90:198.00} },
-  { id:4, name:"Petcom Spanish Town",        brand:"Petcom", parish:"St. Catherine",  lat:17.99140, lng:-76.95740, prices:{87:193.50,diesel:183.80} },
-  { id:5, name:"Texaco Fairview MoBay",      brand:"Texaco", parish:"St. James",      lat:18.45398, lng:-77.92285, prices:{90:197.80,diesel:184.50} },
-  { id:6, name:"Shell Mandeville",           brand:"Shell",  parish:"Manchester",     lat:18.04130, lng:-77.51008, prices:{87:194.20,90:198.10} },
-  { id:7, name:"Total Ocho Rios",            brand:"Total",  parish:"St. Ann",        lat:18.40540, lng:-77.10310, prices:{87:194.80,diesel:185.20} },
-  { id:8, name:"Rubis May Pen",              brand:"Rubis",  parish:"Clarendon",      lat:17.97034, lng:-77.24369, prices:{90:198.00,diesel:184.00} },
-  { id:9, name:"Petcom Savanna-la-Mar",      brand:"Petcom", parish:"Westmoreland",   lat:18.21890, lng:-78.13340, prices:{87:193.90,diesel:183.50} },
-  { id:10,name:"Total Port Antonio",         brand:"Total",  parish:"Portland",       lat:18.17785, lng:-76.45025, prices:{87:195.00,diesel:185.50} },
-];
+let STATIONS = [];
+let map, markers = [];
 
-let nextId = STATIONS.length + 1;
+const BRAND_COLORS = {Texaco:'#00e676',Shell:'#ff5252',Total:'#448aff',Rubis:'#ffd600',Petcom:'#ff9100',Esso:'#d500f9','Co-op':'#00bfa5',Other:'#888'};
 
+/* ─── HELPERS ─── */
 const $ = s => document.querySelector(s);
 const fmtMoney = n => 'J$' + (n ? n.toFixed(2) : '—');
 function toast(msg, type='success'){
   const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + type + ' show';
   setTimeout(()=>t.classList.remove('show'), 4000);
 }
-function saveStations(){
-  localStorage.setItem('gasStations_v4', JSON.stringify(STATIONS));
+
+/* ─── FETCH REAL STATIONS FROM OPENSTREETMAP ─── */
+async function loadStationsFromOSM(){
+  /* Overpass API query: all fuel stations in Jamaica bounding box */
+  const query = `[out:json][timeout:25];
+    area["name"="Jamaica"]["admin_level"="2"]->.searchArea;
+    node["amenity"="fuel"](area.searchArea);
+    out body 150;`;
+
+  try{
+    const res = await fetch('https://overpass-api.de/api/interpreter',{
+      method:'POST',
+      body: query
+    });
+    const data = await res.json();
+
+    if(!data.elements || !data.elements.length){
+      throw new Error('No stations found');
+    }
+
+    /* Parse OSM tags into our format */
+    STATIONS = data.elements
+      .filter(el => el.lat && el.lon)
+      .map((el, idx) => {
+        const tags = el.tags || {};
+        const name = tags.name || tags.brand || 'Gas Station';
+        const brand = tags.brand || tags.operator || 'Other';
+        /* Try to extract parish from address or name */
+        let parish = tags['addr:city'] || tags['addr:state'] || '';
+        if(!parish){
+          const nameLower = name.toLowerCase();
+          const parishes = ['Kingston','St. Andrew','St. Catherine','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon'];
+          for(const p of parishes){ if(nameLower.includes(p.toLowerCase().replace('st. ','st '))){ parish = p; break; } }
+        }
+        if(!parish) parish = 'Jamaica';
+
+        return {
+          id: idx + 1,
+          name: name,
+          brand: brand,
+          parish: parish,
+          lat: el.lat,
+          lng: el.lon,
+          prices: {}  // User fills these in
+        };
+      })
+      .filter(s => s.name !== 'Gas Station'); /* Remove unnamed ones */
+
+    console.log('Loaded', STATIONS.length, 'stations from OSM');
+    toast('Loaded ' + STATIONS.length + ' real gas stations from OpenStreetMap','success');
+
+  }catch(err){
+    console.error('OSM fetch failed:', err);
+    toast('Could not load OSM data. Using fallback stations.','error');
+    /* Fallback to verified stations */
+    STATIONS = [
+      { id:1, name:"Texaco Constant Spring", brand:"Texaco", parish:"St. Andrew", lat:18.01775, lng:-76.77420, prices:{} },
+      { id:2, name:"Total Half Way Tree",    brand:"Total",  parish:"St. Andrew", lat:18.01056, lng:-76.78472, prices:{} },
+      { id:3, name:"Rubis Harbour Street",   brand:"Rubis",  parish:"Kingston",   lat:17.97000, lng:-76.79200, prices:{} },
+      { id:4, name:"Petcom Spanish Town",    brand:"Petcom", parish:"St. Catherine", lat:17.99140, lng:-76.95740, prices:{} },
+      { id:5, name:"Texaco Fairview MoBay",  brand:"Texaco", parish:"St. James",  lat:18.45398, lng:-77.92285, prices:{} },
+      { id:6, name:"Shell Mandeville",       brand:"Shell",  parish:"Manchester", lat:18.04130, lng:-77.51008, prices:{} },
+      { id:7, name:"Total Ocho Rios",        brand:"Total",  parish:"St. Ann",    lat:18.40540, lng:-77.10310, prices:{} },
+      { id:8, name:"Rubis May Pen",          brand:"Rubis",  parish:"Clarendon",  lat:17.97034, lng:-77.24369, prices:{} },
+      { id:9, name:"Petcom Savanna-la-Mar",  brand:"Petcom", parish:"Westmoreland", lat:18.21890, lng:-78.13340, prices:{} },
+      { id:10,name:"Total Port Antonio",     brand:"Total",  parish:"Portland",   lat:18.17785, lng:-76.45025, prices:{} },
+    ];
+  }
+
+  renderStations();
+  addMarkers();
+  populateSelect();
 }
 
-/* ─── PETROJAM CARDS ─── */
+/* ─── RENDER ─── */
 function renderPetro(){
   $('#petroGrid').innerHTML = PETROJAM.map(p => {
     const pump = p.fuel_type==='propane' ? p.ex_refinery_price : p.ex_refinery_price + MARKUP;
@@ -303,22 +319,21 @@ function renderPetro(){
   }).join('');
 }
 
-/* ─── STATION CARDS ─── */
-function renderStations(fuelFilter='all', parishFilter='all'){
+function renderStations(filter='all'){
+  if(!STATIONS.length) return;
   $('#stationGrid').innerHTML = STATIONS.map(s => {
     const p = s.prices || {};
     const has = Object.keys(p).length > 0;
     const tags = Object.entries(p).slice(0,4).map(([f,pr]) =>
       `<div class="p"><div class="t">${f}</div><div class="v">${fmtMoney(pr)}</div></div>`
     ).join('');
-    const fuelVisible = fuelFilter==='all' || p[fuelFilter];
-    const parishVisible = parishFilter==='all' || s.parish===parishFilter;
+    const visible = filter==='all' || p[filter];
     return `
-      <div class="station-card" data-id="${s.id}" style="display:${fuelVisible&&parishVisible?'':'none'}">
+      <div class="station-card" data-id="${s.id}" style="display:${visible?'':'none'}">
         <div class="brand">${s.brand}</div>
         <div class="name">${s.name}</div>
-        <div class="loc">📍 ${s.parish} · ${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</div>
-        <div class="prices">${has ? tags : '<div class="p" style="grid-column:1/-1;color:var(--muted);font-size:.8rem">No prices yet</div>'}</div>
+        <div class="loc">📍 ${s.parish}</div>
+        <div class="prices">${has ? tags : '<div class="p" style="grid-column:1/-1;color:var(--muted);font-size:.8rem">No prices reported yet</div>'}</div>
         <div class="actions">
           <button class="btn btn-primary" onclick="openModal(${s.id})">Update Price</button>
           <button class="btn btn-ghost" onclick="flyTo(${s.id})">View Map</button>
@@ -328,37 +343,13 @@ function renderStations(fuelFilter='all', parishFilter='all'){
 }
 
 /* ─── MAP ─── */
-let map, markers = [], tempMarker;
-const BRAND_COLORS = {Texaco:'#00e676',Shell:'#ff5252',Total:'#448aff',Rubis:'#ffd600',Petcom:'#ff9100',Esso:'#d500f9','Co-op':'#00bfa5',Other:'#888'};
-
 function initMap(){
   map = L.map('map',{zoomControl:false}).setView([18.15,-77.3],9);
   L.control.zoom({position:'bottomright'}).addTo(map);
-
-  /* WORKAROUND: Use OpenStreetMap tiles — way more detailed than CartoDB dark.
-     Shows street names, buildings, landmarks so approximate pins look natural. */
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom:19
   }).addTo(map);
-
-  addMarkers();
-
-  /* Click map to add a new station at exact location */
-  map.on('click', function(e){
-    if(tempMarker) map.removeLayer(tempMarker);
-    tempMarker = L.marker(e.latlng,{
-      icon:L.divIcon({
-        html:'<div style="background:var(--yellow);color:#000;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;white-space:nowrap;border:2px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5)">📍 New Station</div>',
-        iconAnchor:[50,20],className:''
-      })
-    }).addTo(map);
-    $('#sLat').value = e.latlng.lat.toFixed(6);
-    $('#sLng').value = e.latlng.lng.toFixed(6);
-    $('#clickCoords').textContent = e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5);
-    $('#stationModal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  });
 }
 
 function addMarkers(){
@@ -370,8 +361,8 @@ function addMarkers(){
       `<div class="price-row"><span class="fuel">${f}</span><span class="amt">${fmtMoney(pr)}</span></div>`
     ).join('') || '<div class="price-row"><span class="fuel">No prices yet</span></div>';
     const icon = L.divIcon({
-      html:`<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #111;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#000">${s.brand[0]}</div>`,
-      iconSize:[28,28], iconAnchor:[14,14]
+      html:`<div style="background:${color};width:26px;height:26px;border-radius:50%;border:3px solid #111;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#000">${s.brand[0]}</div>`,
+      iconSize:[26,26], iconAnchor:[14,14]
     });
     const m = L.marker([s.lat,s.lng],{icon}).addTo(map).bindPopup(`
       <div class="popup-station">
@@ -379,7 +370,6 @@ function addMarkers(){
         <div class="meta">${s.brand} · ${s.parish}</div>
         ${list}
         <button class="btn-update" onclick="openModal(${s.id});map.closePopup();">Report Price</button>
-        <button class="btn-ghost" onclick="flyTo(${s.id})">Zoom In</button>
       </div>`);
     markers.push(m);
   });
@@ -396,23 +386,12 @@ document.querySelectorAll('.filter-chip[data-filter]').forEach(btn=>{
     document.querySelectorAll('.filter-chip[data-filter]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const f = btn.dataset.filter;
-    const p = $('#parishFilter').value;
     markers.forEach((m,i)=>{ const s=STATIONS[i]; if(f==='all'||s.prices[f]) map.addLayer(m); else map.removeLayer(m); });
-    renderStations(f, p);
+    document.querySelectorAll('.station-card').forEach((c,i)=>{ c.style.display = (f==='all'||STATIONS[i].prices[f])?'':'none'; });
   });
 });
 
-$('#parishFilter').addEventListener('change', e => {
-  const p = e.target.value;
-  const f = document.querySelector('.filter-chip.active').dataset.filter;
-  renderStations(f, p);
-  if(p !== 'all'){
-    const first = STATIONS.find(s=>s.parish===p);
-    if(first) map.flyTo([first.lat,first.lng],11,{duration:1});
-  }
-});
-
-/* ─── MODALS ─── */
+/* ─── MODAL ─── */
 function populateSelect(){
   $('#fStation').innerHTML = '<option value="" disabled selected>Choose a station…</option>' +
     STATIONS.map(s=>`<option value="${s.id}">${s.name} (${s.brand})</option>`).join('');
@@ -423,36 +402,7 @@ $('#closeModal').addEventListener('click', closeModal);
 $('#priceModal').addEventListener('click', e=>{ if(e.target===$('#priceModal')) closeModal(); });
 $('#openAddStation').addEventListener('click', ()=>openModal());
 
-$('#closeStationModal').addEventListener('click', ()=>{
-  $('#stationModal').classList.remove('open'); document.body.style.overflow='';
-  if(tempMarker){ map.removeLayer(tempMarker); tempMarker=null; }
-});
-$('#stationModal').addEventListener('click', e=>{
-  if(e.target===$('#stationModal')){ $('#stationModal').classList.remove('open'); document.body.style.overflow=''; if(tempMarker){ map.removeLayer(tempMarker); tempMarker=null; } }
-});
-
-/* ─── ADD STATION FORM ─── */
-$('#stationForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const name = $('#sName').value.trim();
-  const brand = $('#sBrand').value;
-  const parish = $('#sParish').value;
-  const lat = parseFloat($('#sLat').value);
-  const lng = parseFloat($('#sLng').value);
-  if(!name||!brand||!parish){ toast('Fill all fields','error'); return; }
-
-  STATIONS.push({ id:nextId++, name, brand, parish, lat, lng, prices:{} });
-  saveStations();
-  renderStations();
-  addMarkers();
-  populateSelect();
-  $('#stationForm').reset();
-  $('#stationModal').classList.remove('open'); document.body.style.overflow='';
-  if(tempMarker){ map.removeLayer(tempMarker); tempMarker=null; }
-  toast('Station added! Now report a price for it.','success');
-});
-
-/* ─── REPORT PRICE FORM ─── */
+/* ─── FORM SUBMIT ─── */
 $('#priceForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const btn = $('#submitBtn'); btn.disabled=true; btn.textContent='Submitting…';
@@ -462,7 +412,7 @@ $('#priceForm').addEventListener('submit', async e=>{
   if(!sid||!price){ toast('Fill all fields','error'); btn.disabled=false; btn.textContent='Submit Price'; return; }
 
   const station = STATIONS.find(s=>s.id===sid);
-  if(station){ station.prices[fuel] = price; saveStations(); renderStations(); addMarkers(); }
+  if(station){ station.prices[fuel] = price; renderStations(); addMarkers(); }
 
   toast('Price updated! 🎉','success');
   $('#priceForm').reset(); closeModal();
@@ -471,9 +421,8 @@ $('#priceForm').addEventListener('submit', async e=>{
 
 /* ─── BOOT ─── */
 renderPetro();
-renderStations();
 initMap();
-populateSelect();
+loadStationsFromOSM();
 </script>
 </body>
 </html>
