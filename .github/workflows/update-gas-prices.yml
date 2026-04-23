@@ -11,23 +11,92 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - run: npm install @supabase/supabase-js
-
-      - name: Scrape Petrojam and update Supabase
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: node scraper.js
-
-      - name: Commit date stamp
+      - name: Scrape Petrojam and update HTML
         run: |
-          sed -i "s/Last updated:.*$/Last updated: $(date +'%b %d, %Y')/" gas-prices.html || true
+          node <<'NODEEOF'
+          const https = require('https');
+
+          function fetchPage(url) {
+            return new Promise((resolve, reject) => {
+              const req = https.get(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+                timeout: 15000
+              }, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve(data));
+              });
+              req.on('error', reject);
+              req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+            });
+          }
+
+          async function main() {
+            try {
+              console.log('Fetching Petrojam...');
+              const html = await fetchPage('https://petrojam.com/price/');
+              console.log('Fetched', html.length, 'bytes');
+
+              const fuels = [
+                { regex: /E10-87[^\d]*(\d{3}\.\d{2})/i, key: '87' },
+                { regex: /E10-90[^\d]*(\d{3}\.\d{2})/i, key: '90' },
+                { regex: /Auto\s*Diesel[^\d]*(\d{3}\.\d{2})/i, key: 'diesel' },
+                { regex: /ULSD[^\d]*(\d{3}\.\d{2})/i, key: 'ulsd' },
+                { regex: /Kerosene[^\d]*(\d{3}\.\d{2})/i, key: 'kerosene' },
+                { regex: /Propane[^\d]*(\d{2,3}\.\d{2})/i, key: 'propane' },
+              ];
+
+              const found = {};
+              for (const f of fuels) {
+                const m = html.match(f.regex);
+                if (m) { found[f.key] = parseFloat(m[1]); console.log('  ' + f.key + ': J$' + found[f.key]); }
+                else console.log('  ' + f.key + ': not found');
+              }
+
+              if (Object.keys(found).length < 3) {
+                console.log('Too few prices found. Keeping existing prices.');
+                process.exit(0);
+              }
+
+              // Read current gas-prices.html
+              const fs = require('fs');
+              let content = fs.readFileSync('gas-prices.html', 'utf8');
+
+              // Update price values in the PRICES array using regex
+              const updatePrice = (key, newPrice) => {
+                if (!newPrice) return;
+                // Match:  { key:'87', ... price:181.1328, ... }
+                const pattern = new RegExp("(key:'" + key + "'[^}]*price:)([\d.]+)");
+                content = content.replace(pattern, (match, prefix) => prefix + newPrice);
+              };
+
+              updatePrice('87', found['87']);
+              updatePrice('90', found['90']);
+              updatePrice('diesel', found['diesel']);
+              updatePrice('ulsd', found['ulsd']);
+              updatePrice('kerosene', found['kerosene']);
+              updatePrice('propane', found['propane']);
+
+              // Update lastUpdated date
+              const today = new Date().toLocaleDateString('en-JM', { month:'short', day:'numeric', year:'numeric' });
+              content = content.replace(/id="lastUpdated"[^>]*>[^<]+/, 'id="lastUpdated">' + today);
+
+              fs.writeFileSync('gas-prices.html', content);
+              console.log('✅ gas-prices.html updated with new prices');
+
+            } catch (err) {
+              console.error('Scraper error:', err.message);
+              console.log('Keeping existing prices.');
+              process.exit(0); // Don't fail the workflow
+            }
+          }
+          main();
+          NODEEOF
+
+      - name: Commit changes
+        run: |
           git config user.name "Yaad Adz Bot"
           git config user.email "bot@yaadadz.com"
           git add gas-prices.html
-          git diff --staged --quiet || git commit -m "Update gas prices stamp [$(date +'%Y-%m-%d')]"
+          git diff --staged --quiet || git commit -m "⛽ Update gas prices [$(date +'%Y-%m-%d')]"
           git push
