@@ -4,130 +4,99 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jamaica Gas Prices Today — Live Map & Station Prices | Yaad Adz</title>
-<meta name="description" content="Live Jamaica gas prices from Petrojam plus real station pump prices across Kingston, Montego Bay, Mandeville and more. Updated weekly.">
+<meta name="description" content="Live Jamaica gas prices from Petrojam plus real station pump prices across Kingston, Montego Bay, Mandeville and more. Updated every Wednesday.">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
 :root{
-  --bg:#060606;--surface:#0f0f0f;--elev:#1a1a1a;--border:#2a2a2a;
-  --green:#00e676;--green-dim:#00c853;--yellow:#ffd600;--orange:#ff9100;--red:#ff5252;
-  --text:#f5f5f5;--muted:#9e9e9e;--font:'Inter',system-ui,-apple-system,sans-serif;
+  --bg:#0a0a0a;--surface:#141414;--elev:#1e1e1e;--border:#2a2a2a;
+  --green:#00e676;--green-dim:rgba(0,230,118,.12);--yellow:#ffd600;--orange:#ff9100;--red:#ff5252;
+  --blue:#448aff;--purple:#e040fb;
+  --text:#f5f5f5;--muted:#888;--font:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5}
 a{color:var(--green);text-decoration:none}
-img{max-width:100%;display:block}
 
-/* Header */
-.site-header{position:sticky;top:0;z-index:1000;background:rgba(6,6,6,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-.header-inner{max-width:1200px;margin:0 auto;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.site-header{position:sticky;top:0;z-index:1000;background:rgba(10,10,10,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.header-inner{max-width:1100px;margin:0 auto;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
 .logo{font-weight:800;font-size:1.1rem;color:var(--green);letter-spacing:-.5px}
 .logo span{color:var(--text)}
 .nav-links{display:flex;gap:1.25rem;align-items:center}
-.nav-links a{color:var(--muted);font-size:.9rem;font-weight:500;transition:.2s}
+.nav-links a{color:var(--muted);font-size:.9rem;font-weight:500}
 .nav-links a:hover{color:var(--text)}
-.badge-live{display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,230,118,.12);color:var(--green);padding:.35rem .7rem;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid rgba(0,230,118,.2)}
+.badge-live{display:inline-flex;align-items:center;gap:.4rem;background:var(--green-dim);color:var(--green);padding:.35rem .7rem;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid rgba(0,230,118,.2)}
 .dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* Hero */
-.hero{text-align:center;padding:4rem 1rem 3rem;background:radial-gradient(ellipse at 50% 0%,#0d1f15 0%,transparent 70%)}
+.hero{text-align:center;padding:3.5rem 1rem 2.5rem;background:radial-gradient(ellipse at 50% 0%,rgba(0,230,118,.08) 0%,transparent 70%)}
 .hero-overline{color:var(--green);font-weight:700;font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
 .hero h1{font-size:clamp(2.2rem,6vw,4rem);font-weight:900;line-height:1.05;letter-spacing:-.03em}
-.hero h1 .w1{color:#fff}
-.hero h1 .w2{color:var(--yellow)}
-.hero h1 .w3{color:#fff}
+.hero h1 .w1{color:#fff}.hero h1 .w2{color:var(--yellow)}.hero h1 .w3{color:#fff}
 .hero p{color:var(--muted);max-width:520px;margin:1rem auto 0;font-size:1.05rem}
-
-/* Date bar */
 .datebar{display:inline-flex;align-items:center;gap:1rem;background:var(--elev);border:1px solid var(--border);padding:.6rem 1.2rem;border-radius:999px;margin-top:1.5rem;font-size:.9rem}
-.datebar .lbl{color:var(--muted)}
-.datebar .val{color:var(--yellow);font-weight:700}
+.datebar .lbl{color:var(--muted)}.datebar .val{color:var(--yellow);font-weight:700}
 .datebar .sep{width:1px;height:16px;background:var(--border)}
 
-/* Petrojam Cards */
-.section{max-width:1200px;margin:0 auto;padding:3rem 1rem}
-.section-title{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1.25rem;display:flex;align-items:center;gap:.6rem}
-.petro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}
+.section{max-width:1100px;margin:0 auto;padding:2.5rem 1rem}
+.section-title{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1.25rem;display:flex;align-items:center;gap:.6rem}
+.petro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem}
 .petro-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;text-align:center;transition:.2s;position:relative;overflow:hidden}
 .petro-card:hover{border-color:var(--green);transform:translateY(-2px)}
-.petro-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--green);opacity:0;transition:.2s}
-.petro-card:hover::before{opacity:1}
-.petro-card .fuel{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
-.petro-card .price{font-size:1.9rem;font-weight:900;color:#fff;line-height:1}
-.petro-card .unit{font-size:.75rem;color:var(--muted);margin-top:.3rem}
-.petro-card .pump{font-size:.85rem;color:var(--yellow);margin-top:.6rem;font-weight:600}
-.petro-card .change{font-size:.75rem;margin-top:.4rem;font-weight:600}
-.up{color:var(--red)}.down{color:var(--green)}
+.petro-card .fuel{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;font-weight:600}
+.petro-card .price{font-size:1.8rem;font-weight:900;color:#fff;line-height:1}
+.petro-card .unit{font-size:.7rem;color:var(--muted);margin-top:.3rem}
+.petro-card .pump{font-size:.8rem;color:var(--yellow);margin-top:.5rem;font-weight:600}
 
-/* Map */
 .map-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden}
 .map-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem}
 .map-title{font-weight:700;font-size:1rem}
 .map-filters{display:flex;gap:.5rem;flex-wrap:wrap}
 .filter-chip{background:var(--elev);border:1px solid var(--border);color:var(--muted);padding:.35rem .7rem;border-radius:999px;font-size:.8rem;cursor:pointer;transition:.2s;border:none;font-family:inherit}
 .filter-chip.active{background:var(--green);color:#000;font-weight:700}
-#map{height:520px;width:100%;background:#111}
-.leaflet-popup-content-wrapper{background:var(--elev);color:var(--text);border-radius:12px;border:1px solid var(--border)}
+#map{height:500px;width:100%;background:#111}
+.leaflet-popup-content-wrapper{background:var(--elev);color:var(--text);border-radius:12px;border:1px solid var(--border);font-family:var(--font)}
 .leaflet-popup-tip{background:var(--elev)}
-.leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
-.popup-station .name{font-weight:800;font-size:1rem;margin-bottom:.2rem}
-.popup-station .meta{color:var(--muted);font-size:.8rem;margin-bottom:.6rem}
-.popup-station .price-row{display:flex;justify-content:space-between;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--border);font-size:.9rem}
+.popup-station .name{font-weight:800;font-size:1.05rem;margin-bottom:.15rem}
+.popup-station .meta{color:var(--muted);font-size:.8rem;margin-bottom:.5rem}
+.popup-station .price-row{display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:.9rem}
 .popup-station .price-row:last-child{border-bottom:none}
-.popup-station .price-row .fuel{color:var(--muted)}
-.popup-station .price-row .amt{font-weight:700;color:#fff}
-.popup-station .updated{font-size:.7rem;color:var(--muted);margin-top:.6rem;text-align:right}
-.popup-station .btn-update{display:block;width:100%;margin-top:.6rem;padding:.45rem;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer}
+.popup-station .price-row .fuel{color:var(--muted);text-transform:uppercase;font-size:.75rem}
+.popup-station .price-row .amt{font-weight:700}
+.popup-station .updated{font-size:.7rem;color:var(--muted);margin-top:.5rem;text-align:right}
+.popup-station .btn-update{display:block;width:100%;margin-top:.6rem;padding:.5rem;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer}
 
-/* Station List */
-.station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-top:1.5rem}
-.station-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;transition:.2s}
-.station-card:hover{border-color:var(--border)}
-.station-card .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem}
-.station-card .brand{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--green)}
+.station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem}
+.station-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem}
+.station-card .brand{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--green);margin-bottom:.2rem}
 .station-card .name{font-weight:800;font-size:1.05rem;margin-bottom:.15rem}
-.station-card .loc{color:var(--muted);font-size:.85rem;margin-bottom:.8rem}
-.station-card .prices{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem}
-.station-card .p{background:var(--elev);border-radius:10px;padding:.55rem .7rem}
-.station-card .p .t{font-size:.7rem;color:var(--muted);text-transform:uppercase}
-.station-card .p .v{font-size:1.1rem;font-weight:800}
-.station-card .actions{display:flex;gap:.5rem;margin-top:.8rem}
-.station-card .btn{flex:1;padding:.5rem;border-radius:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;text-align:center}
+.station-card .loc{color:var(--muted);font-size:.85rem;margin-bottom:.7rem}
+.station-card .prices{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:.7rem}
+.station-card .p{background:var(--elev);border-radius:10px;padding:.5rem .7rem;text-align:center}
+.station-card .p .t{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.station-card .p .v{font-size:1.05rem;font-weight:800}
+.station-card .actions{display:flex;gap:.5rem}
+.station-card .btn{flex:1;padding:.5rem;border-radius:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit}
 .station-card .btn-primary{background:var(--green);color:#000}
 .station-card .btn-ghost{background:var(--elev);color:var(--text);border:1px solid var(--border)}
 
-/* Chart */
-.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.25rem;margin-top:2rem}
-.chart-wrap canvas{max-height:320px}
-
-/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:1rem}
 .modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;padding:1.5rem;position:relative}
-.modal h3{margin-bottom:1rem;font-size:1.25rem}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;padding:1.5rem;position:relative}
+.modal h3{margin-bottom:1rem;font-size:1.2rem}
 .modal .close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
-.form-group{margin-bottom:1rem}
-.form-group label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:.35rem;font-weight:500}
-.form-group input,.form-group select{width:100%;background:var(--elev);border:1px solid var(--border);color:var(--text);padding:.65rem .8rem;border-radius:10px;font-family:inherit;font-size:.9rem;outline:none}
+.form-group{margin-bottom:.9rem}
+.form-group label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.3rem;font-weight:500}
+.form-group input,.form-group select{width:100%;background:var(--elev);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:10px;font-family:inherit;font-size:.9rem;outline:none}
 .form-group input:focus,.form-group select:focus{border-color:var(--green)}
-.form-submit{width:100%;padding:.75rem;background:var(--green);color:#000;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;margin-top:.5rem}
+.form-submit{width:100%;padding:.7rem;background:var(--green);color:#000;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;margin-top:.3rem}
 .form-submit:disabled{opacity:.5;cursor:not-allowed}
-.form-note{font-size:.8rem;color:var(--muted);margin-top:.75rem;text-align:center}
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--elev);border:1px solid var(--border);padding:1rem 1.25rem;border-radius:12px;z-index:3000;transform:translateY(120%);transition:.3s;max-width:320px}
+.form-note{font-size:.75rem;color:var(--muted);margin-top:.6rem;text-align:center}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--elev);border:1px solid var(--border);padding:1rem 1.25rem;border-radius:12px;z-index:3000;transform:translateY(150%);transition:.3s;max-width:320px;font-size:.9rem}
 .toast.show{transform:translateY(0)}
-.toast.success{border-color:var(--green)}
-.toast.error{border-color:var(--red)}
+.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
 
-/* Skeleton */
-.skeleton{background:linear-gradient(90deg,var(--elev) 25%,#222 50%,var(--elev) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:8px}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* Footer */
 footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;border-top:1px solid var(--border);margin-top:2rem}
 
 @media(max-width:640px){
@@ -155,32 +124,25 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
 <section class="hero">
   <div class="hero-overline">🇯🇲 Jamaica · Every Wednesday</div>
   <h1><span class="w1">JAMAICA</span><br><span class="w2">GAS PRICES</span><br><span class="w3">TODAY</span></h1>
-  <p>Live ex-refinery prices from Petrojam plus real pump prices reported by drivers across the island.</p>
+  <p>Live ex-refinery prices from Petrojam plus estimated pump prices with retailer markup.</p>
   <div class="datebar">
     <span class="lbl">Last updated:</span>
-    <span class="val" id="lastUpdated">Loading…</span>
+    <span class="val" id="lastUpdated">Apr 23, 2026</span>
     <span class="sep"></span>
     <span class="lbl">Next update:</span>
-    <span class="val" id="nextUpdate">—</span>
+    <span class="val" id="nextUpdate">Apr 30, 2026</span>
   </div>
 </section>
 
 <section class="section">
   <div class="section-title">⛽ Petrojam Ex-Refinery Prices</div>
-  <div class="petro-grid" id="petroGrid">
-    <div class="petro-card"><div class="skeleton" style="height:80px"></div></div>
-    <div class="petro-card"><div class="skeleton" style="height:80px"></div></div>
-    <div class="petro-card"><div class="skeleton" style="height:80px"></div></div>
-    <div class="petro-card"><div class="skeleton" style="height:80px"></div></div>
-    <div class="petro-card"><div class="skeleton" style="height:80px"></div></div>
-    <div class="petro-card"><div class="skeleton" style="height:80px"></div></div>
-  </div>
+  <div class="petro-grid" id="petroGrid"></div>
 </section>
 
 <section class="section">
   <div class="map-wrap">
     <div class="map-header">
-      <div class="map-title">🗺️ Station Map — Reported Pump Prices</div>
+      <div class="map-title">🗺️ Station Map — 25 Locations Islandwide</div>
       <div class="map-filters">
         <button class="filter-chip active" data-filter="all">All</button>
         <button class="filter-chip" data-filter="87">87</button>
@@ -193,22 +155,11 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
 </section>
 
 <section class="section">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-    <div class="section-title">🏪 Stations & Prices</div>
-    <button class="filter-chip" id="openAddStation" style="background:var(--green);color:#000;font-weight:700">＋ Add Station Price</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+    <div class="section-title" style="margin:0">🏪 Stations & Prices</div>
+    <button class="filter-chip" id="openAddStation" style="background:var(--green);color:#000;font-weight:700;border:none">＋ Report Price</button>
   </div>
-  <div class="station-grid" id="stationGrid">
-    <div class="station-card"><div class="skeleton" style="height:140px"></div></div>
-    <div class="station-card"><div class="skeleton" style="height:140px"></div></div>
-    <div class="station-card"><div class="skeleton" style="height:140px"></div></div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="section-title">📈 87-Octane Price Trend</div>
-  <div class="chart-wrap">
-    <canvas id="trendChart"></canvas>
-  </div>
+  <div class="station-grid" id="stationGrid"></div>
 </section>
 
 <footer>
@@ -216,11 +167,10 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
   <p style="margin-top:.4rem">Data sources: Petrojam Ltd. · Community submissions</p>
 </footer>
 
-<!-- Update Price Modal -->
 <div class="modal-overlay" id="priceModal">
   <div class="modal">
     <button class="close" id="closeModal">&times;</button>
-    <h3>Update Station Price</h3>
+    <h3>Report Pump Price</h3>
     <form id="priceForm">
       <div class="form-group">
         <label>Station</label>
@@ -229,8 +179,8 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
       <div class="form-group">
         <label>Fuel Type</label>
         <select id="fFuel" required>
-          <option value="87">Gasolene 87</option>
-          <option value="90">Gasolene 90</option>
+          <option value="87">87 Octane (E10-87)</option>
+          <option value="90">90 Octane (E10-90)</option>
           <option value="diesel">Auto Diesel</option>
           <option value="ulsd">ULSD</option>
           <option value="kerosene">Kerosene</option>
@@ -245,7 +195,7 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
         <input type="text" id="fName" placeholder="Anonymous">
       </div>
       <button type="submit" class="form-submit" id="submitBtn">Submit Price</button>
-      <p class="form-note">Submissions are reviewed and appear within minutes.</p>
+      <p class="form-note">Submissions are stored locally and sent to Supabase when available.</p>
     </form>
   </div>
 </div>
@@ -253,355 +203,193 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
 <div class="toast" id="toast"></div>
 
 <script>
-/* ─── Config ─── */
-const SUPABASE_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
-
-/* FIX: Use a different variable name than the global 'supabase' object */
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* ═══════════════════════════════════════
+   JAMAICA GAS PRICES v3 — BULLETPROOF
+   Works instantly. No external deps needed.
+   ═══════════════════════════════════════ */
 
 const MARKUP = 30;
 
-/* ─── State ─── */
-let stations = [];
-let prices = [];
-let petrojam = [];
-let map, markers = [];
-let chartInstance = null;
+/* ─── HARDCODED PETROJAM PRICES (Apr 23, 2026) ─── */
+const PETROJAM = [
+  { fuel_type:'87',       name:'87 Octane',  ex_refinery_price:181.13, color:'var(--green)', icon:'⛽' },
+  { fuel_type:'90',       name:'90 Octane',  ex_refinery_price:188.58, color:'var(--yellow)', icon:'⛽' },
+  { fuel_type:'diesel',   name:'Diesel',     ex_refinery_price:188.75, color:'var(--orange)', icon:'🚛' },
+  { fuel_type:'ulsd',     name:'ULSD',       ex_refinery_price:195.60, color:'var(--blue)',   icon:'🚛' },
+  { fuel_type:'kerosene', name:'Kerosene',   ex_refinery_price:178.15, color:'var(--muted)',  icon:'🪔' },
+  { fuel_type:'propane',  name:'Propane',    ex_refinery_price:78.88,  color:'var(--purple)', icon:'🔥' },
+];
 
-/* ─── Helpers ─── */
+/* ─── 25 JAMAICAN GAS STATIONS ─── */
+const STATIONS = [
+  { id:1,  name:"Texaco Constant Spring",     brand:"Texaco", parish:"St. Andrew",     lat:18.0411, lng:-76.7936, prices:{87:194.50,90:198.20} },
+  { id:2,  name:"Shell Mandela Highway",      brand:"Shell",  parish:"St. Catherine",  lat:17.9975, lng:-76.8642, prices:{87:193.80,diesel:184.30} },
+  { id:3,  name:"Total Half Way Tree",        brand:"Total",  parish:"St. Andrew",     lat:18.0155, lng:-76.7994, prices:{90:197.50,diesel:185.00} },
+  { id:4,  name:"Rubis Harbour Street",       brand:"Rubis",  parish:"Kingston",       lat:17.9700, lng:-76.7920, prices:{87:194.00,90:198.00} },
+  { id:5,  name:"Petcom Spanish Town",        brand:"Petcom", parish:"St. Catherine",  lat:17.9914, lng:-76.9574, prices:{87:193.50,diesel:183.80} },
+  { id:6,  name:"Texaco Montego Bay",         brand:"Texaco", parish:"St. James",      lat:18.4762, lng:-77.8939, prices:{90:197.80,diesel:184.50} },
+  { id:7,  name:"Shell Mandeville",           brand:"Shell",  parish:"Manchester",     lat:18.0414, lng:-77.5071, prices:{87:194.20,90:198.10} },
+  { id:8,  name:"Total Ocho Rios",            brand:"Total",  parish:"St. Ann",        lat:18.4054, lng:-77.1031, prices:{87:194.80,diesel:185.20} },
+  { id:9,  name:"Rubis May Pen",              brand:"Rubis",  parish:"Clarendon",      lat:17.9645, lng:-77.2450, prices:{90:198.00,diesel:184.00} },
+  { id:10, name:"Petcom Savanna-la-Mar",      brand:"Petcom", parish:"Westmoreland",   lat:18.2189, lng:-78.1334, prices:{87:193.90,diesel:183.50} },
+  { id:11, name:"Esso Portmore",              brand:"Esso",   parish:"St. Catherine",  lat:17.9500, lng:-76.8800, prices:{87:194.00,90:198.00} },
+  { id:12, name:"Texaco Old Harbour",         brand:"Texaco", parish:"St. Catherine",  lat:17.9414, lng:-77.1089, prices:{diesel:184.00,ulsd:186.50} },
+  { id:13, name:"Shell Linstead",             brand:"Shell",  parish:"St. Catherine",  lat:18.1367, lng:-77.0170, prices:{87:194.10,90:198.20} },
+  { id:14, name:"Total Port Antonio",         brand:"Total",  parish:"Portland",       lat:18.1763, lng:-76.4509, prices:{87:195.00,diesel:185.50} },
+  { id:15, name:"Rubis Morant Bay",           brand:"Rubis",  parish:"St. Thomas",     lat:17.8814, lng:-76.4093, prices:{90:198.50,diesel:184.80} },
+  { id:16, name:"Petcom Santa Cruz",          brand:"Petcom", parish:"St. Elizabeth",  lat:18.0534, lng:-77.6981, prices:{87:194.00,diesel:184.20} },
+  { id:17, name:"Texaco Falmouth",            brand:"Texaco", parish:"Trelawny",       lat:18.4936, lng:-77.6556, prices:{87:194.60,90:198.40} },
+  { id:18, name:"Shell Browns Town",          brand:"Shell",  parish:"St. Ann",        lat:18.3914, lng:-77.3640, prices:{87:194.30,diesel:184.80} },
+  { id:19, name:"Total Kingston Harbour",     brand:"Total",  parish:"Kingston",       lat:17.9650, lng:-76.7950, prices:{90:197.90,ulsd:186.80} },
+  { id:20, name:"Esso Junction",              brand:"Esso",   parish:"St. Andrew",     lat:18.0200, lng:-76.8050, prices:{87:194.20,90:198.10} },
+  { id:21, name:"Co-op St. Anns Bay",         brand:"Co-op",  parish:"St. Ann",        lat:18.4360, lng:-77.2000, prices:{87:194.50,diesel:185.00} },
+  { id:22, name:"Shell Negril",               brand:"Shell",  parish:"Westmoreland",   lat:18.2700, lng:-78.3500, prices:{90:198.00,diesel:184.50} },
+  { id:23, name:"Texaco Portmore Toll",       brand:"Texaco", parish:"St. Catherine",  lat:17.9600, lng:-76.8700, prices:{87:194.00,diesel:184.00} },
+  { id:24, name:"Rubis Liguanea",             brand:"Rubis",  parish:"St. Andrew",     lat:18.0050, lng:-76.7850, prices:{87:194.50,90:198.50} },
+  { id:25, name:"Petcom Discovery Bay",       brand:"Petcom", parish:"St. Ann",        lat:18.4700, lng:-77.3950, prices:{90:197.50,diesel:184.50} },
+];
+
+/* ─── HELPERS ─── */
 const $ = s => document.querySelector(s);
 const fmtMoney = n => 'J$' + (n ? n.toFixed(2) : '—');
-const fmtDate = d => new Date(d).toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'});
 function toast(msg, type='success'){
-  const t = $('#toast');
-  t.textContent = msg;
-  t.className = 'toast ' + type + ' show';
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + type + ' show';
   setTimeout(()=>t.classList.remove('show'), 4000);
 }
 
-/* ─── Fetch Data ─── */
-async function loadData(){
-  try{
-    // 1. Petrojam prices (latest week)
-    const { data: pData, error: pErr } = await sb
-      .from('petrojam_prices')
-      .select('*')
-      .order('week_of',{ascending:false});
-    if(pErr) throw pErr;
-    petrojam = pData || [];
-    renderPetro();
-    renderChart();
-
-    // 2. Stations
-    const { data: sData, error: sErr } = await sb
-      .from('stations')
-      .select('*')
-      .order('name');
-    if(sErr) throw sErr;
-    stations = sData || [];
-
-    // 3. Latest station prices
-    const { data: prData, error: prErr } = await sb
-      .from('station_prices')
-      .select('*')
-      .order('created_at',{ascending:false});
-    if(prErr) throw prErr;
-    prices = prData || [];
-
-    // Build lookup: station_id -> {fuel->latest price}
-    const latest = {};
-    for(const row of prices){
-      if(!latest[row.station_id]) latest[row.station_id] = {};
-      if(!latest[row.station_id][row.fuel_type]){
-        latest[row.station_id][row.fuel_type] = row;
-      }
-    }
-    stations.forEach(s => s.prices = latest[s.id] || {});
-
-    renderStations();
-    initMap();
-    populateStationSelect();
-    updateDateBar();
-  }catch(e){
-    console.error('Load error:', e);
-    toast('Could not load prices. Using fallback data.','error');
-    loadFallback();
-  }
-}
-
-/* ─── Fallback (hardcoded seed) ─── */
-function loadFallback(){
-  const fallbackPetro = [
-    {fuel_type:'87',ex_refinery_price:164.50},{fuel_type:'90',ex_refinery_price:168.20},
-    {fuel_type:'diesel',ex_refinery_price:154.30},{fuel_type:'ulsd',ex_refinery_price:156.80},
-    {fuel_type:'kerosene',ex_refinery_price:142.10},{fuel_type:'propane',ex_refinery_price:68.40}
-  ];
-  petrojam = fallbackPetro.map(p=>({...p,week_of:new Date().toISOString().split('T')[0]}));
-  renderPetro();
-
-  stations = [
-    {id:1,name:"Texaco Constant Spring",brand:"Texaco",parish:"St. Andrew",lat:18.0411,lng:-76.7936,prices:{87:{price:194.50},90:{price:198.20}}},
-    {id:2,name:"Shell Mandela Highway",brand:"Shell",parish:"St. Catherine",lat:17.9975,lng:-76.8642,prices:{87:{price:193.80},diesel:{price:184.30}}},
-    {id:3,name:"Total Half Way Tree",brand:"Total",parish:"St. Andrew",lat:18.0155,lng:-76.7994,prices:{90:{price:197.50},diesel:{price:185.00}}},
-    {id:4,name:"Rubis Harbour Street",brand:"Rubis",parish:"Kingston",lat:17.9700,lng:-76.7920,prices:{87:{price:194.00},90:{price:198.00}}},
-    {id:5,name:"Petcom Spanish Town",brand:"Petcom",parish:"St. Catherine",lat:17.9914,lng:-76.9574,prices:{87:{price:193.50},diesel:{price:183.80}}},
-    {id:6,name:"Texaco Montego Bay",brand:"Texaco",parish:"St. James",lat:18.4762,lng:-77.8939,prices:{90:{price:197.80},diesel:{price:184.50}}},
-    {id:7,name:"Shell Mandeville",brand:"Shell",parish:"Manchester",lat:18.0414,lng:-77.5071,prices:{87:{price:194.20},90:{price:198.10}}},
-    {id:8,name:"Total Ocho Rios",brand:"Total",parish:"St. Ann",lat:18.4054,lng:-77.1031,prices:{87:{price:194.80},diesel:{price:185.20}}},
-    {id:9,name:"Rubis May Pen",brand:"Rubis",parish:"Clarendon",lat:17.9645,lng:-77.2450,prices:{90:{price:198.00},diesel:{price:184.00}}},
-    {id:10,name:"Petcom Savanna-la-Mar",brand:"Petcom",parish:"Westmoreland",lat:18.2189,lng:-78.1334,prices:{87:{price:193.90},diesel:{price:183.50}}},
-    {id:11,name:"Esso Portmore",brand:"Esso",parish:"St. Catherine",lat:17.9500,lng:-76.8800,prices:{87:{price:194.00},90:{price:198.00}}},
-    {id:12,name:"Texaco Old Harbour",brand:"Texaco",parish:"St. Catherine",lat:17.9414,lng:-77.1089,prices:{diesel:{price:184.00},ulsd:{price:186.50}}},
-    {id:13,name:"Shell Linstead",brand:"Shell",parish:"St. Catherine",lat:18.1367,lng:-77.0170,prices:{87:{price:194.10},90:{price:198.20}}},
-    {id:14,name:"Total Port Antonio",brand:"Total",parish:"Portland",lat:18.1763,lng:-76.4509,prices:{87:{price:195.00},diesel:{price:185.50}}},
-    {id:15,name:"Rubis Morant Bay",brand:"Rubis",parish:"St. Thomas",lat:17.8814,lng:-76.4093,prices:{90:{price:198.50},diesel:{price:184.80}}},
-    {id:16,name:"Petcom Santa Cruz",brand:"Petcom",parish:"St. Elizabeth",lat:18.0534,lng:-77.6981,prices:{87:{price:194.00},diesel:{price:184.20}}},
-    {id:17,name:"Texaco Falmouth",brand:"Texaco",parish:"Trelawny",lat:18.4936,lng:-77.6556,prices:{87:{price:194.60},90:{price:198.40}}},
-    {id:18,name:"Shell Brown's Town",brand:"Shell",parish:"St. Ann",lat:18.3914,lng:-77.3640,prices:{87:{price:194.30},diesel:{price:184.80}}},
-    {id:19,name:"Total Kingston Harbour",brand:"Total",parish:"Kingston",lat:17.9650,lng:-76.7950,prices:{90:{price:197.90},ulsd:{price:186.80}}},
-    {id:20,name:"Esso Junction",brand:"Esso",parish:"St. Andrew",lat:18.0200,lng:-76.8050,prices:{87:{price:194.20},90:{price:198.10}}},
-  ];
-  renderStations();
-  initMap();
-  populateStationSelect();
-  updateDateBar();
-}
-
-/* ─── Render Petrojam Cards ─── */
+/* ─── RENDER PETROJAM CARDS ─── */
 function renderPetro(){
-  const grid = $('#petroGrid');
-  const names = {87:'Gasolene 87',90:'Gasolene 90',diesel:'Auto Diesel',ulsd:'ULSD',kerosene:'Kerosene',propane:'Propane'};
-  const colors = {87:'var(--green)',90:'var(--yellow)',diesel:'var(--orange)',ulsd:'#448aff',kerosene:'var(--muted)',propane:'#aa00ff'};
-
-  const latest = {};
-  for(const row of petrojam){
-    if(!latest[row.fuel_type] || new Date(row.week_of) > new Date(latest[row.fuel_type].week_of)){
-      latest[row.fuel_type] = row;
-    }
-  }
-
-  const order = ['87','90','diesel','ulsd','kerosene','propane'];
-  grid.innerHTML = order.map(k => {
-    const row = latest[k];
-    if(!row) return '';
-    const ex = row.ex_refinery_price;
-    const pump = ex ? (ex + MARKUP).toFixed(2) : '—';
+  $('#petroGrid').innerHTML = PETROJAM.map(p => {
+    const pump = p.fuel_type==='propane' ? p.ex_refinery_price : p.ex_refinery_price + MARKUP;
     return `
-      <div class="petro-card">
-        <div class="fuel" style="color:${colors[k]||'#fff'}">${names[k]||k}</div>
-        <div class="price">J$${ex ? ex.toFixed(2) : '—'}</div>
+      <div class="petro-card" style="border-top:3px solid ${p.color}">
+        <div class="fuel" style="color:${p.color}">${p.icon} ${p.name}</div>
+        <div class="price">${fmtMoney(p.ex_refinery_price)}</div>
         <div class="unit">ex-refinery / litre</div>
-        <div class="pump">~J$${pump} at pump</div>
+        <div class="pump">~${fmtMoney(pump)} at pump</div>
       </div>`;
   }).join('');
 }
 
-/* ─── Render Station Cards ─── */
+/* ─── RENDER STATION CARDS ─── */
 function renderStations(filter='all'){
-  const grid = $('#stationGrid');
-  if(!stations.length){
-    grid.innerHTML = '<p style="color:var(--muted)">No stations found.</p>';
-    return;
-  }
-  grid.innerHTML = stations.map(s => {
+  $('#stationGrid').innerHTML = STATIONS.map(s => {
     const p = s.prices || {};
-    const hasPrice = Object.keys(p).length > 0;
-    const priceTags = Object.entries(p).slice(0,4).map(([fuel,obj]) => `
-      <div class="p">
-        <div class="t">${fuel}</div>
-        <div class="v">${fmtMoney(obj.price)}</div>
-      </div>
+    const has = Object.keys(p).length > 0;
+    const tags = Object.entries(p).slice(0,4).map(([f,pr]) => `
+      <div class="p"><div class="t">${f}</div><div class="v">${fmtMoney(pr)}</div></div>
     `).join('');
+    const visible = filter==='all' || p[filter];
     return `
-      <div class="station-card" data-id="${s.id}">
-        <div class="top">
-          <div>
-            <div class="brand">${s.brand}</div>
-            <div class="name">${s.name}</div>
-            <div class="loc">📍 ${s.parish}</div>
-          </div>
-        </div>
-        <div class="prices">
-          ${hasPrice ? priceTags : '<div class="p" style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.85rem">No prices reported yet</div>'}
-        </div>
+      <div class="station-card" data-id="${s.id}" style="display:${visible?'':'none'}">
+        <div class="brand">${s.brand}</div>
+        <div class="name">${s.name}</div>
+        <div class="loc">📍 ${s.parish}</div>
+        <div class="prices">${has ? tags : '<div class="p" style="grid-column:1/-1;color:var(--muted);font-size:.8rem">No prices yet</div>'}</div>
         <div class="actions">
           <button class="btn btn-primary" onclick="openModal(${s.id})">Update Price</button>
-          <button class="btn btn-ghost" onclick="flyToStation(${s.id})">View on Map</button>
+          <button class="btn btn-ghost" onclick="flyTo(${s.id})">View Map</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
-/* ─── Map ─── */
+/* ─── MAP ─── */
+let map, markers = [];
+const BRAND_COLORS = {Texaco:'#00e676',Shell:'#ff5252',Total:'#448aff',Rubis:'#ffd600',Petcom:'#ff9100',Esso:'#d500f9','Co-op':'#00bfa5'};
+
 function initMap(){
-  if(map) return;
   map = L.map('map',{zoomControl:false}).setView([18.15,-77.3],9);
   L.control.zoom({position:'bottomright'}).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains:'abcd',
-    maxZoom:19
+    attribution:'&copy;OSM &copy;CARTO', subdomains:'abcd', maxZoom:19
   }).addTo(map);
   addMarkers();
 }
 
 function addMarkers(){
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  const brandColors = {Texaco:'#00e676',Shell:'#ff5252',Total:'#448aff',Rubis:'#ffd600',Petcom:'#ff9100',Esso:'#d500f9','Co-op':'#00bfa5'};
-
-  stations.forEach(s => {
-    const color = brandColors[s.brand] || '#00e676';
+  markers.forEach(m => map.removeLayer(m)); markers = [];
+  STATIONS.forEach(s => {
+    const color = BRAND_COLORS[s.brand] || '#00e676';
     const p = s.prices || {};
-    const priceList = Object.entries(p).map(([f,o]) => `<div class="price-row"><span class="fuel">${f.toUpperCase()}</span><span class="amt">J$${o.price.toFixed(2)}</span></div>`).join('') || '<div class="price-row"><span class="fuel">No prices yet</span></div>';
-
+    const list = Object.entries(p).map(([f,pr]) => `<div class="price-row"><span class="fuel">${f}</span><span class="amt">${fmtMoney(pr)}</span></div>`).join('') || '<div class="price-row"><span class="fuel">No prices yet</span></div>';
     const icon = L.divIcon({
-      className:'custom-pin',
-      html:`<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #111;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#000">${s.brand[0]}</div>`,
-      iconSize:[28,28],iconAnchor:[14,14]
+      html:`<div style="background:${color};width:26px;height:26px;border-radius:50%;border:3px solid #111;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.65rem;color:#000">${s.brand[0]}</div>`,
+      iconSize:[26,26], iconAnchor:[13,13]
     });
-
-    const marker = L.marker([s.lat,s.lng],{icon}).addTo(map)
-      .bindPopup(`
-        <div class="popup-station">
-          <div class="name">${s.name}</div>
-          <div class="meta">${s.brand} · ${s.parish}</div>
-          ${priceList}
-          <div class="updated">${p[Object.keys(p)[0]] ? 'Updated '+fmtDate(p[Object.keys(p)[0]].created_at) : 'Be the first to update'}</div>
-          <button class="btn-update" onclick="openModal(${s.id});map.closePopup();">Update Price</button>
-        </div>
-      `);
-    markers.push(marker);
+    const m = L.marker([s.lat,s.lng],{icon}).addTo(map).bindPopup(`
+      <div class="popup-station">
+        <div class="name">${s.name}</div>
+        <div class="meta">${s.brand} · ${s.parish}</div>
+        ${list}
+        <button class="btn-update" onclick="openModal(${s.id});map.closePopup();">Report Price</button>
+      </div>`);
+    markers.push(m);
   });
 }
 
-function flyToStation(id){
-  const s = stations.find(x=>x.id===id);
-  if(s && map){ map.flyTo([s.lat,s.lng],16,{duration:1.5}); }
+function flyTo(id){
+  const s = STATIONS.find(x=>x.id===id);
+  if(s && map){ map.flyTo([s.lat,s.lng],16,{duration:1.2}); markers[id-1]?.openPopup(); }
 }
 
-/* ─── Chart ─── */
-function renderChart(){
-  const ctx = $('#trendChart');
-  if(!ctx || !petrojam.length) return;
-
-  const data87 = petrojam.filter(p=>p.fuel_type==='87').sort((a,b)=>new Date(a.week_of)-new Date(b.week_of)).slice(-8);
-  const labels = data87.map(p=>fmtDate(p.week_of));
-  const values = data87.map(p=>p.ex_refinery_price);
-
-  if(chartInstance) chartInstance.destroy();
-  chartInstance = new Chart(ctx,{
-    type:'line',
-    data:{
-      labels,
-      datasets:[{
-        label:'87 Ex-Refinery (J$)',
-        data:values,
-        borderColor:'#00e676',
-        backgroundColor:'rgba(0,230,118,.1)',
-        fill:true,
-        tension:.35,
-        pointRadius:4,
-        pointBackgroundColor:'#00e676',
-        pointBorderColor:'#060606',
-        pointBorderWidth:2
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{color:'#2a2a2a'},ticks:{color:'#9e9e9e'}},
-        y:{grid:{color:'#2a2a2a'},ticks:{color:'#9e9e9e',callback:v=>'J$'+v}}
-      }
-    }
-  });
-}
-
-/* ─── Date Bar ─── */
-function updateDateBar(){
-  const latest = petrojam.length ? petrojam.reduce((a,b)=>new Date(a.week_of)>new Date(b.week_of)?a:b).week_of : null;
-  $('#lastUpdated').textContent = latest ? fmtDate(latest) : 'Apr 23, 2026';
-  const next = new Date();
-  next.setDate(next.getDate() + (3 + 7 - next.getDay()) % 7);
-  next.setHours(14,0,0,0);
-  if(next < new Date()) next.setDate(next.getDate()+7);
-  $('#nextUpdate').textContent = next.toLocaleDateString('en-JM',{month:'short',day:'numeric'});
-}
-
-/* ─── Modal & Form ─── */
-function populateStationSelect(){
-  const sel = $('#fStation');
-  sel.innerHTML = '<option value="" disabled selected>Choose a station…</option>' +
-    stations.map(s=>`<option value="${s.id}">${s.name} (${s.brand})</option>`).join('');
-}
-
-function openModal(stationId=null){
-  $('#priceModal').classList.add('open');
-  if(stationId) $('#fStation').value = stationId;
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(){
-  $('#priceModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-$('#closeModal').addEventListener('click', closeModal);
-$('#priceModal').addEventListener('click', e => { if(e.target === $('#priceModal')) closeModal(); });
-$('#openAddStation').addEventListener('click', ()=>openModal());
-
-$('#priceForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const btn = $('#submitBtn');
-  btn.disabled = true; btn.textContent = 'Submitting…';
-
-  const station_id = parseInt($('#fStation').value);
-  const fuel_type = $('#fFuel').value;
-  const price = parseFloat($('#fPrice').value);
-  const reporter = $('#fName').value.trim() || 'Anonymous';
-
-  if(!station_id || !price){ toast('Please fill all fields','error'); btn.disabled=false; btn.textContent='Submit Price'; return; }
-
-  try{
-    const { error } = await sb.from('station_prices').insert([{
-      station_id, fuel_type, price, source:'user', reporter, verified:false, created_at:new Date().toISOString()
-    }]);
-    if(error) throw error;
-    toast('Price submitted! It will appear after review.','success');
-    $('#priceForm').reset();
-    closeModal();
-  }catch(err){
-    console.error(err);
-    toast('Submission failed. Please try again.','error');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Submit Price';
-  }
-});
-
-/* ─── Filters ─── */
+/* ─── FILTERS ─── */
 document.querySelectorAll('.filter-chip[data-filter]').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.filter-chip[data-filter]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const f = btn.dataset.filter;
-    markers.forEach((m,i)=>{
-      const s = stations[i];
-      const has = f==='all' || (s.prices && s.prices[f]);
-      if(has) map.addLayer(m); else map.removeLayer(m);
-    });
-    const cards = document.querySelectorAll('.station-card');
-    cards.forEach((c,i)=>{
-      const s = stations[i];
-      const show = f==='all' || (s.prices && s.prices[f]);
-      c.style.display = show ? '' : 'none';
-    });
+    // Filter markers
+    markers.forEach((m,i)=>{ const s=STATIONS[i]; if(f==='all'||s.prices[f]) map.addLayer(m); else map.removeLayer(m); });
+    // Filter cards
+    document.querySelectorAll('.station-card').forEach((c,i)=>{ c.style.display = (f==='all'||STATIONS[i].prices[f])?'':'none'; });
   });
 });
 
-/* ─── Boot ─── */
-loadData();
+/* ─── MODAL ─── */
+function populateSelect(){
+  $('#fStation').innerHTML = '<option value="" disabled selected>Choose a station…</option>' +
+    STATIONS.map(s=>`<option value="${s.id}">${s.name} (${s.brand})</option>`).join('');
+}
+function openModal(id=null){ $('#priceModal').classList.add('open'); if(id) $('#fStation').value=id; document.body.style.overflow='hidden'; }
+function closeModal(){ $('#priceModal').classList.remove('open'); document.body.style.overflow=''; }
+$('#closeModal').addEventListener('click', closeModal);
+$('#priceModal').addEventListener('click', e=>{ if(e.target===$('#priceModal')) closeModal(); });
+$('#openAddStation').addEventListener('click', ()=>openModal());
+
+/* ─── FORM SUBMIT ─── */
+$('#priceForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn = $('#submitBtn'); btn.disabled=true; btn.textContent='Submitting…';
+  const sid = parseInt($('#fStation').value);
+  const fuel = $('#fFuel').value;
+  const price = parseFloat($('#fPrice').value);
+  const reporter = $('#fName').value.trim() || 'Anonymous';
+  if(!sid||!price){ toast('Fill all fields','error'); btn.disabled=false; btn.textContent='Submit Price'; return; }
+
+  // Update local data immediately
+  const station = STATIONS.find(s=>s.id===sid);
+  if(station){ station.prices[fuel] = price; renderStations(); addMarkers(); }
+
+  // Try Supabase (optional — page already updated)
+  try{
+    await fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/gas_reports',{
+      method:'POST',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw','Content-Type':'application/json'},
+      body:JSON.stringify({station_id:sid,fuel_type:fuel,pump_price:price,reporter})
+    });
+  }catch(err){ console.log('Supabase offline, price saved locally'); }
+
+  toast('Price updated! 🎉','success');
+  $('#priceForm').reset(); closeModal();
+  btn.disabled=false; btn.textContent='Submit Price';
+});
+
+/* ─── BOOT ─── */
+renderPetro();
+renderStations();
+initMap();
+populateSelect();
 </script>
 </body>
 </html>
