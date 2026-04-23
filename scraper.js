@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-const https = require('https');
 
 const URL = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_KEY;
@@ -11,28 +10,45 @@ if (!URL || !KEY) {
 
 const db = createClient(URL, KEY);
 
-function fetchPage(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YaadAdzBot/1.0)' }
-    }, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
+// Use native fetch (Node 20+) with timeout via AbortController
+function fetchPage(url, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, {
+    signal: controller.signal,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Connection': 'keep-alive',
+    }
+  }).then(res => {
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.text();
+  }).catch(err => {
+    clearTimeout(timer);
+    throw err;
   });
 }
 
 async function main() {
   console.log('Fetching Petrojam...');
   const html = await fetchPage('https://petrojam.com/price/');
+  console.log('Fetched ' + html.length + ' bytes');
 
   // Try multiple date patterns
   const dateMatch = html.match(/Date:\s*<\/td>\s*<td[^>]*>([^<]+)<\/td>/i)
     || html.match(/Date:\s*([^<\n]+)/i)
     || html.match(/(\w+\s+\d{1,2},?\s+\d{4})/);
 
-  if (!dateMatch) throw new Error('Could not find price date');
+  if (!dateMatch) {
+    console.error('Could not find price date. HTML snippet:');
+    console.error(html.slice(0, 2000));
+    throw new Error('Could not find price date');
+  }
 
   const weekOf = new Date(dateMatch[1].trim()).toISOString().split('T')[0];
   console.log('Week of:', weekOf);
