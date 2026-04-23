@@ -1,594 +1,883 @@
-
-html = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jamaica Gas Prices Today — Live Map & Station Prices | Yaad Adz</title>
-<link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<title>Jamaica Gas Prices Today 2026 — Live Petrojam Pump Prices | Yaad Adz</title>
+<meta name="description" content="Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel and kerosene pump prices. Find real gas stations on the map and report pump prices.">
+<meta name="keywords" content="Jamaica gas prices today 2026, Petrojam prices, fuel prices Jamaica, gas price Kingston, diesel price Jamaica, E10-87 price">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://yaadadz.com/gas-prices">
+<meta property="og:title" content="Jamaica Gas Prices Today 2026 — Live Petrojam Prices">
+<meta property="og:description" content="Live pump prices updated every Wednesday. Find stations on the map and report what you paid.">
+<meta property="og:url" content="https://yaadadz.com/gas-prices">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://yaadadz.com/og-image.jpg">
+<link rel="icon" href="/icon-192.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","name":"Jamaica Gas Prices Today 2026","description":"Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel, kerosene pump prices.","url":"https://yaadadz.com/gas-prices","publisher":{"@type":"Organization","name":"Yaad Adz","url":"https://yaadadz.com"},"mainEntity":{"@type":"Dataset","name":"Jamaica Petrojam Fuel Prices","description":"Weekly ex-refinery prices from Petrojam plus retailer markup estimates","frequency":"Weekly"}}
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-KE3X5BMY63');</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
+/* ══════════════════════════════════════════════════
+   YAAD ADZ GAS PRICES V2 — Dark Premium Theme
+══════════════════════════════════════════════════ */
 :root{
-  --bg:#0a0a0a;--surface:#141414;--elev:#1e1e1e;--border:#2a2a2a;
-  --green:#00e676;--green-dim:rgba(0,230,118,.12);--yellow:#ffd600;--orange:#ff9100;--red:#ff5252;
-  --blue:#448aff;--purple:#e040fb;
-  --text:#f5f5f5;--muted:#888;--font:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --bg:#080c0a; --surface:#0f1712; --card:#141c16;
+  --card2:#1a2420; --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.1);
+  --green:#00e064; --green-d:rgba(0,224,100,0.1);
+  --amber:#f5a623; --amber-d:rgba(245,166,35,0.1);
+  --red:#ff4444; --red-d:rgba(255,68,68,0.08);
+  --blue:#3b9eff; --blue-d:rgba(59,158,255,0.1);
+  --purple:#c77dff; --purple-d:rgba(199,125,255,0.1);
+  --t1:#eef2ef; --t2:#7a8c80; --t3:#3d4f42;
+  --font-d:'Bebas Neue',sans-serif;
+  --font-b:'DM Sans',sans-serif;
+  --font-m:'JetBrains Mono',monospace;
+  --r:14px; --r2:20px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5}
-a{color:var(--green);text-decoration:none}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
 
-.site-header{position:sticky;top:0;z-index:1000;background:rgba(10,10,10,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-.header-inner{max-width:1100px;margin:0 auto;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
-.logo{font-weight:800;font-size:1.1rem;color:var(--green)}
-.logo span{color:var(--text)}
-.nav-links{display:flex;gap:1.25rem;align-items:center}
-.nav-links a{color:var(--muted);font-size:.9rem;font-weight:500}
-.badge-live{display:inline-flex;align-items:center;gap:.4rem;background:var(--green-dim);color:var(--green);padding:.35rem .7rem;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid rgba(0,230,118,.2)}
-.dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* ── NOISE TEXTURE overlay ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
 
-.hero{text-align:center;padding:3.5rem 1rem 2.5rem;background:radial-gradient(ellipse at 50% 0%,rgba(0,230,118,.08) 0%,transparent 70%)}
-.hero-overline{color:var(--green);font-weight:700;font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
-.hero h1{font-size:clamp(2.2rem,6vw,4rem);font-weight:900;line-height:1.05;letter-spacing:-.03em}
-.hero h1 .w1{color:#fff}.hero h1 .w2{color:var(--yellow)}.hero h1 .w3{color:#fff}
-.hero p{color:var(--muted);max-width:520px;margin:1rem auto 0;font-size:1.05rem}
-.datebar{display:inline-flex;align-items:center;gap:1rem;background:var(--elev);border:1px solid var(--border);padding:.6rem 1.2rem;border-radius:999px;margin-top:1.5rem;font-size:.9rem}
-.datebar .lbl{color:var(--muted)}.datebar .val{color:var(--yellow);font-weight:700}
-.datebar .sep{width:1px;height:16px;background:var(--border)}
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:12px;
+  padding:12px 20px;background:rgba(8,12,10,0.9);
+  backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-back{color:var(--green);font-size:17px;text-decoration:none;display:flex;align-items:center;gap:2px;font-weight:400;-webkit-tap-highlight-color:transparent}
+.nav-back:hover{opacity:.7}
+.nav-spacer{flex:1}
+.nav-pill{background:var(--green-d);border:1px solid rgba(0,224,100,0.25);color:var(--green);
+  font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-.section{max-width:1100px;margin:0 auto;padding:2.5rem 1rem}
-.section-title{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1.25rem;display:flex;align-items:center;gap:.6rem}
-.section-title span{flex:1;height:1px;background:var(--border)}
-.petro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem}
-.petro-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;text-align:center;transition:.2s}
-.petro-card:hover{border-color:var(--green);transform:translateY(-2px)}
-.petro-card .fuel{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;font-weight:600}
-.petro-card .price{font-size:1.8rem;font-weight:900;color:#fff;line-height:1}
-.petro-card .unit{font-size:.7rem;color:var(--muted);margin-top:.3rem}
-.petro-card .pump{font-size:.8rem;color:var(--yellow);margin-top:.5rem;font-weight:600}
+/* ── HERO ── */
+.hero{position:relative;padding:56px 20px 40px;text-align:center;overflow:hidden;
+  background:radial-gradient(ellipse 90% 70% at 50% -10%,rgba(0,224,100,0.07) 0%,transparent 65%)}
+.hero-bg-text{position:absolute;font-family:var(--font-d);font-size:clamp(80px,20vw,180px);
+  color:rgba(0,224,100,0.03);top:0;left:50%;transform:translateX(-50%);
+  white-space:nowrap;pointer-events:none;letter-spacing:4px;line-height:1;user-select:none}
+.hero-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--green);
+  font-weight:600;margin-bottom:12px;opacity:.8}
+.hero-title{font-family:var(--font-d);font-size:clamp(44px,10vw,84px);line-height:.92;
+  letter-spacing:1px;margin-bottom:16px}
+.hero-title em{color:var(--amber);font-style:normal}
+.hero-sub{color:var(--t2);font-size:14px;max-width:460px;margin:0 auto 24px;line-height:1.7}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border2);border-radius:10px;
+  padding:9px 16px;font-size:12px;color:var(--t2);font-family:var(--font-m)}
+.hero-badge strong{color:var(--amber)}
 
-.map-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden}
-.map-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem}
-.map-title{font-weight:700;font-size:1rem}
-.map-filters{display:flex;gap:.5rem;flex-wrap:wrap}
-.filter-chip{background:var(--elev);border:1px solid var(--border);color:var(--muted);padding:.35rem .7rem;border-radius:999px;font-size:.8rem;cursor:pointer;transition:.2s;border:none;font-family:inherit}
-.filter-chip.active{background:var(--green);color:#000;font-weight:700}
-#map{height:520px;width:100%;background:#111}
-.leaflet-popup-content-wrapper{background:var(--elev);color:var(--text);border-radius:12px;border:1px solid var(--border);font-family:var(--font)}
-.leaflet-popup-tip{background:var(--elev)}
-.popup-station .name{font-weight:800;font-size:1.05rem;margin-bottom:.15rem}
-.popup-station .meta{color:var(--muted);font-size:.8rem;margin-bottom:.5rem}
-.popup-station .price-row{display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:.9rem}
-.popup-station .price-row:last-child{border-bottom:none}
-.popup-station .price-row .fuel{color:var(--muted);text-transform:uppercase;font-size:.75rem}
-.popup-station .price-row .amt{font-weight:700}
-.popup-station .btn-update{display:block;width:100%;margin-top:.6rem;padding:.5rem;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer}
+/* ── WRAP ── */
+.wrap{max-width:920px;margin:0 auto;padding:0 20px}
 
-.station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem}
-.station-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem}
-.station-card .brand{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--green);margin-bottom:.2rem}
-.station-card .name{font-weight:800;font-size:1.05rem;margin-bottom:.15rem}
-.station-card .loc{color:var(--muted);font-size:.85rem;margin-bottom:.7rem}
-.station-card .prices{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:.7rem}
-.station-card .p{background:var(--elev);border-radius:10px;padding:.5rem .7rem;text-align:center}
-.station-card .p .t{font-size:.65rem;color:var(--muted);text-transform:uppercase}
-.station-card .p .v{font-size:1.05rem;font-weight:800}
-.station-card .actions{display:flex;gap:.5rem}
-.station-card .btn{flex:1;padding:.5rem;border-radius:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit}
-.station-card .btn-primary{background:var(--green);color:#000}
-.station-card .btn-ghost{background:var(--elev);color:var(--text);border:1px solid var(--border)}
+/* ── SECTION LABEL ── */
+.slabel{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--t3);
+  font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border)}
 
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:1rem}
-.modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;padding:1.5rem;position:relative}
-.modal h3{margin-bottom:1rem;font-size:1.2rem}
-.modal .close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
-.form-group{margin-bottom:.9rem}
-.form-group label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.3rem;font-weight:500}
-.form-group input,.form-group select{width:100%;background:var(--elev);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:10px;font-family:inherit;font-size:.9rem;outline:none}
-.form-group input:focus,.form-group select:focus{border-color:var(--green)}
-.form-submit{width:100%;padding:.7rem;background:var(--green);color:#000;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;margin-top:.3rem}
-.form-submit:disabled{opacity:.5;cursor:not-allowed}
-.form-note{font-size:.75rem;color:var(--muted);margin-top:.6rem;text-align:center}
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--elev);border:1px solid var(--border);padding:1rem 1.25rem;border-radius:12px;z-index:3000;transform:translateY(150%);transition:.3s;max-width:320px;font-size:.9rem}
-.toast.show{transform:translateY(0)}
-.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
+/* ── PRICE GRID ── */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:28px}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
+  padding:18px 14px;position:relative;overflow:hidden;cursor:default;
+  transition:transform .18s,border-color .18s}
+.pc:hover{transform:translateY(-3px);border-color:var(--border2)}
+.pc::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.025) 0%,transparent 55%);pointer-events:none}
+.pc.petrol{border-top:2px solid var(--green)}
+.pc.diesel{border-top:2px solid var(--amber)}
+.pc.kero  {border-top:2px solid var(--blue)}
+.pc.lpg   {border-top:2px solid var(--purple)}
+.pc-icon{font-size:20px;margin-bottom:8px}
+.pc-name{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:4px}
+.pc-grade{font-size:10px;color:var(--t2);margin-bottom:8px}
+.pc-price{font-family:var(--font-d);font-size:32px;line-height:1;letter-spacing:.5px}
+.pc.petrol .pc-price{color:var(--green)}
+.pc.diesel .pc-price{color:var(--amber)}
+.pc.kero   .pc-price{color:var(--blue)}
+.pc.lpg    .pc-price{color:var(--purple)}
+.pc-unit{font-size:10px;color:var(--t3);margin-top:2px}
+.pc-exref{font-size:9px;color:var(--t3);margin-top:4px;font-family:var(--font-m)}
+.pc-chg{display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:600;
+  font-family:var(--font-m);margin-top:8px;padding:2px 7px;border-radius:20px}
+.up{background:var(--red-d);color:var(--red)}
+.dn{background:var(--green-d);color:var(--green)}
+.flat{background:rgba(255,255,255,0.04);color:var(--t3)}
 
-.loading-msg{text-align:center;padding:2rem;color:var(--muted);font-size:.9rem}
+/* ── MARKUP INFO ── */
+.markup-info{background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.15);
+  border-radius:var(--r);padding:12px 16px;font-size:12px;color:var(--amber);
+  margin-bottom:28px;line-height:1.6}
+.markup-info strong{font-weight:600}
 
-footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;border-top:1px solid var(--border);margin-top:2rem}
+/* ── TREND ── */
+.trend-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
+  padding:20px;margin-bottom:28px}
+.trend-hd{font-size:12px;color:var(--t2);margin-bottom:16px}
+.trend-bars{display:flex;align-items:flex-end;gap:3px;height:90px}
+.tbw{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.tb{width:100%;border-radius:3px 3px 0 0;
+  background:linear-gradient(180deg,var(--green) 0%,rgba(0,224,100,.2) 100%);min-height:4px;
+  transition:height .7s cubic-bezier(.34,1.56,.64,1)}
+.tb.cur{background:linear-gradient(180deg,var(--amber) 0%,rgba(245,166,35,.2) 100%)}
+.tw{font-size:7px;color:var(--t3);font-family:var(--font-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.tv{font-size:7px;color:var(--t2);font-family:var(--font-m)}
 
-@media(max-width:640px){
-  .hero{padding:2.5rem 1rem 2rem}
-  .petro-grid{grid-template-columns:repeat(2,1fr)}
-  #map{height:380px}
-  .station-grid{grid-template-columns:1fr}
+/* ── MAP SECTION ── */
+.map-section{padding:32px 0 28px}
+.search-bar{position:relative;margin-bottom:10px}
+.search-bar input{width:100%;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px 16px 12px 44px;color:var(--t1);
+  font-family:var(--font-b);font-size:15px;outline:none;transition:border-color .2s}
+.search-bar input:focus{border-color:rgba(0,224,100,.4)}
+.search-bar input::placeholder{color:var(--t3)}
+.search-bar .si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none}
+.search-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:#1a2420;border:1px solid var(--border2);border-radius:var(--r);
+  z-index:300;max-height:220px;overflow-y:auto;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);display:none}
+.search-dropdown.open{display:block}
+.sd-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s}
+.sd-item:hover{background:rgba(255,255,255,.04)}
+.sd-item:last-child{border-bottom:none}
+.sd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sd-name{font-size:13px;font-weight:500}
+.sd-meta{font-size:10px;color:var(--t3)}
+
+.map-wrap{border-radius:var(--r2);overflow:hidden;border:1px solid var(--border);
+  height:440px;position:relative;margin-bottom:8px}
+#gasMap{height:100%;width:100%;background:#111}
+.map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 0 20px;font-size:11px;color:var(--t2)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5)}
+.map-status{font-size:11px;color:var(--t3);font-family:var(--font-m);margin-bottom:10px;min-height:16px}
+
+/* ── REPORT FORM ── */
+.rform{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px;margin-bottom:14px}
+.rform-title{font-family:var(--font-d);font-size:24px;letter-spacing:.5px;margin-bottom:4px}
+.rform-sub{font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fg.one{grid-template-columns:1fr}
+.finp{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;
+  padding:11px 14px;color:var(--t1);font-family:var(--font-b);font-size:14px;
+  width:100%;outline:none;transition:border-color .2s}
+.finp:focus{border-color:rgba(0,224,100,.4)}
+.finp::placeholder{color:var(--t3)}
+select.finp option{background:#1a2420}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  font-size:13px;color:var(--t2);cursor:pointer}
+.toggle-row input{accent-color:var(--green);width:16px;height:16px;cursor:pointer}
+.hint{font-size:11px;color:var(--amber);margin-bottom:10px;display:none}
+.hint.on{display:block}
+.sbtn{width:100%;padding:13px;background:var(--green);color:#000;
+  font-family:var(--font-d);font-size:19px;letter-spacing:1px;
+  border:none;border-radius:10px;cursor:pointer;transition:opacity .18s;margin-top:4px}
+.sbtn:hover{opacity:.85}
+.sbtn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── REPORTS LIST ── */
+.rlist{display:flex;flex-direction:column;gap:8px;margin-bottom:32px}
+.ri{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;display:flex;align-items:center;gap:12px;
+  animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ri-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;flex-shrink:0}
+.ri-icon.p{background:var(--green-d)}
+.ri-icon.d{background:var(--amber-d)}
+.ri-body{flex:1;min-width:0}
+.ri-station{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-meta{font-size:10px;color:var(--t2);margin-top:1px}
+.ri-right{text-align:right;flex-shrink:0}
+.ri-price{font-family:var(--font-m);font-size:15px;font-weight:600}
+.cheap{color:var(--green)}.avg{color:var(--amber)}.pricey{color:var(--red)}
+.ri-ago{font-size:9px;color:var(--t3);margin-top:1px}
+
+/* ── YAAD LISTINGS ── */
+.yaad-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;
+  scrollbar-width:none;margin-bottom:28px}
+.yaad-scroll::-webkit-scrollbar{display:none}
+.ym{flex-shrink:0;width:148px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;text-decoration:none;color:var(--t1);
+  display:block;transition:transform .18s,border-color .18s}
+.ym:hover{transform:translateY(-2px);border-color:rgba(0,224,100,.25)}
+.ym-img{width:100%;height:100px;background:#1e2820;display:flex;align-items:center;
+  justify-content:center;font-size:26px;overflow:hidden}
+.ym-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ym-body{padding:8px 10px}
+.ym-price{font-family:var(--font-m);font-size:12px;font-weight:600;color:var(--green)}
+.ym-title{font-size:10px;color:var(--t2);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+.yaad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px;margin-bottom:12px}
+.yg{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;text-decoration:none;color:var(--t1);
+  display:block;transition:transform .18s,border-color .18s}
+.yg:hover{transform:translateY(-3px);border-color:rgba(0,224,100,.3)}
+.yg-img{width:100%;height:118px;background:#1e2820;display:flex;align-items:center;
+  justify-content:center;font-size:32px;overflow:hidden}
+.yg-img img{width:100%;height:100%;object-fit:cover;display:block}
+.yg-body{padding:10px 11px}
+.yg-price{font-family:var(--font-m);font-size:13px;font-weight:600;color:var(--green)}
+.yg-title{font-size:11px;color:var(--t2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yg-parish{font-size:9px;color:var(--t3);margin-top:2px}
+.see-all{display:inline-block;padding:10px 22px;background:var(--green-d);
+  border:1px solid rgba(0,224,100,.25);color:var(--green);border-radius:8px;
+  text-decoration:none;font-size:13px;font-weight:500;transition:background .18s}
+.see-all:hover{background:rgba(0,224,100,.18)}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:24px 20px;
+  text-align:center;color:var(--t3);font-size:11px;line-height:1.9;max-width:920px;margin:0 auto}
+footer a{color:var(--green);text-decoration:none}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--card2);border:1px solid var(--border2);color:var(--t1);
+  padding:11px 20px;border-radius:10px;font-size:13px;
+  box-shadow:0 8px 40px rgba(0,0,0,.5);transition:transform .3s;z-index:999;white-space:nowrap}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:580px){
+  .price-grid{grid-template-columns:repeat(2,1fr)}
+  .fg{grid-template-columns:1fr}
+  .hero-title{font-size:44px}
+  .map-wrap{height:340px}
+  .tw{display:none}
 }
 </style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="header-inner">
-    <a href="/" class="logo">Yaad<span>Adz</span></a>
-    <nav class="nav-links">
-      <a href="/">Classifieds</a>
-      <a href="/gas-prices.html">Gas Prices</a>
-      <span class="badge-live"><span class="dot"></span>Updated Weekly</span>
-    </nav>
-  </div>
-</header>
+<nav>
+  <a class="nav-back" href="/">‹ Yaad Adz</a>
+  <div class="nav-spacer"></div>
+  <div class="nav-pill"><span class="dot"></span> Updated Weekly</div>
+</nav>
 
-<section class="hero">
-  <div class="hero-overline">JM JAMAICA &middot; EVERY WEDNESDAY</div>
-  <h1><span class="w1">JAMAICA</span><br><span class="w2">GAS PRICES</span><br><span class="w3">TODAY</span></h1>
-  <p>Live ex-refinery prices from Petrojam plus estimated pump prices with retailer markup.</p>
-  <div class="datebar">
-    <span class="lbl">Last updated:</span>
-    <span class="val" id="lastUpdated">Apr 23, 2026</span>
-    <span class="sep"></span>
-    <span class="lbl">Next update:</span>
-    <span class="val" id="nextUpdate">Apr 30, 2026</span>
-  </div>
-</section>
-
-<section class="section">
-  <div class="section-title">⛽ Petrojam Ex-Refinery Prices</div>
-  <div class="petro-grid" id="petroGrid"></div>
-</section>
-
-<section class="section">
-  <div class="map-wrap">
-    <div class="map-header">
-      <div class="map-title">🗺️ Station Map — <span id="stationCount">Loading...</span></div>
-      <div class="map-filters">
-        <button class="filter-chip active" data-filter="all">All</button>
-        <button class="filter-chip" data-filter="87">87</button>
-        <button class="filter-chip" data-filter="90">90</button>
-        <button class="filter-chip" data-filter="diesel">Diesel</button>
-      </div>
-    </div>
-    <div id="map"></div>
-  </div>
-</section>
-
-<section class="section">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
-    <div class="section-title" style="margin:0">🏪 Stations & Prices</div>
-    <button class="filter-chip" id="openAddStation" style="background:var(--green);color:#000;font-weight:700;border:none">+ Report Price</button>
-  </div>
-  <div class="station-grid" id="stationGrid">
-    <div class="loading-msg">Loading stations...</div>
-  </div>
-</section>
-
-<footer>
-  <p>&copy; Yaad Adz &middot; Prices shown are estimates. Always verify at the pump.</p>
-  <p style="margin-top:.4rem">Data sources: Petrojam Ltd. &middot; OpenStreetMap &middot; Community submissions</p>
-</footer>
-
-<div class="modal-overlay" id="priceModal">
-  <div class="modal">
-    <button class="close" id="closeModal">&times;</button>
-    <h3>Report Pump Price</h3>
-    <form id="priceForm">
-      <div class="form-group">
-        <label>Station</label>
-        <select id="fStation" required></select>
-      </div>
-      <div class="form-group">
-        <label>Fuel Type</label>
-        <select id="fFuel" required>
-          <option value="87">87 Octane (E10-87)</option>
-          <option value="90">90 Octane (E10-90)</option>
-          <option value="diesel">Auto Diesel</option>
-          <option value="ulsd">ULSD</option>
-          <option value="kerosene">Kerosene</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Price (J$ per litre)</label>
-        <input type="number" id="fPrice" step="0.01" min="50" max="500" placeholder="e.g. 194.50" required>
-      </div>
-      <div class="form-group">
-        <label>Your Name (optional)</label>
-        <input type="text" id="fName" placeholder="Anonymous">
-      </div>
-      <button type="submit" class="form-submit" id="submitBtn">Submit Price</button>
-      <p class="form-note">Price updates instantly on this page.</p>
-    </form>
+<div class="hero">
+  <div class="hero-bg-text">⛽</div>
+  <div class="hero-tag">🇯🇲 Jamaica · Petrojam · Every Wednesday</div>
+  <h1 class="hero-title">JAMAICA<br><em>GAS PRICES</em><br>TODAY</h1>
+  <p class="hero-sub">Live ex-refinery prices from Petrojam plus estimated pump prices. Real station map powered by OpenStreetMap. Report what you paid at the pump.</p>
+  <div class="hero-badge">
+    Last updated: <strong id="lastUpdated">Apr 23, 2026</strong>
+    &nbsp;·&nbsp; Next update: <strong id="nextUpdate">—</strong>
   </div>
 </div>
+
+<div class="wrap" style="padding-top:36px">
+
+  <!-- PRICE CARDS -->
+  <div class="slabel">Estimated Pump Prices — incl. ~J$30 markup</div>
+  <div class="price-grid" id="priceGrid"></div>
+
+  <div class="markup-info">
+    ℹ️ Petrojam publishes <strong>ex-refinery</strong> prices weekly. Retailers add a markup — typically <strong>J$25–J$35/L</strong>. Cards show estimated pump prices with a <strong>J$30/L markup</strong> applied. Ex-refinery base is shown smaller. LPG prices are retail estimates.
+  </div>
+
+  <!-- YAAD ADZ STRIP -->
+  <div class="slabel">Featured on Yaad Adz</div>
+  <div class="yaad-scroll" id="yaadStrip"></div>
+
+  <!-- TREND CHART -->
+  <div class="slabel">87-Octane Price Trend (J$/L ex-refinery)</div>
+  <div class="trend-card">
+    <div class="trend-hd">Weekly Petrojam prices — Jan to Apr 2026</div>
+    <div class="trend-bars" id="trendBars"></div>
+  </div>
+
+  <!-- MAP & SEARCH -->
+  <div class="map-section">
+    <div class="slabel">Gas Stations Map — Real Locations</div>
+
+    <div class="search-bar">
+      <span class="si">🔍</span>
+      <input id="stationSearch" placeholder="Search by station name, brand, or parish…"
+        autocomplete="off" oninput="handleSearch(this.value)"
+        onblur="setTimeout(()=>closeDropdown(),180)"
+        onfocus="if(this.value.length>1)openDropdown()">
+      <div class="search-dropdown" id="searchDrop"></div>
+    </div>
+
+    <div class="map-status" id="mapStatus">Loading real stations from OpenStreetMap…</div>
+
+    <div class="map-wrap">
+      <div id="gasMap"></div>
+    </div>
+
+    <div class="map-legend" id="mapLegend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00c853"></div> Total</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff5252"></div> Rubis</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffb300"></div> Texaco</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffd740"></div> Shell</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e040fb"></div> Petcom</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#40c4ff"></div> Fesco</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#aaa"></div> Other</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00e064;border:2px solid #fff"></div> Community Report</div>
+    </div>
+
+    <!-- REPORT FORM -->
+    <div class="rform">
+      <div class="rform-title">REPORT A PUMP PRICE</div>
+      <p class="rform-sub">Search and click a station above, or check "Add new station" to pin a new one on the map.</p>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="newToggle" onchange="toggleNew()">
+        I can't find my station — add a new one
+      </label>
+      <div class="hint" id="newHint">📍 Click anywhere on the map to drop a pin for the new station location.</div>
+
+      <!-- Existing station select -->
+      <div id="existWrap">
+        <div class="fg one" style="margin-bottom:10px">
+          <select class="finp" id="rStationId"><option value="">Select a gas station…</option></select>
+        </div>
+      </div>
+
+      <!-- New station fields -->
+      <div id="newWrap" style="display:none">
+        <div class="fg one"><input class="finp" id="rNewName" placeholder="Station name (e.g. Total Waterloo Rd)" maxlength="60"></div>
+        <div class="fg">
+          <select class="finp" id="rNewParish">
+            <option value="">Parish…</option>
+            <option>Kingston</option><option>St. Andrew</option><option>St. Catherine</option>
+            <option>St. Thomas</option><option>Portland</option><option>St. Mary</option>
+            <option>St. Ann</option><option>Trelawny</option><option>St. James</option>
+            <option>Hanover</option><option>Westmoreland</option><option>St. Elizabeth</option>
+            <option>Manchester</option><option>Clarendon</option>
+          </select>
+          <input class="finp" id="rNewBrand" placeholder="Brand (Total, Rubis…)" maxlength="30">
+        </div>
+        <input type="hidden" id="rLat"><input type="hidden" id="rLng">
+      </div>
+
+      <div class="fg">
+        <select class="finp" id="rFuel">
+          <option value="">Fuel type…</option>
+          <option value="87">87 Octane (E10-87)</option>
+          <option value="90">90 Octane (E10-90)</option>
+          <option value="diesel">Diesel</option>
+          <option value="ulsd">Ultra Low Sulphur Diesel</option>
+          <option value="kerosene">Kerosene</option>
+        </select>
+        <input class="finp" id="rPrice" type="number" placeholder="Pump price J$/L" min="100" max="600" step="0.01">
+      </div>
+      <button class="sbtn" id="submitBtn" onclick="submitReport()">⛽ SUBMIT PRICE REPORT</button>
+    </div>
+
+    <!-- RECENT REPORTS -->
+    <div class="slabel">Recent Community Reports</div>
+    <div class="rlist" id="reportsList">
+      <div style="text-align:center;color:var(--t3);padding:24px;font-size:13px">Loading reports…</div>
+    </div>
+  </div>
+
+  <!-- YAAD ADZ GRID -->
+  <div class="slabel">Vehicles &amp; Electronics on Yaad Adz</div>
+  <div class="yaad-grid" id="yaadGrid"></div>
+  <div style="text-align:center;padding:16px 0 32px">
+    <a href="/" class="see-all">Browse all listings on Yaad Adz →</a>
+  </div>
+
+</div><!-- /wrap -->
+
+<footer>
+  <p>Price data sourced from <a href="https://petrojam.com" target="_blank" rel="noopener">Petrojam Limited</a> · Updated every Wednesday</p>
+  <p>Station map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Community pump reports are user-submitted</p>
+  <p style="margin-top:6px"><a href="/">← Back to Yaad Adz</a> · Jamaica's Free AI-Powered Classifieds</p>
+</footer>
 
 <div class="toast" id="toast"></div>
 
 <script>
-/* ============================================================
-   JAMAICA GAS PRICES v7 — BULLETPROOF
-   No risky syntax. Works in all browsers.
-   ============================================================ */
+'use strict';
+/* ══════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════ */
+const SB   = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
+const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+const H    = { 'apikey':KEY, 'Authorization':'Bearer '+KEY, 'Content-Type':'application/json' };
+const MKP  = 30; // J$/L markup
 
-var MARKUP = 30;
-
-var PETROJAM = [
-  { fuel_type:'87',       name:'87 Octane',  ex_refinery_price:181.13, color:'var(--green)', icon:'⛽' },
-  { fuel_type:'90',       name:'90 Octane',  ex_refinery_price:188.58, color:'var(--yellow)', icon:'⛽' },
-  { fuel_type:'diesel',   name:'Diesel',     ex_refinery_price:188.75, color:'var(--orange)', icon:'🚛' },
-  { fuel_type:'ulsd',     name:'ULSD',       ex_refinery_price:195.60, color:'var(--blue)',   icon:'🚛' },
-  { fuel_type:'kerosene', name:'Kerosene',   ex_refinery_price:178.15, color:'var(--muted)',  icon:'🪔' },
-  { fuel_type:'propane',  name:'Propane',    ex_refinery_price:78.88,  color:'var(--purple)', icon:'🔥' }
+/* ══════════════════════════════════════════════════
+   PRICE DATA — Petrojam Apr 23, 2026
+══════════════════════════════════════════════════ */
+const PRICES = [
+  { key:'87',       name:'87 Octane',  grade:'E10-87 Gasoline',   ex:181.1328, prev:176.6328, type:'petrol', icon:'⛽' },
+  { key:'90',       name:'90 Octane',  grade:'E10-90 Gasoline',   ex:188.5787, prev:184.0787, type:'petrol', icon:'⛽' },
+  { key:'diesel',   name:'Diesel',     grade:'Automotive Diesel',  ex:188.7503, prev:189.0003, type:'diesel', icon:'🚛' },
+  { key:'ulsd',     name:'ULSD',       grade:'Ultra Low Sulphur',  ex:195.5973, prev:195.8473, type:'diesel', icon:'🚛' },
+  { key:'kerosene', name:'Kerosene',   grade:'Kerosene',           ex:178.1459, prev:178.3959, type:'kero',   icon:'🪔' },
+  { key:'propane',  name:'Propane',    grade:'LPG Propane',        ex:78.8836,  prev:77.6836,  type:'lpg',    icon:'🔥' },
+  { key:'butane',   name:'Butane',     grade:'LPG Butane',         ex:86.8044,  prev:85.8044,  type:'lpg',    icon:'🔥' },
 ];
 
-/* 50+ verified stations across all major towns */
-var FALLBACK_STATIONS = [
-  /* KINGSTON & ST. ANDREW */
-  { name:"Texaco Constant Spring",     brand:"Texaco", parish:"St. Andrew",     lat:18.01775,  lng:-76.77420 },
-  { name:"Total Cross Roads",          brand:"Total",  parish:"St. Andrew",     lat:18.01056,  lng:-76.78472 },
-  { name:"Rubis Harbour Street",       brand:"Rubis",  parish:"Kingston",       lat:17.97000,  lng:-76.79200 },
-  { name:"Total Kingston Harbour",     brand:"Total",  parish:"Kingston",       lat:17.96500,  lng:-76.79500 },
-  { name:"Esso Junction",              brand:"Esso",   parish:"St. Andrew",     lat:18.02000,  lng:-76.80500 },
-  { name:"Rubis Liguanea",             brand:"Rubis",  parish:"St. Andrew",     lat:18.00500,  lng:-76.78500 },
-  { name:"Texaco Mary Browns Corner",  brand:"Texaco", parish:"St. Andrew",     lat:18.02200,  lng:-76.80500 },
-  { name:"Shell Barbican",             brand:"Shell",  parish:"St. Andrew",     lat:18.03200,  lng:-76.77000 },
-  { name:"Total Dunrobin",             brand:"Total",  parish:"St. Andrew",     lat:18.03500,  lng:-76.77500 },
-  { name:"Petcom Washington Blvd",     brand:"Petcom", parish:"St. Andrew",     lat:18.01500,  lng:-76.82500 },
-  { name:"Texaco Molynes Road",        brand:"Texaco", parish:"St. Andrew",     lat:18.02500,  lng:-76.81500 },
-  { name:"Rubis Washington Blvd",      brand:"Rubis",  parish:"St. Andrew",     lat:18.01800,  lng:-76.83000 },
-  { name:"Shell Hope Road",            brand:"Shell",  parish:"St. Andrew",     lat:18.00800,  lng:-76.79000 },
-  { name:"Texaco Hagley Park",         brand:"Texaco", parish:"St. Andrew",     lat:18.01200,  lng:-76.80000 },
-
-  /* ST. CATHERINE */
-  { name:"Petcom Spanish Town",        brand:"Petcom", parish:"St. Catherine",  lat:17.99140,  lng:-76.95740 },
-  { name:"Petcom Twickenham Park",     brand:"Petcom", parish:"St. Catherine",  lat:17.98500,  lng:-76.95000 },
-  { name:"Esso Portmore",              brand:"Esso",   parish:"St. Catherine",  lat:17.95000,  lng:-76.88000 },
-  { name:"Texaco Old Harbour",         brand:"Texaco", parish:"St. Catherine",  lat:17.94140,  lng:-77.10890 },
-  { name:"Shell Linstead",             brand:"Shell",  parish:"St. Catherine",  lat:18.13670,  lng:-77.01700 },
-  { name:"Texaco Portmore Toll",       brand:"Texaco", parish:"St. Catherine",  lat:17.96000,  lng:-76.87000 },
-  { name:"Petcom Portmore Parkway",    brand:"Petcom", parish:"St. Catherine",  lat:17.95500,  lng:-76.88500 },
-  { name:"Rubis Braeton",              brand:"Rubis",  parish:"St. Catherine",  lat:17.96500,  lng:-76.89000 },
-  { name:"Texaco Ewarton",             brand:"Texaco", parish:"St. Catherine",  lat:18.17500,  lng:-77.08500 },
-  { name:"Shell Spanish Town Road",    brand:"Shell",  parish:"St. Catherine",  lat:17.99500,  lng:-76.92000 },
-  { name:"Total Portmore",             brand:"Total",  parish:"St. Catherine",  lat:17.94800,  lng:-76.87500 },
-
-  /* MONTEGO BAY & ST. JAMES */
-  { name:"Texaco Fairview MoBay",      brand:"Texaco", parish:"St. James",      lat:18.45398,  lng:-77.92285 },
-  { name:"Texaco Downtown MoBay",      brand:"Texaco", parish:"St. James",      lat:18.47436,  lng:-77.92244 },
-  { name:"Total Ironshore",            brand:"Total",  parish:"St. James",      lat:18.51000,  lng:-77.91000 },
-  { name:"Shell Reading",              brand:"Shell",  parish:"St. James",      lat:18.46500,  lng:-77.90500 },
-  { name:"Rubis Rose Hall",            brand:"Rubis",  parish:"St. James",      lat:18.52500,  lng:-77.88000 },
-  { name:"Petcom Montego Bay",         brand:"Petcom", parish:"St. James",      lat:18.48000,  lng:-77.93000 },
-
-  /* MANCHESTER */
-  { name:"Shell Mandeville",           brand:"Shell",  parish:"Manchester",     lat:18.04130,  lng:-77.51008 },
-  { name:"Texaco Mandeville",          brand:"Texaco", parish:"Manchester",     lat:18.03800,  lng:-77.50500 },
-  { name:"Total Manchester Road",      brand:"Total",  parish:"Manchester",     lat:18.04500,  lng:-77.51500 },
-  { name:"Rubis Mandeville",           brand:"Rubis",  parish:"Manchester",     lat:18.03500,  lng:-77.50000 },
-
-  /* ST. ANN */
-  { name:"Total Ocho Rios",            brand:"Total",  parish:"St. Ann",        lat:18.40540,  lng:-77.10310 },
-  { name:"Shell Browns Town",          brand:"Shell",  parish:"St. Ann",        lat:18.39140,  lng:-77.36400 },
-  { name:"Co-op St. Anns Bay",         brand:"Co-op",  parish:"St. Ann",        lat:18.43600,  lng:-77.20000 },
-  { name:"Petcom Discovery Bay",       brand:"Petcom", parish:"St. Ann",        lat:18.47000,  lng:-77.39500 },
-  { name:"Texaco Ocho Rios",           brand:"Texaco", parish:"St. Ann",        lat:18.41000,  lng:-77.11000 },
-  { name:"Shell Ocho Rios",            brand:"Shell",  parish:"St. Ann",        lat:18.40000,  lng:-77.09500 },
-  { name:"Rubis Runaway Bay",          brand:"Rubis",  parish:"St. Ann",        lat:18.46000,  lng:-77.33000 },
-
-  /* CLARENDON */
-  { name:"Rubis May Pen",              brand:"Rubis",  parish:"Clarendon",      lat:17.97034,  lng:-77.24369 },
-  { name:"Texaco May Pen",             brand:"Texaco", parish:"Clarendon",      lat:17.96500,  lng:-77.24000 },
-  { name:"Shell May Pen",              brand:"Shell",  parish:"Clarendon",      lat:17.97500,  lng:-77.25000 },
-  { name:"Petcom May Pen",             brand:"Petcom", parish:"Clarendon",      lat:17.96000,  lng:-77.23500 },
-
-  /* WESTMORELAND */
-  { name:"Petcom Savanna-la-Mar",      brand:"Petcom", parish:"Westmoreland",   lat:18.21890,  lng:-78.13340 },
-  { name:"Shell Negril",               brand:"Shell",  parish:"Westmoreland",   lat:18.26844,  lng:-78.34810 },
-  { name:"Texaco Savanna-la-Mar",      brand:"Texaco", parish:"Westmoreland",   lat:18.21500,  lng:-78.13000 },
-  { name:"Rubis Negril",               brand:"Rubis",  parish:"Westmoreland",   lat:18.27500,  lng:-78.35500 },
-
-  /* PORTLAND */
-  { name:"Total Port Antonio",         brand:"Total",  parish:"Portland",       lat:18.17785,  lng:-76.45025 },
-  { name:"Texaco Port Antonio",        brand:"Texaco", parish:"Portland",       lat:18.18000,  lng:-76.44500 },
-  { name:"Shell Port Antonio",         brand:"Shell",  parish:"Portland",       lat:18.17500,  lng:-76.45500 },
-
-  /* ST. THOMAS */
-  { name:"Rubis Morant Bay",           brand:"Rubis",  parish:"St. Thomas",     lat:17.88140,  lng:-76.40930 },
-  { name:"Texaco Morant Bay",          brand:"Texaco", parish:"St. Thomas",     lat:17.88500,  lng:-76.40500 },
-
-  /* ST. ELIZABETH */
-  { name:"Petcom Santa Cruz",          brand:"Petcom", parish:"St. Elizabeth",  lat:18.05340,  lng:-77.69810 },
-  { name:"Texaco Santa Cruz",          brand:"Texaco", parish:"St. Elizabeth",  lat:18.05000,  lng:-77.69500 },
-  { name:"Shell Black River",          brand:"Shell",  parish:"St. Elizabeth",  lat:18.02500,  lng:-77.85000 },
-
-  /* TRELAWNY */
-  { name:"Texaco Falmouth",            brand:"Texaco", parish:"Trelawny",       lat:18.48714,  lng:-77.66560 },
-  { name:"Shell Falmouth",             brand:"Shell",  parish:"Trelawny",       lat:18.49000,  lng:-77.67000 },
-  { name:"Total Falmouth",             brand:"Total",  parish:"Trelawny",       lat:18.48500,  lng:-77.66000 },
-
-  /* HANOVER */
-  { name:"Texaco Lucea",               brand:"Texaco", parish:"Hanover",        lat:18.45000,  lng:-78.17500 },
-  { name:"Shell Lucea",                brand:"Shell",  parish:"Hanover",        lat:18.45500,  lng:-78.18000 },
-
-  /* ST. MARY */
-  { name:"Texaco Annotto Bay",         brand:"Texaco", parish:"St. Mary",       lat:18.27000,  lng:-76.76500 },
-  { name:"Shell Port Maria",           brand:"Shell",  parish:"St. Mary",       lat:18.37000,  lng:-76.89000 },
-
-  /* TRELAWNY border */
-  { name:"Texaco Duncans",             brand:"Texaco", parish:"Trelawny",       lat:18.52000,  lng:-77.54000 }
+const TREND = [
+  {w:'Jan 1',v:149.57},{w:'Jan 8',v:147.59},{w:'Jan 15',v:147.84},
+  {w:'Jan 22',v:148.31},{w:'Jan 29',v:149.51},{w:'Feb 5',v:149.69},
+  {w:'Feb 12',v:152.15},{w:'Feb 19',v:149.96},{w:'Feb 26',v:151.32},
+  {w:'Mar 5',v:154.38},{w:'Mar 12',v:158.88},{w:'Mar 19',v:163.38},
+  {w:'Mar 26',v:167.88},{w:'Apr 2',v:172.38},{w:'Apr 9',v:176.88},
+  {w:'Apr 16',v:176.63},{w:'Apr 23',v:181.13},
 ];
 
-var STATIONS = [];
-var map, markers = [];
-var BRAND_COLORS = {Texaco:'#00e676',Shell:'#ff5252',Total:'#448aff',Rubis:'#ffd600',Petcom:'#ff9100',Esso:'#d500f9','Co-op':'#00bfa5',Other:'#888'};
-
-function $(s){ return document.querySelector(s); }
-function fmtMoney(n){ return 'J$' + (n ? n.toFixed(2) : '—'); }
-function toast(msg, type){
-  type = type || 'success';
-  var t = $('#toast');
-  t.textContent = msg;
-  t.className = 'toast ' + type + ' show';
-  setTimeout(function(){ t.classList.remove('show'); }, 4000);
+/* ══════════════════════════════════════════════════
+   RENDER PRICE CARDS
+══════════════════════════════════════════════════ */
+function renderPrices() {
+  const el = document.getElementById('priceGrid');
+  el.innerHTML = PRICES.map(function(p) {
+    const isLpg = p.type === 'lpg';
+    const pump     = isLpg ? p.ex : p.ex + MKP;
+    const pumpPrev = isLpg ? p.prev : p.prev + MKP;
+    const diff = +(pump - pumpPrev).toFixed(2);
+    const cls  = diff > 0 ? 'up' : diff < 0 ? 'dn' : 'flat';
+    const chg  = diff > 0 ? '▲ +'+diff : diff < 0 ? '▼ '+diff : '— 0.00';
+    const note = isLpg ? 'per litre · retail est.' : 'per litre · pump est.';
+    return '<div class="pc '+p.type+'">' +
+      '<div class="pc-icon">'+p.icon+'</div>' +
+      '<div class="pc-name">'+p.name+'</div>' +
+      '<div class="pc-grade">'+p.grade+'</div>' +
+      '<div class="pc-price">J$'+pump.toFixed(2)+'</div>' +
+      '<div class="pc-unit">'+note+'</div>' +
+      (!isLpg ? '<div class="pc-exref">Ex-ref: J$'+p.ex.toFixed(2)+'</div>' : '') +
+      '<div class="pc-chg '+cls+'">'+chg+'</div>' +
+    '</div>';
+  }).join('');
 }
 
-/* Detect parish from station name */
-function detectParish(name){
-  var n = name.toLowerCase();
-  if(n.indexOf('kingston') > -1) return 'Kingston';
-  if(n.indexOf('constant spring') > -1 || n.indexOf('cross roads') > -1 || n.indexOf('liguanea') > -1 || n.indexOf('barbican') > -1 || n.indexOf('dunrobin') > -1 || n.indexOf('papine') > -1 || n.indexOf('harbour view') > -1 || n.indexOf('molynes') > -1 || n.indexOf('hagley park') > -1 || n.indexOf('hope road') > -1 || n.indexOf('junction') > -1 || n.indexOf('washington blvd') > -1) return 'St. Andrew';
-  if(n.indexOf('spanish town') > -1 || n.indexOf('portmore') > -1 || n.indexOf('old harbour') > -1 || n.indexOf('linstead') > -1 || n.indexOf('ewarton') > -1 || n.indexOf('braeton') > -1 || n.indexOf('twickenham') > -1) return 'St. Catherine';
-  if(n.indexOf('montego bay') > -1 || n.indexOf('mobay') > -1 || n.indexOf('reading') > -1 || n.indexOf('rose hall') > -1 || n.indexOf('ironshore') > -1) return 'St. James';
-  if(n.indexOf('mandeville') > -1) return 'Manchester';
-  if(n.indexOf('ocho rios') > -1 || n.indexOf('browns town') > -1 || n.indexOf('st. ann') > -1 || n.indexOf('discovery bay') > -1 || n.indexOf('runaway bay') > -1) return 'St. Ann';
-  if(n.indexOf('may pen') > -1) return 'Clarendon';
-  if(n.indexOf('savanna') > -1 || n.indexOf('negril') > -1) return 'Westmoreland';
-  if(n.indexOf('port antonio') > -1) return 'Portland';
-  if(n.indexOf('morant bay') > -1) return 'St. Thomas';
-  if(n.indexOf('santa cruz') > -1 || n.indexOf('black river') > -1) return 'St. Elizabeth';
-  if(n.indexOf('falmouth') > -1 || n.indexOf('duncans') > -1) return 'Trelawny';
-  if(n.indexOf('lucea') > -1) return 'Hanover';
-  if(n.indexOf('annotto bay') > -1 || n.indexOf('port maria') > -1) return 'St. Mary';
-  return 'Jamaica';
+/* ══════════════════════════════════════════════════
+   RENDER TREND CHART
+══════════════════════════════════════════════════ */
+function renderTrend() {
+  const vals = TREND.map(function(t){return t.v;});
+  const max = Math.max.apply(null, vals);
+  const min = Math.min.apply(null, vals);
+  document.getElementById('trendBars').innerHTML = TREND.map(function(t, i) {
+    const h = ((t.v - min) / (max - min) * 72 + 8).toFixed(1);
+    const cur = i === TREND.length - 1;
+    return '<div class="tbw">' +
+      '<div class="tv">'+t.v+'</div>' +
+      '<div class="tb'+(cur?' cur':'')+'" style="height:'+h+'px"></div>' +
+      '<div class="tw">'+t.w+'</div>' +
+    '</div>';
+  }).join('');
 }
 
-/* Load stations from OSM, fallback to hardcoded list */
-function loadStations(){
-  var query = '[out:json][timeout:30];area["name"="Jamaica"]["admin_level"="2"]->.searchArea;node["amenity"="fuel"](area.searchArea);out body 500;';
-  
-  fetch('https://overpass-api.de/api/interpreter',{
-    method:'POST',
-    body: query
-  }).then(function(res){ return res.json(); }).then(function(data){
-    var osm = [];
-    if(data.elements && data.elements.length){
-      for(var i=0;i<data.elements.length;i++){
-        var el = data.elements[i];
-        if(!el.lat || !el.lon) continue;
-        var t = el.tags || {};
-        var name = t.name || t.brand || '';
-        var brand = t.brand || t.operator || 'Other';
-        if(!name) name = brand + ' Station';
-        if(name.toLowerCase() === 'gas station') name = brand + ' Station';
-        var parish = t['addr:city'] || t['addr:state'] || detectParish(name);
-        if(!parish) parish = 'Jamaica';
-        if(name.length > 3){
-          osm.push({ id:'osm_'+i, name:name, brand:brand, parish:parish, lat:el.lat, lng:el.lon, prices:{}, source:'osm' });
-        }
-      }
-    }
-    
-    /* Merge OSM + fallback, remove duplicates */
-    var seen = {};
-    STATIONS = [];
-    var all = osm.concat(FALLBACK_STATIONS.map(function(s,idx){
-      return { id:'fb_'+idx, name:s.name, brand:s.brand, parish:s.parish, lat:s.lat, lng:s.lng, prices:{}, source:'fallback' };
-    }));
-    
-    for(var j=0;j<all.length;j++){
-      var s = all[j];
-      var key = (s.name + '|' + s.lat.toFixed(3) + '|' + s.lng.toFixed(3)).toLowerCase();
-      if(!seen[key]){
-        seen[key] = true;
-        STATIONS.push(s);
-      }
-    }
-    
-    STATIONS.sort(function(a,b){ return a.name.localeCompare(b.name); });
-    for(var k=0;k<STATIONS.length;k++){ STATIONS[k].id = k+1; }
-    
-    $('#stationCount').textContent = STATIONS.length + ' stations islandwide';
-    toast('Loaded ' + STATIONS.length + ' gas stations','success');
-    renderStations(); addMarkers(); populateSelect();
-  }).catch(function(err){
-    console.log('OSM failed, using fallback:', err);
-    STATIONS = FALLBACK_STATIONS.map(function(s,idx){
-      return { id:idx+1, name:s.name, brand:s.brand, parish:s.parish, lat:s.lat, lng:s.lng, prices:{}, source:'fallback' };
-    });
-    $('#stationCount').textContent = STATIONS.length + ' stations (fallback)';
-    toast('Loaded ' + STATIONS.length + ' stations from database','success');
-    renderStations(); addMarkers(); populateSelect();
+/* ══════════════════════════════════════════════════
+   NEXT WEDNESDAY
+══════════════════════════════════════════════════ */
+function nextWed() {
+  const d = new Date();
+  const diff = (3 - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'});
+}
+
+/* ══════════════════════════════════════════════════
+   MAP — Live data from OpenStreetMap Overpass API
+══════════════════════════════════════════════════ */
+let map, osmMarkers = [], dbMarkers = [], allStations = [], filteredStations = [], tempPin;
+
+const BRAND_COLOR = {
+  total:'#00c853', rubis:'#ff5252', texaco:'#ffb300',
+  shell:'#ffd740', petcom:'#e040fb', fesco:'#40c4ff',
+  esso:'#ff7043', unipet:'#b39ddb', carib:'#4fc3f7'
+};
+function brandColor(name) {
+  if (!name) return '#888';
+  const n = name.toLowerCase();
+  for (const [k,v] of Object.entries(BRAND_COLOR)) { if (n.includes(k)) return v; }
+  return '#888888';
+}
+function dotIcon(color, size) {
+  const s = size || 10;
+  return L.divIcon({
+    className:'',
+    html:'<div style="background:'+color+';width:'+s+'px;height:'+s+'px;border-radius:50%;border:2px solid rgba(255,255,255,.6);box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
+    iconSize:[s+4,s+4], iconAnchor:[(s+4)/2,(s+4)/2]
   });
 }
 
-/* Render Petrojam cards */
-function renderPetro(){
-  var html = '';
-  for(var i=0;i<PETROJAM.length;i++){
-    var p = PETROJAM[i];
-    var pump = p.fuel_type === 'propane' ? p.ex_refinery_price : p.ex_refinery_price + MARKUP;
-    html += '<div class="petro-card" style="border-top:3px solid ' + p.color + '">' +
-      '<div class="fuel" style="color:' + p.color + '">' + p.icon + ' ' + p.name + '</div>' +
-      '<div class="price">' + fmtMoney(p.ex_refinery_price) + '</div>' +
-      '<div class="unit">ex-refinery / litre</div>' +
-      '<div class="pump">~' + fmtMoney(pump) + ' at pump</div>' +
-    '</div>';
-  }
-  $('#petroGrid').innerHTML = html;
+function initMap() {
+  if (!window.L) return;
+  map = L.map('gasMap',{zoomControl:false,attributionControl:false})
+    .setView([18.1096,-77.2975], 9);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+  L.control.zoom({position:'topright'}).addTo(map);
+
+  // Click to pin new station
+  map.on('click', function(e) {
+    if (!document.getElementById('newToggle').checked) return;
+    document.getElementById('rLat').value = e.latlng.lat.toFixed(6);
+    document.getElementById('rLng').value = e.latlng.lng.toFixed(6);
+    if (tempPin) map.removeLayer(tempPin);
+    tempPin = L.marker([e.latlng.lat, e.latlng.lng], {
+      icon: L.divIcon({
+        html:'<div style="background:var(--amber);color:#000;font-weight:700;font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;font-family:DM Sans,sans-serif">📍 New Station</div>',
+        iconAnchor:[40,10]
+      })
+    }).addTo(map);
+    toast('📍 Pin dropped — fill in the details below');
+  });
+
+  // Load OSM stations first, then DB stations
+  loadOSMStations();
+  loadDBStations();
+  loadReports();
 }
 
-/* Render station cards */
-function renderStations(filter){
-  filter = filter || 'all';
-  if(!STATIONS.length) return;
-  var html = '';
-  for(var i=0;i<STATIONS.length;i++){
-    var s = STATIONS[i];
-    var p = s.prices || {};
-    var has = Object.keys(p).length > 0;
-    var tags = '';
-    var keys = Object.keys(p);
-    for(var j=0;j<Math.min(keys.length,4);j++){
-      tags += '<div class="p"><div class="t">' + keys[j] + '</div><div class="v">' + fmtMoney(p[keys[j]]) + '</div></div>';
-    }
-    var visible = filter === 'all' || p[filter];
-    html += '<div class="station-card" data-id="' + s.id + '" style="display:' + (visible?'block':'none') + '">' +
-      '<div class="brand">' + s.brand + '</div>' +
-      '<div class="name">' + s.name + '</div>' +
-      '<div class="loc">📍 ' + s.parish + '</div>' +
-      '<div class="prices">' + (has ? tags : '<div class="p" style="grid-column:1/-1;color:var(--muted);font-size:.8rem">No prices reported yet</div>') + '</div>' +
-      '<div class="actions">' +
-        '<button class="btn btn-primary" onclick="openModal(' + s.id + ')">Update Price</button>' +
-        '<button class="btn btn-ghost" onclick="flyTo(' + s.id + ')">View Map</button>' +
-      '</div>' +
-    '</div>';
-  }
-  $('#stationGrid').innerHTML = html;
-}
+/* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
+async function loadOSMStations() {
+  const status = document.getElementById('mapStatus');
+  try {
+    // Jamaica bounding box: south,west,north,east
+    const query = '[out:json][timeout:25];node[amenity=fuel](17.5,-78.5,18.6,-76.1);out body;';
+    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+    const r = await fetch(url);
+    const data = await r.json();
+    const elements = data.elements || [];
 
-/* Map */
-function initMap(){
-  map = L.map('map',{zoomControl:false}).setView([18.15,-77.3],9);
-  L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom:19
-  }).addTo(map);
-}
+    osmMarkers.forEach(function(m){ map.removeLayer(m); });
+    osmMarkers = [];
 
-function addMarkers(){
-  for(var i=0;i<markers.length;i++){ map.removeLayer(markers[i]); }
-  markers = [];
-  for(var j=0;j<STATIONS.length;j++){
-    var s = STATIONS[j];
-    var color = BRAND_COLORS[s.brand] || '#888';
-    var p = s.prices || {};
-    var list = '';
-    var keys = Object.keys(p);
-    if(keys.length){
-      for(var k=0;k<keys.length;k++){
-        list += '<div class="price-row"><span class="fuel">' + keys[k] + '</span><span class="amt">' + fmtMoney(p[keys[k]]) + '</span></div>';
-      }
-    } else {
-      list = '<div class="price-row"><span class="fuel">No prices yet</span></div>';
-    }
-    var icon = L.divIcon({
-      html:'<div style="background:' + color + ';width:26px;height:26px;border-radius:50%;border:3px solid #111;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#000">' + s.brand[0] + '</div>',
-      iconSize:[26,26], iconAnchor:[14,14]
+    let count = 0;
+    elements.forEach(function(el) {
+      if (!el.lat || !el.lon) return;
+      const tags = el.tags || {};
+      const name   = tags.name || tags['name:en'] || tags.brand || 'Gas Station';
+      const brand  = tags.brand || tags.operator || '';
+      const color  = brandColor(brand || name);
+
+      const m = L.marker([el.lat, el.lon], { icon: dotIcon(color, 10) }).addTo(map);
+      m.bindPopup(
+        '<div style="font-family:DM Sans,sans-serif;min-width:180px;color:#111">' +
+        '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(name)+'</div>' +
+        (brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+brand+'</div>' : '') +
+        (tags['addr:street'] ? '<div style="font-size:11px;color:#888;margin-bottom:8px">📍 '+tags['addr:street']+'</div>' : '<div style="margin-bottom:8px"></div>') +
+        '<a href="https://www.google.com/maps?q='+el.lat+','+el.lon+'" target="_blank" style="display:block;background:#00c853;color:#000;text-align:center;padding:7px;border-radius:6px;font-weight:600;font-size:12px;text-decoration:none;margin-bottom:6px">🗺 Open in Google Maps</a>' +
+        '<button onclick="pickStation(\'osm_'+el.id+'\',\''+name.replace(/'/g,'').replace(/"/g,'&quot;')+'\')" style="width:100%;background:#1a2420;border:1px solid #333;color:#eef2ef;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">⛽ Report Price Here</button>' +
+        '</div>'
+      );
+
+      // Store for search
+      allStations.push({ id:'osm_'+el.id, name:name, brand:brand, lat:el.lat, lng:el.lon, source:'osm' });
+      osmMarkers.push(m);
+      count++;
     });
-    var m = L.marker([s.lat,s.lng],{icon}).addTo(map).bindPopup(
-      '<div class="popup-station">' +
-        '<div class="name">' + s.name + '</div>' +
-        '<div class="meta">' + s.brand + ' · ' + s.parish + '</div>' +
-        list +
-        '<button class="btn-update" onclick="openModal(' + s.id + ');map.closePopup();">Report Price</button>' +
-      '</div>'
-    );
-    markers.push(m);
+
+    filteredStations = allStations.slice();
+    populateSelect();
+    status.textContent = count + ' real stations loaded from OpenStreetMap';
+  } catch(e) {
+    status.textContent = 'Could not load live map data — using database stations';
+    console.warn('OSM load failed:', e);
   }
 }
 
-function flyTo(id){
-  for(var i=0;i<STATIONS.length;i++){
-    if(STATIONS[i].id === id){
-      map.flyTo([STATIONS[i].lat,STATIONS[i].lng],17,{duration:1.2});
+/* ── Load stations from Supabase DB (user-added) ── */
+async function loadDBStations() {
+  try {
+    const r = await fetch(SB+'/gas_stations?select=*&order=name.asc', {headers:H});
+    const data = await r.json();
+    if (!Array.isArray(data)) return;
+
+    dbMarkers.forEach(function(m){ map.removeLayer(m); });
+    dbMarkers = [];
+
+    data.forEach(function(s) {
+      if (!s.lat || !s.lng) return;
+      // Skip if OSM already has something very close
+      const dup = allStations.some(function(a){ return Math.abs(a.lat-s.lat)<0.001 && Math.abs(a.lng-s.lng)<0.001; });
+      if (!dup) {
+        const color = brandColor(s.brand || s.name);
+        const m = L.marker([s.lat, s.lng], { icon: dotIcon(color, 10) }).addTo(map);
+        m.bindPopup(
+          '<div style="font-family:DM Sans,sans-serif;min-width:180px;color:#111">' +
+          '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+s.name+'</div>' +
+          (s.brand ? '<div style="font-size:11px;color:#666;margin-bottom:8px">'+s.brand+'</div>' : '<div style="margin-bottom:8px"></div>') +
+          '<button onclick="pickStation(\''+s.id+'\',\''+s.name.replace(/'/g,'').replace(/"/g,'&quot;')+'\')" style="width:100%;background:#1a2420;border:1px solid #333;color:#eef2ef;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">⛽ Report Price Here</button>' +
+          '</div>'
+        );
+        allStations.push({ id:s.id, name:s.name, brand:s.brand||'', lat:s.lat, lng:s.lng, source:'db' });
+        dbMarkers.push(m);
+      }
+    });
+
+    filteredStations = allStations.slice();
+    populateSelect();
+  } catch(e) { console.warn('DB stations failed:', e); }
+}
+
+function populateSelect() {
+  const sel = document.getElementById('rStationId');
+  sel.innerHTML = '<option value="">Select a gas station…</option>' +
+    allStations.map(function(s){ return '<option value="'+s.id+'">'+s.name+(s.brand?' ('+s.brand+')':'')+'</option>'; }).join('');
+}
+
+function pickStation(id, name) {
+  document.getElementById('rStationId').value = id;
+  document.getElementById('newToggle').checked = false;
+  toggleNew();
+  document.querySelector('.rform').scrollIntoView({behavior:'smooth'});
+  toast('✅ '+name+' selected — enter the price below');
+}
+
+/* ── SEARCH ── */
+function handleSearch(q) {
+  const drop = document.getElementById('searchDrop');
+  if (!q || q.length < 2) { drop.classList.remove('open'); return; }
+  const lq = q.toLowerCase();
+  filteredStations = allStations.filter(function(s){
+    return (s.name||'').toLowerCase().includes(lq) ||
+           (s.brand||'').toLowerCase().includes(lq);
+  });
+  drop.innerHTML = filteredStations.slice(0,10).map(function(s){
+    const color = brandColor(s.brand||s.name);
+    return '<div class="sd-item" onclick="flyTo(\''+s.id+'\','+s.lat+','+s.lng+')">' +
+      '<div class="sd-dot" style="background:'+color+'"></div>' +
+      '<div><div class="sd-name">'+s.name+'</div>' +
+      '<div class="sd-meta">'+(s.brand||'Station')+'</div></div></div>';
+  }).join('') || '<div style="padding:12px;color:var(--t3);font-size:12px">No stations found — try "Total", "Rubis" or a brand name.</div>';
+  drop.classList.add('open');
+}
+
+function flyTo(id, lat, lng) {
+  map.flyTo([lat, lng], 16, {duration:1.2});
+  // Open that marker's popup after fly
+  setTimeout(function(){
+    const all = [...osmMarkers, ...dbMarkers];
+    all.forEach(function(m){
+      const p = m.getLatLng();
+      if (Math.abs(p.lat - lat) < 0.0005 && Math.abs(p.lng - lng) < 0.0005) m.openPopup();
+    });
+  }, 1300);
+  pickStation(id, document.getElementById('stationSearch').value);
+  closeDropdown();
+}
+function openDropdown()  { document.getElementById('searchDrop').classList.add('open'); }
+function closeDropdown() { document.getElementById('searchDrop').classList.remove('open'); }
+
+/* ── NEW STATION TOGGLE ── */
+function toggleNew() {
+  const on = document.getElementById('newToggle').checked;
+  document.getElementById('existWrap').style.display = on ? 'none' : 'block';
+  document.getElementById('newWrap').style.display   = on ? 'block' : 'none';
+  document.getElementById('newHint').classList.toggle('on', on);
+  if (!on && tempPin) { map.removeLayer(tempPin); tempPin = null; }
+}
+
+/* ══════════════════════════════════════════════════
+   LOAD REPORTS
+══════════════════════════════════════════════════ */
+const FUEL_LABELS = {'87':'87 Oct','90':'90 Oct','diesel':'Diesel','ulsd':'ULSD','kerosene':'Kerosene'};
+function ago(iso){
+  const m = Math.floor((Date.now()-new Date(iso).getTime())/60000);
+  if(m<2)return'just now';if(m<60)return m+'m ago';if(m<1440)return Math.floor(m/60)+'h ago';
+  return Math.floor(m/1440)+'d ago';
+}
+
+async function loadReports() {
+  const el = document.getElementById('reportsList');
+  try {
+    const r = await fetch(SB+'/gas_reports?select=*,station:station_id(name,brand,parish)&order=created_at.desc&limit=25',{headers:H});
+    const data = await r.json();
+    if (!Array.isArray(data)||!data.length) {
+      el.innerHTML='<div style="text-align:center;color:var(--t3);padding:28px;font-size:13px">No reports yet — be the first to report a pump price!</div>';
       return;
     }
-  }
+    const ref={'87':181.13+MKP,'90':188.58+MKP,'diesel':188.75+MKP,'ulsd':195.60+MKP,'kerosene':178.15+MKP};
+    el.innerHTML = data.map(function(rep){
+      const pump = +rep.pump_price;
+      const base = ref[rep.fuel_type]||210;
+      const pcls = pump<=base-5?'cheap':pump>=base+5?'pricey':'avg';
+      const icls = (rep.fuel_type==='87'||rep.fuel_type==='90')?'p':'d';
+      const name = (rep.station&&rep.station.name)||'Unknown Station';
+      const par  = (rep.station&&rep.station.parish)||'';
+      return '<div class="ri">' +
+        '<div class="ri-icon '+icls+'">⛽</div>' +
+        '<div class="ri-body">' +
+          '<div class="ri-station">'+name+'</div>' +
+          '<div class="ri-meta">📍 '+(par?par+' · ':'')+( FUEL_LABELS[rep.fuel_type]||rep.fuel_type)+'</div>' +
+        '</div>' +
+        '<div class="ri-right">' +
+          '<div class="ri-price '+pcls+'">J$'+pump.toFixed(2)+'</div>' +
+          '<div class="ri-ago">'+ago(rep.created_at)+'</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Add report markers to map
+    if (map) addReportMarkers(data);
+  } catch(e){ el.innerHTML='<div style="text-align:center;color:var(--t3);padding:24px">Could not load reports.</div>'; }
 }
 
-/* Filter chips */
-function setupFilters(){
-  var chips = document.querySelectorAll('.filter-chip[data-filter]');
-  for(var i=0;i<chips.length;i++){
-    chips[i].addEventListener('click', function(){
-      var filter = this.getAttribute('data-filter');
-      for(var j=0;j<chips.length;j++){ chips[j].classList.remove('active'); }
-      this.classList.add('active');
-      for(var k=0;k<markers.length;k++){
-        var s = STATIONS[k];
-        if(filter === 'all' || s.prices[filter]){ map.addLayer(markers[k]); }
-        else { map.removeLayer(markers[k]); }
-      }
-      renderStations(filter);
+function addReportMarkers(reports) {
+  reports.forEach(function(rep){
+    // Find matching OSM station or rough parish location
+    const sid = rep.station_id;
+    const station = allStations.find(function(s){return s.id===sid;});
+    if (!station) return;
+    const m = L.marker([station.lat, station.lng], {
+      icon: L.divIcon({
+        className:'',
+        html:'<div style="background:#00e064;color:#000;font-size:9px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;border:1px solid rgba(255,255,255,.3);box-shadow:0 2px 8px rgba(0,0,0,.4)">J$'+Number(rep.pump_price).toFixed(0)+'</div>',
+        iconAnchor:[16,8]
+      })
+    }).addTo(map);
+    m.bindPopup(
+      '<b>'+(rep.station&&rep.station.name||'Station')+'</b><br>'+
+      (FUEL_LABELS[rep.fuel_type]||rep.fuel_type)+': J$'+Number(rep.pump_price).toFixed(2)+'/L<br>'+
+      '<span style="color:#888;font-size:11px">'+ago(rep.created_at)+' · community report</span>'
+    );
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SUBMIT REPORT
+══════════════════════════════════════════════════ */
+async function submitReport() {
+  const isNew = document.getElementById('newToggle').checked;
+  const fuel  = document.getElementById('rFuel').value;
+  const price = parseFloat(document.getElementById('rPrice').value);
+  const btn   = document.getElementById('submitBtn');
+
+  if (!fuel)  return toast('Select fuel type');
+  if (!price||price<100||price>600) return toast('Enter a valid price (100–600)');
+
+  let stationId = null;
+
+  if (isNew) {
+    const name   = document.getElementById('rNewName').value.trim();
+    const parish = document.getElementById('rNewParish').value;
+    const brand  = document.getElementById('rNewBrand').value.trim();
+    const lat    = document.getElementById('rLat').value;
+    const lng    = document.getElementById('rLng').value;
+    if (!name)   return toast('Enter station name');
+    if (!parish) return toast('Select a parish');
+    if (!lat||!lng) return toast('Click the map to drop a pin 📍');
+
+    btn.disabled=true; btn.textContent='Adding station…';
+    const sr = await fetch(SB+'/gas_stations',{
+      method:'POST',
+      headers:Object.assign({},H,{'Prefer':'return=representation'}),
+      body:JSON.stringify({name,brand:brand||null,parish,lat:+lat,lng:+lng})
     });
-  }
-}
-
-/* Modal */
-function populateSelect(){
-  var html = '<option value="" disabled selected>Choose a station...</option>';
-  for(var i=0;i<STATIONS.length;i++){
-    html += '<option value="' + STATIONS[i].id + '">' + STATIONS[i].name + ' (' + STATIONS[i].brand + ')</option>';
-  }
-  $('#fStation').innerHTML = html;
-}
-
-function openModal(id){
-  $('#priceModal').classList.add('open');
-  if(id) $('#fStation').value = id;
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(){
-  $('#priceModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-$('#closeModal').addEventListener('click', closeModal);
-$('#priceModal').addEventListener('click', function(e){
-  if(e.target === $('#priceModal')) closeModal();
-});
-$('#openAddStation').addEventListener('click', function(){ openModal(); });
-
-/* Form */
-$('#priceForm').addEventListener('submit', function(e){
-  e.preventDefault();
-  var btn = $('#submitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Submitting...';
-  var sid = parseInt($('#fStation').value);
-  var fuel = $('#fFuel').value;
-  var price = parseFloat($('#fPrice').value);
-  if(!sid || !price){
-    toast('Fill all fields','error');
-    btn.disabled = false;
-    btn.textContent = 'Submit Price';
-    return;
-  }
-  for(var i=0;i<STATIONS.length;i++){
-    if(STATIONS[i].id === sid){
-      STATIONS[i].prices[fuel] = price;
-      break;
+    const ns = await sr.json();
+    if(!sr.ok||!Array.isArray(ns)){
+      toast('Error adding station'); btn.disabled=false; btn.textContent='⛽ SUBMIT PRICE REPORT'; return;
     }
+    stationId = ns[0].id;
+    allStations.push(Object.assign({source:'db'}, ns[0]));
+    filteredStations = allStations.slice();
+    populateSelect();
+    // Add marker
+    const color = brandColor(brand||name);
+    L.marker([+lat,+lng],{icon:dotIcon(color,10)}).addTo(map)
+      .bindPopup('<b>'+name+'</b><br>'+(brand||'')+'<br>📍 '+parish);
+  } else {
+    stationId = document.getElementById('rStationId').value;
+    if (!stationId) return toast('Select a station first');
   }
-  renderStations();
-  addMarkers();
-  toast('Price updated!','success');
-  $('#priceForm').reset();
-  closeModal();
-  btn.disabled = false;
-  btn.textContent = 'Submit Price';
-});
 
-/* Boot */
-renderPetro();
-initMap();
-loadStations();
-setupFilters();
+  btn.disabled=true; btn.textContent='Submitting…';
+  const rr = await fetch(SB+'/gas_reports',{
+    method:'POST',
+    headers:Object.assign({},H,{'Prefer':'return=representation'}),
+    body:JSON.stringify({station_id:stationId,fuel_type:fuel,pump_price:price})
+  });
+
+  if (rr.ok) {
+    toast('✅ Price reported! Thanks for helping Jamaica 🇯🇲');
+    ['rFuel','rPrice','rStationId','rNewName','rNewParish','rNewBrand','rLat','rLng']
+      .forEach(function(id){ const e=document.getElementById(id); if(e) e.value=''; });
+    document.getElementById('newToggle').checked=false; toggleNew();
+    if(tempPin){map.removeLayer(tempPin);tempPin=null;}
+    loadReports();
+  } else { toast('Error submitting — try again'); }
+  btn.disabled=false; btn.textContent='⛽ SUBMIT PRICE REPORT';
+}
+
+/* ══════════════════════════════════════════════════
+   YAAD ADZ LISTINGS
+══════════════════════════════════════════════════ */
+async function loadListings() {
+  try {
+    const r = await fetch(SB+'/ads?select=id,title,price,parish,category,image,photos,status&status=eq.active&order=created_at.desc&limit=12',{headers:H});
+    const ads = await r.json();
+    if (!Array.isArray(ads)||!ads.length) return;
+
+    const ICONS={vehicles:'🚗',electronics:'📱',property:'🏠',fashion:'👗',furniture:'🛋️',jobs:'💼',services:'🔧',food:'🌿',other:'📦'};
+    function fmt(p){return p?'J$'+Number(p).toLocaleString('en-JM'):'N/A'}
+    function slug(ad){
+      return ((ad.title||'')+'-'+(ad.parish||'')).toLowerCase()
+        .replace(/[^a-z0-9\s-]/g,' ').trim().replace(/\s+/g,'-').slice(0,60)+'-'+ad.id.slice(0,8);
+    }
+    function img(ad, cls) {
+      const icon = ICONS[ad.category]||'📦';
+      let src='';
+      if(ad.image) src=ad.image;
+      else if(ad.photos){try{const p=typeof ad.photos==='string'?JSON.parse(ad.photos):ad.photos;src=Array.isArray(p)?p[0]||'':'';}catch(e){}}
+      if(src) return '<div class="'+cls+'"><img src="'+src+'" alt="" loading="lazy"></div>';
+      return '<div class="'+cls+'">'+icon+'</div>';
+    }
+
+    const strip = document.getElementById('yaadStrip');
+    if(strip) strip.innerHTML=ads.slice(0,6).map(function(ad){
+      return '<a class="ym" href="/ad/'+slug(ad)+'">'+img(ad,'ym-img')+
+        '<div class="ym-body"><div class="ym-price">'+fmt(ad.price)+'</div>'+
+        '<div class="ym-title">'+(ad.title||'Listing')+'</div></div></a>';
+    }).join('');
+
+    const grid = document.getElementById('yaadGrid');
+    if(grid) grid.innerHTML=ads.map(function(ad){
+      return '<a class="yg" href="/ad/'+slug(ad)+'">'+img(ad,'yg-img')+
+        '<div class="yg-body"><div class="yg-price">'+fmt(ad.price)+'</div>'+
+        '<div class="yg-title">'+(ad.title||'Listing')+'</div>'+
+        '<div class="yg-parish">📍 '+(ad.parish||'')+'</div></div></a>';
+    }).join('');
+  } catch(e){console.warn('Listings error:',e);}
+}
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(function(){t.classList.remove('on');},3200);
+}
+
+/* ══════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+  renderPrices();
+  renderTrend();
+  document.getElementById('nextUpdate').textContent = nextWed();
+  loadListings();
+
+  const chk = setInterval(function(){
+    if (window.L) { clearInterval(chk); initMap(); }
+  }, 150);
+});
 </script>
 </body>
-</html>'''
-
-with open('/mnt/agents/output/gas-prices.html','w',encoding='utf-8') as f:
-    f.write(html)
-print(f"v7 bulletproof saved: {len(html):,} chars")
+</html>
