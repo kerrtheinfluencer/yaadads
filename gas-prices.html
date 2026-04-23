@@ -256,9 +256,11 @@ footer{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem;b
 /* ─── Config ─── */
 const SUPABASE_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const MARKUP = 30; // estimated retailer markup J$
+/* FIX: Use a different variable name than the global 'supabase' object */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MARKUP = 30;
 
 /* ─── State ─── */
 let stations = [];
@@ -282,7 +284,7 @@ function toast(msg, type='success'){
 async function loadData(){
   try{
     // 1. Petrojam prices (latest week)
-    const { data: pData, error: pErr } = await supabase
+    const { data: pData, error: pErr } = await sb
       .from('petrojam_prices')
       .select('*')
       .order('week_of',{ascending:false});
@@ -292,7 +294,7 @@ async function loadData(){
     renderChart();
 
     // 2. Stations
-    const { data: sData, error: sErr } = await supabase
+    const { data: sData, error: sErr } = await sb
       .from('stations')
       .select('*')
       .order('name');
@@ -300,7 +302,7 @@ async function loadData(){
     stations = sData || [];
 
     // 3. Latest station prices
-    const { data: prData, error: prErr } = await supabase
+    const { data: prData, error: prErr } = await sb
       .from('station_prices')
       .select('*')
       .order('created_at',{ascending:false});
@@ -322,8 +324,8 @@ async function loadData(){
     populateStationSelect();
     updateDateBar();
   }catch(e){
-    console.error(e);
-    toast('Could not load prices. Showing fallback data.','error');
+    console.error('Load error:', e);
+    toast('Could not load prices. Using fallback data.','error');
     loadFallback();
   }
 }
@@ -372,7 +374,6 @@ function renderPetro(){
   const names = {87:'Gasolene 87',90:'Gasolene 90',diesel:'Auto Diesel',ulsd:'ULSD',kerosene:'Kerosene',propane:'Propane'};
   const colors = {87:'var(--green)',90:'var(--yellow)',diesel:'var(--orange)',ulsd:'#448aff',kerosene:'var(--muted)',propane:'#aa00ff'};
 
-  // Group by fuel type, take latest
   const latest = {};
   for(const row of petrojam){
     if(!latest[row.fuel_type] || new Date(row.week_of) > new Date(latest[row.fuel_type].week_of)){
@@ -486,7 +487,6 @@ function renderChart(){
   const ctx = $('#trendChart');
   if(!ctx || !petrojam.length) return;
 
-  // Get last 8 weeks of 87 prices
   const data87 = petrojam.filter(p=>p.fuel_type==='87').sort((a,b)=>new Date(a.week_of)-new Date(b.week_of)).slice(-8);
   const labels = data87.map(p=>fmtDate(p.week_of));
   const values = data87.map(p=>p.ex_refinery_price);
@@ -565,7 +565,7 @@ $('#priceForm').addEventListener('submit', async e => {
   if(!station_id || !price){ toast('Please fill all fields','error'); btn.disabled=false; btn.textContent='Submit Price'; return; }
 
   try{
-    const { error } = await supabase.from('station_prices').insert([{
+    const { error } = await sb.from('station_prices').insert([{
       station_id, fuel_type, price, source:'user', reporter, verified:false, created_at:new Date().toISOString()
     }]);
     if(error) throw error;
@@ -586,13 +586,11 @@ document.querySelectorAll('.filter-chip[data-filter]').forEach(btn=>{
     document.querySelectorAll('.filter-chip[data-filter]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const f = btn.dataset.filter;
-    // Filter map markers
     markers.forEach((m,i)=>{
       const s = stations[i];
       const has = f==='all' || (s.prices && s.prices[f]);
       if(has) map.addLayer(m); else map.removeLayer(m);
     });
-    // Filter cards
     const cards = document.querySelectorAll('.station-card');
     cards.forEach((c,i)=>{
       const s = stations[i];
