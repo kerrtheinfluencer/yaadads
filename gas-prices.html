@@ -277,7 +277,7 @@ footer a{color:var(--green);text-decoration:none}
   <h1 class="hero-title">JAMAICA<br><em>GAS PRICES</em><br>TODAY</h1>
   <p class="hero-sub">Live ex-refinery prices from Petrojam plus estimated pump prices. Real station map powered by OpenStreetMap. Report what you paid at the pump.</p>
   <div class="hero-badge">
-    Last updated: <strong id="lastUpdated">Apr 23, 2026</strong>
+    Last updated: <strong id="lastUpdated">—</strong>
     &nbsp;·&nbsp; Next update: <strong id="nextUpdate">—</strong>
   </div>
 </div>
@@ -299,7 +299,7 @@ footer a{color:var(--green);text-decoration:none}
   <!-- TREND CHART -->
   <div class="slabel">87-Octane Price Trend (J$/L ex-refinery)</div>
   <div class="trend-card">
-    <div class="trend-hd">Weekly Petrojam prices — Jan to Apr 2026</div>
+    <div class="trend-hd" id="trendHeading">Weekly Petrojam prices</div>
     <div class="trend-bars" id="trendBars"></div>
   </div>
 
@@ -415,6 +415,7 @@ const SB   = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
 const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
 const H    = { 'apikey':KEY, 'Authorization':'Bearer '+KEY, 'Content-Type':'application/json' };
 const MKP  = 30; // J$/L markup
+const DATA_EFFECTIVE_DATE = '2026-04-23';
 
 /* ══════════════════════════════════════════════════
    PRICE DATA — Petrojam Apr 23, 2026
@@ -437,6 +438,25 @@ const TREND = [
   {w:'Mar 26',v:167.88},{w:'Apr 2',v:172.38},{w:'Apr 9',v:176.88},
   {w:'Apr 16',v:176.63},{w:'Apr 23',v:181.13},
 ];
+
+const REF_PRICES = PRICES.reduce(function(acc, p) {
+  if (p.type !== 'lpg') acc[p.key] = +(p.ex + MKP).toFixed(2);
+  return acc;
+}, {});
+
+function formatDate(isoDate) {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-JM', {
+    month:'short', day:'numeric', year:'numeric'
+  });
+}
+
+function trendRangeLabel() {
+  if (!TREND.length) return 'Weekly Petrojam prices';
+  const first = TREND[0].w.split(' ')[0];
+  const last = TREND[TREND.length - 1].w.split(' ')[0];
+  const year = new Date(DATA_EFFECTIVE_DATE + 'T00:00:00').getFullYear();
+  return 'Weekly Petrojam prices — ' + first + ' to ' + last + ' ' + year;
+}
 
 /* ══════════════════════════════════════════════════
    RENDER PRICE CARDS
@@ -484,8 +504,8 @@ function renderTrend() {
 /* ══════════════════════════════════════════════════
    NEXT WEDNESDAY
 ══════════════════════════════════════════════════ */
-function nextWed() {
-  const d = new Date();
+function nextWed(fromDate) {
+  const d = fromDate ? new Date(fromDate) : new Date();
   const diff = (3 - d.getDay() + 7) % 7 || 7;
   d.setDate(d.getDate() + diff);
   return d.toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'});
@@ -669,7 +689,8 @@ function flyTo(id, lat, lng) {
       if (Math.abs(p.lat - lat) < 0.0005 && Math.abs(p.lng - lng) < 0.0005) m.openPopup();
     });
   }, 1300);
-  pickStation(id, document.getElementById('stationSearch').value);
+  const station = allStations.find(function(s){ return s.id === id; });
+  pickStation(id, station ? station.name : 'Station');
   closeDropdown();
 }
 function openDropdown()  { document.getElementById('searchDrop').classList.add('open'); }
@@ -703,10 +724,9 @@ async function loadReports() {
       el.innerHTML='<div style="text-align:center;color:var(--t3);padding:28px;font-size:13px">No reports yet — be the first to report a pump price!</div>';
       return;
     }
-    const ref={'87':181.13+MKP,'90':188.58+MKP,'diesel':188.75+MKP,'ulsd':195.60+MKP,'kerosene':178.15+MKP};
     el.innerHTML = data.map(function(rep){
       const pump = +rep.pump_price;
-      const base = ref[rep.fuel_type]||210;
+      const base = REF_PRICES[rep.fuel_type] || 210;
       const pcls = pump<=base-5?'cheap':pump>=base+5?'pricey':'avg';
       const icls = (rep.fuel_type==='87'||rep.fuel_type==='90')?'p':'d';
       const name = (rep.station&&rep.station.name)||'Unknown Station';
@@ -871,7 +891,9 @@ function toast(msg) {
 document.addEventListener('DOMContentLoaded', function() {
   renderPrices();
   renderTrend();
-  document.getElementById('nextUpdate').textContent = nextWed();
+  document.getElementById('lastUpdated').textContent = formatDate(DATA_EFFECTIVE_DATE);
+  document.getElementById('nextUpdate').textContent = nextWed(DATA_EFFECTIVE_DATE);
+  document.getElementById('trendHeading').textContent = trendRangeLabel();
   loadListings();
 
   const chk = setInterval(function(){
