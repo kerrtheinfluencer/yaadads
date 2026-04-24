@@ -574,12 +574,23 @@ function initMap() {
     toast('📍 Pin dropped — fill in the details below');
   });
 
-  // Always load DB/reports, prioritize live OSM locations, fallback to snapshot only if needed.
-  loadDBStations();
   loadReports();
-  loadOSMStations().then(function(ok){
-    if (!ok) loadPreloadedStations();
+  // Build map anchors from authoritative sources first, then attach DB stations.
+  loadOSMStations().then(async function(ok){
+    if (!ok) await loadPreloadedStations();
+    loadDBStations();
   });
+}
+
+function metersBetween(aLat, aLng, bLat, bLng) {
+  const toRad = Math.PI / 180;
+  const dLat = (bLat - aLat) * toRad;
+  const dLng = (bLng - aLng) * toRad;
+  const lat1 = aLat * toRad;
+  const lat2 = bLat * toRad;
+  const x = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) * Math.sin(dLng/2);
+  return 6371000 * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)));
 }
 
 async function loadPreloadedStations() {
@@ -641,16 +652,20 @@ async function loadOSMStations() {
     allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
 
     let count = 0;
-    const seen = new Set();
-    elements.forEach(function(el) {
+    const sorted = elements.slice().sort(function(a,b){
+      const aw = a.type === 'node' ? 0 : 1;
+      const bw = b.type === 'node' ? 0 : 1;
+      return aw - bw;
+    });
+    const keptStations = [];
+    sorted.forEach(function(el) {
       const lat = el.lat || (el.center && el.center.lat);
       const lon = el.lon || (el.center && el.center.lon);
       if (!lat || !lon) return;
-      const dedupeKey = lat.toFixed(5)+','+lon.toFixed(5);
-      if (seen.has(dedupeKey)) return;
-      seen.add(dedupeKey);
       if (lat < 17.45 || lat > 18.65 || lon < -78.55 || lon > -76.05) return;
       const tags = el.tags || {};
+      const hasName = !!(tags.name || tags['name:en'] || tags.brand || tags.operator);
+      if (el.type !== 'node' && !hasName) return;
       const name   = tags.name || tags['name:en'] || tags.brand || 'Gas Station';
       const brand  = tags.brand || tags.operator || '';
       const color  = brandColor(brand || name);
@@ -659,16 +674,17 @@ async function loadOSMStations() {
         id:'osm_'+el.id, name:name, brand:brand, lat:lat, lng:lon, source:'osm',
         street:tags['addr:street'] || ''
       };
-      const dupWithDb = allStations.some(function(a){
-        return Math.abs(a.lat - station.lat) < 0.001 && Math.abs(a.lng - station.lng) < 0.001;
+      const dup = keptStations.some(function(a){
+        return metersBetween(a.lat, a.lng, station.lat, station.lng) < 120;
       });
-      if (dupWithDb) return;
+      if (dup) return;
       const m = L.marker([lat, lon], { icon: dotIcon(color, 10) }).addTo(map);
       m.stationId = station.id;
       m.bindPopup(stationPopup(station));
 
       // Store for search
       allStations.push(station);
+      keptStations.push(station);
       osmMarkers.push(m);
       count++;
     });
@@ -723,45 +739,6 @@ async function fetchPublicOSMStations() {
   return [];
 }
 
-function overpassQueryForTile(tile) {
-  return '[out:json][timeout:35];(' +
-    'node["amenity"="fuel"]('+tile.join(',')+');' +
-    'way["amenity"="fuel"]('+tile.join(',')+');' +
-    'relation["amenity"="fuel"]('+tile.join(',')+');' +
-  ');out center tags;';
-}
-
-async function fetchTile(endpoint, tile) {
-  const query = overpassQueryForTile(tile);
-  const ctrl = new AbortController();
-  const timeout = setTimeout(function(){ ctrl.abort(); }, 14000);
-  try {
-    const r = await fetch(endpoint, {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body:'data=' + encodeURIComponent(query),
-      signal: ctrl.signal
-    });
-    const data = await r.json();
-    return Array.isArray(data.elements) ? data.elements : [];
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function fetchPublicOSMStations() {
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
-      const merged = chunks.flat();
-      if (merged.length) return merged;
-    } catch(e) {
-      console.warn('OSM endpoint failed:', endpoint, e);
-    }
-  }
-  return [];
-}
-
 /* ── Load stations from Supabase DB (user-added) ── */
 async function loadDBStations() {
   try {
@@ -772,18 +749,33 @@ async function loadDBStations() {
     dbMarkers.forEach(function(m){ map.removeLayer(m); });
     dbMarkers = [];
 
+    const anchorStations = allStations.filter(function(a){ return a.source === 'osm' || a.source === 'preloaded'; });
     data.forEach(function(s) {
       if (!s.lat || !s.lng) return;
-      // Skip if OSM already has something very close
-      const dup = allStations.some(function(a){ return Math.abs(a.lat-s.lat)<0.001 && Math.abs(a.lng-s.lng)<0.001; });
-      if (!dup) {
-        const color = brandColor(s.brand || s.name);
-        const m = L.marker([s.lat, s.lng], { icon: dotIcon(color, 10) }).addTo(map);
-        m.stationId = s.id;
-        m.bindPopup(stationPopup(s));
-        allStations.push({ id:s.id, name:s.name, brand:s.brand||'', lat:s.lat, lng:s.lng, source:'db' });
-        dbMarkers.push(m);
-      }
+      let best = null;
+      anchorStations.forEach(function(a){
+        const d = metersBetween(a.lat, a.lng, s.lat, s.lng);
+        if (!best || d < best.d) best = { d:d, station:a };
+      });
+
+      const isVerified = s.verified === true;
+      if (!isVerified && (!best || best.d > 250)) return;
+
+      const lat = isVerified || !best ? s.lat : best.station.lat;
+      const lng = isVerified || !best ? s.lng : best.station.lng;
+      const dup = allStations.some(function(a){ return metersBetween(a.lat, a.lng, lat, lng) < 80; });
+      if (dup) return;
+
+      const normalized = {
+        id:s.id, name:s.name, brand:s.brand||'', parish:s.parish||'',
+        lat:lat, lng:lng, source:'db', snapped:!isVerified && !!best
+      };
+      const color = brandColor(normalized.brand || normalized.name);
+      const m = L.marker([normalized.lat, normalized.lng], { icon: dotIcon(color, 10) }).addTo(map);
+      m.stationId = normalized.id;
+      m.bindPopup(stationPopup(normalized));
+      allStations.push(normalized);
+      dbMarkers.push(m);
     });
 
     filteredStations = allStations.slice();
@@ -853,6 +845,7 @@ function stationPopup(station) {
   return '<div style="font-family:DM Sans,sans-serif;min-width:200px;color:#111">' +
     '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(station.name || 'Gas Station')+'</div>' +
     (station.brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+station.brand+'</div>' : '') +
+    (station.snapped ? '<div style="font-size:11px;color:#0a7c33;margin-bottom:2px">📌 Location snapped to nearest verified station</div>' : '') +
     (station.parish ? '<div style="font-size:11px;color:#666;margin-bottom:2px">Parish: '+station.parish+'</div>' : '') +
     (station.street ? '<div style="font-size:11px;color:#888;margin-bottom:6px">📍 '+station.street+'</div>' : '<div style="margin-bottom:4px"></div>') +
     '<div style="border-top:1px solid #e8e8e8;padding-top:6px;margin-top:2px">' +
