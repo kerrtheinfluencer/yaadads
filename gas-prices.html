@@ -706,6 +706,35 @@ async function fetchNominatimStations() {
   }
 }
 
+function overpassQueryForTile(tile) {
+  return '[out:json][timeout:35];(' +
+    'node["amenity"="fuel"]('+tile.join(',')+');' +
+    'way["amenity"="fuel"]('+tile.join(',')+');' +
+    'relation["amenity"="fuel"]('+tile.join(',')+');' +
+  ');out center tags;';
+}
+
+async function fetchTile(endpoint, tile) {
+  const query = overpassQueryForTile(tile);
+  const url = endpoint + '?data=' + encodeURIComponent(query);
+  const r = await fetch(url);
+  const data = await r.json();
+  return Array.isArray(data.elements) ? data.elements : [];
+}
+
+async function fetchPublicOSMStations() {
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
+      const merged = chunks.flat();
+      if (merged.length) return merged;
+    } catch(e) {
+      console.warn('OSM endpoint failed:', endpoint, e);
+    }
+  }
+  return [];
+}
+
 /* ── Load stations from Supabase DB (user-added) ── */
 async function loadDBStations() {
   try {
@@ -755,6 +784,9 @@ async function loadDBStations() {
 
     filteredStations = allStations.slice();
     populateSelect();
+    if (!hasAnchors) {
+      document.getElementById('mapStatus').textContent = dbMarkers.length + ' DB stations loaded (no live/snapshot anchors available)';
+    }
   } catch(e) { console.warn('DB stations failed:', e); }
 }
 
