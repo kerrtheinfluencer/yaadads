@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jamaica Gas Prices Today 2026 — Live Petrojam Pump Prices | Yaad Adz</title>
+<title>Jamaica Gas Prices Today 2026 (V2) — Live Petrojam Pump Prices | Yaad Adz</title>
 <meta name="description" content="Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel and kerosene pump prices. Find real gas stations on the map and report pump prices.">
 <meta name="keywords" content="Jamaica gas prices today 2026, Petrojam prices, fuel prices Jamaica, gas price Kingston, diesel price Jamaica, E10-87 price">
 <meta name="robots" content="index, follow">
@@ -273,11 +273,11 @@ footer a{color:var(--green);text-decoration:none}
 
 <div class="hero">
   <div class="hero-bg-text">⛽</div>
-  <div class="hero-tag">🇯🇲 Jamaica · Petrojam · Every Wednesday</div>
+  <div class="hero-tag">🇯🇲 Jamaica · Petrojam · Every Wednesday · V2</div>
   <h1 class="hero-title">JAMAICA<br><em>GAS PRICES</em><br>TODAY</h1>
   <p class="hero-sub">Live ex-refinery prices from Petrojam plus estimated pump prices. Real station map powered by OpenStreetMap. Report what you paid at the pump.</p>
   <div class="hero-badge">
-    Last updated: <strong id="lastUpdated">Apr 23, 2026</strong>
+    Last updated: <strong id="lastUpdated">—</strong>
     &nbsp;·&nbsp; Next update: <strong id="nextUpdate">—</strong>
   </div>
 </div>
@@ -299,7 +299,7 @@ footer a{color:var(--green);text-decoration:none}
   <!-- TREND CHART -->
   <div class="slabel">87-Octane Price Trend (J$/L ex-refinery)</div>
   <div class="trend-card">
-    <div class="trend-hd">Weekly Petrojam prices — Jan to Apr 2026</div>
+    <div class="trend-hd" id="trendHeading">Weekly Petrojam prices</div>
     <div class="trend-bars" id="trendBars"></div>
   </div>
 
@@ -316,7 +316,7 @@ footer a{color:var(--green);text-decoration:none}
       <div class="search-dropdown" id="searchDrop"></div>
     </div>
 
-    <div class="map-status" id="mapStatus">Loading real stations from OpenStreetMap…</div>
+    <div class="map-status" id="mapStatus">Loading live public gas station locations for Jamaica…</div>
 
     <div class="map-wrap">
       <div id="gasMap"></div>
@@ -390,7 +390,7 @@ footer a{color:var(--green);text-decoration:none}
   </div>
 
   <!-- YAAD ADZ GRID -->
-  <div class="slabel">Vehicles &amp; Electronics on Yaad Adz</div>
+  <div class="slabel">More Ads from Yaad Adz (Main Site)</div>
   <div class="yaad-grid" id="yaadGrid"></div>
   <div style="text-align:center;padding:16px 0 32px">
     <a href="/" class="see-all">Browse all listings on Yaad Adz →</a>
@@ -415,6 +415,7 @@ const SB   = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
 const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
 const H    = { 'apikey':KEY, 'Authorization':'Bearer '+KEY, 'Content-Type':'application/json' };
 const MKP  = 30; // J$/L markup
+const DATA_EFFECTIVE_DATE = '2026-04-23';
 
 /* ══════════════════════════════════════════════════
    PRICE DATA — Petrojam Apr 23, 2026
@@ -437,6 +438,25 @@ const TREND = [
   {w:'Mar 26',v:167.88},{w:'Apr 2',v:172.38},{w:'Apr 9',v:176.88},
   {w:'Apr 16',v:176.63},{w:'Apr 23',v:181.13},
 ];
+
+const REF_PRICES = PRICES.reduce(function(acc, p) {
+  if (p.type !== 'lpg') acc[p.key] = +(p.ex + MKP).toFixed(2);
+  return acc;
+}, {});
+
+function formatDate(isoDate) {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-JM', {
+    month:'short', day:'numeric', year:'numeric'
+  });
+}
+
+function trendRangeLabel() {
+  if (!TREND.length) return 'Weekly Petrojam prices';
+  const first = TREND[0].w.split(' ')[0];
+  const last = TREND[TREND.length - 1].w.split(' ')[0];
+  const year = new Date(DATA_EFFECTIVE_DATE + 'T00:00:00').getFullYear();
+  return 'Weekly Petrojam prices — ' + first + ' to ' + last + ' ' + year;
+}
 
 /* ══════════════════════════════════════════════════
    RENDER PRICE CARDS
@@ -484,8 +504,8 @@ function renderTrend() {
 /* ══════════════════════════════════════════════════
    NEXT WEDNESDAY
 ══════════════════════════════════════════════════ */
-function nextWed() {
-  const d = new Date();
+function nextWed(fromDate) {
+  const d = fromDate ? new Date(fromDate) : new Date();
   const diff = (3 - d.getDay() + 7) % 7 || 7;
   d.setDate(d.getDate() + diff);
   return d.toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'});
@@ -494,13 +514,29 @@ function nextWed() {
 /* ══════════════════════════════════════════════════
    MAP — Live data from OpenStreetMap Overpass API
 ══════════════════════════════════════════════════ */
-let map, osmMarkers = [], dbMarkers = [], allStations = [], filteredStations = [], tempPin;
+let map, osmMarkers = [], dbMarkers = [], reportMarkers = [], allStations = [], filteredStations = [], tempPin;
+let latestByStation = {};
 
 const BRAND_COLOR = {
   total:'#00c853', rubis:'#ff5252', texaco:'#ffb300',
   shell:'#ffd740', petcom:'#e040fb', fesco:'#40c4ff',
   esso:'#ff7043', unipet:'#b39ddb', carib:'#4fc3f7'
 };
+const SNAPSHOT_URL = '/gas-stations-snapshot.json';
+const FALLBACK_STATIONS = [];
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter'
+];
+const JAMAICA_TILES = [
+  [17.50,-78.50,17.95,-77.70],
+  [17.50,-77.70,17.95,-76.90],
+  [17.95,-78.50,18.30,-77.70],
+  [17.95,-77.70,18.30,-76.90],
+  [18.30,-78.50,18.60,-77.70],
+  [18.30,-77.70,18.60,-76.10],
+];
 function brandColor(name) {
   if (!name) return '#888';
   const n = name.toLowerCase();
@@ -538,58 +574,169 @@ function initMap() {
     toast('📍 Pin dropped — fill in the details below');
   });
 
-  // Load OSM stations first, then DB stations
-  loadOSMStations();
-  loadDBStations();
   loadReports();
+  // Build map anchors from authoritative sources first, then attach DB stations.
+  loadOSMStations().then(async function(ok){
+    if (!ok) await loadPreloadedStations();
+    loadDBStations();
+  });
+}
+
+function metersBetween(aLat, aLng, bLat, bLng) {
+  const toRad = Math.PI / 180;
+  const dLat = (bLat - aLat) * toRad;
+  const dLng = (bLng - aLng) * toRad;
+  const lat1 = aLat * toRad;
+  const lat2 = bLat * toRad;
+  const x = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) * Math.sin(dLng/2);
+  return 6371000 * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)));
+}
+
+async function loadPreloadedStations() {
+  const status = document.getElementById('mapStatus');
+  osmMarkers.forEach(function(m){ map.removeLayer(m); });
+  osmMarkers = [];
+  allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
+  let stations = FALLBACK_STATIONS.slice();
+  try {
+    const r = await fetch(SNAPSHOT_URL);
+    const payload = await r.json();
+    if (
+      payload &&
+      payload.source === 'Overpass public OSM snapshot' &&
+      Array.isArray(payload.stations)
+    ) {
+      stations = payload.stations.filter(function(s){
+        return /^osm_/.test(String(s.id || '')) &&
+          typeof s.lat === 'number' &&
+          typeof s.lng === 'number' &&
+          s.lat >= 17.45 && s.lat <= 18.65 &&
+          s.lng >= -78.55 && s.lng <= -76.05;
+      });
+    }
+  } catch(e) {
+    console.warn('Snapshot load failed, using fallback stations:', e);
+  }
+
+  if (!stations.length) {
+    status.textContent = 'No verified OSM snapshot available. Showing DB/user-submitted stations only.';
+    filteredStations = allStations.slice();
+    populateSelect();
+    return;
+  }
+
+  stations.forEach(function(s) {
+    const station = Object.assign({source:'preloaded'}, s);
+    const m = L.marker([station.lat, station.lng], { icon: dotIcon(brandColor(station.brand || station.name), 10) }).addTo(map);
+    m.stationId = station.id;
+    m.bindPopup(stationPopup(station));
+    osmMarkers.push(m);
+    allStations.push(station);
+  });
+
+  filteredStations = allStations.slice();
+  populateSelect();
+  status.textContent = stations.length + ' verified OSM snapshot stations loaded (fallback mode)';
 }
 
 /* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
 async function loadOSMStations() {
   const status = document.getElementById('mapStatus');
   try {
-    // Jamaica bounding box: south,west,north,east
-    const query = '[out:json][timeout:25];node[amenity=fuel](17.5,-78.5,18.6,-76.1);out body;';
-    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
-    const r = await fetch(url);
-    const data = await r.json();
-    const elements = data.elements || [];
+    const elements = await fetchPublicOSMStations();
+    if (!elements.length) throw new Error('No OSM station records returned');
 
     osmMarkers.forEach(function(m){ map.removeLayer(m); });
     osmMarkers = [];
+    allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
 
     let count = 0;
-    elements.forEach(function(el) {
-      if (!el.lat || !el.lon) return;
+    const sorted = elements.slice().sort(function(a,b){
+      const aw = a.type === 'node' ? 0 : 1;
+      const bw = b.type === 'node' ? 0 : 1;
+      return aw - bw;
+    });
+    const keptStations = [];
+    sorted.forEach(function(el) {
+      const lat = el.lat || (el.center && el.center.lat);
+      const lon = el.lon || (el.center && el.center.lon);
+      if (!lat || !lon) return;
+      if (lat < 17.45 || lat > 18.65 || lon < -78.55 || lon > -76.05) return;
       const tags = el.tags || {};
+      const hasName = !!(tags.name || tags['name:en'] || tags.brand || tags.operator);
+      if (el.type !== 'node' && !hasName) return;
       const name   = tags.name || tags['name:en'] || tags.brand || 'Gas Station';
       const brand  = tags.brand || tags.operator || '';
       const color  = brandColor(brand || name);
 
-      const m = L.marker([el.lat, el.lon], { icon: dotIcon(color, 10) }).addTo(map);
-      m.bindPopup(
-        '<div style="font-family:DM Sans,sans-serif;min-width:180px;color:#111">' +
-        '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(name)+'</div>' +
-        (brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+brand+'</div>' : '') +
-        (tags['addr:street'] ? '<div style="font-size:11px;color:#888;margin-bottom:8px">📍 '+tags['addr:street']+'</div>' : '<div style="margin-bottom:8px"></div>') +
-        '<a href="https://www.google.com/maps?q='+el.lat+','+el.lon+'" target="_blank" style="display:block;background:#00c853;color:#000;text-align:center;padding:7px;border-radius:6px;font-weight:600;font-size:12px;text-decoration:none;margin-bottom:6px">🗺 Open in Google Maps</a>' +
-        '<button onclick="pickStation(\'osm_'+el.id+'\',\''+name.replace(/'/g,'').replace(/"/g,'&quot;')+'\')" style="width:100%;background:#1a2420;border:1px solid #333;color:#eef2ef;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">⛽ Report Price Here</button>' +
-        '</div>'
-      );
+      const station = {
+        id:'osm_'+el.id, name:name, brand:brand, lat:lat, lng:lon, source:'osm',
+        street:tags['addr:street'] || ''
+      };
+      const dup = keptStations.some(function(a){
+        return metersBetween(a.lat, a.lng, station.lat, station.lng) < 120;
+      });
+      if (dup) return;
+      const m = L.marker([lat, lon], { icon: dotIcon(color, 10) }).addTo(map);
+      m.stationId = station.id;
+      m.bindPopup(stationPopup(station));
 
       // Store for search
-      allStations.push({ id:'osm_'+el.id, name:name, brand:brand, lat:el.lat, lng:el.lon, source:'osm' });
+      allStations.push(station);
+      keptStations.push(station);
       osmMarkers.push(m);
       count++;
     });
 
     filteredStations = allStations.slice();
     populateSelect();
-    status.textContent = count + ' real stations loaded from OpenStreetMap';
+    status.textContent = count + ' live public OSM stations loaded across Jamaica';
+    return true;
   } catch(e) {
-    status.textContent = 'Could not load live map data — using database stations';
+    status.textContent = 'Live OSM fetch unavailable — switching to snapshot fallback';
     console.warn('OSM load failed:', e);
+    return false;
   }
+}
+
+function overpassQueryForTile(tile) {
+  return '[out:json][timeout:35];(' +
+    'node["amenity"="fuel"]('+tile.join(',')+');' +
+    'way["amenity"="fuel"]('+tile.join(',')+');' +
+    'relation["amenity"="fuel"]('+tile.join(',')+');' +
+  ');out center tags;';
+}
+
+async function fetchTile(endpoint, tile) {
+  const query = overpassQueryForTile(tile);
+  const ctrl = new AbortController();
+  const timeout = setTimeout(function(){ ctrl.abort(); }, 14000);
+  try {
+    const r = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:'data=' + encodeURIComponent(query),
+      signal: ctrl.signal
+    });
+    const data = await r.json();
+    return Array.isArray(data.elements) ? data.elements : [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchPublicOSMStations() {
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
+      const merged = chunks.flat();
+      if (merged.length) return merged;
+    } catch(e) {
+      console.warn('OSM endpoint failed:', endpoint, e);
+    }
+  }
+  return [];
 }
 
 /* ── Load stations from Supabase DB (user-added) ── */
@@ -602,27 +749,44 @@ async function loadDBStations() {
     dbMarkers.forEach(function(m){ map.removeLayer(m); });
     dbMarkers = [];
 
+    const anchorStations = allStations.filter(function(a){ return a.source === 'osm' || a.source === 'preloaded'; });
+    const hasAnchors = anchorStations.length > 0;
     data.forEach(function(s) {
       if (!s.lat || !s.lng) return;
-      // Skip if OSM already has something very close
-      const dup = allStations.some(function(a){ return Math.abs(a.lat-s.lat)<0.001 && Math.abs(a.lng-s.lng)<0.001; });
-      if (!dup) {
-        const color = brandColor(s.brand || s.name);
-        const m = L.marker([s.lat, s.lng], { icon: dotIcon(color, 10) }).addTo(map);
-        m.bindPopup(
-          '<div style="font-family:DM Sans,sans-serif;min-width:180px;color:#111">' +
-          '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+s.name+'</div>' +
-          (s.brand ? '<div style="font-size:11px;color:#666;margin-bottom:8px">'+s.brand+'</div>' : '<div style="margin-bottom:8px"></div>') +
-          '<button onclick="pickStation(\''+s.id+'\',\''+s.name.replace(/'/g,'').replace(/"/g,'&quot;')+'\')" style="width:100%;background:#1a2420;border:1px solid #333;color:#eef2ef;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">⛽ Report Price Here</button>' +
-          '</div>'
-        );
-        allStations.push({ id:s.id, name:s.name, brand:s.brand||'', lat:s.lat, lng:s.lng, source:'db' });
-        dbMarkers.push(m);
+      if (s.lat < 17.45 || s.lat > 18.65 || s.lng < -78.55 || s.lng > -76.05) return;
+      let best = null;
+      if (hasAnchors) {
+        anchorStations.forEach(function(a){
+          const d = metersBetween(a.lat, a.lng, s.lat, s.lng);
+          if (!best || d < best.d) best = { d:d, station:a };
+        });
       }
+
+      const isVerified = s.verified === true;
+      if (hasAnchors && !isVerified && (!best || best.d > 250)) return;
+
+      const lat = (hasAnchors && !isVerified && best) ? best.station.lat : s.lat;
+      const lng = (hasAnchors && !isVerified && best) ? best.station.lng : s.lng;
+      const dup = allStations.some(function(a){ return metersBetween(a.lat, a.lng, lat, lng) < 80; });
+      if (dup) return;
+
+      const normalized = {
+        id:s.id, name:s.name, brand:s.brand||'', parish:s.parish||'',
+        lat:lat, lng:lng, source:'db', snapped:hasAnchors && !isVerified && !!best, lowConfidence:!hasAnchors && !isVerified
+      };
+      const color = brandColor(normalized.brand || normalized.name);
+      const m = L.marker([normalized.lat, normalized.lng], { icon: dotIcon(color, 10) }).addTo(map);
+      m.stationId = normalized.id;
+      m.bindPopup(stationPopup(normalized));
+      allStations.push(normalized);
+      dbMarkers.push(m);
     });
 
     filteredStations = allStations.slice();
     populateSelect();
+    if (!hasAnchors) {
+      document.getElementById('mapStatus').textContent = dbMarkers.length + ' DB stations loaded (no live/snapshot anchors available)';
+    }
   } catch(e) { console.warn('DB stations failed:', e); }
 }
 
@@ -647,7 +811,8 @@ function handleSearch(q) {
   const lq = q.toLowerCase();
   filteredStations = allStations.filter(function(s){
     return (s.name||'').toLowerCase().includes(lq) ||
-           (s.brand||'').toLowerCase().includes(lq);
+           (s.brand||'').toLowerCase().includes(lq) ||
+           (s.parish||'').toLowerCase().includes(lq);
   });
   drop.innerHTML = filteredStations.slice(0,10).map(function(s){
     const color = brandColor(s.brand||s.name);
@@ -669,11 +834,43 @@ function flyTo(id, lat, lng) {
       if (Math.abs(p.lat - lat) < 0.0005 && Math.abs(p.lng - lng) < 0.0005) m.openPopup();
     });
   }, 1300);
-  pickStation(id, document.getElementById('stationSearch').value);
+  const station = allStations.find(function(s){ return s.id === id; });
+  pickStation(id, station ? station.name : 'Station');
   closeDropdown();
 }
 function openDropdown()  { document.getElementById('searchDrop').classList.add('open'); }
 function closeDropdown() { document.getElementById('searchDrop').classList.remove('open'); }
+
+function stationPopup(station) {
+  const id = station.id;
+  const safeName = (station.name || 'Gas Station').replace(/'/g,'').replace(/"/g,'&quot;');
+  const latest = latestByStation[id];
+  const priceRows = latest ? Object.keys(latest).map(function(ft){
+    return '<div style="font-size:11px;color:#333;margin-top:2px">• '+(FUEL_LABELS[ft]||ft)+': <strong>J$'+latest[ft].price.toFixed(2)+'/L</strong> <span style="color:#888">('+ago(latest[ft].created_at)+')</span></div>';
+  }).join('') : '<div style="font-size:11px;color:#777;margin:6px 0 4px">No community prices yet for this station.</div>';
+
+  return '<div style="font-family:DM Sans,sans-serif;min-width:200px;color:#111">' +
+    '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(station.name || 'Gas Station')+'</div>' +
+    (station.brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+station.brand+'</div>' : '') +
+    (station.snapped ? '<div style="font-size:11px;color:#0a7c33;margin-bottom:2px">📌 Location snapped to nearest verified station</div>' : '') +
+    (station.lowConfidence ? '<div style="font-size:11px;color:#b36b00;margin-bottom:2px">⚠️ Approx location (anchor source unavailable)</div>' : '') +
+    (station.parish ? '<div style="font-size:11px;color:#666;margin-bottom:2px">Parish: '+station.parish+'</div>' : '') +
+    (station.street ? '<div style="font-size:11px;color:#888;margin-bottom:6px">📍 '+station.street+'</div>' : '<div style="margin-bottom:4px"></div>') +
+    '<div style="border-top:1px solid #e8e8e8;padding-top:6px;margin-top:2px">' +
+      '<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.5px">Latest community prices</div>' +
+      priceRows +
+    '</div>' +
+    '<a href="https://www.google.com/maps?q='+station.lat+','+station.lng+'" target="_blank" style="display:block;background:#00c853;color:#000;text-align:center;padding:7px;border-radius:6px;font-weight:600;font-size:12px;text-decoration:none;margin:8px 0 6px">🗺 Open in Google Maps</a>' +
+    '<button onclick="pickStation(\''+id+'\',\''+safeName+'\')" style="width:100%;background:#1a2420;border:1px solid #333;color:#eef2ef;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">⛽ Report Price Here</button>' +
+    '</div>';
+}
+
+function refreshMarkerPopups() {
+  [...osmMarkers, ...dbMarkers].forEach(function(marker) {
+    const station = allStations.find(function(s){ return s.id === marker.stationId; });
+    if (station) marker.setPopupContent(stationPopup(station));
+  });
+}
 
 /* ── NEW STATION TOGGLE ── */
 function toggleNew() {
@@ -697,16 +894,15 @@ function ago(iso){
 async function loadReports() {
   const el = document.getElementById('reportsList');
   try {
-    const r = await fetch(SB+'/gas_reports?select=*,station:station_id(name,brand,parish)&order=created_at.desc&limit=25',{headers:H});
+    const r = await fetch(SB+'/gas_reports?select=*,station:station_id(name,brand,parish)&order=created_at.desc&limit=200',{headers:H});
     const data = await r.json();
     if (!Array.isArray(data)||!data.length) {
       el.innerHTML='<div style="text-align:center;color:var(--t3);padding:28px;font-size:13px">No reports yet — be the first to report a pump price!</div>';
       return;
     }
-    const ref={'87':181.13+MKP,'90':188.58+MKP,'diesel':188.75+MKP,'ulsd':195.60+MKP,'kerosene':178.15+MKP};
     el.innerHTML = data.map(function(rep){
       const pump = +rep.pump_price;
-      const base = ref[rep.fuel_type]||210;
+      const base = REF_PRICES[rep.fuel_type] || 210;
       const pcls = pump<=base-5?'cheap':pump>=base+5?'pricey':'avg';
       const icls = (rep.fuel_type==='87'||rep.fuel_type==='90')?'p':'d';
       const name = (rep.station&&rep.station.name)||'Unknown Station';
@@ -724,12 +920,27 @@ async function loadReports() {
       '</div>';
     }).join('');
 
+    latestByStation = data.reduce(function(acc, rep){
+      if (!rep.station_id || !rep.fuel_type) return acc;
+      acc[rep.station_id] = acc[rep.station_id] || {};
+      if (!acc[rep.station_id][rep.fuel_type]) {
+        acc[rep.station_id][rep.fuel_type] = {
+          price: Number(rep.pump_price),
+          created_at: rep.created_at
+        };
+      }
+      return acc;
+    }, {});
+    refreshMarkerPopups();
+
     // Add report markers to map
     if (map) addReportMarkers(data);
   } catch(e){ el.innerHTML='<div style="text-align:center;color:var(--t3);padding:24px">Could not load reports.</div>'; }
 }
 
 function addReportMarkers(reports) {
+  reportMarkers.forEach(function(m){ map.removeLayer(m); });
+  reportMarkers = [];
   reports.forEach(function(rep){
     // Find matching OSM station or rough parish location
     const sid = rep.station_id;
@@ -742,6 +953,7 @@ function addReportMarkers(reports) {
         iconAnchor:[16,8]
       })
     }).addTo(map);
+    reportMarkers.push(m);
     m.bindPopup(
       '<b>'+(rep.station&&rep.station.name||'Station')+'</b><br>'+
       (FUEL_LABELS[rep.fuel_type]||rep.fuel_type)+': J$'+Number(rep.pump_price).toFixed(2)+'/L<br>'+
@@ -871,7 +1083,9 @@ function toast(msg) {
 document.addEventListener('DOMContentLoaded', function() {
   renderPrices();
   renderTrend();
-  document.getElementById('nextUpdate').textContent = nextWed();
+  document.getElementById('lastUpdated').textContent = formatDate(DATA_EFFECTIVE_DATE);
+  document.getElementById('nextUpdate').textContent = nextWed(DATA_EFFECTIVE_DATE);
+  document.getElementById('trendHeading').textContent = trendRangeLabel();
   loadListings();
 
   const chk = setInterval(function(){
