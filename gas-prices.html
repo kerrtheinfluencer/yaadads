@@ -731,6 +731,9 @@ async function loadDBStations() {
 
     filteredStations = allStations.slice();
     populateSelect();
+    if (!hasAnchors) {
+      document.getElementById('mapStatus').textContent = dbMarkers.length + ' DB stations loaded (no live/snapshot anchors available)';
+    }
   } catch(e) { console.warn('DB stations failed:', e); }
 }
 
