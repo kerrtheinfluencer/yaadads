@@ -698,6 +698,7 @@ async function loadOSMStations() {
     console.warn('OSM load failed:', e);
     return false;
   }
+  return [];
 }
 
 function overpassQueryForTile(tile) {
@@ -750,25 +751,29 @@ async function loadDBStations() {
     dbMarkers = [];
 
     const anchorStations = allStations.filter(function(a){ return a.source === 'osm' || a.source === 'preloaded'; });
+    const hasAnchors = anchorStations.length > 0;
     data.forEach(function(s) {
       if (!s.lat || !s.lng) return;
+      if (s.lat < 17.45 || s.lat > 18.65 || s.lng < -78.55 || s.lng > -76.05) return;
       let best = null;
-      anchorStations.forEach(function(a){
-        const d = metersBetween(a.lat, a.lng, s.lat, s.lng);
-        if (!best || d < best.d) best = { d:d, station:a };
-      });
+      if (hasAnchors) {
+        anchorStations.forEach(function(a){
+          const d = metersBetween(a.lat, a.lng, s.lat, s.lng);
+          if (!best || d < best.d) best = { d:d, station:a };
+        });
+      }
 
       const isVerified = s.verified === true;
-      if (!isVerified && (!best || best.d > 250)) return;
+      if (hasAnchors && !isVerified && (!best || best.d > 250)) return;
 
-      const lat = isVerified || !best ? s.lat : best.station.lat;
-      const lng = isVerified || !best ? s.lng : best.station.lng;
+      const lat = (hasAnchors && !isVerified && best) ? best.station.lat : s.lat;
+      const lng = (hasAnchors && !isVerified && best) ? best.station.lng : s.lng;
       const dup = allStations.some(function(a){ return metersBetween(a.lat, a.lng, lat, lng) < 80; });
       if (dup) return;
 
       const normalized = {
         id:s.id, name:s.name, brand:s.brand||'', parish:s.parish||'',
-        lat:lat, lng:lng, source:'db', snapped:!isVerified && !!best
+        lat:lat, lng:lng, source:'db', snapped:hasAnchors && !isVerified && !!best, lowConfidence:!hasAnchors && !isVerified
       };
       const color = brandColor(normalized.brand || normalized.name);
       const m = L.marker([normalized.lat, normalized.lng], { icon: dotIcon(color, 10) }).addTo(map);
@@ -780,6 +785,9 @@ async function loadDBStations() {
 
     filteredStations = allStations.slice();
     populateSelect();
+    if (!hasAnchors) {
+      document.getElementById('mapStatus').textContent = dbMarkers.length + ' DB stations loaded (no live/snapshot anchors available)';
+    }
   } catch(e) { console.warn('DB stations failed:', e); }
 }
 
@@ -846,6 +854,7 @@ function stationPopup(station) {
     '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(station.name || 'Gas Station')+'</div>' +
     (station.brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+station.brand+'</div>' : '') +
     (station.snapped ? '<div style="font-size:11px;color:#0a7c33;margin-bottom:2px">📌 Location snapped to nearest verified station</div>' : '') +
+    (station.lowConfidence ? '<div style="font-size:11px;color:#b36b00;margin-bottom:2px">⚠️ Approx location (anchor source unavailable)</div>' : '') +
     (station.parish ? '<div style="font-size:11px;color:#666;margin-bottom:2px">Parish: '+station.parish+'</div>' : '') +
     (station.street ? '<div style="font-size:11px;color:#888;margin-bottom:6px">📍 '+station.street+'</div>' : '<div style="margin-bottom:4px"></div>') +
     '<div style="border-top:1px solid #e8e8e8;padding-top:6px;margin-top:2px">' +
