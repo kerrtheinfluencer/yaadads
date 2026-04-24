@@ -680,6 +680,7 @@ async function fetchTile(endpoint, tile) {
   } finally {
     clearTimeout(timeout);
   }
+  return [];
 }
 
 async function fetchPublicOSMStations() {
