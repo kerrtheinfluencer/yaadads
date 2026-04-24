@@ -522,8 +522,6 @@ const BRAND_COLOR = {
   shell:'#ffd740', petcom:'#e040fb', fesco:'#40c4ff',
   esso:'#ff7043', unipet:'#b39ddb', carib:'#4fc3f7'
 };
-const SNAPSHOT_URL = '/gas-stations-snapshot.json';
-const FALLBACK_STATIONS = [];
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
@@ -536,6 +534,9 @@ const JAMAICA_TILES = [
   [17.95,-77.70,18.30,-76.90],
   [18.30,-78.50,18.60,-77.70],
   [18.30,-77.70,18.60,-76.10],
+  // extra density pulls for Kingston / Portmore metro
+  [17.90,-76.95,18.08,-76.70],
+  [17.88,-76.95,17.99,-76.78],
 ];
 function brandColor(name) {
   if (!name) return '#888';
@@ -577,9 +578,8 @@ function initMap() {
   loadReports();
   // Show DB stations immediately so map is never empty.
   loadDBStations();
-  // Build map anchors from authoritative sources first, then attach DB stations.
-  loadOSMStations().then(async function(ok){
-    if (!ok) await loadPreloadedStations();
+  // Build map anchors from live OSM only, then attach DB stations.
+  loadOSMStations().then(function(){
     // Re-run DB load to snap/align to anchors once available.
     loadDBStations();
   });
@@ -594,53 +594,6 @@ function metersBetween(aLat, aLng, bLat, bLng) {
   const x = Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) * Math.sin(dLng/2);
   return 6371000 * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)));
-}
-
-async function loadPreloadedStations() {
-  const status = document.getElementById('mapStatus');
-  osmMarkers.forEach(function(m){ map.removeLayer(m); });
-  osmMarkers = [];
-  allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
-  let stations = FALLBACK_STATIONS.slice();
-  try {
-    const r = await fetch(SNAPSHOT_URL);
-    const payload = await r.json();
-    if (
-      payload &&
-      payload.source === 'Overpass public OSM snapshot' &&
-      Array.isArray(payload.stations)
-    ) {
-      stations = payload.stations.filter(function(s){
-        return /^osm_/.test(String(s.id || '')) &&
-          typeof s.lat === 'number' &&
-          typeof s.lng === 'number' &&
-          s.lat >= 17.45 && s.lat <= 18.65 &&
-          s.lng >= -78.55 && s.lng <= -76.05;
-      });
-    }
-  } catch(e) {
-    console.warn('Snapshot load failed, using fallback stations:', e);
-  }
-
-  if (!stations.length) {
-    status.textContent = 'No verified OSM snapshot available. Showing DB/user-submitted stations only.';
-    filteredStations = allStations.slice();
-    populateSelect();
-    return;
-  }
-
-  stations.forEach(function(s) {
-    const station = Object.assign({source:'preloaded'}, s);
-    const m = L.marker([station.lat, station.lng], { icon: dotIcon(brandColor(station.brand || station.name), 10) }).addTo(map);
-    m.stationId = station.id;
-    m.bindPopup(stationPopup(station));
-    osmMarkers.push(m);
-    allStations.push(station);
-  });
-
-  filteredStations = allStations.slice();
-  populateSelect();
-  status.textContent = stations.length + ' verified OSM snapshot stations loaded (fallback mode)';
 }
 
 /* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
@@ -678,7 +631,7 @@ async function loadOSMStations() {
         street:tags['addr:street'] || ''
       };
       const dup = keptStations.some(function(a){
-        return metersBetween(a.lat, a.lng, station.lat, station.lng) < 120;
+        return metersBetween(a.lat, a.lng, station.lat, station.lng) < 35;
       });
       if (dup) return;
       const m = L.marker([lat, lon], { icon: dotIcon(color, 10) }).addTo(map);
@@ -714,7 +667,7 @@ function overpassQueryForTile(tile) {
 async function fetchTile(endpoint, tile) {
   const query = overpassQueryForTile(tile);
   const ctrl = new AbortController();
-  const timeout = setTimeout(function(){ ctrl.abort(); }, 7000);
+  const timeout = setTimeout(function(){ ctrl.abort(); }, 12000);
   try {
     const r = await fetch(endpoint, {
       method:'POST',
@@ -727,6 +680,7 @@ async function fetchTile(endpoint, tile) {
   } finally {
     clearTimeout(timeout);
   }
+  return [];
 }
 
 async function fetchPublicOSMStations() {
@@ -752,7 +706,7 @@ async function loadDBStations() {
     dbMarkers.forEach(function(m){ map.removeLayer(m); });
     dbMarkers = [];
 
-    const anchorStations = allStations.filter(function(a){ return a.source === 'osm' || a.source === 'preloaded'; });
+    const anchorStations = allStations.filter(function(a){ return a.source === 'osm'; });
     const hasAnchors = anchorStations.length > 0;
     data.forEach(function(s) {
       if (!s.lat || !s.lng) return;
