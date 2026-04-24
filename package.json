@@ -4,7 +4,8 @@
   "description": "Static ad page generator for Yaad Adz",
   "private": true,
   "scripts": {
-    "generate": "node generate-pages.js"
+    "generate": "node generate-pages.js",
+    "stations:snapshot": "node scrape-gas-stations.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0"
