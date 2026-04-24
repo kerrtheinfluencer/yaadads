@@ -1,26 +1,6 @@
 {
   "updated_at": "2026-04-24",
-  "source": "public snapshot fallback (use live OSM when available)",
-  "stations": [
-    {"id":"snap_001","name":"Total Half Way Tree","brand":"Total","parish":"St. Andrew","lat":18.007000,"lng":-76.798900},
-    {"id":"snap_002","name":"Rubis Constant Spring","brand":"Rubis","parish":"St. Andrew","lat":18.035800,"lng":-76.792200},
-    {"id":"snap_003","name":"Texaco Washington Blvd","brand":"Texaco","parish":"St. Andrew","lat":18.012800,"lng":-76.837000},
-    {"id":"snap_004","name":"Total Portmore","brand":"Total","parish":"St. Catherine","lat":17.949800,"lng":-76.874400},
-    {"id":"snap_005","name":"Rubis Spanish Town Road","brand":"Rubis","parish":"St. Catherine","lat":17.999800,"lng":-76.957200},
-    {"id":"snap_006","name":"Petcom May Pen","brand":"Petcom","parish":"Clarendon","lat":17.964100,"lng":-77.245100},
-    {"id":"snap_007","name":"Total Mandeville","brand":"Total","parish":"Manchester","lat":18.041000,"lng":-77.507000},
-    {"id":"snap_008","name":"Rubis Santa Cruz","brand":"Rubis","parish":"St. Elizabeth","lat":18.051200,"lng":-77.698100},
-    {"id":"snap_009","name":"Texaco Savanna-la-Mar","brand":"Texaco","parish":"Westmoreland","lat":18.219200,"lng":-78.133200},
-    {"id":"snap_010","name":"Total Lucea","brand":"Total","parish":"Hanover","lat":18.442200,"lng":-78.173100},
-    {"id":"snap_011","name":"Rubis Montego Bay","brand":"Rubis","parish":"St. James","lat":18.476200,"lng":-77.893900},
-    {"id":"snap_012","name":"Petcom Fairview","brand":"Petcom","parish":"St. James","lat":18.459200,"lng":-77.926000},
-    {"id":"snap_013","name":"Texaco Falmouth","brand":"Texaco","parish":"Trelawny","lat":18.492300,"lng":-77.655800},
-    {"id":"snap_014","name":"Total Ocho Rios","brand":"Total","parish":"St. Ann","lat":18.404300,"lng":-77.104800},
-    {"id":"snap_015","name":"Rubis St. Anns Bay","brand":"Rubis","parish":"St. Ann","lat":18.435100,"lng":-77.200700},
-    {"id":"snap_016","name":"Texaco Port Maria","brand":"Texaco","parish":"St. Mary","lat":18.368500,"lng":-76.893100},
-    {"id":"snap_017","name":"Total Port Antonio","brand":"Total","parish":"Portland","lat":18.176600,"lng":-76.451800},
-    {"id":"snap_018","name":"Rubis Morant Bay","brand":"Rubis","parish":"St. Thomas","lat":17.881500,"lng":-76.412700},
-    {"id":"snap_019","name":"Fesco Cross Roads","brand":"Fesco","parish":"St. Andrew","lat":17.990900,"lng":-76.783800},
-    {"id":"snap_020","name":"Unipet Linstead","brand":"Unipet","parish":"St. Catherine","lat":18.136800,"lng":-77.031700}
-  ]
+  "source": "Overpass public OSM snapshot",
+  "notes": "Run npm run stations:snapshot in a network-enabled environment to regenerate accurate stations.",
+  "stations": []
 }

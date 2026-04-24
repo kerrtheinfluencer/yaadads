@@ -523,13 +523,7 @@ const BRAND_COLOR = {
   esso:'#ff7043', unipet:'#b39ddb', carib:'#4fc3f7'
 };
 const SNAPSHOT_URL = '/gas-stations-snapshot.json';
-const FALLBACK_STATIONS = [
-  {id:'pre_a',name:'Total Half Way Tree',brand:'Total',parish:'St. Andrew',lat:18.0070,lng:-76.7989},
-  {id:'pre_b',name:'Rubis Montego Bay',brand:'Rubis',parish:'St. James',lat:18.4762,lng:-77.8939},
-  {id:'pre_c',name:'Texaco Mandeville',brand:'Texaco',parish:'Manchester',lat:18.0410,lng:-77.5070},
-  {id:'pre_d',name:'Total Ocho Rios',brand:'Total',parish:'St. Ann',lat:18.4043,lng:-77.1048},
-  {id:'pre_e',name:'Rubis Port Antonio',brand:'Rubis',parish:'Portland',lat:18.1766,lng:-76.4518},
-];
+const FALLBACK_STATIONS = [];
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
@@ -593,13 +587,32 @@ async function loadPreloadedStations() {
   osmMarkers.forEach(function(m){ map.removeLayer(m); });
   osmMarkers = [];
   allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
-  let stations = FALLBACK_STATIONS;
+  let stations = FALLBACK_STATIONS.slice();
   try {
     const r = await fetch(SNAPSHOT_URL);
     const payload = await r.json();
-    if (Array.isArray(payload && payload.stations) && payload.stations.length) stations = payload.stations;
+    if (
+      payload &&
+      payload.source === 'Overpass public OSM snapshot' &&
+      Array.isArray(payload.stations)
+    ) {
+      stations = payload.stations.filter(function(s){
+        return /^osm_/.test(String(s.id || '')) &&
+          typeof s.lat === 'number' &&
+          typeof s.lng === 'number' &&
+          s.lat >= 17.45 && s.lat <= 18.65 &&
+          s.lng >= -78.55 && s.lng <= -76.05;
+      });
+    }
   } catch(e) {
     console.warn('Snapshot load failed, using fallback stations:', e);
+  }
+
+  if (!stations.length) {
+    status.textContent = 'No verified OSM snapshot available. Showing DB/user-submitted stations only.';
+    filteredStations = allStations.slice();
+    populateSelect();
+    return;
   }
 
   stations.forEach(function(s) {
@@ -613,7 +626,7 @@ async function loadPreloadedStations() {
 
   filteredStations = allStations.slice();
   populateSelect();
-  status.textContent = stations.length + ' snapshot stations loaded (fallback mode)';
+  status.textContent = stations.length + ' verified OSM snapshot stations loaded (fallback mode)';
 }
 
 /* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
@@ -669,6 +682,45 @@ async function loadOSMStations() {
     console.warn('OSM load failed:', e);
     return false;
   }
+}
+
+function overpassQueryForTile(tile) {
+  return '[out:json][timeout:35];(' +
+    'node["amenity"="fuel"]('+tile.join(',')+');' +
+    'way["amenity"="fuel"]('+tile.join(',')+');' +
+    'relation["amenity"="fuel"]('+tile.join(',')+');' +
+  ');out center tags;';
+}
+
+async function fetchTile(endpoint, tile) {
+  const query = overpassQueryForTile(tile);
+  const ctrl = new AbortController();
+  const timeout = setTimeout(function(){ ctrl.abort(); }, 14000);
+  try {
+    const r = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:'data=' + encodeURIComponent(query),
+      signal: ctrl.signal
+    });
+    const data = await r.json();
+    return Array.isArray(data.elements) ? data.elements : [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchPublicOSMStations() {
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
+      const merged = chunks.flat();
+      if (merged.length) return merged;
+    } catch(e) {
+      console.warn('OSM endpoint failed:', endpoint, e);
+    }
+  }
+  return [];
 }
 
 function overpassQueryForTile(tile) {

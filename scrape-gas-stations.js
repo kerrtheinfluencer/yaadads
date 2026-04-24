@@ -6,7 +6,8 @@ const fs = require('fs');
 const OUT_FILE = 'gas-stations-snapshot.json';
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter'
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter'
 ];
 const TILES = [
   [17.50,-78.50,17.95,-77.70],
