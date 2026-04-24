@@ -723,6 +723,45 @@ async function fetchPublicOSMStations() {
   return [];
 }
 
+function overpassQueryForTile(tile) {
+  return '[out:json][timeout:35];(' +
+    'node["amenity"="fuel"]('+tile.join(',')+');' +
+    'way["amenity"="fuel"]('+tile.join(',')+');' +
+    'relation["amenity"="fuel"]('+tile.join(',')+');' +
+  ');out center tags;';
+}
+
+async function fetchTile(endpoint, tile) {
+  const query = overpassQueryForTile(tile);
+  const ctrl = new AbortController();
+  const timeout = setTimeout(function(){ ctrl.abort(); }, 14000);
+  try {
+    const r = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:'data=' + encodeURIComponent(query),
+      signal: ctrl.signal
+    });
+    const data = await r.json();
+    return Array.isArray(data.elements) ? data.elements : [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchPublicOSMStations() {
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
+      const merged = chunks.flat();
+      if (merged.length) return merged;
+    } catch(e) {
+      console.warn('OSM endpoint failed:', endpoint, e);
+    }
+  }
+  return [];
+}
+
 /* ── Load stations from Supabase DB (user-added) ── */
 async function loadDBStations() {
   try {
