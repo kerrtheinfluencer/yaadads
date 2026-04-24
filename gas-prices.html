@@ -597,7 +597,8 @@ function metersBetween(aLat, aLng, bLat, bLng) {
 async function loadOSMStations() {
   const status = document.getElementById('mapStatus');
   try {
-    const elements = await fetchPublicOSMStations();
+    const live = await fetchPublicOSMStations();
+    const elements = live.elements || [];
     if (!elements.length) throw new Error('No OSM station records returned');
 
     osmMarkers.forEach(function(m){ map.removeLayer(m); });
@@ -644,12 +645,64 @@ async function loadOSMStations() {
 
     filteredStations = allStations.slice();
     populateSelect();
-    status.textContent = count + ' live public OSM stations loaded across Jamaica';
+    status.textContent = count + ' live public stations loaded across Jamaica ('+live.source+')';
     return true;
   } catch(e) {
-    status.textContent = 'Live OSM fetch unavailable — switching to snapshot fallback';
+    status.textContent = 'Live station fetch unavailable — no station markers shown.';
     console.warn('OSM load failed:', e);
     return false;
+  }
+}
+
+function overpassQueryForTile(tile) {
+  return '[out:json][timeout:35];(' +
+    'node["amenity"="fuel"]('+tile.join(',')+');' +
+    'way["amenity"="fuel"]('+tile.join(',')+');' +
+    'relation["amenity"="fuel"]('+tile.join(',')+');' +
+  ');out center tags;';
+}
+
+async function fetchTile(endpoint, tile) {
+  const query = overpassQueryForTile(tile);
+  const url = endpoint + '?data=' + encodeURIComponent(query);
+  const r = await fetch(url);
+  const data = await r.json();
+  return Array.isArray(data.elements) ? data.elements : [];
+}
+
+async function fetchPublicOSMStations() {
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
+      const merged = chunks.flat();
+      if (merged.length) return { elements: merged, source: 'Overpass' };
+    } catch(e) {
+      console.warn('OSM endpoint failed:', endpoint, e);
+    }
+  }
+  const nominatim = await fetchNominatimStations();
+  if (nominatim.length) return { elements: nominatim, source: 'Nominatim' };
+  return { elements: [], source: 'none' };
+}
+
+async function fetchNominatimStations() {
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&bounded=1&limit=500&viewbox=-78.55,18.65,-76.05,17.45&q=fuel%20station%20Jamaica';
+    const r = await fetch(url, { headers: { 'Accept-Language':'en' } });
+    const rows = await r.json();
+    if (!Array.isArray(rows)) return [];
+    return rows.map(function(row){
+      return {
+        id: row.place_id || row.osm_id,
+        type: 'node',
+        lat: Number(row.lat),
+        lon: Number(row.lon),
+        tags: { name: row.name || row.display_name || 'Gas Station', operator: '' }
+      };
+    });
+  } catch(e) {
+    console.warn('Nominatim fallback failed:', e);
+    return [];
   }
 }
 
