@@ -1,0 +1,6 @@
+{
+  "updated_at": "2026-04-24",
+  "source": "Overpass public OSM snapshot",
+  "notes": "Run npm run stations:snapshot in a network-enabled environment to regenerate accurate stations.",
+  "stations": []
+}
