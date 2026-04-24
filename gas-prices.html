@@ -316,7 +316,7 @@ footer a{color:var(--green);text-decoration:none}
       <div class="search-dropdown" id="searchDrop"></div>
     </div>
 
-    <div class="map-status" id="mapStatus">Loading real stations from OpenStreetMap…</div>
+    <div class="map-status" id="mapStatus">Loading preloaded gas stations for Jamaica…</div>
 
     <div class="map-wrap">
       <div id="gasMap"></div>
@@ -522,6 +522,28 @@ const BRAND_COLOR = {
   shell:'#ffd740', petcom:'#e040fb', fesco:'#40c4ff',
   esso:'#ff7043', unipet:'#b39ddb', carib:'#4fc3f7'
 };
+const PRELOADED_STATIONS = [
+  {id:'pre_1',name:'Total Half Way Tree',brand:'Total',parish:'St. Andrew',lat:18.0070,lng:-76.7989},
+  {id:'pre_2',name:'Rubis Constant Spring',brand:'Rubis',parish:'St. Andrew',lat:18.0358,lng:-76.7922},
+  {id:'pre_3',name:'Texaco Washington Blvd',brand:'Texaco',parish:'St. Andrew',lat:18.0128,lng:-76.8370},
+  {id:'pre_4',name:'Total Portmore',brand:'Total',parish:'St. Catherine',lat:17.9498,lng:-76.8744},
+  {id:'pre_5',name:'Rubis Spanish Town Road',brand:'Rubis',parish:'St. Catherine',lat:17.9998,lng:-76.9572},
+  {id:'pre_6',name:'Petcom May Pen',brand:'Petcom',parish:'Clarendon',lat:17.9641,lng:-77.2451},
+  {id:'pre_7',name:'Total Mandeville',brand:'Total',parish:'Manchester',lat:18.0410,lng:-77.5070},
+  {id:'pre_8',name:'Rubis Santa Cruz',brand:'Rubis',parish:'St. Elizabeth',lat:18.0512,lng:-77.6981},
+  {id:'pre_9',name:'Texaco Savanna-la-Mar',brand:'Texaco',parish:'Westmoreland',lat:18.2192,lng:-78.1332},
+  {id:'pre_10',name:'Total Lucea',brand:'Total',parish:'Hanover',lat:18.4422,lng:-78.1731},
+  {id:'pre_11',name:'Rubis Montego Bay',brand:'Rubis',parish:'St. James',lat:18.4762,lng:-77.8939},
+  {id:'pre_12',name:'Petcom Fairview',brand:'Petcom',parish:'St. James',lat:18.4592,lng:-77.9260},
+  {id:'pre_13',name:'Texaco Falmouth',brand:'Texaco',parish:'Trelawny',lat:18.4923,lng:-77.6558},
+  {id:'pre_14',name:'Total Ocho Rios',brand:'Total',parish:'St. Ann',lat:18.4043,lng:-77.1048},
+  {id:'pre_15',name:'Rubis St. Anns Bay',brand:'Rubis',parish:'St. Ann',lat:18.4351,lng:-77.2007},
+  {id:'pre_16',name:'Texaco Port Maria',brand:'Texaco',parish:'St. Mary',lat:18.3685,lng:-76.8931},
+  {id:'pre_17',name:'Total Port Antonio',brand:'Total',parish:'Portland',lat:18.1766,lng:-76.4518},
+  {id:'pre_18',name:'Rubis Morant Bay',brand:'Rubis',parish:'St. Thomas',lat:17.8815,lng:-76.4127},
+  {id:'pre_19',name:'Fesco Cross Roads',brand:'Fesco',parish:'St. Andrew',lat:17.9909,lng:-76.7838},
+  {id:'pre_20',name:'Unipet Linstead',brand:'Unipet',parish:'St. Catherine',lat:18.1368,lng:-77.0317},
+];
 function brandColor(name) {
   if (!name) return '#888';
   const n = name.toLowerCase();
@@ -559,11 +581,30 @@ function initMap() {
     toast('📍 Pin dropped — fill in the details below');
   });
 
-  // Load OSM stations first, then DB stations + reports
-  loadOSMStations().then(function() {
-    loadDBStations();
-    loadReports();
+  // Always preload known stations instantly, then try live OSM refresh
+  loadPreloadedStations();
+  loadDBStations();
+  loadReports();
+  loadOSMStations();
+}
+
+function loadPreloadedStations() {
+  const status = document.getElementById('mapStatus');
+  osmMarkers.forEach(function(m){ map.removeLayer(m); });
+  osmMarkers = [];
+  allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
+
+  PRELOADED_STATIONS.forEach(function(s) {
+    const m = L.marker([s.lat, s.lng], { icon: dotIcon(brandColor(s.brand || s.name), 10) }).addTo(map);
+    m.stationId = s.id;
+    m.bindPopup(stationPopup(Object.assign({source:'preloaded'}, s)));
+    osmMarkers.push(m);
+    allStations.push(Object.assign({source:'preloaded'}, s));
   });
+
+  filteredStations = allStations.slice();
+  populateSelect();
+  status.textContent = PRELOADED_STATIONS.length + ' preloaded stations on map · live refresh in progress…';
 }
 
 /* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
@@ -579,6 +620,7 @@ async function loadOSMStations() {
 
     osmMarkers.forEach(function(m){ map.removeLayer(m); });
     osmMarkers = [];
+    allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
 
     let count = 0;
     const seen = new Set();
@@ -598,6 +640,10 @@ async function loadOSMStations() {
         id:'osm_'+el.id, name:name, brand:brand, lat:lat, lng:lon, source:'osm',
         street:tags['addr:street'] || ''
       };
+      const dupWithDb = allStations.some(function(a){
+        return Math.abs(a.lat - station.lat) < 0.001 && Math.abs(a.lng - station.lng) < 0.001;
+      });
+      if (dupWithDb) return;
       const m = L.marker([lat, lon], { icon: dotIcon(color, 10) }).addTo(map);
       m.stationId = station.id;
       m.bindPopup(stationPopup(station));
@@ -610,9 +656,9 @@ async function loadOSMStations() {
 
     filteredStations = allStations.slice();
     populateSelect();
-    status.textContent = count + ' real stations loaded from OpenStreetMap (all Jamaica parishes)';
+    status.textContent = count + ' real stations loaded from OpenStreetMap across Jamaica';
   } catch(e) {
-    status.textContent = 'Could not load live map data — using database stations';
+    status.textContent = 'Live station refresh failed — using preloaded Jamaica stations';
     console.warn('OSM load failed:', e);
   }
 }
@@ -667,7 +713,8 @@ function handleSearch(q) {
   const lq = q.toLowerCase();
   filteredStations = allStations.filter(function(s){
     return (s.name||'').toLowerCase().includes(lq) ||
-           (s.brand||'').toLowerCase().includes(lq);
+           (s.brand||'').toLowerCase().includes(lq) ||
+           (s.parish||'').toLowerCase().includes(lq);
   });
   drop.innerHTML = filteredStations.slice(0,10).map(function(s){
     const color = brandColor(s.brand||s.name);
@@ -707,6 +754,7 @@ function stationPopup(station) {
   return '<div style="font-family:DM Sans,sans-serif;min-width:200px;color:#111">' +
     '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(station.name || 'Gas Station')+'</div>' +
     (station.brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+station.brand+'</div>' : '') +
+    (station.parish ? '<div style="font-size:11px;color:#666;margin-bottom:2px">Parish: '+station.parish+'</div>' : '') +
     (station.street ? '<div style="font-size:11px;color:#888;margin-bottom:6px">📍 '+station.street+'</div>' : '<div style="margin-bottom:4px"></div>') +
     '<div style="border-top:1px solid #e8e8e8;padding-top:6px;margin-top:2px">' +
       '<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.5px">Latest community prices</div>' +
