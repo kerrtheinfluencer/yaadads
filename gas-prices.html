@@ -316,7 +316,7 @@ footer a{color:var(--green);text-decoration:none}
       <div class="search-dropdown" id="searchDrop"></div>
     </div>
 
-    <div class="map-status" id="mapStatus">Loading preloaded gas stations for Jamaica…</div>
+    <div class="map-status" id="mapStatus">Loading live public gas station locations for Jamaica…</div>
 
     <div class="map-wrap">
       <div id="gasMap"></div>
@@ -532,7 +532,8 @@ const FALLBACK_STATIONS = [
 ];
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter'
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter'
 ];
 const JAMAICA_TILES = [
   [17.50,-78.50,17.95,-77.70],
@@ -579,11 +580,11 @@ function initMap() {
     toast('📍 Pin dropped — fill in the details below');
   });
 
-  // Preload public snapshot first, then DB/reports, then attempt live OSM expansion
-  loadPreloadedStations().finally(function() {
-    loadDBStations();
-    loadReports();
-    loadOSMStations();
+  // Always load DB/reports, prioritize live OSM locations, fallback to snapshot only if needed.
+  loadDBStations();
+  loadReports();
+  loadOSMStations().then(function(ok){
+    if (!ok) loadPreloadedStations();
   });
 }
 
@@ -612,7 +613,7 @@ async function loadPreloadedStations() {
 
   filteredStations = allStations.slice();
   populateSelect();
-  status.textContent = stations.length + ' public stations preloaded · live OSM expansion in progress…';
+  status.textContent = stations.length + ' snapshot stations loaded (fallback mode)';
 }
 
 /* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
@@ -635,6 +636,7 @@ async function loadOSMStations() {
       const dedupeKey = lat.toFixed(5)+','+lon.toFixed(5);
       if (seen.has(dedupeKey)) return;
       seen.add(dedupeKey);
+      if (lat < 17.45 || lat > 18.65 || lon < -78.55 || lon > -76.05) return;
       const tags = el.tags || {};
       const name   = tags.name || tags['name:en'] || tags.brand || 'Gas Station';
       const brand  = tags.brand || tags.operator || '';
@@ -661,9 +663,11 @@ async function loadOSMStations() {
     filteredStations = allStations.slice();
     populateSelect();
     status.textContent = count + ' live public OSM stations loaded across Jamaica';
+    return true;
   } catch(e) {
-    status.textContent = 'Live OSM expansion unavailable — using preloaded public station snapshot';
+    status.textContent = 'Live OSM fetch unavailable — switching to snapshot fallback';
     console.warn('OSM load failed:', e);
+    return false;
   }
 }
 
@@ -680,8 +684,12 @@ async function fetchTile(endpoint, tile) {
   const ctrl = new AbortController();
   const timeout = setTimeout(function(){ ctrl.abort(); }, 14000);
   try {
-    const url = endpoint + '?data=' + encodeURIComponent(query);
-    const r = await fetch(url, { signal: ctrl.signal });
+    const r = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:'data=' + encodeURIComponent(query),
+      signal: ctrl.signal
+    });
     const data = await r.json();
     return Array.isArray(data.elements) ? data.elements : [];
   } finally {
