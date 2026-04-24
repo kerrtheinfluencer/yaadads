@@ -575,9 +575,12 @@ function initMap() {
   });
 
   loadReports();
+  // Show DB stations immediately so map is never empty.
+  loadDBStations();
   // Build map anchors from authoritative sources first, then attach DB stations.
   loadOSMStations().then(async function(ok){
     if (!ok) await loadPreloadedStations();
+    // Re-run DB load to snap/align to anchors once available.
     loadDBStations();
   });
 }
@@ -698,7 +701,6 @@ async function loadOSMStations() {
     console.warn('OSM load failed:', e);
     return false;
   }
-  return [];
 }
 
 function overpassQueryForTile(tile) {
@@ -712,7 +714,7 @@ function overpassQueryForTile(tile) {
 async function fetchTile(endpoint, tile) {
   const query = overpassQueryForTile(tile);
   const ctrl = new AbortController();
-  const timeout = setTimeout(function(){ ctrl.abort(); }, 14000);
+  const timeout = setTimeout(function(){ ctrl.abort(); }, 7000);
   try {
     const r = await fetch(endpoint, {
       method:'POST',
