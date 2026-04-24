@@ -698,6 +698,7 @@ async function loadOSMStations() {
     console.warn('OSM load failed:', e);
     return false;
   }
+  return [];
 }
 
 function overpassQueryForTile(tile) {
