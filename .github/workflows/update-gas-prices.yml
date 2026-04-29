@@ -2,16 +2,18 @@ name: Update Jamaica Gas Prices
 
 on:
   schedule:
-    - cron: '0 19 * * 3'
+    - cron: '0 19 * * 3'  # Every Wednesday at 7PM (Petrojam update day)
   workflow_dispatch:
 
 jobs:
   update-prices:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Scrape Petrojam and update HTML
+      - name: Scrape Petrojam prices
         run: |
           node <<'NODEEOF'
           const https = require('https');
@@ -58,15 +60,13 @@ jobs:
                 process.exit(0);
               }
 
-              // Read current gas-prices.html
               const fs = require('fs');
               let content = fs.readFileSync('gas-prices.html', 'utf8');
 
-              // Update price values in the PRICES array using regex
+              // Update PRICES array values
               const updatePrice = (key, newPrice) => {
                 if (!newPrice) return;
-                // Match:  { key:'87', ... price:181.1328, ... }
-                const pattern = new RegExp("(key:'" + key + "'[^}]*price:)([\d.]+)");
+                const pattern = new RegExp("(key: '\\" + key + "'[^}]*exRefinery:\s*)([\d.]+)");
                 content = content.replace(pattern, (match, prefix) => prefix + newPrice);
               };
 
@@ -77,17 +77,42 @@ jobs:
               updatePrice('kerosene', found['kerosene']);
               updatePrice('propane', found['propane']);
 
-              // Update lastUpdated date
-              const today = new Date().toLocaleDateString('en-JM', { month:'short', day:'numeric', year:'numeric' });
-              content = content.replace(/id="lastUpdated"[^>]*>[^<]+/, 'id="lastUpdated">' + today);
+              // Update lastUpdated text
+              const today = new Date().toLocaleDateString('en-JM', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+              content = content.replace(/document\.getElementById\('lastUpdated'\)\.textContent = '[^']*';/, `document.getElementById('lastUpdated').textContent = '${today}';`);
+
+              // Update HISTORY data - shift arrays and append new values
+              for (const [key, price] of Object.entries(found)) {
+                if (!price) continue;
+                // Find the array for this fuel and update last element
+                const arrPattern = new RegExp("(\'" + key + "\':\s*\[)([^\]]*)(\])");
+                const match = content.match(arrPattern);
+                if (match) {
+                  const values = match[2].split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+                  values.shift(); // remove oldest
+                  values.push(price); // add newest
+                  content = content.replace(arrPattern, `$1${values.join(', ')}$3`);
+                }
+              }
+
+              // Update week labels
+              const weekLabels = [];
+              const now = new Date();
+              for (let i = 11; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - (i * 7));
+                const label = d.toLocaleDateString('en-JM', { month: 'short', day: 'numeric' });
+                weekLabels.push(`'${label}'`);
+              }
+              content = content.replace(/weeks:\s*\[[^\]]*\]/, `weeks: [${weekLabels.join(', ')}]`);
 
               fs.writeFileSync('gas-prices.html', content);
-              console.log('✅ gas-prices.html updated with new prices');
+              console.log('✅ gas-prices.html updated with new prices and history');
 
             } catch (err) {
               console.error('Scraper error:', err.message);
               console.log('Keeping existing prices.');
-              process.exit(0); // Don't fail the workflow
+              process.exit(0);
             }
           }
           main();
