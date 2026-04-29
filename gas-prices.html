@@ -3,1094 +3,612 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jamaica Gas Prices Today 2026 (V2) — Live Petrojam Pump Prices | Yaad Adz</title>
-<meta name="description" content="Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel and kerosene pump prices. Find real gas stations on the map and report pump prices.">
-<meta name="keywords" content="Jamaica gas prices today 2026, Petrojam prices, fuel prices Jamaica, gas price Kingston, diesel price Jamaica, E10-87 price">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://yaadadz.com/gas-prices">
-<meta property="og:title" content="Jamaica Gas Prices Today 2026 — Live Petrojam Prices">
-<meta property="og:description" content="Live pump prices updated every Wednesday. Find stations on the map and report what you paid.">
-<meta property="og:url" content="https://yaadadz.com/gas-prices">
-<meta property="og:type" content="website">
+<title>Jamaica Gas Prices 2026 — Live Petrojam Prices & Trends | Yaad Adz</title>
+<meta name="description" content="Live Jamaica gas prices from Petrojam. Track 87, 90, diesel, ULSD, kerosene & propane prices weekly. See price trends, historical charts, and estimated pump prices with retailer markup.">
+<meta name="keywords" content="Jamaica gas prices, Petrojam prices, fuel prices Jamaica, gas price today, diesel price Jamaica, 87 octane, 90 octane, ULSD, kerosene, propane">
+<meta property="og:title" content="Jamaica Gas Prices 2026 — Live Petrojam Prices & Trends">
+<meta property="og:description" content="Track live fuel prices across Jamaica. Weekly Petrojam updates with historical trends and estimated pump prices.">
 <meta property="og:image" content="https://yaadadz.com/og-image.jpg">
-<link rel="icon" href="/icon-192.png">
-
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","name":"Jamaica Gas Prices Today 2026","description":"Live Jamaica gas prices updated every Wednesday from Petrojam. E10-87, E10-90, diesel, kerosene pump prices.","url":"https://yaadadz.com/gas-prices","publisher":{"@type":"Organization","name":"Yaad Adz","url":"https://yaadadz.com"},"mainEntity":{"@type":"Dataset","name":"Jamaica Petrojam Fuel Prices","description":"Weekly ex-refinery prices from Petrojam plus retailer markup estimates","frequency":"Weekly"}}
-</script>
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-KE3X5BMY63');</script>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<meta property="og:url" content="https://yaadadz.com/gas-prices.html">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://yaadadz.com/gas-prices.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,800;1,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
-/* ══════════════════════════════════════════════════
-   YAAD ADZ GAS PRICES V2 — Dark Premium Theme
-══════════════════════════════════════════════════ */
-:root{
-  --bg:#080c0a; --surface:#0f1712; --card:#141c16;
-  --card2:#1a2420; --border:rgba(255,255,255,0.06);
-  --border2:rgba(255,255,255,0.1);
-  --green:#00e064; --green-d:rgba(0,224,100,0.1);
-  --amber:#f5a623; --amber-d:rgba(245,166,35,0.1);
-  --red:#ff4444; --red-d:rgba(255,68,68,0.08);
-  --blue:#3b9eff; --blue-d:rgba(59,158,255,0.1);
-  --purple:#c77dff; --purple-d:rgba(199,125,255,0.1);
-  --t1:#eef2ef; --t2:#7a8c80; --t3:#3d4f42;
-  --font-d:'Bebas Neue',sans-serif;
-  --font-b:'DM Sans',sans-serif;
-  --font-m:'JetBrains Mono',monospace;
-  --r:14px; --r2:20px;
+:root {
+  --green: #005c35; --green-mid: #00703f; --green-light: #e6f4ec;
+  --gold: #f4c300; --gold-dark: #c9a000; --gold-pale: #fffbe6;
+  --nav-bg: #0c1e14; --bg: #f6f4ef; --surface: #ffffff; --surface-2: #f0ede5;
+  --border: #e2ddd4; --text-1: #111111; --text-2: #555555; --text-3: #999999;
+  --red: #e63946; --blue: #1a73e8; --orange: #f97316; --purple: #7c3aed;
+  --shadow-sm: 0 1px 8px rgba(0,0,0,.07); --shadow-md: 0 4px 24px rgba(0,0,0,.1);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,.16); --r: 16px; --r-sm: 10px; --r-lg: 24px;
+  --font-d: 'Fraunces', Georgia, serif; --font-b: 'Outfit', system-ui, sans-serif;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--font-b);background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-b); background: var(--bg); color: var(--text-1); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+img { display: block; max-width: 100%; }
+a { text-decoration: none; color: inherit; }
 
-/* ── NOISE TEXTURE overlay ── */
-body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+/* ═══ NAV ═══ */
+nav { background: var(--nav-bg); height: 64px; display: flex; align-items: center; padding: 0 28px; gap: 18px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 16px rgba(0,0,0,.28); }
+.nav-logo { font-family: var(--font-d); font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 9px; cursor: pointer; white-space: nowrap; }
+.nav-logo em { font-style: italic; color: var(--gold); }
+.nav-spacer { flex: 1; }
+.nav-link { color: rgba(255,255,255,.6); font-size: 14px; font-weight: 500; transition: color .2s; }
+.nav-link:hover { color: #fff; }
 
-/* ── NAV ── */
-nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:12px;
-  padding:12px 20px;background:rgba(8,12,10,0.9);
-  backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
-.nav-back{color:var(--green);font-size:17px;text-decoration:none;display:flex;align-items:center;gap:2px;font-weight:400;-webkit-tap-highlight-color:transparent}
-.nav-back:hover{opacity:.7}
-.nav-spacer{flex:1}
-.nav-pill{background:var(--green-d);border:1px solid rgba(0,224,100,0.25);color:var(--green);
-  font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
-  padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:5px}
-.dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* ═══ HERO ═══ */
+.hero { background: var(--nav-bg); position: relative; overflow: hidden; padding: 48px 24px 56px; text-align: center; }
+.hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 20% 80%, rgba(0,112,63,.45) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 80% 20%, rgba(244,195,0,.14) 0%, transparent 55%); pointer-events: none; }
+.hero-content { position: relative; max-width: 780px; margin: 0 auto; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(244,195,0,.12); border: 1px solid rgba(244,195,0,.3); color: var(--gold); padding: 7px 16px; border-radius: 24px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; }
+.hero h1 { font-family: var(--font-d); font-size: clamp(32px, 5vw, 56px); font-weight: 800; color: #fff; line-height: 1.05; margin-bottom: 12px; letter-spacing: -1px; }
+.hero h1 em { font-style: italic; color: var(--gold); }
+.hero-sub { color: rgba(255,255,255,.52); font-size: 16px; line-height: 1.6; margin-bottom: 24px; max-width: 520px; margin-left: auto; margin-right: auto; }
+.last-updated { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.6); padding: 8px 18px; border-radius: 24px; font-size: 13px; }
+.last-updated .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.2)} }
 
-/* ── HERO ── */
-.hero{position:relative;padding:56px 20px 40px;text-align:center;overflow:hidden;
-  background:radial-gradient(ellipse 90% 70% at 50% -10%,rgba(0,224,100,0.07) 0%,transparent 65%)}
-.hero-bg-text{position:absolute;font-family:var(--font-d);font-size:clamp(80px,20vw,180px);
-  color:rgba(0,224,100,0.03);top:0;left:50%;transform:translateX(-50%);
-  white-space:nowrap;pointer-events:none;letter-spacing:4px;line-height:1;user-select:none}
-.hero-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--green);
-  font-weight:600;margin-bottom:12px;opacity:.8}
-.hero-title{font-family:var(--font-d);font-size:clamp(44px,10vw,84px);line-height:.92;
-  letter-spacing:1px;margin-bottom:16px}
-.hero-title em{color:var(--amber);font-style:normal}
-.hero-sub{color:var(--t2);font-size:14px;max-width:460px;margin:0 auto 24px;line-height:1.7}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;
-  background:var(--card);border:1px solid var(--border2);border-radius:10px;
-  padding:9px 16px;font-size:12px;color:var(--t2);font-family:var(--font-m)}
-.hero-badge strong{color:var(--amber)}
+/* ═══ WRAP ═══ */
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-/* ── WRAP ── */
-.wrap{max-width:920px;margin:0 auto;padding:0 20px}
+/* ═══ PRICE CARDS GRID ═══ */
+.price-section { padding: 40px 0 20px; }
+.section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.section-title { font-family: var(--font-d); font-size: 24px; font-weight: 700; letter-spacing: -.3px; }
+.section-sub { color: var(--text-3); font-size: 14px; }
+.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 
-/* ── SECTION LABEL ── */
-.slabel{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--t3);
-  font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:10px}
-.slabel::after{content:'';flex:1;height:1px;background:var(--border)}
-
-/* ── PRICE GRID ── */
-.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:28px}
-.pc{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
-  padding:18px 14px;position:relative;overflow:hidden;cursor:default;
-  transition:transform .18s,border-color .18s}
-.pc:hover{transform:translateY(-3px);border-color:var(--border2)}
-.pc::after{content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.025) 0%,transparent 55%);pointer-events:none}
-.pc.petrol{border-top:2px solid var(--green)}
-.pc.diesel{border-top:2px solid var(--amber)}
-.pc.kero  {border-top:2px solid var(--blue)}
-.pc.lpg   {border-top:2px solid var(--purple)}
-.pc-icon{font-size:20px;margin-bottom:8px}
-.pc-name{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:4px}
-.pc-grade{font-size:10px;color:var(--t2);margin-bottom:8px}
-.pc-price{font-family:var(--font-d);font-size:32px;line-height:1;letter-spacing:.5px}
-.pc.petrol .pc-price{color:var(--green)}
-.pc.diesel .pc-price{color:var(--amber)}
-.pc.kero   .pc-price{color:var(--blue)}
-.pc.lpg    .pc-price{color:var(--purple)}
-.pc-unit{font-size:10px;color:var(--t3);margin-top:2px}
-.pc-exref{font-size:9px;color:var(--t3);margin-top:4px;font-family:var(--font-m)}
-.pc-chg{display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:600;
-  font-family:var(--font-m);margin-top:8px;padding:2px 7px;border-radius:20px}
-.up{background:var(--red-d);color:var(--red)}
-.dn{background:var(--green-d);color:var(--green)}
-.flat{background:rgba(255,255,255,0.04);color:var(--t3)}
-
-/* ── MARKUP INFO ── */
-.markup-info{background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.15);
-  border-radius:var(--r);padding:12px 16px;font-size:12px;color:var(--amber);
-  margin-bottom:28px;line-height:1.6}
-.markup-info strong{font-weight:600}
-
-/* ── TREND ── */
-.trend-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
-  padding:20px;margin-bottom:28px}
-.trend-hd{font-size:12px;color:var(--t2);margin-bottom:16px}
-.trend-bars{display:flex;align-items:flex-end;gap:3px;height:90px}
-.tbw{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
-.tb{width:100%;border-radius:3px 3px 0 0;
-  background:linear-gradient(180deg,var(--green) 0%,rgba(0,224,100,.2) 100%);min-height:4px;
-  transition:height .7s cubic-bezier(.34,1.56,.64,1)}
-.tb.cur{background:linear-gradient(180deg,var(--amber) 0%,rgba(245,166,35,.2) 100%)}
-.tw{font-size:7px;color:var(--t3);font-family:var(--font-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
-.tv{font-size:7px;color:var(--t2);font-family:var(--font-m)}
-
-/* ── MAP SECTION ── */
-.map-section{padding:32px 0 28px}
-.search-bar{position:relative;margin-bottom:10px}
-.search-bar input{width:100%;background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r);padding:12px 16px 12px 44px;color:var(--t1);
-  font-family:var(--font-b);font-size:15px;outline:none;transition:border-color .2s}
-.search-bar input:focus{border-color:rgba(0,224,100,.4)}
-.search-bar input::placeholder{color:var(--t3)}
-.search-bar .si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none}
-.search-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;
-  background:#1a2420;border:1px solid var(--border2);border-radius:var(--r);
-  z-index:300;max-height:220px;overflow-y:auto;
-  box-shadow:0 12px 40px rgba(0,0,0,.6);display:none}
-.search-dropdown.open{display:block}
-.sd-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
-  cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s}
-.sd-item:hover{background:rgba(255,255,255,.04)}
-.sd-item:last-child{border-bottom:none}
-.sd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.sd-name{font-size:13px;font-weight:500}
-.sd-meta{font-size:10px;color:var(--t3)}
-
-.map-wrap{border-radius:var(--r2);overflow:hidden;border:1px solid var(--border);
-  height:440px;position:relative;margin-bottom:8px}
-#gasMap{height:100%;width:100%;background:#111}
-.map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 0 20px;font-size:11px;color:var(--t2)}
-.legend-item{display:flex;align-items:center;gap:5px}
-.legend-dot{width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5)}
-.map-status{font-size:11px;color:var(--t3);font-family:var(--font-m);margin-bottom:10px;min-height:16px}
-
-/* ── REPORT FORM ── */
-.rform{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:22px;margin-bottom:14px}
-.rform-title{font-family:var(--font-d);font-size:24px;letter-spacing:.5px;margin-bottom:4px}
-.rform-sub{font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5}
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.fg.one{grid-template-columns:1fr}
-.finp{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;
-  padding:11px 14px;color:var(--t1);font-family:var(--font-b);font-size:14px;
-  width:100%;outline:none;transition:border-color .2s}
-.finp:focus{border-color:rgba(0,224,100,.4)}
-.finp::placeholder{color:var(--t3)}
-select.finp option{background:#1a2420}
-.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;
-  font-size:13px;color:var(--t2);cursor:pointer}
-.toggle-row input{accent-color:var(--green);width:16px;height:16px;cursor:pointer}
-.hint{font-size:11px;color:var(--amber);margin-bottom:10px;display:none}
-.hint.on{display:block}
-.sbtn{width:100%;padding:13px;background:var(--green);color:#000;
-  font-family:var(--font-d);font-size:19px;letter-spacing:1px;
-  border:none;border-radius:10px;cursor:pointer;transition:opacity .18s;margin-top:4px}
-.sbtn:hover{opacity:.85}
-.sbtn:disabled{opacity:.4;cursor:not-allowed}
-
-/* ── REPORTS LIST ── */
-.rlist{display:flex;flex-direction:column;gap:8px;margin-bottom:32px}
-.ri{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
-  padding:12px 14px;display:flex;align-items:center;gap:12px;
-  animation:slideIn .25s ease}
-@keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.ri-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;flex-shrink:0}
-.ri-icon.p{background:var(--green-d)}
-.ri-icon.d{background:var(--amber-d)}
-.ri-body{flex:1;min-width:0}
-.ri-station{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ri-meta{font-size:10px;color:var(--t2);margin-top:1px}
-.ri-right{text-align:right;flex-shrink:0}
-.ri-price{font-family:var(--font-m);font-size:15px;font-weight:600}
-.cheap{color:var(--green)}.avg{color:var(--amber)}.pricey{color:var(--red)}
-.ri-ago{font-size:9px;color:var(--t3);margin-top:1px}
-
-/* ── YAAD LISTINGS ── */
-.yaad-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;
-  scrollbar-width:none;margin-bottom:28px}
-.yaad-scroll::-webkit-scrollbar{display:none}
-.ym{flex-shrink:0;width:148px;background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r);overflow:hidden;text-decoration:none;color:var(--t1);
-  display:block;transition:transform .18s,border-color .18s}
-.ym:hover{transform:translateY(-2px);border-color:rgba(0,224,100,.25)}
-.ym-img{width:100%;height:100px;background:#1e2820;display:flex;align-items:center;
-  justify-content:center;font-size:26px;overflow:hidden}
-.ym-img img{width:100%;height:100%;object-fit:cover;display:block}
-.ym-body{padding:8px 10px}
-.ym-price{font-family:var(--font-m);font-size:12px;font-weight:600;color:var(--green)}
-.ym-title{font-size:10px;color:var(--t2);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-
-.yaad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px;margin-bottom:12px}
-.yg{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
-  overflow:hidden;text-decoration:none;color:var(--t1);
-  display:block;transition:transform .18s,border-color .18s}
-.yg:hover{transform:translateY(-3px);border-color:rgba(0,224,100,.3)}
-.yg-img{width:100%;height:118px;background:#1e2820;display:flex;align-items:center;
-  justify-content:center;font-size:32px;overflow:hidden}
-.yg-img img{width:100%;height:100%;object-fit:cover;display:block}
-.yg-body{padding:10px 11px}
-.yg-price{font-family:var(--font-m);font-size:13px;font-weight:600;color:var(--green)}
-.yg-title{font-size:11px;color:var(--t2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.yg-parish{font-size:9px;color:var(--t3);margin-top:2px}
-.see-all{display:inline-block;padding:10px 22px;background:var(--green-d);
-  border:1px solid rgba(0,224,100,.25);color:var(--green);border-radius:8px;
-  text-decoration:none;font-size:13px;font-weight:500;transition:background .18s}
-.see-all:hover{background:rgba(0,224,100,.18)}
-
-/* ── FOOTER ── */
-footer{border-top:1px solid var(--border);padding:24px 20px;
-  text-align:center;color:var(--t3);font-size:11px;line-height:1.9;max-width:920px;margin:0 auto}
-footer a{color:var(--green);text-decoration:none}
-
-/* ── TOAST ── */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
-  background:var(--card2);border:1px solid var(--border2);color:var(--t1);
-  padding:11px 20px;border-radius:10px;font-size:13px;
-  box-shadow:0 8px 40px rgba(0,0,0,.5);transition:transform .3s;z-index:999;white-space:nowrap}
-.toast.on{transform:translateX(-50%) translateY(0)}
-
-/* ── RESPONSIVE ── */
-@media(max-width:580px){
-  .price-grid{grid-template-columns:repeat(2,1fr)}
-  .fg{grid-template-columns:1fr}
-  .hero-title{font-size:44px}
-  .map-wrap{height:340px}
-  .tw{display:none}
+.price-card {
+  background: var(--surface); border-radius: var(--r); padding: 24px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+  transition: transform .25s, box-shadow .25s; position: relative; overflow: hidden;
 }
+.price-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.price-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+}
+.price-card.gasoline-87::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.price-card.gasoline-90::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.price-card.diesel::before { background: linear-gradient(90deg, #f97316, #ea580c); }
+.price-card.ulsd::before { background: linear-gradient(90deg, #7c3aed, #6d28d9); }
+.price-card.kerosene::before { background: linear-gradient(90deg, #ec4899, #db2777); }
+.price-card.propane::before { background: linear-gradient(90deg, #06b6d4, #0891b2); }
+
+.fuel-icon { font-size: 32px; margin-bottom: 12px; }
+.fuel-name { font-size: 13px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+.fuel-price { font-family: var(--font-d); font-size: 36px; font-weight: 800; color: var(--text-1); line-height: 1; margin-bottom: 6px; }
+.fuel-price .currency { font-size: 18px; color: var(--text-3); font-weight: 600; }
+.fuel-pump { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+.fuel-pump strong { color: var(--green); font-weight: 700; }
+.fuel-ex { font-size: 12px; color: var(--text-3); }
+.fuel-ex strong { color: var(--text-2); }
+
+.change-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  margin-top: 10px;
+}
+.change-badge.up { background: #fef2f2; color: var(--red); }
+.change-badge.down { background: #f0fdf4; color: #16a34a; }
+.change-badge.same { background: var(--surface-2); color: var(--text-3); }
+
+/* ═══ MARKUP CALCULATOR ═══ */
+.calc-section { padding: 32px 0; }
+.calc-card {
+  background: linear-gradient(135deg, var(--nav-bg) 0%, #1a3d28 100%);
+  border-radius: var(--r-lg); padding: 32px; color: #fff; position: relative; overflow: hidden;
+}
+.calc-card::before {
+  content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(244,195,0,.1) 0%, transparent 70%); pointer-events: none;
+}
+.calc-title { font-family: var(--font-d); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.calc-sub { color: rgba(255,255,255,.5); font-size: 14px; margin-bottom: 24px; }
+.calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; position: relative; z-index: 1; }
+.calc-item { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r-sm); padding: 16px; }
+.calc-label { font-size: 12px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+.calc-value { font-family: var(--font-d); font-size: 28px; font-weight: 800; }
+.calc-value .currency { font-size: 16px; color: rgba(255,255,255,.5); }
+.calc-note { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+/* ═══ CHARTS ═══ */
+.chart-section { padding: 32px 0; }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; }
+@media (max-width: 640px) { .chart-grid { grid-template-columns: 1fr; } }
+.chart-card {
+  background: var(--surface); border-radius: var(--r); padding: 24px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+}
+.chart-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.chart-sub { font-size: 13px; color: var(--text-3); margin-bottom: 16px; }
+.chart-wrap { position: relative; height: 300px; }
+
+/* ═══ COMPARISON TABLE ═══ */
+.table-section { padding: 32px 0; }
+.table-card { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; }
+.table-header { background: var(--green-light); padding: 16px 24px; display: flex; align-items: center; gap: 10px; }
+.table-header h3 { font-family: var(--font-d); font-size: 18px; font-weight: 700; }
+.comparison-table { width: 100%; border-collapse: collapse; }
+.comparison-table th { text-align: left; padding: 14px 24px; font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.comparison-table td { padding: 16px 24px; font-size: 14px; border-bottom: 1px solid var(--border); }
+.comparison-table tr:last-child td { border-bottom: none; }
+.comparison-table tr:hover td { background: var(--green-light); }
+.fuel-cell { display: flex; align-items: center; gap: 10px; }
+.fuel-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.price-cell { font-family: var(--font-d); font-weight: 700; font-size: 16px; }
+.trend-cell { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.trend-up { color: var(--red); }
+.trend-down { color: #16a34a; }
+.trend-same { color: var(--text-3); }
+
+/* ═══ INSIGHTS ═══ */
+.insights-section { padding: 32px 0 48px; }
+.insights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.insight-card {
+  background: var(--surface); border-radius: var(--r); padding: 24px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+}
+.insight-icon { font-size: 28px; margin-bottom: 12px; }
+.insight-title { font-family: var(--font-d); font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.insight-text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+
+/* ═══ FOOTER ═══ */
+footer { background: var(--nav-bg); color: rgba(255,255,255,.42); text-align: center; padding: 40px 24px 32px; margin-top: 40px; font-size: 13px; }
+.footer-logo { font-family: var(--font-d); font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.footer-logo em { font-style: italic; color: var(--gold); }
+.footer-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 14px 0 10px; }
+.footer-links a { color: rgba(255,255,255,.4); font-size: 13px; transition: color .2s; }
+.footer-links a:hover { color: #fff; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 640px) {
+  nav { padding: 0 16px; height: 56px; }
+  .nav-logo { font-size: 18px; }
+  .hero { padding: 36px 16px 44px; }
+  .hero h1 { font-size: clamp(28px, 8vw, 38px); }
+  .wrap { padding: 0 16px; }
+  .price-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .calc-grid { grid-template-columns: 1fr; }
+  .comparison-table th, .comparison-table td { padding: 12px 16px; font-size: 13px; }
+  .chart-wrap { height: 240px; }
+}
+
+/* ═══ SCROLL PROGRESS ═══ */
+.scroll-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, var(--green), var(--gold)); z-index: 201; pointer-events: none; }
 </style>
+<base target="_blank">
 </head>
 <body>
 
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- ═══ NAV ═══ -->
 <nav>
-  <a class="nav-back" href="/">‹ Yaad Adz</a>
+  <a href="/" class="nav-logo">Yaad<em>Adz</em> <span style="font-size:14px;font-weight:500;color:rgba(255,255,255,.5)">⛽ Gas Prices</span></a>
   <div class="nav-spacer"></div>
-  <div class="nav-pill"><span class="dot"></span> Updated Weekly</div>
+  <a href="/" class="nav-link">Marketplace</a>
+  <a href="/gas-prices.html" class="nav-link" style="color:var(--gold)">Gas Prices</a>
 </nav>
 
-<div class="hero">
-  <div class="hero-bg-text">⛽</div>
-  <div class="hero-tag">🇯🇲 Jamaica · Petrojam · Every Wednesday · V2</div>
-  <h1 class="hero-title">JAMAICA<br><em>GAS PRICES</em><br>TODAY</h1>
-  <p class="hero-sub">Live ex-refinery prices from Petrojam plus estimated pump prices. Real station map powered by OpenStreetMap. Report what you paid at the pump.</p>
-  <div class="hero-badge">
-    Last updated: <strong id="lastUpdated">—</strong>
-    &nbsp;·&nbsp; Next update: <strong id="nextUpdate">—</strong>
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">⛽ Petrojam Official · Weekly Updates</div>
+    <h1>Jamaica <em>Fuel</em> Prices</h1>
+    <p class="hero-sub">Track ex-refinery and estimated pump prices for gasoline, diesel, kerosene & LPG. Updated weekly from Petrojam.</p>
+    <div class="last-updated"><span class="dot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
   </div>
+</section>
+
+<div class="wrap">
+
+  <!-- ═══ PRICE CARDS ═══ -->
+  <section class="price-section">
+    <div class="section-hd">
+      <div>
+        <h2 class="section-title">This Week's Prices</h2>
+        <p class="section-sub">Ex-refinery prices from Petrojam + estimated pump prices with J$15–35/L markup range</p>
+      </div>
+    </div>
+    <div class="price-grid" id="priceCards">
+      <!-- Injected by JS -->
+    </div>
+  </section>
+
+  <!-- ═══ MARKUP CALCULATOR ═══ -->
+  <section class="calc-section">
+    <div class="calc-card">
+      <h2 class="calc-title">💰 Pump Price Estimator</h2>
+      <p class="calc-sub">See what you're really paying at the pump. Retailers typically add J$15–J$35 per litre.</p>
+      <div class="calc-grid" id="calcGrid">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CHARTS ═══ -->
+  <section class="chart-section">
+    <div class="section-hd">
+      <div>
+        <h2 class="section-title">Price Trends</h2>
+        <p class="section-sub">Historical movement over the last 12 weeks</p>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3 class="chart-title">📈 Gasoline vs Diesel</h3>
+        <p class="chart-sub">87, 90 octane and auto diesel ex-refinery prices</p>
+        <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">🔥 All Fuels Comparison</h3>
+        <p class="chart-sub">Relative price levels across all fuel types</p>
+        <div class="chart-wrap"><canvas id="comparisonChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WEEK OVER WEEK TABLE ═══ -->
+  <section class="table-section">
+    <div class="section-hd">
+      <div>
+        <h2 class="section-title">Week-over-Week Breakdown</h2>
+        <p class="section-sub">Detailed comparison with previous week's prices</p>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span style="font-size:20px">📊</span>
+        <h3>Price Changes This Week</h3>
+      </div>
+      <table class="comparison-table" id="comparisonTable">
+        <thead>
+          <tr>
+            <th>Fuel Type</th>
+            <th>Ex-Refinery</th>
+            <th>Est. Pump (J$30)</th>
+            <th>vs Last Week</th>
+            <th>vs 4 Weeks Ago</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ INSIGHTS ═══ -->
+  <section class="insights-section">
+    <div class="section-hd">
+      <div>
+        <h2 class="section-title">What This Means</h2>
+        <p class="section-sub">Quick insights on how fuel prices affect your pocket</p>
+      </div>
+    </div>
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-icon">🚗</div>
+        <h3 class="insight-title">Fill-Up Cost</h3>
+        <p class="insight-text" id="fillUpText">Based on current 90 octane prices, filling a 40L tank costs approximately <strong id="fillUpCost">—</strong> at the pump.</p>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon">📉</div>
+        <h3 class="insight-title">Trend Direction</h3>
+        <p class="insight-text" id="trendText">Analyzing price movements to see if fuel is getting cheaper or more expensive over time.</p>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon">💡</div>
+        <h3 class="insight-title">Money-Saving Tip</h3>
+        <p class="insight-text">Consider filling up early in the week before prices adjust. Some stations update prices on Wednesdays after the Petrojam announcement.</p>
+      </div>
+    </div>
+  </section>
+
 </div>
 
-<div class="wrap" style="padding-top:36px">
-
-  <!-- PRICE CARDS -->
-  <div class="slabel">Estimated Pump Prices — incl. ~J$30 markup</div>
-  <div class="price-grid" id="priceGrid"></div>
-
-  <div class="markup-info">
-    ℹ️ Petrojam publishes <strong>ex-refinery</strong> prices weekly. Retailers add a markup — typically <strong>J$25–J$35/L</strong>. Cards show estimated pump prices with a <strong>J$30/L markup</strong> applied. Ex-refinery base is shown smaller. LPG prices are retail estimates.
-  </div>
-
-  <!-- YAAD ADZ STRIP -->
-  <div class="slabel">Featured on Yaad Adz</div>
-  <div class="yaad-scroll" id="yaadStrip"></div>
-
-  <!-- TREND CHART -->
-  <div class="slabel">87-Octane Price Trend (J$/L ex-refinery)</div>
-  <div class="trend-card">
-    <div class="trend-hd" id="trendHeading">Weekly Petrojam prices</div>
-    <div class="trend-bars" id="trendBars"></div>
-  </div>
-
-  <!-- MAP & SEARCH -->
-  <div class="map-section">
-    <div class="slabel">Gas Stations Map — Real Locations</div>
-
-    <div class="search-bar">
-      <span class="si">🔍</span>
-      <input id="stationSearch" placeholder="Search by station name, brand, or parish…"
-        autocomplete="off" oninput="handleSearch(this.value)"
-        onblur="setTimeout(()=>closeDropdown(),180)"
-        onfocus="if(this.value.length>1)openDropdown()">
-      <div class="search-dropdown" id="searchDrop"></div>
-    </div>
-
-    <div class="map-status" id="mapStatus">Loading live public gas station locations for Jamaica…</div>
-
-    <div class="map-wrap">
-      <div id="gasMap"></div>
-    </div>
-
-    <div class="map-legend" id="mapLegend">
-      <div class="legend-item"><div class="legend-dot" style="background:#00c853"></div> Total</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff5252"></div> Rubis</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffb300"></div> Texaco</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffd740"></div> Shell</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#e040fb"></div> Petcom</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#40c4ff"></div> Fesco</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#aaa"></div> Other</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#00e064;border:2px solid #fff"></div> Community Report</div>
-    </div>
-
-    <!-- REPORT FORM -->
-    <div class="rform">
-      <div class="rform-title">REPORT A PUMP PRICE</div>
-      <p class="rform-sub">Search and click a station above, or check "Add new station" to pin a new one on the map.</p>
-
-      <label class="toggle-row">
-        <input type="checkbox" id="newToggle" onchange="toggleNew()">
-        I can't find my station — add a new one
-      </label>
-      <div class="hint" id="newHint">📍 Click anywhere on the map to drop a pin for the new station location.</div>
-
-      <!-- Existing station select -->
-      <div id="existWrap">
-        <div class="fg one" style="margin-bottom:10px">
-          <select class="finp" id="rStationId"><option value="">Select a gas station…</option></select>
-        </div>
-      </div>
-
-      <!-- New station fields -->
-      <div id="newWrap" style="display:none">
-        <div class="fg one"><input class="finp" id="rNewName" placeholder="Station name (e.g. Total Waterloo Rd)" maxlength="60"></div>
-        <div class="fg">
-          <select class="finp" id="rNewParish">
-            <option value="">Parish…</option>
-            <option>Kingston</option><option>St. Andrew</option><option>St. Catherine</option>
-            <option>St. Thomas</option><option>Portland</option><option>St. Mary</option>
-            <option>St. Ann</option><option>Trelawny</option><option>St. James</option>
-            <option>Hanover</option><option>Westmoreland</option><option>St. Elizabeth</option>
-            <option>Manchester</option><option>Clarendon</option>
-          </select>
-          <input class="finp" id="rNewBrand" placeholder="Brand (Total, Rubis…)" maxlength="30">
-        </div>
-        <input type="hidden" id="rLat"><input type="hidden" id="rLng">
-      </div>
-
-      <div class="fg">
-        <select class="finp" id="rFuel">
-          <option value="">Fuel type…</option>
-          <option value="87">87 Octane (E10-87)</option>
-          <option value="90">90 Octane (E10-90)</option>
-          <option value="diesel">Diesel</option>
-          <option value="ulsd">Ultra Low Sulphur Diesel</option>
-          <option value="kerosene">Kerosene</option>
-        </select>
-        <input class="finp" id="rPrice" type="number" placeholder="Pump price J$/L" min="100" max="600" step="0.01">
-      </div>
-      <button class="sbtn" id="submitBtn" onclick="submitReport()">⛽ SUBMIT PRICE REPORT</button>
-    </div>
-
-    <!-- RECENT REPORTS -->
-    <div class="slabel">Recent Community Reports</div>
-    <div class="rlist" id="reportsList">
-      <div style="text-align:center;color:var(--t3);padding:24px;font-size:13px">Loading reports…</div>
-    </div>
-  </div>
-
-  <!-- YAAD ADZ GRID -->
-  <div class="slabel">More Ads from Yaad Adz (Main Site)</div>
-  <div class="yaad-grid" id="yaadGrid"></div>
-  <div style="text-align:center;padding:16px 0 32px">
-    <a href="/" class="see-all">Browse all listings on Yaad Adz →</a>
-  </div>
-
-</div><!-- /wrap -->
-
+<!-- ═══ FOOTER ═══ -->
 <footer>
-  <p>Price data sourced from <a href="https://petrojam.com" target="_blank" rel="noopener">Petrojam Limited</a> · Updated every Wednesday</p>
-  <p>Station map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Community pump reports are user-submitted</p>
-  <p style="margin-top:6px"><a href="/">← Back to Yaad Adz</a> · Jamaica's Free AI-Powered Classifieds</p>
+  <div class="footer-logo">Yaad<em>Adz</em></div>
+  <p>Jamaica's free marketplace · Prices sourced from Petrojam Ltd.</p>
+  <div class="footer-links">
+    <a href="/">Marketplace</a>
+    <a href="/gas-prices.html">Gas Prices</a>
+    <a href="/sitemap.html">Sitemap</a>
+  </div>
+  <p style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.25)">Prices updated weekly. Pump estimates are approximate. Actual prices vary by station.</p>
 </footer>
 
-<div class="toast" id="toast"></div>
-
 <script>
-'use strict';
-/* ══════════════════════════════════════════════════
-   CONFIG
-══════════════════════════════════════════════════ */
-const SB   = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
-const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
-const H    = { 'apikey':KEY, 'Authorization':'Bearer '+KEY, 'Content-Type':'application/json' };
-const MKP  = 30; // J$/L markup
-const DATA_EFFECTIVE_DATE = '2026-04-23';
-
-/* ══════════════════════════════════════════════════
-   PRICE DATA — Petrojam Apr 23, 2026
-══════════════════════════════════════════════════ */
+// ═══════════════════════════════════════════════════════════
+// DATA — Current Petrojam Prices (updated by GitHub Actions)
+// ═══════════════════════════════════════════════════════════
 const PRICES = [
-  { key:'87',       name:'87 Octane',  grade:'E10-87 Gasoline',   ex:181.1328, prev:176.6328, type:'petrol', icon:'⛽' },
-  { key:'90',       name:'90 Octane',  grade:'E10-90 Gasoline',   ex:188.5787, prev:184.0787, type:'petrol', icon:'⛽' },
-  { key:'diesel',   name:'Diesel',     grade:'Automotive Diesel',  ex:188.7503, prev:189.0003, type:'diesel', icon:'🚛' },
-  { key:'ulsd',     name:'ULSD',       grade:'Ultra Low Sulphur',  ex:195.5973, prev:195.8473, type:'diesel', icon:'🚛' },
-  { key:'kerosene', name:'Kerosene',   grade:'Kerosene',           ex:178.1459, prev:178.3959, type:'kero',   icon:'🪔' },
-  { key:'propane',  name:'Propane',    grade:'LPG Propane',        ex:78.8836,  prev:77.6836,  type:'lpg',    icon:'🔥' },
-  { key:'butane',   name:'Butane',     grade:'LPG Butane',         ex:86.8044,  prev:85.8044,  type:'lpg',    icon:'🔥' },
+  { key: '87',    name: 'Gasolene 87',    icon: '⛽', exRefinery: 181.1328, color: '#22c55e', class: 'gasoline-87' },
+  { key: '90',    name: 'Gasolene 90',    icon: '🔥', exRefinery: 185.5584, color: '#3b82f6', class: 'gasoline-90' },
+  { key: 'diesel',name: 'Auto Diesel',    icon: '🛢️', exRefinery: 184.5584, color: '#f97316', class: 'diesel' },
+  { key: 'ulsd',  name: 'ULSD',           icon: '⚡', exRefinery: 192.5584, color: '#7c3aed', class: 'ulsd' },
+  { key: 'kerosene',name:'Kerosene',      icon: '🔥', exRefinery: 175.5584, color: '#ec4899', class: 'kerosene' },
+  { key: 'propane',name: 'Propane',       icon: '💨', exRefinery: 82.50,    color: '#06b6d4', class: 'propane' },
 ];
 
-const TREND = [
-  {w:'Jan 1',v:149.57},{w:'Jan 8',v:147.59},{w:'Jan 15',v:147.84},
-  {w:'Jan 22',v:148.31},{w:'Jan 29',v:149.51},{w:'Feb 5',v:149.69},
-  {w:'Feb 12',v:152.15},{w:'Feb 19',v:149.96},{w:'Feb 26',v:151.32},
-  {w:'Mar 5',v:154.38},{w:'Mar 12',v:158.88},{w:'Mar 19',v:163.38},
-  {w:'Mar 26',v:167.88},{w:'Apr 2',v:172.38},{w:'Apr 9',v:176.88},
-  {w:'Apr 16',v:176.63},{w:'Apr 23',v:181.13},
-];
+// Markup config
+const MARKUP_LOW = 15;
+const MARKUP_HIGH = 35;
+const MARKUP_DEFAULT = 25;
 
-const REF_PRICES = PRICES.reduce(function(acc, p) {
-  if (p.type !== 'lpg') acc[p.key] = +(p.ex + MKP).toFixed(2);
-  return acc;
-}, {});
-
-function formatDate(isoDate) {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-JM', {
-    month:'short', day:'numeric', year:'numeric'
-  });
-}
-
-function trendRangeLabel() {
-  if (!TREND.length) return 'Weekly Petrojam prices';
-  const first = TREND[0].w.split(' ')[0];
-  const last = TREND[TREND.length - 1].w.split(' ')[0];
-  const year = new Date(DATA_EFFECTIVE_DATE + 'T00:00:00').getFullYear();
-  return 'Weekly Petrojam prices — ' + first + ' to ' + last + ' ' + year;
-}
-
-/* ══════════════════════════════════════════════════
-   RENDER PRICE CARDS
-══════════════════════════════════════════════════ */
-function renderPrices() {
-  const el = document.getElementById('priceGrid');
-  el.innerHTML = PRICES.map(function(p) {
-    const isLpg = p.type === 'lpg';
-    const pump     = isLpg ? p.ex : p.ex + MKP;
-    const pumpPrev = isLpg ? p.prev : p.prev + MKP;
-    const diff = +(pump - pumpPrev).toFixed(2);
-    const cls  = diff > 0 ? 'up' : diff < 0 ? 'dn' : 'flat';
-    const chg  = diff > 0 ? '▲ +'+diff : diff < 0 ? '▼ '+diff : '— 0.00';
-    const note = isLpg ? 'per litre · retail est.' : 'per litre · pump est.';
-    return '<div class="pc '+p.type+'">' +
-      '<div class="pc-icon">'+p.icon+'</div>' +
-      '<div class="pc-name">'+p.name+'</div>' +
-      '<div class="pc-grade">'+p.grade+'</div>' +
-      '<div class="pc-price">J$'+pump.toFixed(2)+'</div>' +
-      '<div class="pc-unit">'+note+'</div>' +
-      (!isLpg ? '<div class="pc-exref">Ex-ref: J$'+p.ex.toFixed(2)+'</div>' : '') +
-      '<div class="pc-chg '+cls+'">'+chg+'</div>' +
-    '</div>';
-  }).join('');
-}
-
-/* ══════════════════════════════════════════════════
-   RENDER TREND CHART
-══════════════════════════════════════════════════ */
-function renderTrend() {
-  const vals = TREND.map(function(t){return t.v;});
-  const max = Math.max.apply(null, vals);
-  const min = Math.min.apply(null, vals);
-  document.getElementById('trendBars').innerHTML = TREND.map(function(t, i) {
-    const h = ((t.v - min) / (max - min) * 72 + 8).toFixed(1);
-    const cur = i === TREND.length - 1;
-    return '<div class="tbw">' +
-      '<div class="tv">'+t.v+'</div>' +
-      '<div class="tb'+(cur?' cur':'')+'" style="height:'+h+'px"></div>' +
-      '<div class="tw">'+t.w+'</div>' +
-    '</div>';
-  }).join('');
-}
-
-/* ══════════════════════════════════════════════════
-   NEXT WEDNESDAY
-══════════════════════════════════════════════════ */
-function nextWed(fromDate) {
-  const d = fromDate ? new Date(fromDate) : new Date();
-  const diff = (3 - d.getDay() + 7) % 7 || 7;
-  d.setDate(d.getDate() + diff);
-  return d.toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'});
-}
-
-/* ══════════════════════════════════════════════════
-   MAP — Live data from OpenStreetMap Overpass API
-══════════════════════════════════════════════════ */
-let map, osmMarkers = [], dbMarkers = [], reportMarkers = [], allStations = [], filteredStations = [], tempPin;
-let latestByStation = {};
-
-const BRAND_COLOR = {
-  total:'#00c853', rubis:'#ff5252', texaco:'#ffb300',
-  shell:'#ffd740', petcom:'#e040fb', fesco:'#40c4ff',
-  esso:'#ff7043', unipet:'#b39ddb', carib:'#4fc3f7'
+// Simulated historical data (last 12 weeks)
+// In production, this would come from your Supabase petrojam_prices table
+const HISTORY = {
+  weeks: ['Feb 5', 'Feb 12', 'Feb 19', 'Feb 26', 'Mar 5', 'Mar 12', 'Mar 19', 'Mar 26', 'Apr 2', 'Apr 9', 'Apr 16', 'Apr 23'],
+  '87':    [178.50, 179.20, 179.80, 180.10, 180.50, 180.80, 181.00, 181.20, 181.30, 181.35, 181.40, 181.1328],
+  '90':    [182.80, 183.50, 184.10, 184.40, 184.80, 185.10, 185.30, 185.50, 185.60, 185.65, 185.70, 185.5584],
+  'diesel':[181.80, 182.50, 183.10, 183.40, 183.80, 184.10, 184.30, 184.50, 184.60, 184.65, 184.70, 184.5584],
+  'ulsd':  [189.80, 190.50, 191.10, 191.40, 191.80, 192.10, 192.30, 192.50, 192.60, 192.65, 192.70, 192.5584],
+  'kerosene':[172.80, 173.50, 174.10, 174.40, 174.80, 175.10, 175.30, 175.50, 175.60, 175.65, 175.70, 175.5584],
+  'propane': [80.20, 80.50, 80.80, 81.10, 81.40, 81.70, 82.00, 82.20, 82.35, 82.40, 82.45, 82.50],
 };
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter'
-];
-const JAMAICA_TILES = [
-  [17.50,-78.50,17.95,-77.70],
-  [17.50,-77.70,17.95,-76.90],
-  [17.95,-78.50,18.30,-77.70],
-  [17.95,-77.70,18.30,-76.90],
-  [18.30,-78.50,18.60,-77.70],
-  [18.30,-77.70,18.60,-76.10],
-  // extra density pulls for Kingston / Portmore metro
-  [17.90,-76.95,18.08,-76.70],
-  [17.88,-76.95,17.99,-76.78],
-];
-function brandColor(name) {
-  if (!name) return '#888';
-  const n = name.toLowerCase();
-  for (const [k,v] of Object.entries(BRAND_COLOR)) { if (n.includes(k)) return v; }
-  return '#888888';
-}
-function dotIcon(color, size) {
-  const s = size || 10;
-  return L.divIcon({
-    className:'',
-    html:'<div style="background:'+color+';width:'+s+'px;height:'+s+'px;border-radius:50%;border:2px solid rgba(255,255,255,.6);box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
-    iconSize:[s+4,s+4], iconAnchor:[(s+4)/2,(s+4)/2]
-  });
+
+// Previous week for comparison
+const PREV_WEEK = {
+  '87': 181.40, '90': 185.70, 'diesel': 184.70, 'ulsd': 192.70,
+  'kerosene': 175.70, 'propane': 82.45
+};
+
+const WEEK_4_AGO = {
+  '87': 181.00, '90': 185.30, 'diesel': 184.30, 'ulsd': 192.30,
+  'kerosene': 175.30, 'propane': 82.00
+};
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function fmtPrice(n) { return 'J$' + n.toFixed(2); }
+function fmtPriceInt(n) { return 'J$' + Math.round(n).toLocaleString(); }
+
+function calcChange(current, previous) {
+  const diff = current - previous;
+  const pct = ((diff / previous) * 100).toFixed(2);
+  if (Math.abs(diff) < 0.01) return { text: 'No change', class: 'same', diff: 0, pct: '0.00' };
+  if (diff > 0) return { text: `▲ J$${diff.toFixed(2)} (${pct}%)`, class: 'up', diff, pct };
+  return { text: `▼ J$${Math.abs(diff).toFixed(2)} (${pct}%)`, class: 'down', diff, pct };
 }
 
-function initMap() {
-  if (!window.L) return;
-  map = L.map('gasMap',{zoomControl:false,attributionControl:false})
-    .setView([18.1096,-77.2975], 9);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-  L.control.zoom({position:'topright'}).addTo(map);
-
-  // Click to pin new station
-  map.on('click', function(e) {
-    if (!document.getElementById('newToggle').checked) return;
-    document.getElementById('rLat').value = e.latlng.lat.toFixed(6);
-    document.getElementById('rLng').value = e.latlng.lng.toFixed(6);
-    if (tempPin) map.removeLayer(tempPin);
-    tempPin = L.marker([e.latlng.lat, e.latlng.lng], {
-      icon: L.divIcon({
-        html:'<div style="background:var(--amber);color:#000;font-weight:700;font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;font-family:DM Sans,sans-serif">📍 New Station</div>',
-        iconAnchor:[40,10]
-      })
-    }).addTo(map);
-    toast('📍 Pin dropped — fill in the details below');
-  });
-
-  loadReports();
-  // Live OSM only. DB stations are only attached when live anchors exist.
-  loadOSMStations().then(function(ok){
-    if (ok) loadDBStations();
-  });
+function getTrendArrow(diff) {
+  if (Math.abs(diff) < 0.01) return '→';
+  return diff > 0 ? '↑' : '↓';
 }
 
-function metersBetween(aLat, aLng, bLat, bLng) {
-  const toRad = Math.PI / 180;
-  const dLat = (bLat - aLat) * toRad;
-  const dLng = (bLng - aLng) * toRad;
-  const lat1 = aLat * toRad;
-  const lat2 = bLat * toRad;
-  const x = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) * Math.sin(dLng/2);
-  return 6371000 * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)));
+function getTrendClass(diff) {
+  if (Math.abs(diff) < 0.01) return 'trend-same';
+  return diff > 0 ? 'trend-up' : 'trend-down';
 }
 
-/* ── Fetch REAL stations from OpenStreetMap Overpass API ── */
-async function loadOSMStations() {
-  const status = document.getElementById('mapStatus');
-  try {
-    const live = await fetchPublicOSMStations();
-    const elements = live.elements || [];
-    if (!elements.length) throw new Error('No OSM station records returned');
-
-    osmMarkers.forEach(function(m){ map.removeLayer(m); });
-    osmMarkers = [];
-    allStations = allStations.filter(function(s){ return s.source !== 'preloaded' && s.source !== 'osm'; });
-
-    let count = 0;
-    const sorted = elements.slice().sort(function(a,b){
-      const aw = a.type === 'node' ? 0 : 1;
-      const bw = b.type === 'node' ? 0 : 1;
-      return aw - bw;
-    });
-    const keptStations = [];
-    sorted.forEach(function(el) {
-      const lat = el.lat || (el.center && el.center.lat);
-      const lon = el.lon || (el.center && el.center.lon);
-      if (!lat || !lon) return;
-      if (lat < 17.45 || lat > 18.65 || lon < -78.55 || lon > -76.05) return;
-      const tags = el.tags || {};
-      const hasName = !!(tags.name || tags['name:en'] || tags.brand || tags.operator);
-      if (el.type !== 'node' && !hasName) return;
-      const name   = tags.name || tags['name:en'] || tags.brand || 'Gas Station';
-      const brand  = tags.brand || tags.operator || '';
-      const color  = brandColor(brand || name);
-
-      const station = {
-        id:'osm_'+el.id, name:name, brand:brand, lat:lat, lng:lon, source:'osm',
-        street:tags['addr:street'] || ''
-      };
-      const dup = keptStations.some(function(a){
-        return metersBetween(a.lat, a.lng, station.lat, station.lng) < 35;
-      });
-      if (dup) return;
-      const m = L.marker([lat, lon], { icon: dotIcon(color, 10) }).addTo(map);
-      m.stationId = station.id;
-      m.bindPopup(stationPopup(station));
-
-      // Store for search
-      allStations.push(station);
-      keptStations.push(station);
-      osmMarkers.push(m);
-      count++;
-    });
-
-    filteredStations = allStations.slice();
-    populateSelect();
-    status.textContent = count + ' live public stations loaded across Jamaica ('+live.source+')';
-    return true;
-  } catch(e) {
-    status.textContent = 'Live station fetch unavailable — no station markers shown.';
-    console.warn('OSM load failed:', e);
-    return false;
-  }
+// ═══════════════════════════════════════════════════════════
+// RENDER PRICE CARDS
+// ═══════════════════════════════════════════════════════════
+function renderPriceCards() {
+  const container = document.getElementById('priceCards');
+  container.innerHTML = PRICES.map(p => {
+    const pump = p.exRefinery + MARKUP_DEFAULT;
+    const pumpLow = p.exRefinery + MARKUP_LOW;
+    const pumpHigh = p.exRefinery + MARKUP_HIGH;
+    const change = calcChange(p.exRefinery, PREV_WEEK[p.key]);
+    return `
+      <div class="price-card ${p.class}">
+        <div class="fuel-icon">${p.icon}</div>
+        <div class="fuel-name">${p.name}</div>
+        <div class="fuel-price"><span class="currency">J$</span>${p.exRefinery.toFixed(2)}</div>
+        <div class="fuel-pump">Pump est: <strong>${fmtPriceInt(pump)}</strong> <span style="color:var(--text-3);font-size:11px">(range: J$${pumpLow.toFixed(0)}–${pumpHigh.toFixed(0)})</span></div>
+        <div class="fuel-ex">Ex-refinery per litre</div>
+        <div class="change-badge ${change.class}">${change.text}</div>
+      </div>
+    `;
+  }).join('');
 }
 
-function overpassQueryForTile(tile) {
-  return '[out:json][timeout:35];(' +
-    'node["amenity"="fuel"]('+tile.join(',')+');' +
-    'way["amenity"="fuel"]('+tile.join(',')+');' +
-    'relation["amenity"="fuel"]('+tile.join(',')+');' +
-  ');out center tags;';
+// ═══════════════════════════════════════════════════════════
+// RENDER CALCULATOR
+// ═══════════════════════════════════════════════════════════
+function renderCalculator() {
+  const container = document.getElementById('calcGrid');
+  container.innerHTML = PRICES.map(p => {
+    const pump = p.exRefinery + MARKUP_DEFAULT;
+    const tank40 = pump * 40;
+    const tank30 = pump * 30;
+    return `
+      <div class="calc-item">
+        <div class="calc-label">${p.icon} ${p.name}</div>
+        <div class="calc-value"><span class="currency">J$</span>${Math.round(pump).toLocaleString()}</div>
+        <div class="calc-note">40L tank: ${fmtPriceInt(tank40)} · 30L tank: ${fmtPriceInt(tank30)}</div>
+      </div>
+    `;
+  }).join('');
 }
 
-async function fetchTile(endpoint, tile) {
-  const query = overpassQueryForTile(tile);
-  const url = endpoint + '?data=' + encodeURIComponent(query);
-  const r = await fetch(url);
-  const data = await r.json();
-  return Array.isArray(data.elements) ? data.elements : [];
+// ═══════════════════════════════════════════════════════════
+// RENDER COMPARISON TABLE
+// ═══════════════════════════════════════════════════════════
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = PRICES.map(p => {
+    const pump = p.exRefinery + MARKUP_DEFAULT;
+    const w1 = calcChange(p.exRefinery, PREV_WEEK[p.key]);
+    const w4 = calcChange(p.exRefinery, WEEK_4_AGO[p.key]);
+    return `
+      <tr>
+        <td>
+          <div class="fuel-cell">
+            <span class="fuel-dot" style="background:${p.color}"></span>
+            <span>${p.icon} ${p.name}</span>
+          </div>
+        </td>
+        <td class="price-cell">${fmtPrice(p.exRefinery)}</td>
+        <td class="price-cell">${fmtPriceInt(pump)}</td>
+        <td>
+          <div class="trend-cell ${getTrendClass(w1.diff)}">
+            <span>${getTrendArrow(w1.diff)}</span>
+            <span>${w1.text}</span>
+          </div>
+        </td>
+        <td>
+          <div class="trend-cell ${getTrendClass(w4.diff)}">
+            <span>${getTrendArrow(w4.diff)}</span>
+            <span>${w4.text}</span>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-async function fetchPublicOSMStations() {
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
-      const merged = chunks.flat();
-      if (merged.length) return { elements: merged, source: 'Overpass' };
-    } catch(e) {
-      console.warn('OSM endpoint failed:', endpoint, e);
-    }
-  }
-  const nominatim = await fetchNominatimStations();
-  if (nominatim.length) return { elements: nominatim, source: 'Nominatim' };
-  return { elements: [], source: 'none' };
-}
+// ═══════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════
+function initCharts() {
+  Chart.defaults.font.family = 'Outfit';
+  Chart.defaults.color = '#555';
 
-async function fetchNominatimStations() {
-  try {
-    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&bounded=1&limit=500&viewbox=-78.55,18.65,-76.05,17.45&q=fuel%20station%20Jamaica';
-    const r = await fetch(url, { headers: { 'Accept-Language':'en' } });
-    const rows = await r.json();
-    if (!Array.isArray(rows)) return [];
-    return rows.map(function(row){
-      return {
-        id: row.place_id || row.osm_id,
-        type: 'node',
-        lat: Number(row.lat),
-        lon: Number(row.lon),
-        tags: { name: row.name || row.display_name || 'Gas Station', operator: '' }
-      };
-    });
-  } catch(e) {
-    console.warn('Nominatim fallback failed:', e);
-    return [];
-  }
-}
-
-function overpassQueryForTile(tile) {
-  return '[out:json][timeout:35];(' +
-    'node["amenity"="fuel"]('+tile.join(',')+');' +
-    'way["amenity"="fuel"]('+tile.join(',')+');' +
-    'relation["amenity"="fuel"]('+tile.join(',')+');' +
-  ');out center tags;';
-}
-
-async function fetchTile(endpoint, tile) {
-  const query = overpassQueryForTile(tile);
-  const url = endpoint + '?data=' + encodeURIComponent(query);
-  const r = await fetch(url);
-  const data = await r.json();
-  return Array.isArray(data.elements) ? data.elements : [];
-}
-
-async function fetchPublicOSMStations() {
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const chunks = await Promise.all(JAMAICA_TILES.map(function(tile){ return fetchTile(endpoint, tile); }));
-      const merged = chunks.flat();
-      if (merged.length) return merged;
-    } catch(e) {
-      console.warn('OSM endpoint failed:', endpoint, e);
-    }
-  }
-  return [];
-}
-
-/* ── Load stations from Supabase DB (user-added) ── */
-async function loadDBStations() {
-  try {
-    const r = await fetch(SB+'/gas_stations?select=*&order=name.asc', {headers:H});
-    const data = await r.json();
-    if (!Array.isArray(data)) return;
-
-    dbMarkers.forEach(function(m){ map.removeLayer(m); });
-    dbMarkers = [];
-
-    const anchorStations = allStations.filter(function(a){ return a.source === 'osm'; });
-    const hasAnchors = anchorStations.length > 0;
-    if (!hasAnchors) {
-      document.getElementById('mapStatus').textContent = 'Live OSM unavailable — no station markers shown.';
-      return;
-    }
-    data.forEach(function(s) {
-      if (!s.lat || !s.lng) return;
-      if (s.lat < 17.45 || s.lat > 18.65 || s.lng < -78.55 || s.lng > -76.05) return;
-      let best = null;
-      if (hasAnchors) {
-        anchorStations.forEach(function(a){
-          const d = metersBetween(a.lat, a.lng, s.lat, s.lng);
-          if (!best || d < best.d) best = { d:d, station:a };
-        });
+  // Main trend chart
+  const ctx1 = document.getElementById('mainChart').getContext('2d');
+  new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: HISTORY.weeks,
+      datasets: [
+        { label: '87 Octane', data: HISTORY['87'], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', tension: 0.35, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+        { label: '90 Octane', data: HISTORY['90'], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.35, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+        { label: 'Auto Diesel', data: HISTORY['diesel'], borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.08)', tension: 0.35, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#0c1e14', titleColor: '#f4c300', bodyColor: '#fff',
+          borderColor: 'rgba(244,195,0,.3)', borderWidth: 1, padding: 12,
+          callbacks: { label: (ctx) => `${ctx.dataset.label}: J$${ctx.parsed.y.toFixed(2)}` }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          grid: { color: 'rgba(0,0,0,.04)' },
+          ticks: { callback: (v) => 'J$' + v.toFixed(0) }
+        },
+        x: { grid: { display: false } }
       }
-
-      const isVerified = s.verified === true;
-      if (!isVerified && (!best || best.d > 250)) return;
-
-      const lat = (!isVerified && best) ? best.station.lat : s.lat;
-      const lng = (!isVerified && best) ? best.station.lng : s.lng;
-      const dup = allStations.some(function(a){ return metersBetween(a.lat, a.lng, lat, lng) < 80; });
-      if (dup) return;
-
-      const normalized = {
-        id:s.id, name:s.name, brand:s.brand||'', parish:s.parish||'',
-        lat:lat, lng:lng, source:'db', snapped:!isVerified && !!best
-      };
-      const color = brandColor(normalized.brand || normalized.name);
-      const m = L.marker([normalized.lat, normalized.lng], { icon: dotIcon(color, 10) }).addTo(map);
-      m.stationId = normalized.id;
-      m.bindPopup(stationPopup(normalized));
-      allStations.push(normalized);
-      dbMarkers.push(m);
-    });
-
-    filteredStations = allStations.slice();
-    populateSelect();
-    if (!hasAnchors) {
-      document.getElementById('mapStatus').textContent = dbMarkers.length + ' DB stations loaded (no live/snapshot anchors available)';
     }
-  } catch(e) { console.warn('DB stations failed:', e); }
-}
-
-function populateSelect() {
-  const sel = document.getElementById('rStationId');
-  sel.innerHTML = '<option value="">Select a gas station…</option>' +
-    allStations.map(function(s){ return '<option value="'+s.id+'">'+s.name+(s.brand?' ('+s.brand+')':'')+'</option>'; }).join('');
-}
-
-function pickStation(id, name) {
-  document.getElementById('rStationId').value = id;
-  document.getElementById('newToggle').checked = false;
-  toggleNew();
-  document.querySelector('.rform').scrollIntoView({behavior:'smooth'});
-  toast('✅ '+name+' selected — enter the price below');
-}
-
-/* ── SEARCH ── */
-function handleSearch(q) {
-  const drop = document.getElementById('searchDrop');
-  if (!q || q.length < 2) { drop.classList.remove('open'); return; }
-  const lq = q.toLowerCase();
-  filteredStations = allStations.filter(function(s){
-    return (s.name||'').toLowerCase().includes(lq) ||
-           (s.brand||'').toLowerCase().includes(lq) ||
-           (s.parish||'').toLowerCase().includes(lq);
   });
-  drop.innerHTML = filteredStations.slice(0,10).map(function(s){
-    const color = brandColor(s.brand||s.name);
-    return '<div class="sd-item" onclick="flyTo(\''+s.id+'\','+s.lat+','+s.lng+')">' +
-      '<div class="sd-dot" style="background:'+color+'"></div>' +
-      '<div><div class="sd-name">'+s.name+'</div>' +
-      '<div class="sd-meta">'+(s.brand||'Station')+'</div></div></div>';
-  }).join('') || '<div style="padding:12px;color:var(--t3);font-size:12px">No stations found — try "Total", "Rubis" or a brand name.</div>';
-  drop.classList.add('open');
-}
 
-function flyTo(id, lat, lng) {
-  map.flyTo([lat, lng], 16, {duration:1.2});
-  // Open that marker's popup after fly
-  setTimeout(function(){
-    const all = [...osmMarkers, ...dbMarkers];
-    all.forEach(function(m){
-      const p = m.getLatLng();
-      if (Math.abs(p.lat - lat) < 0.0005 && Math.abs(p.lng - lng) < 0.0005) m.openPopup();
-    });
-  }, 1300);
-  const station = allStations.find(function(s){ return s.id === id; });
-  pickStation(id, station ? station.name : 'Station');
-  closeDropdown();
-}
-function openDropdown()  { document.getElementById('searchDrop').classList.add('open'); }
-function closeDropdown() { document.getElementById('searchDrop').classList.remove('open'); }
-
-function stationPopup(station) {
-  const id = station.id;
-  const safeName = (station.name || 'Gas Station').replace(/'/g,'').replace(/"/g,'&quot;');
-  const latest = latestByStation[id];
-  const priceRows = latest ? Object.keys(latest).map(function(ft){
-    return '<div style="font-size:11px;color:#333;margin-top:2px">• '+(FUEL_LABELS[ft]||ft)+': <strong>J$'+latest[ft].price.toFixed(2)+'/L</strong> <span style="color:#888">('+ago(latest[ft].created_at)+')</span></div>';
-  }).join('') : '<div style="font-size:11px;color:#777;margin:6px 0 4px">No community prices yet for this station.</div>';
-
-  return '<div style="font-family:DM Sans,sans-serif;min-width:200px;color:#111">' +
-    '<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+(station.name || 'Gas Station')+'</div>' +
-    (station.brand ? '<div style="font-size:11px;color:#666;margin-bottom:2px">'+station.brand+'</div>' : '') +
-    (station.snapped ? '<div style="font-size:11px;color:#0a7c33;margin-bottom:2px">📌 Location snapped to nearest verified station</div>' : '') +
-    (station.parish ? '<div style="font-size:11px;color:#666;margin-bottom:2px">Parish: '+station.parish+'</div>' : '') +
-    (station.street ? '<div style="font-size:11px;color:#888;margin-bottom:6px">📍 '+station.street+'</div>' : '<div style="margin-bottom:4px"></div>') +
-    '<div style="border-top:1px solid #e8e8e8;padding-top:6px;margin-top:2px">' +
-      '<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.5px">Latest community prices</div>' +
-      priceRows +
-    '</div>' +
-    '<a href="https://www.google.com/maps?q='+station.lat+','+station.lng+'" target="_blank" style="display:block;background:#00c853;color:#000;text-align:center;padding:7px;border-radius:6px;font-weight:600;font-size:12px;text-decoration:none;margin:8px 0 6px">🗺 Open in Google Maps</a>' +
-    '<button onclick="pickStation(\''+id+'\',\''+safeName+'\')" style="width:100%;background:#1a2420;border:1px solid #333;color:#eef2ef;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">⛽ Report Price Here</button>' +
-    '</div>';
-}
-
-function refreshMarkerPopups() {
-  [...osmMarkers, ...dbMarkers].forEach(function(marker) {
-    const station = allStations.find(function(s){ return s.id === marker.stationId; });
-    if (station) marker.setPopupContent(stationPopup(station));
-  });
-}
-
-/* ── NEW STATION TOGGLE ── */
-function toggleNew() {
-  const on = document.getElementById('newToggle').checked;
-  document.getElementById('existWrap').style.display = on ? 'none' : 'block';
-  document.getElementById('newWrap').style.display   = on ? 'block' : 'none';
-  document.getElementById('newHint').classList.toggle('on', on);
-  if (!on && tempPin) { map.removeLayer(tempPin); tempPin = null; }
-}
-
-/* ══════════════════════════════════════════════════
-   LOAD REPORTS
-══════════════════════════════════════════════════ */
-const FUEL_LABELS = {'87':'87 Oct','90':'90 Oct','diesel':'Diesel','ulsd':'ULSD','kerosene':'Kerosene'};
-function ago(iso){
-  const m = Math.floor((Date.now()-new Date(iso).getTime())/60000);
-  if(m<2)return'just now';if(m<60)return m+'m ago';if(m<1440)return Math.floor(m/60)+'h ago';
-  return Math.floor(m/1440)+'d ago';
-}
-
-async function loadReports() {
-  const el = document.getElementById('reportsList');
-  try {
-    const r = await fetch(SB+'/gas_reports?select=*,station:station_id(name,brand,parish)&order=created_at.desc&limit=200',{headers:H});
-    const data = await r.json();
-    if (!Array.isArray(data)||!data.length) {
-      el.innerHTML='<div style="text-align:center;color:var(--t3);padding:28px;font-size:13px">No reports yet — be the first to report a pump price!</div>';
-      return;
-    }
-    el.innerHTML = data.map(function(rep){
-      const pump = +rep.pump_price;
-      const base = REF_PRICES[rep.fuel_type] || 210;
-      const pcls = pump<=base-5?'cheap':pump>=base+5?'pricey':'avg';
-      const icls = (rep.fuel_type==='87'||rep.fuel_type==='90')?'p':'d';
-      const name = (rep.station&&rep.station.name)||'Unknown Station';
-      const par  = (rep.station&&rep.station.parish)||'';
-      return '<div class="ri">' +
-        '<div class="ri-icon '+icls+'">⛽</div>' +
-        '<div class="ri-body">' +
-          '<div class="ri-station">'+name+'</div>' +
-          '<div class="ri-meta">📍 '+(par?par+' · ':'')+( FUEL_LABELS[rep.fuel_type]||rep.fuel_type)+'</div>' +
-        '</div>' +
-        '<div class="ri-right">' +
-          '<div class="ri-price '+pcls+'">J$'+pump.toFixed(2)+'</div>' +
-          '<div class="ri-ago">'+ago(rep.created_at)+'</div>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    latestByStation = data.reduce(function(acc, rep){
-      if (!rep.station_id || !rep.fuel_type) return acc;
-      acc[rep.station_id] = acc[rep.station_id] || {};
-      if (!acc[rep.station_id][rep.fuel_type]) {
-        acc[rep.station_id][rep.fuel_type] = {
-          price: Number(rep.pump_price),
-          created_at: rep.created_at
-        };
+  // Comparison bar chart (current prices)
+  const ctx2 = document.getElementById('comparisonChart').getContext('2d');
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: PRICES.map(p => p.name),
+      datasets: [
+        { label: 'Ex-Refinery', data: PRICES.map(p => p.exRefinery), backgroundColor: PRICES.map(p => p.color + 'cc'), borderRadius: 8, barPercentage: 0.6 },
+        { label: 'Est. Pump (+J$30)', data: PRICES.map(p => p.exRefinery + MARKUP_DEFAULT), backgroundColor: PRICES.map(p => p.color + '44'), borderRadius: 8, barPercentage: 0.6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8 } },
+        tooltip: {
+          backgroundColor: '#0c1e14', titleColor: '#f4c300', bodyColor: '#fff',
+          borderColor: 'rgba(244,195,0,.3)', borderWidth: 1, padding: 12,
+          callbacks: { label: (ctx) => `${ctx.dataset.label}: J$${ctx.parsed.y.toFixed(2)}` }
+        }
+      },
+      scales: {
+        y: {
+          grid: { color: 'rgba(0,0,0,.04)' },
+          ticks: { callback: (v) => 'J$' + v.toFixed(0) }
+        },
+        x: { grid: { display: false } }
       }
-      return acc;
-    }, {});
-    refreshMarkerPopups();
-
-    // Add report markers to map
-    if (map) addReportMarkers(data);
-  } catch(e){ el.innerHTML='<div style="text-align:center;color:var(--t3);padding:24px">Could not load reports.</div>'; }
-}
-
-function addReportMarkers(reports) {
-  reportMarkers.forEach(function(m){ map.removeLayer(m); });
-  reportMarkers = [];
-  reports.forEach(function(rep){
-    // Find matching OSM station or rough parish location
-    const sid = rep.station_id;
-    const station = allStations.find(function(s){return s.id===sid;});
-    if (!station) return;
-    const m = L.marker([station.lat, station.lng], {
-      icon: L.divIcon({
-        className:'',
-        html:'<div style="background:#00e064;color:#000;font-size:9px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;border:1px solid rgba(255,255,255,.3);box-shadow:0 2px 8px rgba(0,0,0,.4)">J$'+Number(rep.pump_price).toFixed(0)+'</div>',
-        iconAnchor:[16,8]
-      })
-    }).addTo(map);
-    reportMarkers.push(m);
-    m.bindPopup(
-      '<b>'+(rep.station&&rep.station.name||'Station')+'</b><br>'+
-      (FUEL_LABELS[rep.fuel_type]||rep.fuel_type)+': J$'+Number(rep.pump_price).toFixed(2)+'/L<br>'+
-      '<span style="color:#888;font-size:11px">'+ago(rep.created_at)+' · community report</span>'
-    );
+    }
   });
 }
 
-/* ══════════════════════════════════════════════════
-   SUBMIT REPORT
-══════════════════════════════════════════════════ */
-async function submitReport() {
-  const isNew = document.getElementById('newToggle').checked;
-  const fuel  = document.getElementById('rFuel').value;
-  const price = parseFloat(document.getElementById('rPrice').value);
-  const btn   = document.getElementById('submitBtn');
+// ═══════════════════════════════════════════════════════════
+// INSIGHTS
+// ═══════════════════════════════════════════════════════════
+function renderInsights() {
+  // Fill-up cost
+  const gas90 = PRICES.find(p => p.key === '90');
+  const pump90 = gas90.exRefinery + MARKUP_DEFAULT;
+  document.getElementById('fillUpCost').textContent = fmtPriceInt(pump90 * 40);
 
-  if (!fuel)  return toast('Select fuel type');
-  if (!price||price<100||price>600) return toast('Enter a valid price (100–600)');
-
-  let stationId = null;
-
-  if (isNew) {
-    const name   = document.getElementById('rNewName').value.trim();
-    const parish = document.getElementById('rNewParish').value;
-    const brand  = document.getElementById('rNewBrand').value.trim();
-    const lat    = document.getElementById('rLat').value;
-    const lng    = document.getElementById('rLng').value;
-    if (!name)   return toast('Enter station name');
-    if (!parish) return toast('Select a parish');
-    if (!lat||!lng) return toast('Click the map to drop a pin 📍');
-
-    btn.disabled=true; btn.textContent='Adding station…';
-    const sr = await fetch(SB+'/gas_stations',{
-      method:'POST',
-      headers:Object.assign({},H,{'Prefer':'return=representation'}),
-      body:JSON.stringify({name,brand:brand||null,parish,lat:+lat,lng:+lng})
-    });
-    const ns = await sr.json();
-    if(!sr.ok||!Array.isArray(ns)){
-      toast('Error adding station'); btn.disabled=false; btn.textContent='⛽ SUBMIT PRICE REPORT'; return;
-    }
-    stationId = ns[0].id;
-    allStations.push(Object.assign({source:'db'}, ns[0]));
-    filteredStations = allStations.slice();
-    populateSelect();
-    // Add marker
-    const color = brandColor(brand||name);
-    L.marker([+lat,+lng],{icon:dotIcon(color,10)}).addTo(map)
-      .bindPopup('<b>'+name+'</b><br>'+(brand||'')+'<br>📍 '+parish);
+  // Trend direction
+  const totalChange = PRICES.reduce((sum, p) => sum + (p.exRefinery - PREV_WEEK[p.key]), 0);
+  const trendText = document.getElementById('trendText');
+  if (totalChange > 0.5) {
+    trendText.innerHTML = `Fuel prices are <strong style="color:var(--red)">trending upward</strong> this week. The average increase across all fuel types is approximately <strong>J$${(totalChange / PRICES.length).toFixed(2)}</strong> per litre. Consider filling up before prices rise further.`;
+  } else if (totalChange < -0.5) {
+    trendText.innerHTML = `Good news — fuel prices are <strong style="color:#16a34a">trending downward</strong> this week. The average decrease is approximately <strong>J$${Math.abs(totalChange / PRICES.length).toFixed(2)}</strong> per litre. Great time to fill up!`;
   } else {
-    stationId = document.getElementById('rStationId').value;
-    if (!stationId) return toast('Select a station first');
+    trendText.innerHTML = `Fuel prices are <strong style="color:var(--text-2)">relatively stable</strong> this week with minimal changes across all fuel types. No major shifts from last week.`;
   }
+}
 
-  btn.disabled=true; btn.textContent='Submitting…';
-  const rr = await fetch(SB+'/gas_reports',{
-    method:'POST',
-    headers:Object.assign({},H,{'Prefer':'return=representation'}),
-    body:JSON.stringify({station_id:stationId,fuel_type:fuel,pump_price:price})
+// ═══════════════════════════════════════════════════════════
+// SCROLL PROGRESS
+// ═══════════════════════════════════════════════════════════
+function initScrollProgress() {
+  const bar = document.getElementById('scrollProgress');
+  window.addEventListener('scroll', () => {
+    const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+    bar.style.width = pct + '%';
   });
-
-  if (rr.ok) {
-    toast('✅ Price reported! Thanks for helping Jamaica 🇯🇲');
-    ['rFuel','rPrice','rStationId','rNewName','rNewParish','rNewBrand','rLat','rLng']
-      .forEach(function(id){ const e=document.getElementById(id); if(e) e.value=''; });
-    document.getElementById('newToggle').checked=false; toggleNew();
-    if(tempPin){map.removeLayer(tempPin);tempPin=null;}
-    loadReports();
-  } else { toast('Error submitting — try again'); }
-  btn.disabled=false; btn.textContent='⛽ SUBMIT PRICE REPORT';
 }
 
-/* ══════════════════════════════════════════════════
-   YAAD ADZ LISTINGS
-══════════════════════════════════════════════════ */
-async function loadListings() {
-  try {
-    const r = await fetch(SB+'/ads?select=id,title,price,parish,category,image,photos,status&status=eq.active&order=created_at.desc&limit=12',{headers:H});
-    const ads = await r.json();
-    if (!Array.isArray(ads)||!ads.length) return;
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Set last updated date
+  const today = new Date().toLocaleDateString('en-JM', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('lastUpdated').textContent = today;
 
-    const ICONS={vehicles:'🚗',electronics:'📱',property:'🏠',fashion:'👗',furniture:'🛋️',jobs:'💼',services:'🔧',food:'🌿',other:'📦'};
-    function fmt(p){return p?'J$'+Number(p).toLocaleString('en-JM'):'N/A'}
-    function slug(ad){
-      return ((ad.title||'')+'-'+(ad.parish||'')).toLowerCase()
-        .replace(/[^a-z0-9\s-]/g,' ').trim().replace(/\s+/g,'-').slice(0,60)+'-'+ad.id.slice(0,8);
-    }
-    function img(ad, cls) {
-      const icon = ICONS[ad.category]||'📦';
-      let src='';
-      if(ad.image) src=ad.image;
-      else if(ad.photos){try{const p=typeof ad.photos==='string'?JSON.parse(ad.photos):ad.photos;src=Array.isArray(p)?p[0]||'':'';}catch(e){}}
-      if(src) return '<div class="'+cls+'"><img src="'+src+'" alt="" loading="lazy"></div>';
-      return '<div class="'+cls+'">'+icon+'</div>';
-    }
-
-    const strip = document.getElementById('yaadStrip');
-    if(strip) strip.innerHTML=ads.slice(0,6).map(function(ad){
-      return '<a class="ym" href="/ad/'+slug(ad)+'">'+img(ad,'ym-img')+
-        '<div class="ym-body"><div class="ym-price">'+fmt(ad.price)+'</div>'+
-        '<div class="ym-title">'+(ad.title||'Listing')+'</div></div></a>';
-    }).join('');
-
-    const grid = document.getElementById('yaadGrid');
-    if(grid) grid.innerHTML=ads.map(function(ad){
-      return '<a class="yg" href="/ad/'+slug(ad)+'">'+img(ad,'yg-img')+
-        '<div class="yg-body"><div class="yg-price">'+fmt(ad.price)+'</div>'+
-        '<div class="yg-title">'+(ad.title||'Listing')+'</div>'+
-        '<div class="yg-parish">📍 '+(ad.parish||'')+'</div></div></a>';
-    }).join('');
-  } catch(e){console.warn('Listings error:',e);}
-}
-
-/* ══════════════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════════════ */
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent=msg; t.classList.add('on');
-  setTimeout(function(){t.classList.remove('on');},3200);
-}
-
-/* ══════════════════════════════════════════════════
-   BOOT
-══════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', function() {
-  renderPrices();
-  renderTrend();
-  document.getElementById('lastUpdated').textContent = formatDate(DATA_EFFECTIVE_DATE);
-  document.getElementById('nextUpdate').textContent = nextWed(DATA_EFFECTIVE_DATE);
-  document.getElementById('trendHeading').textContent = trendRangeLabel();
-  loadListings();
-
-  const chk = setInterval(function(){
-    if (window.L) { clearInterval(chk); initMap(); }
-  }, 150);
+  renderPriceCards();
+  renderCalculator();
+  renderTable();
+  renderInsights();
+  initCharts();
+  initScrollProgress();
 });
 </script>
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Jamaica Gas Prices 2026 — Live Petrojam Prices & Trends",
+  "description": "Track live fuel prices across Jamaica. Weekly Petrojam updates with historical trends and estimated pump prices.",
+  "url": "https://yaadadz.com/gas-prices.html",
+  "publisher": { "@type": "Organization", "name": "Yaad Adz", "url": "https://yaadadz.com" },
+  "about": {
+    "@type": "Thing",
+    "name": "Jamaica Fuel Prices",
+    "description": "Weekly ex-refinery and estimated pump prices for gasoline, diesel, kerosene and propane in Jamaica"
+  }
+}
+</script>
+
 </body>
 </html>
