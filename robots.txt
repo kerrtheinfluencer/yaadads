@@ -1,8 +1,8 @@
 User-agent: *
 Allow: /
 
-# Block URL parameter variants — these are app state, not real pages
-# Google should only index clean URLs and static /ad/ /category/ /parish/ pages
+# Block SPA state URLs — these are JavaScript app state, not real pages
+# Google cannot meaningfully index these
 Disallow: /*?q=
 Disallow: /*?ad=
 Disallow: /*?cat=
@@ -11,14 +11,16 @@ Disallow: /*?min=
 Disallow: /*?max=
 Disallow: /*?post=
 Disallow: /*?modal=
+Disallow: /*?search=
 
-# Allow static generated pages (override the wildcard above)
+# Explicitly allow real static pages (takes precedence over wildcards)
 Allow: /ad/
-Allow: /category/
-Allow: /parish/
+Allow: /gas-prices
+Allow: /sitemap.html
+Allow: /sitemap.xml
 
-# Admin dashboard — never index
+# Admin — never index
 Disallow: /dash-kxrr1.html
 
-# Sitemap location
+# Sitemap
 Sitemap: https://yaadadz.com/sitemap.xml

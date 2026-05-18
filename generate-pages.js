@@ -325,7 +325,7 @@ function buildSimilarHTML(ad, allAds) {
     <h2 class="similar-heading">${esc(headingLabel)}</h2>
     <div class="similar-grid">${cards}</div>
     <div style="text-align:center;margin-top:20px">
-      <a class="see-more-btn" href="${BASE_URL}/?cat=${ad.category}">See all ${CAT_NAMES[ad.category] || 'listings'} →</a>
+      <a class="see-more-btn" href="${BASE_URL}/">See all listings on Yaad Adz →</a>
     </div>
   </div>`;
 }
@@ -380,8 +380,8 @@ function buildPage(ad, allAds) {
       <div class="contact-title">Contact Seller</div>
       ${ad.phone ? `<a class="cta-btn cta-call" href="tel:${esc(ad.phone)}">📞 Call Seller</a>` : ''}
       ${waLink ? `<a class="cta-btn cta-wa" href="${waLink}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
-      <a class="cta-btn cta-site" href="${BASE_URL}/?ad=${ad.id}">✉️ Message on Yaad Adz</a>
-    </div>` : `<div class="contact-box sold-msg">This item has been sold. <a href="${BASE_URL}/?cat=${ad.category}">Browse similar listings →</a></div>`;
+      <a class="cta-btn cta-site" href="${BASE_URL}/" onclick="return false;">✉️ Message on Yaad Adz</a>
+    </div>` : `<div class="contact-box sold-msg">This item has been sold. <a href="${BASE_URL}/">Browse all listings →</a></div>`;
 
   const similarHTML = buildSimilarHTML(ad, allAds);
 
@@ -908,6 +908,16 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .footer-logo { font-family: var(--font-d); font-size: 18px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
   .footer-logo em { color: var(--gold); font-style: italic; }
 
+  /* ── SEO CONTENT BLOCK ── */
+  .seo-section { background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); padding: 28px 24px; }
+  .seo-wrap { max-width: 760px; margin: 0 auto; }
+  .seo-wrap h2 { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 10px; }
+  .seo-wrap p { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 10px; }
+  .seo-links { font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+  .seo-links strong { color: var(--text-2); }
+  .seo-links a { color: var(--green); text-decoration: none; font-weight: 500; }
+  .seo-links a:hover { text-decoration: underline; }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 700px) {
     .ad-layout { grid-template-columns: 1fr; }
@@ -929,7 +939,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
 <nav id="topNav">
   <!-- Left: iPhone-style back -->
-  <a class="nav-back" href="${BASE_URL}/?cat=${ad.category}" onclick="if(history.length>1&&document.referrer.includes('yaadadz.com')){history.back();return false;}">
+  <a class="nav-back" href="${BASE_URL}/" onclick="if(history.length>1&&document.referrer.includes('yaadadz.com')){history.back();return false;}">
     <span class="nav-back-chevron">‹</span>
     <span class="nav-back-label">${catName}</span>
   </a>
@@ -939,15 +949,15 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     <div class="nav-center-price">${price}</div>
   </div>
   <!-- Right: Post Ad -->
-  <a class="nav-post" href="${BASE_URL}/?post=1">+ Post Ad</a>
+  <a class="nav-post" href="${BASE_URL}/#post">+ Post Ad</a>
 </nav>
 
 <div class="breadcrumb">
   <a href="${BASE_URL}">Yaad Adz</a>
   <span>›</span>
-  <a href="${BASE_URL}/?cat=${ad.category}">${catIcon} ${catName}</a>
+  <a href="${BASE_URL}/sitemap.html">${catIcon} ${catName}</a>
   <span>›</span>
-  <a href="${BASE_URL}/?parish=${encodeURIComponent(ad.parish)}">${esc(ad.parish)}</a>
+  <a href="${BASE_URL}/sitemap.html">${esc(ad.parish)}</a>
   <span>›</span>
   <span style="color:var(--text-2)">${esc(ad.title.slice(0,40))}${ad.title.length>40?'…':''}</span>
 </div>
@@ -1030,15 +1040,30 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <!-- SIMILAR LISTINGS -->
 ${similarHTML}
 
+<!-- SEO CONTENT BLOCK — Genuinely useful context for buyers -->
+<section class="seo-section" aria-label="About this listing">
+  <div class="seo-wrap">
+    <h2>About this ${catName} listing in ${esc(ad.parish)}, Jamaica</h2>
+    <p>${esc(ad.title)} is listed for ${price} in ${esc(ad.parish)}, Jamaica on Yaad Adz — Jamaica's free classifieds marketplace. ${ad.desc && ad.desc.length > 20 ? 'The seller describes: ' + esc(ad.desc.slice(0,200)) + (ad.desc.length > 200 ? '…' : '') + ' ' : ''}This listing was posted ${ago(ad.date)} and is currently ${ad.status === 'sold' ? 'marked as sold' : 'available'}${ad.neg ? ' — price is negotiable' : ''}.</p>
+    <p>To contact the seller about this ${catName.toLowerCase()} in ${esc(ad.parish)}, use the Call or WhatsApp buttons above. Yaad Adz connects buyers and sellers across all 14 parishes in Jamaica — Kingston, St. Andrew, St. Catherine, St. James, Manchester, and more — completely free with no listing fees.</p>
+    <div class="seo-links">
+      <strong>Browse more listings:</strong>
+      <a href="${BASE_URL}/">All Listings on Yaad Adz</a>
+      <a href="${BASE_URL}/sitemap.html">Browse All ${CAT_NAMES[ad.category] || 'Listings'}</a>
+      <a href="${BASE_URL}/gas-prices">Jamaica Gas Prices Today</a>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
   <p>Jamaica's free classifieds marketplace</p>
   <div style="margin-top:10px">
     <a href="${BASE_URL}">Home</a>
-    <a href="${BASE_URL}/?cat=vehicles">Cars</a>
-    <a href="${BASE_URL}/?cat=property">Property</a>
-    <a href="${BASE_URL}/?cat=electronics">Electronics</a>
-    <a href="${BASE_URL}/?cat=jobs">Jobs</a>
+    <a href="${BASE_URL}/">All Listings</a>
+    <a href="${BASE_URL}/sitemap.html">Browse Index</a>
+    <a href="${BASE_URL}/sitemap.html">All Listings</a>
+    <a href="${BASE_URL}/gas-prices">Gas Prices</a>
   </div>
   <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
@@ -1349,26 +1374,12 @@ async function main() {
   console.log('🗺️  Generating sitemap.xml…');
   const today = new Date().toISOString().split('T')[0];
 
+  // Only include REAL crawlable pages in sitemap — no SPA ?param= URLs
+  // Google can't index JavaScript-rendered category/parish pages
+  // Wasting crawl budget on ?cat=vehicles etc hurts, not helps
   const staticPages = [
-    { url: BASE_URL + '/',                    priority: '1.0', changefreq: 'hourly'  },
-    { url: BASE_URL + '/?cat=vehicles',       priority: '0.9', changefreq: 'hourly'  },
-    { url: BASE_URL + '/?cat=property',       priority: '0.9', changefreq: 'hourly'  },
-    { url: BASE_URL + '/?cat=electronics',    priority: '0.9', changefreq: 'hourly'  },
-    { url: BASE_URL + '/?cat=fashion',        priority: '0.8', changefreq: 'daily'   },
-    { url: BASE_URL + '/?cat=furniture',      priority: '0.8', changefreq: 'daily'   },
-    { url: BASE_URL + '/?cat=jobs',           priority: '0.9', changefreq: 'hourly'  },
-    { url: BASE_URL + '/?cat=services',       priority: '0.8', changefreq: 'daily'   },
-    { url: BASE_URL + '/?cat=food',           priority: '0.7', changefreq: 'daily'   },
-    { url: BASE_URL + '/?cat=music',          priority: '0.7', changefreq: 'daily'   },
-    { url: BASE_URL + '/?cat=sports',         priority: '0.7', changefreq: 'daily'   },
-    { url: BASE_URL + '/?cat=kids',           priority: '0.7', changefreq: 'daily'   },
-    { url: BASE_URL + '/?parish=Kingston',          priority: '0.8', changefreq: 'hourly' },
-    { url: BASE_URL + '/?parish=St.%20Andrew',      priority: '0.8', changefreq: 'hourly' },
-    { url: BASE_URL + '/?parish=St.%20Catherine',   priority: '0.8', changefreq: 'hourly' },
-    { url: BASE_URL + '/?parish=St.%20James',       priority: '0.8', changefreq: 'hourly' },
-    { url: BASE_URL + '/?parish=Manchester',        priority: '0.7', changefreq: 'daily'  },
-    { url: BASE_URL + '/?parish=St.%20Ann',         priority: '0.7', changefreq: 'daily'  },
-    { url: BASE_URL + '/?parish=Clarendon',         priority: '0.7', changefreq: 'daily'  },
+    { url: BASE_URL + '/',           priority: '1.0', changefreq: 'hourly' },
+    { url: BASE_URL + '/gas-prices', priority: '0.8', changefreq: 'weekly' },
     { url: BASE_URL + '/?parish=Westmoreland',      priority: '0.6', changefreq: 'daily'  },
     { url: BASE_URL + '/?parish=St.%20Elizabeth',   priority: '0.6', changefreq: 'daily'  },
     { url: BASE_URL + '/?parish=Portland',          priority: '0.6', changefreq: 'daily'  },
@@ -1431,6 +1442,36 @@ ${adXml}
     console.log('   ⚠️  Google ping skipped');
   }
 
+  // ── IndexNow — instant page discovery for Bing/Yandex/Google ──
+  // Submits all new ad URLs immediately so they get crawled within hours
+  // Key: use the same key for yaadadz.com (create file /indexnow-key.txt)
+  try {
+    const https2 = require('https');
+    const INDEXNOW_KEY = 'yaadadz2026indexnow';
+    const urlList = adEntries.slice(0, 100).map(e => e.url); // Max 100 per call
+    urlList.push(BASE_URL + '/');
+    urlList.push(BASE_URL + '/sitemap.html');
+    const body = JSON.stringify({
+      host: 'yaadadz.com',
+      key: INDEXNOW_KEY,
+      keyLocation: `${BASE_URL}/${INDEXNOW_KEY}.txt`,
+      urlList: urlList
+    });
+    const req = https2.request({
+      hostname: 'api.indexnow.org',
+      path: '/indexnow',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) }
+    }, (res) => {
+      console.log(`   ⚡ IndexNow pinged — ${urlList.length} URLs submitted (HTTP ${res.statusCode})`);
+    });
+    req.on('error', () => console.log('   ⚠️  IndexNow ping skipped'));
+    req.write(body);
+    req.end();
+  } catch(e) {
+    console.log('   ⚠️  IndexNow skipped');
+  }
+
   // ── HTML Sitemap page (/sitemap.html) ─────────────────────────
   // A human-readable page Google can crawl without JS — guaranteed link path to every ad
   console.log('📄 Generating sitemap.html…');
@@ -1476,10 +1517,8 @@ ${adXml}
 <body>
 <div class="nav">
   <a href="${BASE_URL}">← Yaad Adz Home</a>
-  <a href="${BASE_URL}/?cat=vehicles">Cars</a>
-  <a href="${BASE_URL}/?cat=property">Property</a>
-  <a href="${BASE_URL}/?cat=electronics">Phones</a>
-  <a href="${BASE_URL}/?cat=jobs">Jobs</a>
+  <a href="${BASE_URL}/">All Listings</a>
+  <a href="${BASE_URL}/sitemap.xml">XML Sitemap</a>
 </div>
 <h1>All Listings on Yaad Adz</h1>
 <p style="color:#666;font-size:14px;margin-bottom:24px">${activeAds.length} active listings across Jamaica — updated ${today}</p>
