@@ -181,8 +181,8 @@ function adSchema(ad, adUrl) {
     '@type': 'BreadcrumbList',
     'itemListElement': [
       {'@type':'ListItem','position':1,'name':'Yaad Adz','item':BASE_URL},
-      {'@type':'ListItem','position':2,'name':CAT_NAMES[ad.category]||'Other','item':BASE_URL+'/?cat='+ad.category},
-      {'@type':'ListItem','position':3,'name':ad.parish,'item':BASE_URL+'/?parish='+encodeURIComponent(ad.parish)},
+      {'@type':'ListItem','position':2,'name':CAT_NAMES[ad.category]||'Other','item':BASE_URL+'/'},
+      {'@type':'ListItem','position':3,'name':ad.parish+', Jamaica','item':BASE_URL+'/'},
       {'@type':'ListItem','position':4,'name':ad.title,'item':adUrl},
     ],
   };
@@ -392,8 +392,8 @@ function buildPage(ad, allAds) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <title>${esc(ad.title)} — ${price} | Yaad Adz Jamaica</title>
-<meta name="description" content="${esc((ad.desc||ad.title).slice(0,155))} · ${esc(ad.parish)}, Jamaica. Listed on Yaad Adz — Jamaica's free classifieds.">
-<meta name="robots" content="${ad.status==='sold' ? 'noindex' : 'index, follow, max-image-preview:large'}">
+<meta name="description" content="${esc(ad.title)} — ${price} in ${esc(ad.parish)}, Jamaica. ${ad.desc ? esc(ad.desc.slice(0,100))+'.' : 'Available now on Yaad Adz.'} Free to contact seller. ${ad.neg ? 'Price negotiable.' : ''}">
+<meta name="robots" content="${ad.status==='sold' ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1'}">
 <link rel="canonical" href="${adUrl}">
 
 <!-- Open Graph -->
@@ -1043,13 +1043,13 @@ ${similarHTML}
 <!-- SEO CONTENT BLOCK — Genuinely useful context for buyers -->
 <section class="seo-section" aria-label="About this listing">
   <div class="seo-wrap">
-    <h2>About this ${catName} listing in ${esc(ad.parish)}, Jamaica</h2>
-    <p>${esc(ad.title)} is listed for ${price} in ${esc(ad.parish)}, Jamaica on Yaad Adz — Jamaica's free classifieds marketplace. ${ad.desc && ad.desc.length > 20 ? 'The seller describes: ' + esc(ad.desc.slice(0,200)) + (ad.desc.length > 200 ? '…' : '') + ' ' : ''}This listing was posted ${ago(ad.date)} and is currently ${ad.status === 'sold' ? 'marked as sold' : 'available'}${ad.neg ? ' — price is negotiable' : ''}.</p>
-    <p>To contact the seller about this ${catName.toLowerCase()} in ${esc(ad.parish)}, use the Call or WhatsApp buttons above. Yaad Adz connects buyers and sellers across all 14 parishes in Jamaica — Kingston, St. Andrew, St. Catherine, St. James, Manchester, and more — completely free with no listing fees.</p>
+    <h2>About this ${catName} for Sale in ${esc(ad.parish)}, Jamaica</h2>
+    <p>${esc(ad.title)} is available for ${price} in ${esc(ad.parish)}, Jamaica. ${ad.desc && ad.desc.length > 20 ? "Seller's description: " + esc(ad.desc.slice(0,250)) + (ad.desc.length > 250 ? "…" : "") : "This " + catName.toLowerCase() + " was listed on Yaad Adz, Jamaica's free classifieds marketplace."} ${ad.neg ? 'The asking price of ' + price + ' is negotiable.' : 'Price is ' + price + ' firm.'}</p>
+    <p>This ${catName.toLowerCase()} listing was posted in ${esc(ad.parish)}, Jamaica${ad.date ? ' on ' + new Date(ad.date).toLocaleDateString('en-JM', {month:'long', day:'numeric', year:'numeric'}) : ''}. ${ad.status === 'sold' ? 'This item has been sold.' : 'It is currently available — use the Call or WhatsApp buttons above to reach the seller directly.'} Yaad Adz is Jamaica\'s free AI-powered classifieds marketplace covering all 14 parishes: Kingston, St. Andrew, St. Catherine, St. James, Manchester, Clarendon, St. Ann, Trelawny, Portland, St. Mary, St. Thomas, Hanover, Westmoreland, and St. Elizabeth.</p>
     <div class="seo-links">
-      <strong>Browse more listings:</strong>
+      <strong>Browse more ${catName} listings:</strong>
       <a href="${BASE_URL}/">All Listings on Yaad Adz</a>
-      <a href="${BASE_URL}/sitemap.html">Browse All ${CAT_NAMES[ad.category] || 'Listings'}</a>
+      <a href="${BASE_URL}/sitemap.html">Full Listings Index</a>
       <a href="${BASE_URL}/gas-prices">Jamaica Gas Prices Today</a>
     </div>
   </div>
