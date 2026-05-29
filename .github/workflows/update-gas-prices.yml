@@ -2,7 +2,7 @@ name: Update Jamaica Gas Prices
 
 on:
   schedule:
-    - cron: '0 19 * * 3'  # Every Wednesday at 7PM (Petrojam update day)
+    - cron: '0 19 * * 3'  # Every Wednesday at 7PM UTC (after Petrojam weekly update)
   workflow_dispatch:
 
 jobs:
@@ -13,115 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Scrape Petrojam prices
-        run: |
-          node <<'NODEEOF'
-          const https = require('https');
-
-          function fetchPage(url) {
-            return new Promise((resolve, reject) => {
-              const req = https.get(url, {
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-                timeout: 15000
-              }, res => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => resolve(data));
-              });
-              req.on('error', reject);
-              req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
-            });
-          }
-
-          async function main() {
-            try {
-              console.log('Fetching Petrojam...');
-              const html = await fetchPage('https://petrojam.com/price/');
-              console.log('Fetched', html.length, 'bytes');
-
-              const fuels = [
-                { regex: /E10-87[^\d]*(\d{3}\.\d{2})/i, key: '87' },
-                { regex: /E10-90[^\d]*(\d{3}\.\d{2})/i, key: '90' },
-                { regex: /Auto\s*Diesel[^\d]*(\d{3}\.\d{2})/i, key: 'diesel' },
-                { regex: /ULSD[^\d]*(\d{3}\.\d{2})/i, key: 'ulsd' },
-                { regex: /Kerosene[^\d]*(\d{3}\.\d{2})/i, key: 'kerosene' },
-                { regex: /Propane[^\d]*(\d{2,3}\.\d{2})/i, key: 'propane' },
-              ];
-
-              const found = {};
-              for (const f of fuels) {
-                const m = html.match(f.regex);
-                if (m) { found[f.key] = parseFloat(m[1]); console.log('  ' + f.key + ': J$' + found[f.key]); }
-                else console.log('  ' + f.key + ': not found');
-              }
-
-              if (Object.keys(found).length < 3) {
-                console.log('Too few prices found. Keeping existing prices.');
-                process.exit(0);
-              }
-
-              const fs = require('fs');
-              let content = fs.readFileSync('gas-prices.html', 'utf8');
-
-              // Update PRICES array values
-              const updatePrice = (key, newPrice) => {
-                if (!newPrice) return;
-                const pattern = new RegExp("(key: '\\" + key + "'[^}]*exRefinery:\s*)([\d.]+)");
-                content = content.replace(pattern, (match, prefix) => prefix + newPrice);
-              };
-
-              updatePrice('87', found['87']);
-              updatePrice('90', found['90']);
-              updatePrice('diesel', found['diesel']);
-              updatePrice('ulsd', found['ulsd']);
-              updatePrice('kerosene', found['kerosene']);
-              updatePrice('propane', found['propane']);
-
-              // Update lastUpdated text
-              const today = new Date().toLocaleDateString('en-JM', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-              content = content.replace(/document\.getElementById\('lastUpdated'\)\.textContent = '[^']*';/, `document.getElementById('lastUpdated').textContent = '${today}';`);
-
-              // Update HISTORY data - shift arrays and append new values
-              for (const [key, price] of Object.entries(found)) {
-                if (!price) continue;
-                // Find the array for this fuel and update last element
-                const arrPattern = new RegExp("(\'" + key + "\':\s*\[)([^\]]*)(\])");
-                const match = content.match(arrPattern);
-                if (match) {
-                  const values = match[2].split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
-                  values.shift(); // remove oldest
-                  values.push(price); // add newest
-                  content = content.replace(arrPattern, `$1${values.join(', ')}$3`);
-                }
-              }
-
-              // Update week labels
-              const weekLabels = [];
-              const now = new Date();
-              for (let i = 11; i >= 0; i--) {
-                const d = new Date(now);
-                d.setDate(d.getDate() - (i * 7));
-                const label = d.toLocaleDateString('en-JM', { month: 'short', day: 'numeric' });
-                weekLabels.push(`'${label}'`);
-              }
-              content = content.replace(/weeks:\s*\[[^\]]*\]/, `weeks: [${weekLabels.join(', ')}]`);
-
-              fs.writeFileSync('gas-prices.html', content);
-              console.log('✅ gas-prices.html updated with new prices and history');
-
-            } catch (err) {
-              console.error('Scraper error:', err.message);
-              console.log('Keeping existing prices.');
-              process.exit(0);
-            }
-          }
-          main();
-          NODEEOF
+      - name: Scrape Petrojam price archive
+        run: node scrape-petrojam-archive.js
 
       - name: Commit changes
         run: |
           git config user.name "Yaad Adz Bot"
           git config user.email "bot@yaadadz.com"
-          git add gas-prices.html
-          git diff --staged --quiet || git commit -m "⛽ Update gas prices [$(date +'%Y-%m-%d')]"
+          git add gas-prices-data.json
+          git diff --staged --quiet || git commit -m "⛽ Update gas prices from Petrojam archive [$(date +'%Y-%m-%d')]"
           git push

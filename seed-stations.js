@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Petrojam Price Scraper
- * Fetches current week prices from petrojam.com and upserts to Supabase.
- * Run manually: node scrape-petrojam.js
- * Or via GitHub Actions cron every Wednesday.
+ * Petrojam homepage price scraper (current week only).
+ * For the gas prices page + full archive history, use:
+ *   npm run gas:scrape
+ *   npm run gas:scrape:db   (also upserts Supabase petrojam_prices)
  */
 const { createClient } = require('@supabase/supabase-js');
 

@@ -36,7 +36,7 @@ function fetchPage(url, timeoutMs = 15000) {
 
 async function main() {
   console.log('Fetching Petrojam...');
-  const html = await fetchPage('https://petrojam.com/price/');
+              const html = await fetchPage('https://www.petrojam.com/price/');
   console.log('Fetched ' + html.length + ' bytes');
 
   // Try multiple date patterns
@@ -50,7 +50,9 @@ async function main() {
     throw new Error('Could not find price date');
   }
 
-  const weekOf = new Date(dateMatch[1].trim()).toISOString().split('T')[0];
+  const parsed = new Date(dateMatch[1].trim());
+  if (isNaN(parsed.getTime())) throw new Error('Invalid price date: ' + dateMatch[1].trim());
+  const weekOf = parsed.toISOString().split('T')[0];
   console.log('Week of:', weekOf);
 
   const fuels = [
