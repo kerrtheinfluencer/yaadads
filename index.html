@@ -900,15 +900,7 @@ nav {
       </div>
     </div>
 
-    <!-- Ad: below hero -->
-    <div class="ad-slot-banner" style="min-height:0">
-      <ins class="adsbygoogle ad-slot"
-        style="display:block"
-        data-ad-client="ca-pub-9656521698490533"
-        data-ad-slot="auto"
-        data-ad-format="horizontal"
-        data-full-width-responsive="true"></ins>
-    </div>
+    <!-- Ad: below hero (hidden until AdSense ready) -->
 
     <!-- Compact category row -->
     <div class="cat-row" id="catRow"></div>
@@ -1233,15 +1225,7 @@ nav {
   </div>
 </div>
 
-<!-- Ad: above footer -->
-<div class="ad-slot-banner" style="min-height:0">
-  <ins class="adsbygoogle ad-slot"
-    style="display:block"
-    data-ad-client="ca-pub-9656521698490533"
-    data-ad-slot="auto"
-    data-ad-format="horizontal"
-    data-full-width-responsive="true"></ins>
-</div>
+<!-- Ad: above footer (hidden until AdSense ready) -->
 
 <!-- ─── SEO ABOUT SECTION (above footer — crawlable by Google) ─── -->
 <section class="seo-about" aria-label="About Yaad Adz">
@@ -1960,15 +1944,15 @@ function showAiResponse(text, count) {
   textEl.innerHTML = escHtml(text).replace(/\n/g, '<br>');
   if (count !== null && count !== undefined) {
     badge.textContent = count + ' listing' + (count !== 1 ? 's' : '');
-    badge.style.display = '';
-  } else { badge.style.display = 'none'; }
-  card.style.display = '';
+    badge.classList.add('show');
+  } else { badge.classList.remove('show'); }
+  card.classList.add('show');
   const reset = document.querySelector('.hero-reset');
   if (reset) reset.style.display = '';
 }
 function hideAiResponse() {
   const card = document.getElementById('aiResponseCard');
-  if (card) card.style.display = 'none';
+  if (card) card.classList.remove('show');
 }
 function compactHero() {
   const hero = document.getElementById('heroSection');
@@ -3219,10 +3203,7 @@ function renderHome() {
   if (visible.length) {
     visible.forEach(function(a, i) {
       html += cardHTML(a, i);
-      // Insert in-feed ad after every 8th card
-      if ((i + 1) % 8 === 0 && i < visible.length - 1) {
-        html += '<div class="ad-slot-infeed"><ins class="adsbygoogle ad-slot" style="display:block" data-ad-client="ca-pub-9656521698490533" data-ad-slot="auto" data-ad-format="fluid" data-ad-layout-key="-6t+ed+2i-1n-4w"></ins></div>';
-      }
+      // Ad slots hidden until AdSense inventory is ready
     });
   } else {
     html = emptyEl('No listings match your search.',
