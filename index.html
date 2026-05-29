@@ -850,7 +850,7 @@ nav {
             placeholder="e.g. cheap phone under 80k in Kingston, or house under 15 million…"
             onkeydown="if(event.key==='Enter'){clearTimeout(window._aiDebounce);runAiSearch();}"
             oninput="clearTimeout(window._aiDebounce);if(this.value.length>4){window._aiDebounce=setTimeout(runAiSearch,700);}"
-            onfocus="if(window.innerWidth<=640){this.blur();openAiSheet();}">
+            onfocus="if(window.innerWidth<=640){var v=this.value;this.blur();openAiSheet(v);}">
           <button class="ai-search-btn" id="aiBtn" onclick="runAiSearch()">
             <span id="aiBtnLabel">Ask AI</span>
           </button>
@@ -1221,7 +1221,7 @@ nav {
         <span id="sheetSendLabel">↑</span>
       </button>
     </div>
-    <div class="ai-sheet-hint">Powered by Claude AI · Speaks Jamaican</div>
+    <div class="ai-sheet-hint">Yaad Brain · Understands Patois &amp; natural search</div>
   </div>
 </div>
 
@@ -1931,6 +1931,23 @@ function showSkeletons() {
 function scrollToResults() {
   const el = document.getElementById('homeGrid') || document.getElementById('resultsHeader');
   if (el) setTimeout(function(){ el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 50);
+}
+
+/** Google Analytics helper (safe no-op if gtag missing) */
+function gaEvent(name, params) {
+  try {
+    if (typeof gtag === 'function') gtag('event', name, params || {});
+  } catch (e) {}
+}
+
+/** Thumbnail URL — Supabase storage resize when available */
+function thumbUrl(url, width) {
+  if (!url) return '';
+  const w = width || 120;
+  if (url.indexOf('supabase.co/storage') !== -1) {
+    return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'width=' + w + '&quality=78';
+  }
+  return url;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3185,7 +3202,8 @@ function renderHome() {
     if (f.maxPrice) ads = ads.filter(a => a.price <= f.maxPrice);
     if (f.minPrice) ads = ads.filter(a => a.price >= f.minPrice);
     if (f.parish)   ads = ads.filter(a => a.parish.toLowerCase() === f.parish.toLowerCase());
-    if (f.categories && f.categories.length > 1) ads = ads.filter(a => f.categories.includes(a.category));
+    if (f.categories && f.categories.length >= 1) ads = ads.filter(a => f.categories.includes(a.category));
+    if (f.negotiable) ads = ads.filter(a => a.neg);
   }
 
   // Hide sold filter
@@ -3282,6 +3300,12 @@ function renderBrowse() {
    AI SEARCH ENGINE
 ═══════════════════════════════════════════════════════════ */
 function setAiQuery(q) {
+  if (!q) return;
+  if (window.innerWidth <= 640) {
+    openAiSheet();
+    sheetSearch(q);
+    return;
+  }
   const inp = document.getElementById('aiInput');
   if (inp) inp.value = q;
   runAiSearch();
@@ -3788,10 +3812,10 @@ const YaadBrain = (() => {
   const BASE_CAT_KEYWORDS = {
     vehicles:    ['car','truck','van','bus','bike','scooter','vehicle','drive','civic','corolla','camry','bmw','toyota','honda','hyundai','nissan','kia','suzuki','mazda','jeep','suv','pickup','auto','motor','motorcycle','mileage','sedan','hatchback','coupe','minivan','coaster','hiace','fielder','axio','vitz','fit','swift','march','note','demio','rav4','crv','cx5','hilux','tacoma','prado','fortuner','ipsum','wish','stream','ride','whip','voxy'],
     property:    ['house','home','flat','apartment','room','land','lot','rent','property','estate','sq ft','square feet','bed','bath','bedroom','studio','tenant','landlord','yard','bungalow','villa','mansion','townhouse','condo','lease','mortgage','acre','plot','vacant','commercial','warehouse','shop','office'],
-    electronics: ['phone','iphone','samsung','xiaomi','laptop','computer','pc','tablet','tv','television','camera','console','playstation','xbox','ps4','ps5','airpods','earphones','speakers','headphones','charger','bluetooth','screen','monitor','android','galaxy','pixel','nintendo','switch','macbook','printer','router','wifi','gopro','drone','smartwatch','apple','redmi','oppo','huawei','tecno','infinix','jbl','marshall','bose'],
+    electronics: ['phone','iphone','samsung','xiaomi','laptop','computer','pc','tablet','tv','television','camera','console','playstation','xbox','ps4','ps5','ps6','airpods','earpods','earphones','speakers','headphones','charger','bluetooth','screen','monitor','android','galaxy','pixel','nintendo','switch','macbook','printer','router','wifi','gopro','drone','smartwatch','apple','redmi','oppo','huawei','tecno','infinix','itel','jbl','marshall','bose','s24','s23','s22','s21','s20','a54','a34','ultra','pro max','pro','max','plus'],
     fashion:     ['clothes','clothing','shirt','shoe','bag','dress','fashion','jeans','pants','wear','outfit','sneaker','boot','blouse','skirt','suit','jacket','handbag','jewelry','watch','accessory','nike','adidas','jordan','puma','crocs','gucci','lv','zara','polo','cap','hat','belt','ring','chain','necklace','bracelet','sunglasses','perfume','cologne','wig','hair'],
     furniture:   ['sofa','couch','chair','table','bed','mattress','fridge','stove','washer','dryer','microwave','oven','furniture','appliance','wardrobe','cabinet','desk','shelf','bookcase','drawer','dining','lamp','fan','ac','air condition','iron','blender','freezer','cupboard','bench','mirror'],
-    jobs:        ['job','work','hiring','vacancy','career','employment','position','staff','employee','salary','wage','internship','full time','part time','freelance','contract','temporary','permanent','secretary','cashier','driver','security','manager','supervisor','clerk','helper','assistant','bartender','chef','cook','waitress','waiter'],
+    jobs:        ['job','jobs','work','hiring','vacancy','vacancies','career','employment','position','staff','employee','salary','wage','internship','full time','part time','freelance','contract','temporary','permanent','secretary','cashier','driver','security','manager','supervisor','clerk','helper','assistant','bartender','chef','cook','waitress','waiter','available'],
     services:    ['service','repair','fix','plumber','electrician','painter','cleaning','maid','helper','driver','delivery','contractor','builder','carpenter','mechanic','tutor','lesson','barber','hairdresser','photographer','dj','caterer','mason','tiler','welder','locksmith','pest control','landscaping','moving','trucking','transportation'],
     food:        ['food','farm','fruit','fish','meat','vegetable','produce','ackee','jerk','cook','bake','juice','spice','pepper','yam','banana','plantain','grocery','bakery','mango','breadfruit','callaloo','scotch bonnet','sorrel','patty','dumpling','bun','cheese','chicken','pork','goat','curry','rice','flour','sugar','honey','coconut'],
     music:       ['guitar','music','instrument','drum','keyboard','piano','dj','speaker','amp','amplifier','microphone','beat','studio','sound','art','painting','craft','turntable','mixer','midi','saxophone','violin','flute','trumpet','harmonica','ukulele','bass','vinyl','record'],
@@ -3865,6 +3889,9 @@ const YaadBrain = (() => {
   function detectParish(q) {
     // Normalize: remove dots so "st. andrew" and "st andrew" both match
     const s = q.toLowerCase().replace(/\./g,' ').replace(/\s+/g,' ');
+    if (/\b(near me|around me|close to me)\b/.test(s) && typeof CU !== 'undefined' && CU && CU.parish) {
+      return CU.parish;
+    }
     for(const [parish,aliases] of Object.entries(PARISH_MAP)){
       if(aliases.some(a=>s.includes(a))) return parish.split(' ').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
     }
@@ -4171,7 +4198,8 @@ const YaadBrain = (() => {
     if(ctx.cheap) pool=pool.filter(a=>{const ceil=CHEAP_CEILING[a.category]||20000;return a.price<=ceil;});
     if(ctx.expensive){const sorted=[...pool].sort((a,b)=>b.price-a.price);pool=sorted.slice(0,Math.max(Math.ceil(sorted.length*0.3),3));}
 
-    const qTerms=ctx.terms||tokenize(normalized).filter(t=>t.length>2);
+    let qTerms=(ctx.terms&&ctx.terms.length)?ctx.terms:tokenize(normalized).filter(t=>t.length>=2);
+    if(!qTerms.length) qTerms=tokenize(rawQ).filter(t=>t.length>=2&&!STOP_WORDS.has(t));
     const boosts=getClickBoosts(qTerms);
     let scored=pool.map(ad=>({ad,score:scoreAd(ad,qTerms,_idfCache,boosts)})).sort((a,b)=>b.score-a.score);
 
@@ -4193,7 +4221,7 @@ const YaadBrain = (() => {
     _lastCtx={...ctx,_qTerms:qTerms};
 
     const msg=broadened?`No exact matches${ctx.parish?' in '+ctx.parish:''} — showing closest results. Try broader terms! 🔍`:buildMessage(allResults,ctx,rawQ);
-    return{type:'search',message:msg,results,allResults,filters:{categories:ctx.cats,parish:ctx.parish,minPrice:ctx.lo,maxPrice:ctx.hi,keywords:qTerms},_qTerms:qTerms};
+    return{type:'search',message:msg,results,allResults,filters:{categories:ctx.cats,parish:ctx.parish,minPrice:ctx.lo,maxPrice:ctx.hi,keywords:qTerms,negotiable:!!ctx.negoOnly},_qTerms:qTerms};
   }
 
   function learn(adId,qTerms){recordClick(adId,qTerms||[]);}
@@ -4222,31 +4250,46 @@ function runAiSearch(){
   const inp=document.getElementById('aiInput');
   const query=(inp?.value||'').trim();
   if(!query) return;
+  // Mobile: full-screen AI sheet (hero bar blurs on focus)
+  if(window.innerWidth<=640){
+    openAiSheet();
+    sheetSearch(query);
+    return;
+  }
   saveRecentSearch(query);
   gaEvent('search',{search_term:query});
   const btn=document.getElementById('aiBtn');
   const lbl=document.getElementById('aiBtnLabel');
-  btn.classList.add('loading');
-  lbl.innerHTML='<div class="btn-spinner"></div>';
+  if(btn) btn.classList.add('loading');
+  if(lbl) lbl.innerHTML='<div class="btn-spinner"></div>';
   hideAiResponse();showSkeletons();
-  requestAnimationFrame(()=>{
-    const result=YaadBrain.process(query,[]);
-    if(result.type==='answer'){
-      activeF='all';searchQ='';renderCats();
-      const count=renderHome();
-      showAiResponse(result.message,null);
-    }else{
-      const f=result.filters;
-      activeF=f.categories?.length===1?f.categories[0]:'all';
-      searchQ=(f.keywords||[]).join(' ');
-      window._aiFilters=f;
-      compactHero();renderCats();
-      const count=renderHome();
-      delete window._aiFilters;
-      showAiResponse(result.message,count);
+  requestAnimationFrame(function(){
+    try{
+      const result=YaadBrain.process(query,[]);
+      if(result.type==='answer'){
+        activeF='all';searchQ='';window._aiFilters=null;
+        renderCats();
+        showAiResponse(result.message,null);
+        renderHome();
+      }else{
+        const f=result.filters||{};
+        activeF=(f.categories&&f.categories.length===1)?f.categories[0]:'all';
+        searchQ=(f.keywords&&f.keywords.length)?f.keywords.join(' '):query;
+        window._aiFilters=f;
+        compactHero();renderCats();
+        const count=renderHome();
+        delete window._aiFilters;
+        showAiResponse(result.message,count);
+      }
+      scrollToResults();
+    }catch(err){
+      console.error('AI search error:',err);
+      showAiResponse('Something went wrong — try different words or browse categories below.',null);
+      renderHome();
+    }finally{
+      if(btn) btn.classList.remove('loading');
+      if(lbl) lbl.textContent='Search';
     }
-    scrollToResults();
-    btn.classList.remove('loading');lbl.textContent='Search';
   });
 }
 
@@ -4306,8 +4349,14 @@ function updateSheetSugs(){
   wrap.insertAdjacentHTML('beforeend',extra);
 }
 
-function openAiSheet(){
-  if(sheetOpen) return;
+function openAiSheet(prefill){
+  if(sheetOpen){
+    if(prefill){
+      const inp=document.getElementById('sheetInput');
+      if(inp){inp.value=prefill;sheetSubmit();}
+    }
+    return;
+  }
   sheetOpen=true;
   const sheet=document.getElementById('aiSheet');
   const overlay=document.getElementById('aiSheetOverlay');
@@ -4320,7 +4369,10 @@ function openAiSheet(){
   document.getElementById('mnSearch')?.classList.add('active');
   renderRecentSearches();
   updateSheetSugs();
-  setTimeout(()=>document.getElementById('sheetInput')?.focus(),380);
+  const heroQ=(typeof prefill==='string'?prefill:'')||document.getElementById('aiInput')?.value?.trim()||'';
+  const sheetInp=document.getElementById('sheetInput');
+  if(sheetInp&&heroQ) sheetInp.value=heroQ;
+  setTimeout(function(){document.getElementById('sheetInput')?.focus();},380);
 }
 
 function closeAiSheet(){
@@ -4350,6 +4402,10 @@ function sheetSubmit(){
   // Empty query — show helpful prompt
   if(!query){
     addSheetMsg('ai','What are you looking for? Try:\n• "cheap car under 2 million"\n• "iPhone in Kingston"\n• "house for rent Portmore"\n• "how do I post an ad?"',null,null);
+    return;
+  }
+  if(!_ads.length){
+    addSheetMsg('ai','Listings are still loading — try again in a moment, or browse the homepage.',null,null);
     return;
   }
   inp.value='';
@@ -5501,27 +5557,36 @@ init();
 })();
 </script>
 <!-- ── FLOATING GAS PRICE BANNER ── -->
-<a href="/gas-prices" id="gasBanner" aria-label="Jamaica gas prices today">
+<a href="/gas-prices.html" id="gasBanner" aria-label="Jamaica gas prices today">
   <div class="gas-banner-icon">⛽</div>
   <div class="gas-banner-body">
     <div class="gas-banner-label">Gas Price Today</div>
-    <div class="gas-banner-price" id="bannerPrice">J$211.13</div>
-    <div class="gas-banner-sub">87 Oct · est. pump price</div>
+    <div class="gas-banner-price" id="bannerPrice">…</div>
+    <div class="gas-banner-sub" id="bannerSub">87 Oct · est. pump</div>
   </div>
   <div class="gas-banner-arrow">›</div>
 </a>
 
 <script>
-// ── GAS BANNER — fetch latest 87 octane ex-refinery price ──
-// Falls back to hardcoded current price if fetch fails
+// ── GAS BANNER — live from gas-prices-data.json (Petrojam archive) ──
 (function() {
-  // Current prices (updated Apr 23, 2026)
-  var EX_87    = 181.1328;
-  var MARKUP   = 30;
-  var PUMP_87  = (EX_87 + MARKUP).toFixed(2);
-
+  var MARKUP = 30;
   var el = document.getElementById('bannerPrice');
-  if (el) el.textContent = 'J$' + Number(PUMP_87).toLocaleString('en-JM', {minimumFractionDigits:2, maximumFractionDigits:2});
+  var sub = document.getElementById('bannerSub');
+  function showPump(exRefinery) {
+    if (!el || exRefinery == null) return;
+    var pump = exRefinery + MARKUP;
+    el.textContent = 'J$' + pump.toLocaleString('en-JM', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (sub) sub.textContent = '87 Oct · est. pump (+J$' + MARKUP + ')';
+  }
+  fetch('/gas-prices-data.json', { cache: 'no-store' })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function(data) {
+      var p87 = (data.prices || []).find(function(p) { return p.key === '87'; });
+      if (p87 && p87.exRefinery != null) showPump(p87.exRefinery);
+      else showPump(194.1328);
+    })
+    .catch(function() { showPump(194.1328); });
 })();
 </script>
 
