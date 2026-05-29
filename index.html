@@ -3263,7 +3263,7 @@ function renderHome() {
         const ad = _ads.find(function(a){ return a.id === id; });
         if (!ad) return;
         const slug = slugify(ad);
-        const url = '/ad/' + slug;
+        const url = '/ad/' + slug + '.html';
         // Only prefetch once per URL
         if (document.querySelector('link[rel="prefetch"][href="' + url + '"]')) return;
         const link = document.createElement('link');
@@ -3330,6 +3330,7 @@ function slugify(ad) {
 /* ── Parse ad ID from a slug URL like /ad/2015-honda-civic-ab12cd34 ── */
 function idFromSlug(slug) {
   if (!slug) return null;
+  if (slug.endsWith('.html')) slug = slug.slice(0, -5);
   const parts = slug.split('-');
   return parts[parts.length - 1] && parts[parts.length - 1].length === 8
     ? parts[parts.length - 1]
@@ -3378,7 +3379,7 @@ const SEO = (() => {
   function adToSchema(ad) {
     const cat = CAT_SCHEMA[ad.category] || CAT_SCHEMA.other;
     const geo = PARISH_GEO[ad.parish] || { lat:18.0, lng:-76.8 };
-    const url = BASE_URL + '/ad/' + slugify(ad);
+    const url = BASE_URL + '/ad/' + slugify(ad) + '.html';
     const priceJMD = ad.price || 0;
     const datePosted = ad.date || new Date().toISOString().split('T')[0];
 
@@ -3482,7 +3483,7 @@ const SEO = (() => {
       var el = document.querySelector(sel); if (el) el.setAttribute('content', val);
     };
     const slug = slugify(ad);
-    const adUrl = BASE_URL + '/ad/' + slug;
+    const adUrl = BASE_URL + '/ad/' + slug + '.html';
     const title = ad.title + ' — J$' + Number(ad.price).toLocaleString('en-JM') + ' | Yaad Adz Jamaica';
     const desc  = (ad.desc || ad.title) + ' · ' + ad.parish + ', Jamaica · Listed on Yaad Adz';
     document.title = title;
@@ -3505,7 +3506,7 @@ const SEO = (() => {
     }
     existing.textContent = JSON.stringify(adToSchema(ad));
     // Update canonical to pretty URL
-    setCanonical('/ad/' + slug);
+    setCanonical('/ad/' + slug + '.html');
   }
 
   /* ── Reset OG to site defaults ───────────────────────────────── */
@@ -4600,7 +4601,7 @@ function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
   const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
-  const dest = '/ad/' + slugify(ad);
+  const dest = '/ad/' + slugify(ad) + '.html';
   const newViews = (ad.views || 0) + 1;
   ad.views = newViews;
 
@@ -4774,7 +4775,7 @@ async function sendOffer(adId, sellerId, sellerName, sellerInit) {
 ═══════════════════════════════════════════════════════════ */
 async function shareAd(id) {
   const ad = _ads.find(a => a.id === id); if (!ad) return;
-  const url = 'https://yaadadz.com/ad/' + slugify(ad);
+  const url = 'https://yaadadz.com/ad/' + slugify(ad) + '.html';
   const text = ad.title + ' — J$' + fmtN(ad.price) + ' on Yaad Adz';
   const shareData = { title: ad.title, text: text, url: url };
 

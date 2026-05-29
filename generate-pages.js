@@ -310,7 +310,7 @@ function buildSimilarHTML(ad, allAds) {
       ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
       : `<div class="sim-placeholder">${catIcon}</div>`;
     return `
-      <a class="sim-card" href="${BASE_URL}/ad/${slug}">
+      <a class="sim-card" href="${BASE_URL}/ad/${slug}.html">
         <div class="sim-img">${imgHtml}</div>
         <div class="sim-body">
           <div class="sim-price">${fmtPrice(a.price)}</div>
@@ -335,7 +335,7 @@ function buildSimilarHTML(ad, allAds) {
 // ── HTML template for one ad page ─────────────────────────────
 function buildPage(ad, allAds) {
   const slug   = slugify(ad);
-  const adUrl  = BASE_URL + '/ad/' + slug;
+  const adUrl  = BASE_URL + '/ad/' + slug + '.html';
   const catIcon = CAT_ICONS[ad.category] || '📦';
   const catName = CAT_NAMES[ad.category] || 'Other';
   const price  = fmtPrice(ad.price);
@@ -737,15 +737,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
   /* ── AD SLOT ── */
   .ad-slot-wrap {
-    margin: 8px 0;
-    min-height: 0;
-    background: transparent;
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .ad-slot-wrap:has(ins[data-adsbygoogle-status]) {
-    min-height: 90px;
-    background: rgba(255,255,255,0.02);
+    display: none !important;
   }
 
   /* ── VIEW COUNT ── */
@@ -1393,7 +1385,7 @@ async function main() {
   const adEntries = activeAds.map(ad => {
     const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
     // Use clean URL without .html for sitemap — Google prefers canonical clean URLs
-    return { url: BASE_URL + '/ad/' + slugify(ad), lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
+    return { url: BASE_URL + '/ad/' + slugify(ad) + '.html', lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
   });
 
   const staticXml = staticPages.map(p => `
@@ -1485,7 +1477,7 @@ ${adXml}
     const catIcon = CAT_ICONS[catId] || '📦';
     const links = ads.slice(0, 100).map(ad => {
       const slug = slugify(ad);
-      return `      <li><a href="/ad/${slug}">${esc(ad.title)} — ${fmtPrice(ad.price)} · ${esc(ad.parish)}</a></li>`;
+      return `      <li><a href="/ad/${slug}.html">${esc(ad.title)} — ${fmtPrice(ad.price)} · ${esc(ad.parish)}</a></li>`;
     }).join('\n');
     return `    <div class="cat-group">
       <h2>${catIcon} ${catName} <span class="count">(${ads.length})</span></h2>
@@ -1540,7 +1532,7 @@ ${catSections}
   const staticLinks = recentAds.map(ad => {
     const slug = slugify(ad);
     const catIcon = CAT_ICONS[ad.category] || '📦';
-    return `  <a href="/ad/${slug}" class="static-link-item">
+    return `  <a href="/ad/${slug}.html" class="static-link-item">
     <span class="sli-icon">${catIcon}</span>
     <span class="sli-title">${esc(ad.title)}</span>
     <span class="sli-price">${fmtPrice(ad.price)}</span>
