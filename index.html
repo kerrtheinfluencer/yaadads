@@ -346,10 +346,10 @@ body.ai-sheet-open #gasBanner {
   flex-shrink: 0;
   margin-left: 2px;
 }
-/* On desktop: back to bottom-right, no mob-nav */
+/* On desktop: position above AI FAB so they don't overlap */
 @media (min-width: 641px) {
   #gasBanner {
-    bottom: 28px;
+    bottom: 100px;
     right: 24px;
     left: auto;
     max-width: none;
@@ -714,7 +714,7 @@ nav {
 .ad-price { font-size:18px !important; font-weight:800 !important; color:#00703f !important; line-height:1.1 !important; }
 
 /* ── Ad views always visible ── */
-.ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.75 !important; font-size:11px !important; }
+.ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.88 !important; font-size:12px !important; font-weight:500 !important; }
 
 /* ── Grid columns ── */
 .listings-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
@@ -5488,6 +5488,10 @@ init();
   document.body.appendChild(ptrBar);
 
   var startY = 0, pulling = false, PTR_THRESHOLD = 72;
+  var ptrHideTimer = null;
+
+  // Only enable pull-to-refresh on mobile
+  if (window.innerWidth <= 640) {
 
   document.addEventListener('touchstart', function(e){
     if(window.scrollY === 0) startY = e.touches[0].clientY;
@@ -5500,6 +5504,11 @@ init();
       pulling = true;
       ptrBar.textContent = dy > PTR_THRESHOLD ? '↑ Release to refresh' : '↓ Pull to refresh';
       ptrBar.classList.add('show');
+      // Safety: auto-hide after 4 seconds if stuck
+      clearTimeout(ptrHideTimer);
+      ptrHideTimer = setTimeout(function(){
+        if(pulling) { ptrBar.classList.remove('show'); pulling = false; startY = 0; }
+      }, 4000);
     }
   }, {passive:true});
 
@@ -5507,11 +5516,12 @@ init();
     if(pulling){
       ptrBar.classList.remove('show');
       pulling = false;
+      clearTimeout(ptrHideTimer);
       startY = 0;
       // Reload listings from Supabase
       if(window._ads !== undefined){
         setTimeout(function(){
-          if(typeof loadAds === 'function') loadAds().then(function(){ renderCards(_ads); });
+          if(typeof loadAds === 'function') loadAds().then(function(){ renderCats(); renderHome(); });
         }, 300);
       } else {
         location.reload();
@@ -5519,6 +5529,8 @@ init();
     }
     startY = 0;
   }, {passive:true});
+
+  } // end mobile-only PTR check
 
   // ── AI Sheet swipe-to-close ──────────────────────────────
   var sheet = document.getElementById('aiSheet');
