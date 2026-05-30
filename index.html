@@ -281,7 +281,7 @@ if ('serviceWorker' in navigator) {
   bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 8px);
   left: 12px;
   right: auto;
-  z-index: 490; /* below mob-nav (usually ~600) and way below AI sheet (8000) */
+  z-index: 250; /* above scroll content, below modals (300) */
   background: linear-gradient(135deg, #0e1f16 0%, #142a1c 100%);
   border: 1px solid rgba(0,200,83,0.35);
   border-radius: 14px;
