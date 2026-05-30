@@ -872,6 +872,7 @@ nav {
         <button class="ai-sug" onclick="setAiQuery('house under 20 million')">🏡 Houses for sale</button>
         <button class="ai-sug" onclick="setAiQuery('jobs available near me')">💼 Jobs</button>
         <button class="ai-sug" onclick="setAiQuery('budget laptop under 100000')">💻 Laptops</button>
+        <button class="ai-sug" onclick="setAiQuery('gas price today')">⛽ Gas prices</button>
         <button class="ai-sug" onclick="setAiQuery('how do I post an ad?')">❓ How to post</button>
       </div>
 
@@ -3167,6 +3168,8 @@ function cardHTML(ad, idx) {
   const photoCount = (ad.photos && ad.photos.length > 1)
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const tankInfo = ad.category === 'vehicles' ? getAdTankInfo(ad) : null;
+  const tankBadge = tankInfo?.capacity ? `<span>⛽ ${Math.round(tankInfo.capacity)}L${tankInfo.fullTankCost?` · J$${fmtN(tankInfo.fullTankCost)} fill`:''}</span>` : '';
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
@@ -3178,6 +3181,7 @@ function cardHTML(ad, idx) {
         <span>📍 ${ad.parish}</span>
         <span>${ago(ad.date)}</span>
         <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
+        ${tankBadge}
       </div>
     </div>
   </div>`;
@@ -3933,6 +3937,12 @@ const YaadBrain = (() => {
     [/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening|night)|wah\s*gwaan|whaapen|whappen|ello|hail|greetings|sup)\b/i, 'greeting'],
     [/^(thank|thanks|tanx|bless up|nuff respect|respect|big up|good looking|appreciate|nice|great|good job)/i, 'thanks'],
     [/(help|assist|what can you|what do you)/i, 'help'],
+    [/(gas price|fuel price|petrojam price|petrol price|diesel price|kerosene price|propane price|ulsd price|butane price|price of (?:gas|fuel|diesel|kerosene|propane|ulsd|butane)|how much.*(?:gas|diesel|kerosene|propane|ulsd|butane)|what.*(?:gas|diesel|kerosene|propane|ulsd|butane))/i, 'gas_price_check'],
+    [/(cheapest|lowest price|best deal|best value|best price).*fuel|fuel.*cheapest|cheapest petrol|cheapest diesel|cheapest gas|lowest petrol|lowest diesel/i, 'gas_price_cheapest'],
+    [/(most expensive|highest price|priciest|most costly).*fuel|fuel.*most expensive|expensive diesel|expensive petrol/i, 'gas_price_most_expensive'],
+    [/(trend|price trend|price change|prices change|rise|fall|increase|decrease).*fuel|fuel price trend|petrojam trend/i, 'gas_price_trend'],
+    [/(full\s*tank|tank\s*full|fill\s*up.*tank|fill.*tank|tank.*fill|fuel\s*tank.*cost|tank.*cost|fuel.*tank.*estimate|how much.*fill.*tank|how much.*tank.*cost|cost.*fill.*tank)/i, 'tank_estimate'],
+    [/(tank\s*capacity|fuel\s*tank|tank\s*size|how big.*tank|litre.*tank|liter.*tank)/i, 'tank_capacity'],
     [/(cheapest|lowest price|most affordable|best deal|best value|best price)/i, 'compare_cheapest'],
     [/(most expensive|highest price|priciest|top dollar|premium)/i, 'compare_expensive'],
     [/(most popular|trending|hot|most viewed|top listing|most wanted)/i, 'compare_popular'],
@@ -3954,7 +3964,7 @@ const YaadBrain = (() => {
     delivery:()=>`Delivery is arranged between buyer and seller. Most items are pickup, but many sellers offer local delivery or Knutsford Express for cross-parish.`,
     greeting:()=>{const g=['Wah gwaan! 👋 What yuh looking for today?','Big up! 🇯🇲 How can I help?','Hey! Ask me anything — search for items, get price advice, or just chat.','Respect! 🤝 Ready to help you find exactly what you need.'];return g[Math.floor(Math.random()*g.length)];},
     thanks:()=>{const g=["No problem! Anything else? 😊","Anytime! That's what I'm here for. 🤝","Bless up! Hit me if you need anything else. 🇯🇲"];return g[Math.floor(Math.random()*g.length)];},
-    help:()=>`I'm your Yaad Adz AI assistant!\n\n🔍 Search — "cheap car under 2M" or "phone in Kingston"\n💰 Price check — "average price for iPhone 14"\n📊 Compare — "cheapest laptop"\n🏘️ Parish filter — "furniture in Portmore"\n💬 FAQ — "how do I post an ad?"\n🇯🇲 Patois — "mi waan a criss phone fi likkle money"\n\nJust type naturally!`,
+    help:()=>`I'm your Yaad Adz AI assistant!\n\n🔍 Search — "cheap car under 2M" or "phone in Kingston"\n⛽ Fuel prices — "gas price today" or "diesel price"\n💰 Price check — "average price for iPhone 14"\n📊 Compare — "cheapest laptop"\n🏘️ Parish filter — "furniture in Portmore"\n💬 FAQ — "how do I post an ad?"\n🇯🇲 Patois — "mi waan a criss phone fi likkle money"\n\nJust type naturally!`,
     stats:()=>{
       const active=_ads.filter(a=>a.status!=='sold');
       const cats={};active.forEach(a=>{cats[a.category]=(cats[a.category]||0)+1;});
@@ -3971,6 +3981,242 @@ const YaadBrain = (() => {
       return '🏆 Top sellers:\n'+top.map(([n,c],i)=>`${['🥇','🥈','🥉'][i]} ${n} — ${c} listing${c>1?'s':''}`).join('\n');
     },
   };
+
+  const GAS_PRICE_MARKUP = 25;
+  const GAS_PRICE_KEYS = ['87','90','diesel','ulsd','kerosene','propane','butane'];
+  let GAS_PRICE_REF = {prices:[],history:{weeks:[]},comparisons:{},meta:null};
+  let GAS_PRICE_READY = false;
+  let GAS_PRICE_LOADING = false;
+  let GAS_PRICE_ERROR = false;
+  let VEHICLE_TANK_LOOKUP = {};
+  let VEHICLE_TANK_LOOKUP_READY = false;
+  let VEHICLE_TANK_LOOKUP_ERROR = false;
+
+  async function loadGasPriceReference(){
+    if(GAS_PRICE_LOADING||GAS_PRICE_READY) return;
+    GAS_PRICE_LOADING=true;
+    try{
+      const res=await fetch('/gas-prices-data.json?t='+Date.now(),{cache:'no-store'});
+      if(!res.ok) throw new Error('Gas price feed not available');
+      const data=await res.json();
+      if(!data.prices||!Array.isArray(data.prices)) throw new Error('Invalid gas price data');
+      GAS_PRICE_REF={prices:data.prices,history:data.history||{weeks:[]},comparisons:data.comparisons||{},meta:data};
+      GAS_PRICE_READY=true;
+    }catch(e){
+      console.warn('Gas price reference failed:',e);
+      GAS_PRICE_ERROR=true;
+    }
+  }
+
+  async function loadVehicleTankReference(){
+    if(VEHICLE_TANK_LOOKUP_READY||VEHICLE_TANK_LOOKUP_ERROR) return;
+    try{
+      const res=await fetch('/vehicle-tanks.json?t='+Date.now(),{cache:'no-store'});
+      if(!res.ok) throw new Error('Vehicle tank lookup not available');
+      const data=await res.json();
+      if(!data||typeof data!=='object') throw new Error('Invalid vehicle tank lookup data');
+      VEHICLE_TANK_LOOKUP=data;
+      VEHICLE_TANK_LOOKUP_READY=true;
+    }catch(e){
+      console.warn('Vehicle tank reference failed:',e);
+      VEHICLE_TANK_LOOKUP_ERROR=true;
+    }
+  }
+
+  function normalizeFuelQuery(q){
+    const s=q.toLowerCase();
+    if(/\b(87|eighty\s*seven|gasolene\s*87|petrol\s*87|regular)\b/.test(s)) return '87';
+    if(/\b(90|ninety\s*octane|gasolene\s*90|petrol\s*90|premium)\b/.test(s)) return '90';
+    if(/\b(diesel|auto\s*diesel|diesel\s*fuel)\b/.test(s)) return 'diesel';
+    if(/\b(ulsd|ultra\s*low\s*sulphur|ultra\s*low\s*sulfur|ultra\s*diesel)\b/.test(s)) return 'ulsd';
+    if(/\b(kerosene|paraffin)\b/.test(s)) return 'kerosene';
+    if(/\b(propane|lpg|liquefied\s*petroleum)\b/.test(s)) return 'propane';
+    if(/\b(butane)\b/.test(s)) return 'butane';
+    return null;
+  }
+
+  function findGasFuel(q){
+    const key=normalizeFuelQuery(q);
+    return GAS_PRICE_REF.prices.find(p=>p.key===key)||null;
+  }
+
+  function parseTankCapacity(text){
+    if(!text) return null;
+    const normalized = text.toLowerCase().replace(/\u00a0/g,' ');
+    const match = normalized.match(/(?:fuel\s*tank|tank|capacity|tank\s*size)[^\d]{0,20}?(\d{2,3}(?:\.\d+)?)(?:\s*(?:l|litre|liter|ltr|litres|liters))/i)
+      || normalized.match(/(\d{2,3}(?:\.\d+)?)(?:\s*(?:l|litre|liter|ltr|litres|liters))/i);
+    if(!match) return null;
+    const value = Number(match[1]);
+    return value>10 && value<120 ? value : null;
+  }
+
+  const DEFAULT_VEHICLE_TANK_LOOKUP = {
+    'honda civic': 45,
+    'honda accord': 55,
+    'honda fit shuttle': 40,
+    'honda fit': 40,
+    'honda grace': 40,
+    'honda vezel': 46,
+    'toyota corolla': 50,
+    'toyota axio': 42,
+    'toyota noah': 55,
+    'toyota wish': 55,
+    'toyota voxy': 60,
+    'toyota mark x': 68,
+    'toyota probox': 42,
+    'nissan serena': 65,
+    'subaru impreza': 50,
+    'subaru xv': 60,
+  };
+
+  function inferVehicleModelTankSize(text){
+    if(!text) return null;
+    const norm=text.toLowerCase();
+    const lookups = [VEHICLE_TANK_LOOKUP, DEFAULT_VEHICLE_TANK_LOOKUP];
+    for(const source of lookups){
+      for(const model in source){
+        if(!Object.prototype.hasOwnProperty.call(source,model)) continue;
+        const key=model.toLowerCase();
+        if(norm.includes(key)){
+          const capacity=Number(source[model]);
+          if(capacity>10&&capacity<120) return {name:model,capacity};
+        }
+      }
+    }
+    if(/\bhonda civic\b/.test(norm)) return {name:'Honda Civic',capacity:45};
+    if(/\bhonda accord\b/.test(norm)) return {name:'Honda Accord',capacity:55};
+    if(/\bhonda fit\b|\bfit shuttle\b/.test(norm)) return {name:'Honda Fit Shuttle',capacity:40};
+    if(/\bhonda grace\b/.test(norm)) return {name:'Honda Grace',capacity:40};
+    if(/\bhonda vezel\b/.test(norm)) return {name:'Honda Vezel',capacity:46};
+    if(/\btoyota corolla\b/.test(norm)) return {name:'Toyota Corolla',capacity:50};
+    if(/\btoyota axio\b/.test(norm)) return {name:'Toyota Axio',capacity:42};
+    if(/\btoyota noah\b/.test(norm)) return {name:'Toyota Noah',capacity:55};
+    if(/\btoyota wish\b/.test(norm)) return {name:'Toyota Wish',capacity:55};
+    if(/\btoyota voxy\b/.test(norm)) return {name:'Toyota Voxy',capacity:60};
+    if(/\btoyota mark x\b/.test(norm)) return {name:'Toyota Mark X',capacity:68};
+    if(/\btoyota probox\b/.test(norm)) return {name:'Toyota Probox',capacity:42};
+    if(/\bnissan serena\b/.test(norm)) return {name:'Nissan Serena',capacity:65};
+    if(/\bsubaru impreza\b/.test(norm)) return {name:'Subaru Impreza',capacity:50};
+    if(/\bsubaru xv\b/.test(norm)) return {name:'Subaru XV',capacity:60};
+    if(/\bhonda\b/.test(norm)) return {name:'Honda',capacity:45};
+    if(/\btoyota\b/.test(norm)) return {name:'Toyota',capacity:50};
+    if(/\bnissan\b/.test(norm)) return {name:'Nissan',capacity:55};
+    if(/\bsubaru\b/.test(norm)) return {name:'Subaru',capacity:55};
+    return null;
+  }
+
+  function inferFuelType(ad){
+    const text = ((ad.title||'') + ' ' + (ad.desc||'')).toLowerCase();
+    if(/\b(ulsd|ultra\s*low\s*sulphur|ultra\s*low\s*sulfur|diesel|auto\s*diesel)\b/.test(text)) return 'diesel';
+    if(/\b(kerosene|paraffin)\b/.test(text)) return 'kerosene';
+    if(/\b(propane|lpg|liquefied\s*petroleum)\b/.test(text)) return 'propane';
+    if(/\b(butane)\b/.test(text)) return 'butane';
+    if(/\b(90|ninety|premium|petrol|gasoline|gasolene|octane)\b/.test(text)) return '90';
+    return '90';
+  }
+
+  function getAdTankInfo(ad){
+    const text = `${ad.title||''} ${ad.desc||''}`;
+    const capacity = parseTankCapacity(text) || inferVehicleModelTankSize(text)?.capacity || null;
+    const fuelKey = inferFuelType(ad);
+    const fuel = GAS_PRICE_REF.prices.find(p=>p.key===fuelKey) || GAS_PRICE_REF.prices.find(p=>p.key==='90') || GAS_PRICE_REF.prices[0] || null;
+    const pumpPrice = fuel ? fuel.exRefinery + GAS_PRICE_MARKUP : null;
+    const fullTankCost = capacity && pumpPrice ? Math.round(capacity * pumpPrice) : null;
+    return {capacity,fuelKey,fuelName:fuel?.name||'90 octane petrol',pumpPrice,fullTankCost};
+  }
+
+  function findVehicleAdByQuery(rawQ){
+    const q = normalizePatois(rawQ);
+    const terms = tokenize(q).filter(t=>t.length>2 && !STOP_WORDS.has(t));
+    const vehicles = _ads.filter(a=>a.category==='vehicles' && a.status!=='sold');
+    if(!terms.length) return vehicles[0]||null;
+    const scored = vehicles.map(ad=>{
+      const hay = `${ad.title||''} ${ad.desc||''}`.toLowerCase();
+      const score = terms.reduce((s,term)=> s + (hay.includes(term)? (ad.title.toLowerCase().includes(term)?3:1) : 0), 0);
+      return {ad,score};
+    }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+    return scored.length?scored[0].ad:null;
+  }
+
+  function buildTankEstimateAnswer(rawQ){
+    if(GAS_PRICE_ERROR) return 'Fuel price data is unavailable right now, so full tank cost estimates cannot be calculated.';
+    if(!GAS_PRICE_READY) return 'Loading current fuel prices — try again in a few seconds.';
+    const fuel = findGasFuel(rawQ) || GAS_PRICE_REF.prices.find(p=>p.key==='90') || GAS_PRICE_REF.prices[0];
+    const pump = fuel.exRefinery + GAS_PRICE_MARKUP;
+    const ad = findVehicleAdByQuery(rawQ);
+    if(ad){
+      const info = getAdTankInfo(ad);
+      if(info.capacity){
+        return `I found "${ad.title}". Estimated fuel tank capacity is about ${Math.round(info.capacity)}L. Based on ${fuel.name} pump price (~${fmtPumpPrice(fuel.exRefinery)}), a full tank costs around J$${fmtN(info.fullTankCost)}.`;
+      }
+    }
+    const model = inferVehicleModelTankSize(rawQ);
+    if(model){
+      const cost = Math.round(model.capacity * pump);
+      return `A ${model.name} usually has a ${model.capacity}L tank. At current ${fuel.name} pump price (~${fmtPumpPrice(fuel.exRefinery)}), filling it costs about J$${fmtN(cost)}.`;
+    }
+    const generic = 45;
+    const cost = Math.round(generic * pump);
+    return `I couldn't find a listing with explicit tank size details. Most compact cars on Yaad Adz have about a ${generic}L tank. At current ${fuel.name} pump price (~${fmtPumpPrice(fuel.exRefinery)}), filling it would cost roughly J$${fmtN(cost)}.`;
+  }
+
+  function handleTankIntent(intent,query){
+    if(intent==='tank_capacity' || intent==='tank_estimate'){
+      return {type:'answer',message:buildTankEstimateAnswer(query)};
+    }
+    return null;
+  }
+
+  function fmtGasPrice(n){return 'J$'+n.toFixed(2);}
+  function fmtPumpPrice(n){return 'J$'+Math.round(n+GAS_PRICE_MARKUP).toLocaleString();}
+
+  function gasPriceChangeText(fuel){
+    if(!fuel||!GAS_PRICE_REF.comparisons) return '';
+    const prev=(GAS_PRICE_REF.comparisons.prev_week||{})[fuel.key];
+    if(prev==null) return '';
+    const diff=fuel.exRefinery-prev;
+    if(Math.abs(diff)<0.01) return 'No change from last week.';
+    return `${diff>0?'▲':'▼'} ${fmtGasPrice(Math.abs(diff))} ${diff>0?'higher':'lower'} than last week.`;
+  }
+
+  function buildGasPriceAnswer(rawQ){
+    if(GAS_PRICE_ERROR) return 'Gas price data is unavailable right now. Please check /gas-prices.html for the latest update.';
+    if(!GAS_PRICE_READY) return 'Loading the latest Jamaica gas prices — try again in a few moments.';
+    const fuel=findGasFuel(rawQ);
+    const updated = GAS_PRICE_REF.meta?.last_updated_display||GAS_PRICE_REF.meta?.price_date||'recently';
+    if(fuel){
+      const pump=fuel.exRefinery+GAS_PRICE_MARKUP;
+      return `${fuel.name} is currently ${fmtGasPrice(fuel.exRefinery)} per litre. Estimated pump price is about ${fmtPumpPrice(fuel.exRefinery)}. ${gasPriceChangeText(fuel)} Updated ${updated}.`;
+    }
+    const cheapest=[...GAS_PRICE_REF.prices].sort((a,b)=>a.exRefinery-b.exRefinery)[0];
+    const mostExpensive=[...GAS_PRICE_REF.prices].sort((a,b)=>b.exRefinery-a.exRefinery)[0];
+    if(/\b(cheapest|lowest|best deal)\b/.test(rawQ)){
+      return `Cheapest fuel today is ${cheapest.name} at ${fmtGasPrice(cheapest.exRefinery)} per litre (pump est. ${fmtPumpPrice(cheapest.exRefinery)}). Updated ${updated}.`;
+    }
+    if(/\b(most expensive|highest price|priciest|most costly)\b/.test(rawQ)){
+      return `Most expensive fuel today is ${mostExpensive.name} at ${fmtGasPrice(mostExpensive.exRefinery)} per litre (pump est. ${fmtPumpPrice(mostExpensive.exRefinery)}). Updated ${updated}.`;
+    }
+    if(/\b(trend|change|rise|fall|increase|decrease)\b/.test(rawQ)){
+      const lines=GAS_PRICE_REF.prices.filter(p=>GAS_PRICE_KEYS.includes(p.key)).map(p=>{
+        const prev=(GAS_PRICE_REF.comparisons.prev_week||{})[p.key];
+        const diff=prev==null?'':`${p.exRefinery-prev>0?'▲':'▼'} ${fmtGasPrice(Math.abs(p.exRefinery-prev))}`;
+        return `• ${p.name}: ${fmtGasPrice(p.exRefinery)}${prev!=null?` (${diff} vs last week)`:''}`;
+      }).join('\n');
+      return `Fuel price trends (${updated}):\n${lines}`;
+    }
+    const overview=GAS_PRICE_REF.prices.filter(p=>['87','90','diesel','kerosene','propane'].includes(p.key)).map(p=>`• ${p.name}: ${fmtGasPrice(p.exRefinery)} (pump est. ${fmtPumpPrice(p.exRefinery)})`).join('\n');
+    return `Latest Jamaica fuel prices (${updated}):\n${overview}\nVisit /gas-prices.html for charts and historic data.`;
+  }
+
+  function handleGasPriceIntent(intent,query){
+    if(intent.startsWith('gas_price')){
+      return {type:'answer',message:buildGasPriceAnswer(query)};
+    }
+    return null;
+  }
+
+  loadGasPriceReference();
+  loadVehicleTankReference();
 
   function handleComparison(intent,query) {
     const norm=normalizePatois(query);
@@ -4185,7 +4431,23 @@ const YaadBrain = (() => {
       }
     }
 
-    // 3. Comparison intents
+    // 3. Gas price intents
+    for(const [pattern,intent] of INTENT_PATTERNS){
+      if(pattern.test(rawQ)&&intent.startsWith('gas_price')){
+        const result=handleGasPriceIntent(intent,rawQ);
+        if(result) return result;
+      }
+    }
+
+    // 4. Tank / fuel tank estimate intents
+    for(const [pattern,intent] of INTENT_PATTERNS){
+      if(pattern.test(rawQ)&&intent.startsWith('tank_')){
+        const result=handleTankIntent(intent,rawQ);
+        if(result) return result;
+      }
+    }
+
+    // 5. Comparison intents
     for(const [pattern,intent] of INTENT_PATTERNS){
       if(pattern.test(rawQ)&&(intent.startsWith('compare_')||intent==='price_check')){
         const result=handleComparison(intent,normalized);
