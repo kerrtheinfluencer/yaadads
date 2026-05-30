@@ -416,8 +416,13 @@ body.ai-sheet-open #gasBanner {
   padding: 5px 14px; font-size: 12px; font-weight: 600;
   pointer-events: none; white-space: nowrap;
   transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  display: none;
 }
-.ptr-bar.show { transform: translateX(-50%) translateY(0); }
+.ptr-bar.show { transform: translateX(-50%) translateY(0); display: block; }
+/* Force-hide on desktop — override any stuck state */
+@media (min-width: 641px) {
+  .ptr-bar { display: none !important; }
+}
 
 /* ── Sheet drag handle ── */
 .sheet-handle {
