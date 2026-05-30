@@ -2604,6 +2604,21 @@ function galleryNext() {
   const t = document.getElementById('galleryTrack');
   if (t) galleryGoTo(Math.min(t.children.length - 1, Math.round(t.scrollLeft / (t.offsetWidth||1)) + 1));
 }
+function galleryUpdateDots() {
+  const t = document.getElementById('galleryTrack');
+  if (!t) return;
+  const idx = Math.round(t.scrollLeft / (t.offsetWidth || 1));
+  const dots = t.parentElement.querySelectorAll('.gallery-dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+}
+// Sync gallery dots on swipe/scroll
+document.addEventListener('scroll', function(e) {
+  const t = e.target;
+  if (t && t.id === 'galleryTrack') {
+    clearTimeout(t._galleryDotTimer);
+    t._galleryDotTimer = setTimeout(galleryUpdateDots, 50);
+  }
+}, { passive: true });
 
 
 let CU = L.sess;          // current user (from localStorage)
