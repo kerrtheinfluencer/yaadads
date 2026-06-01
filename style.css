@@ -31,12 +31,12 @@
   --mob-nav-h:   68px;
 
   /* ─── LIQUID GLASS ─── */
-  --glass-blur:       12px;
-  --glass-opacity:    0.12;
-  --glass-border:     rgba(255,255,255,0.18);
-  --glass-dark-blur:  16px;
-  --glass-dark-opacity: 0.08;
-  --glass-dark-border: rgba(255,255,255,0.12);
+  --glass-blur:       16px;
+  --glass-opacity:    0.06;
+  --glass-border:     rgba(255,255,255,0.12);
+  --glass-dark-blur:  20px;
+  --glass-dark-opacity: 0.05;
+  --glass-dark-border: rgba(255,255,255,0.08);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -338,16 +338,16 @@ nav {
 }
 .ai-search-bar {
   display: flex; align-items: center; gap: 0;
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 2px solid rgba(255,255,255,.32);
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 2px solid rgba(255,255,255,.24);
   border-radius: 22px;
   padding: 6px 6px 6px 20px;
   box-shadow:
-    0 8px 40px rgba(0,0,0,.25),
-    0 0 0 1px rgba(244,195,0,.22),
-    inset 0 1px 0 rgba(255,255,255,.8);
+    0 8px 40px rgba(0,0,0,.18),
+    0 0 0 1px rgba(244,195,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.6);
   transition: box-shadow .3s, border-color .3s, transform .2s;
   position: relative;
 }
@@ -677,17 +677,17 @@ nav {
   contain: layout;
 }
 .ad-card {
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255,255,255,.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04);
+  box-shadow: 0 4px 20px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
   cursor: pointer;
   transition: transform .28s cubic-bezier(.22,1,.36,1),
               box-shadow .28s ease,
               background .3s;
-  border: 1px solid rgba(255,255,255,.3);
+  border: 1px solid rgba(255,255,255,.22);
   position: relative;
   contain: layout style;
   -webkit-tap-highlight-color: transparent;
@@ -697,9 +697,9 @@ nav {
 }
 .ad-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 48px rgba(0,0,0,.15), 0 4px 12px rgba(0,0,0,.08);
-  border-color: rgba(255,255,255,.5);
-  background: rgba(255,255,255,.95);
+  box-shadow: 0 16px 48px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+  border-color: rgba(255,255,255,.35);
+  background: rgba(255,255,255,.82);
 }
 .ad-card:hover .ad-card-img img { transform: scale(1.04); }
 .ad-card-img img,
@@ -978,10 +978,10 @@ nav {
 }
 .overlay.open { display: flex; }
 .modal {
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255,255,255,.3);
   border-radius: 22px;
   padding: 40px;
   width: 100%;
@@ -993,7 +993,7 @@ nav {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  box-shadow: 0 20px 60px rgba(0,0,0,.25), 0 0 1px rgba(0,0,0,.1);
+  box-shadow: 0 20px 60px rgba(0,0,0,.2), 0 0 1px rgba(0,0,0,.08);
 }
 .modal-wide { max-width: 560px; }
 .modal-full { max-width: 720px; padding: 0; overflow: hidden; border-radius: 22px; max-height: 96dvh; }
