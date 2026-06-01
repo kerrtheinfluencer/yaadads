@@ -181,6 +181,80 @@ nav {
 }
 .nav-actions { display: flex; align-items: center; gap: 10px; }
 
+/* ─── NAV SEARCH BAR (embedded in sticky nav) ─── */
+.nav-search-bar {
+  flex: 0 1 auto;
+  display: none;
+}
+@media (min-width: 768px) {
+  .nav-search-bar { 
+    display: flex !important;
+    align-items: center;
+  }
+}
+.nav-embedded-search {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,.12) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1.5px solid rgba(255,255,255,.18) !important;
+  border-radius: 20px;
+  padding: 6px 6px 6px 14px;
+  height: 40px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.4) !important;
+  transition: all .25s ease;
+}
+.nav-embedded-search:focus-within {
+  background: rgba(255,255,255,.18) !important;
+  border-color: rgba(244,195,0,.4) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2), 0 0 0 3px rgba(244,195,0,.12), inset 0 1px 0 rgba(255,255,255,.5) !important;
+}
+.nav-embedded-search .ai-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+.nav-embedded-search .ai-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255,255,255,.95);
+  font-size: 13px;
+  font-family: var(--font-b);
+  padding: 0;
+  min-width: 0;
+  line-height: 1.4;
+}
+.nav-embedded-search .ai-search-input::placeholder {
+  color: rgba(255,255,255,.35);
+}
+.nav-embedded-search .ai-search-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: rgba(255,255,255,.65);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s;
+  padding: 0;
+}
+.nav-embedded-search .ai-search-btn:hover {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+}
+.nav-embedded-search .ai-search-btn:active {
+  transform: scale(0.92);
+}
+
 /* UNREAD BADGE */
 .badge-wrap { position: relative; display: inline-flex; }
 .unread-badge {
@@ -331,6 +405,11 @@ nav {
 .ai-search-wrap {
   max-width: 680px; margin: 0 auto 18px; position: relative;
   animation: searchDrop .7s cubic-bezier(.34,1.56,.64,1) both;
+}
+@media (min-width: 768px) {
+  .ai-search-wrap { 
+    display: none !important;
+  }
 }
 @keyframes searchDrop {
   from { opacity: 0; transform: translateY(-16px) scale(.97); }

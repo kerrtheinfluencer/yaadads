@@ -799,6 +799,21 @@ nav {
 <!-- ACTIVITY TICKER -->
 <!-- NAV -->
 <nav>
+  <!-- Mobile-hidden search bar in nav -->
+  <div class="nav-search-bar" id="navSearchBar" style="display:none;flex:1;max-width:280px;margin:0 16px;">
+    <div class="ai-search-bar nav-embedded-search">
+      <span class="ai-icon">🤖</span>
+      <input class="ai-search-input" id="navAiInput" type="text"
+        placeholder="Ask AI..."
+        onkeydown="if(event.key==='Enter'){clearTimeout(window._aiDebounce);runAiSearch();}"
+        oninput="clearTimeout(window._aiDebounce);if(this.value.length>4){window._aiDebounce=setTimeout(runAiSearch,700);}"
+        onfocus="if(window.innerWidth<=640){var v=this.value;this.blur();openAiSheet(v);}">
+      <button class="ai-search-btn" id="navAiBtn" onclick="runAiSearch()">
+        <span>🔍</span>
+      </button>
+    </div>
+  </div>
+
   <div class="nav-logo" onclick="goHome()" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" style="height:38px;width:auto;display:block;" aria-label="Yaad Adz">
       <defs>
@@ -2943,7 +2958,20 @@ function subscribeMessages() {
     .subscribe();
 }
 
-function startNavPlaceholderCycle() {} // nav search removed
+function startNavPlaceholderCycle() {
+  // Sync hero and nav search inputs
+  const heroInput = document.getElementById('aiInput');
+  const navInput = document.getElementById('navAiInput');
+  
+  if (heroInput && navInput) {
+    heroInput.addEventListener('input', (e) => {
+      navInput.value = e.target.value;
+    });
+    navInput.addEventListener('input', (e) => {
+      heroInput.value = e.target.value;
+    });
+  }
+}
 
 function updateStats() {
   const el = document.getElementById('sStat');
