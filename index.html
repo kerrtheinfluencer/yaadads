@@ -217,6 +217,74 @@
   @media (max-width: 640px) {
     .nav-hide-mobile { display: none !important; }
   }
+
+  /* ── PREMIUM NAV SEARCH PILL ── */
+  .nav-search-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255,255,255,0.14);
+    border-radius: 28px;
+    padding: 7px 14px 7px 12px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
+    flex: 1;
+    max-width: 380px;
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .nav-search-pill:hover {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(244,195,0,0.5);
+    box-shadow: 0 0 0 3px rgba(244,195,0,0.12), 0 4px 24px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
+  }
+  .nav-search-pill:active {
+    transform: scale(0.97);
+  }
+  .nav-search-icon {
+    font-size: 15px;
+    flex-shrink: 0;
+    animation: navAiPulse 3s ease-in-out infinite;
+  }
+  .nav-search-placeholder {
+    flex: 1;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.2px;
+  }
+  .nav-search-kbd {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    font-family: monospace;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+  /* On mobile, expand the pill to fill available space */
+  @media (max-width: 640px) {
+    .nav-search-pill {
+      max-width: none;
+      padding: 6px 10px;
+    }
+    .nav-search-kbd { display: none; }
+  }
+  @media (max-width: 390px) {
+    .nav-search-pill { padding: 5px 8px; gap: 5px; }
+    .nav-search-placeholder { font-size: 12px; }
+  }
 </style>
 
 <!-- PWA Manifest (inline blob) -->
@@ -2988,11 +3056,16 @@ function fillCatSelect() {
 ═══════════════════════════════════════════════════════════ */
 function renderNav() {
   const el = document.getElementById('navActions');
+  const navSearch = `
+    <div class="nav-search-pill" onclick="handleNavSearch()" id="navSearchPill">
+      <span class="nav-search-icon">🤖</span>
+      <span class="nav-search-placeholder">Search cars, phones, houses…</span>
+      <span class="nav-search-kbd">⌘K</span>
+    </div>`;
   if (CU) {
     const clr = avatarColor(CU.name);
     const ini = initials(CU.name);
-    el.innerHTML = `
-      <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
+    el.innerHTML = navSearch + `
       <div style="position:relative;display:inline-flex" class="nav-hide-mobile">
         <button class="btn btn-outline btn-sm" onclick="goPage('msgs')" style="display:flex;align-items:center;gap:5px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -3008,12 +3081,26 @@ function renderNav() {
       </div>
       <button class="btn btn-outline btn-sm nav-hide-mobile" onclick="doLogout()">Log out</button>`;
   } else {
-    el.innerHTML = `
+    el.innerHTML = navSearch + `
       <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
       <button class="btn btn-gold btn-sm" onclick="openAuth('register')">Join Free</button>`;
   }
   // Update bottom nav account icon with user avatar when logged in
   updateMobAccountIcon();
+}
+
+/* ── Nav search handler ── */
+function handleNavSearch() {
+  if (window.innerWidth <= 640) {
+    openAiSheet();
+  } else {
+    const inp = document.getElementById('aiInput');
+    if (inp) {
+      inp.focus();
+      inp.select();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
