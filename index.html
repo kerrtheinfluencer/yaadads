@@ -1027,7 +1027,8 @@ nav {
     Messages
   </button>
   <button class="mob-nav-item" id="mnAccount" onclick="handleAccountTab()">
-    <span class="mob-nav-icon">👤</span>Account
+    <span class="mob-nav-icon" id="mobAccountIcon">👤</span>
+    <span id="mobAccountLabel">Account</span>
   </button>
 </div>
 
@@ -2983,7 +2984,7 @@ function fillCatSelect() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   NAV
+   NAV + MOBILE BOTTOM NAV
 ═══════════════════════════════════════════════════════════ */
 function renderNav() {
   const el = document.getElementById('navActions');
@@ -2999,7 +3000,7 @@ function renderNav() {
         </button>
         <span id="navMsgBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e53e3e;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;padding:0 3px;pointer-events:none"></span>
       </div>
-      <div class="badge-wrap">
+      <div class="badge-wrap nav-hide-mobile">
         <div class="user-pill" onclick="goPage('myads')">
           <div class="u-avatar" style="background:${clr.bg};color:${clr.fg}">${ini}</div>
           <span class="nav-hide-mobile">${CU.name.split(' ')[0]}</span>
@@ -3010,6 +3011,25 @@ function renderNav() {
     el.innerHTML = `
       <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
       <button class="btn btn-gold btn-sm" onclick="openAuth('register')">Join Free</button>`;
+  }
+  // Update bottom nav account icon with user avatar when logged in
+  updateMobAccountIcon();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE BOTTOM NAV — Account icon
+═══════════════════════════════════════════════════════════ */
+function updateMobAccountIcon() {
+  const icon = document.getElementById('mobAccountIcon');
+  if (!icon) return;
+  if (CU) {
+    const clr = avatarColor(CU.name);
+    const ini = initials(CU.name);
+    icon.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:' + clr.bg + ';color:' + clr.fg + ';font-size:10px;font-weight:800;line-height:1';
+    icon.textContent = ini;
+  } else {
+    icon.style.cssText = '';
+    icon.textContent = '👤';
   }
 }
 
