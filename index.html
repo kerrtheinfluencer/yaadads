@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en-JM" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
@@ -261,6 +261,33 @@
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: 0.2px;
+  }
+  /* Real search input — blends with the existing glass pill */
+  .nav-search-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font: 400 13px Outfit, -apple-system, sans-serif;
+    padding: 0;
+    letter-spacing: 0.2px;
+  }
+  .nav-search-input::placeholder {
+    color: rgba(255,255,255,0.45);
+  }
+  .nav-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+  /* Focus ring for the whole pill on input focus */
+  .nav-search-pill:has(.nav-search-input:focus),
+  .nav-search-pill.has-focus {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(244,195,0,0.6);
+    box-shadow: 0 0 0 3px rgba(244,195,0,0.14), 0 4px 24px rgba(0,0,0,0.25);
+  }
+  .nav-search-pill:has(.nav-search-input:focus) .nav-search-icon,
+  .nav-search-pill.has-focus .nav-search-icon {
+    animation: none;
   }
   .nav-search-kbd {
     background: rgba(255,255,255,0.1);
@@ -913,22 +940,9 @@ nav {
     <div class="hero-content">
       <div class="hero-eyebrow">✨ Powered by AI · Jamaica's Free Marketplace</div>
       <h1>Find <em>Anything</em><br>in Jamaica</h1>
-      <p class="hero-sub">Ask in plain English — our AI finds exactly what you need, or answers any question about the site.</p>
+      <p class="hero-sub">Browse free classifieds across all 14 parishes. Use the search bar above to find exactly what you need, or tap a suggestion to ask our AI.</p>
 
-      <!-- AI Search Bar -->
-      <div class="ai-search-wrap">
-        <div class="ai-search-bar">
-          <span class="ai-icon">🤖</span>
-          <input class="ai-search-input" id="aiInput" type="text"
-            placeholder="e.g. cheap phone under 80k in Kingston, or house under 15 million…"
-            onkeydown="if(event.key==='Enter'){clearTimeout(window._aiDebounce);runAiSearch();}"
-            oninput="clearTimeout(window._aiDebounce);if(this.value.length>4){window._aiDebounce=setTimeout(runAiSearch,700);}"
-            onfocus="if(window.innerWidth<=640){var v=this.value;this.blur();openAiSheet(v);}">
-          <button class="ai-search-btn" id="aiBtn" onclick="runAiSearch()">
-            <span id="aiBtnLabel">Ask AI</span>
-          </button>
-        </div>
-      </div>
+
 
       <!-- Reset button (shown after search) -->
       <button class="hero-reset" onclick="resetHeroSearch()">← Back to all listings</button>
@@ -3057,11 +3071,17 @@ function fillCatSelect() {
 function renderNav() {
   const el = document.getElementById('navActions');
   const navSearch = `
-    <div class="nav-search-pill" onclick="handleNavSearch()" id="navSearchPill">
-      <span class="nav-search-icon">🤖</span>
-      <span class="nav-search-placeholder">Search cars, phones, houses…</span>
-      <span class="nav-search-kbd">⌘K</span>
-    </div>`;
+    <form class="nav-search-pill" id="navSearchPill" role="search" autocomplete="off" onsubmit="handleNavSearch(event)">
+      <span class="nav-search-icon" aria-hidden="true">🔍</span>
+      <input class="nav-search-input" id="navSearchInput" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search cars, phones, houses…"
+             aria-label="Search Yaad Adz listings"
+             oninput="navSearchPlaceholderSync()"
+             onfocus="this.parentElement.classList.add('has-focus')"
+             onblur="this.parentElement.classList.remove('has-focus')">
+      <span class="nav-search-placeholder" id="navSearchPlaceholder">Search cars, phones, houses…</span>
+      <span class="nav-search-kbd" id="navSearchKbd">⌘K</span>
+    </form>`;
   if (CU) {
     const clr = avatarColor(CU.name);
     const ini = initials(CU.name);
@@ -3089,18 +3109,37 @@ function renderNav() {
   updateMobAccountIcon();
 }
 
-/* ── Nav search handler ── */
-function handleNavSearch() {
-  if (window.innerWidth <= 640) {
-    openAiSheet();
-  } else {
-    const inp = document.getElementById('aiInput');
-    if (inp) {
-      inp.focus();
-      inp.select();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
+/* ── Nav search handler — performs a normal listings search, not AI chat ── */
+function handleNavSearch(ev) {
+  if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+  const inp = document.getElementById('navSearchInput');
+  const q = (inp && inp.value || '').trim();
+  if (!q) { if (inp) inp.focus(); return; }
+  searchQ = q;
+  if (activeF !== 'all') activeF = 'all';
+  window._aiFilters = null;
+  hideAiResponse();
+  const heroEl = document.querySelector('.hero');
+  if (heroEl) heroEl.classList.remove('searched');
+  const aiInp = document.getElementById('aiInput');
+  if (aiInp) aiInp.value = q;
+  if (inp) inp.blur();
+  renderCats(); renderHome();
+  setTimeout(function(){
+    const grid = document.getElementById('homeGrid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+/* Sync the decorative placeholder span to the input's actual state. */
+function navSearchPlaceholderSync() {
+  const inp = document.getElementById('navSearchInput');
+  const ph  = document.getElementById('navSearchPlaceholder');
+  const kbd = document.getElementById('navSearchKbd');
+  if (!inp || !ph) return;
+  const hasValue = (inp.value || '').length > 0;
+  ph.style.opacity = hasValue ? '0' : '';
+  if (kbd) kbd.style.opacity = hasValue ? '0' : '';
 }
 
 /* ═══════════════════════════════════════════════════════════
