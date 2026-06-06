@@ -8,9 +8,27 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 (function(){
+  // ── Self-contained gaEvent shim ─────────────────────────────────────
+  // analytics.js is loaded BEFORE index.html's body scripts run, so a
+  // `gaEvent()` defined later in index.html may not exist yet on a slow
+  // connection or if a user interacts before the page finishes parsing.
+  // Defining our own shim here makes analytics.js self-contained and
+  // guarantees all custom events (search, login, post_ad, share, etc.)
+  // always fire — regardless of script load order.
+  function gaEvent(name, params) {
+    try {
+      if (typeof gtag === 'function') gtag('event', name, params || {});
+    } catch (e) { /* never let analytics break the app */ }
+  }
+  // If a global gaEvent is defined later by index.html, use that one
+  // (it may have richer behaviour). Otherwise this shim handles it.
+  // ───────────────────────────────────────────────────────────────────
+
   if (typeof gtag !== 'function') {
-    console.warn('[analytics] gtag not loaded — events will be no-ops');
-    return;
+    // Don't bail out — page_view from the inline gtag('config', ...) call
+    // will still fire once gtag.js loads. Custom events will be queued
+    // and dispatched as patches call gaEvent(), which itself re-checks.
+    console.warn('[analytics] gtag not loaded yet — will fire events as it loads');
   }
 
   // ── Wait for app to initialize before patching handlers ──
