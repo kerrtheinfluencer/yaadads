@@ -837,6 +837,11 @@ nav {
 /* ── Ad price on cards ── */
 .ad-price { font-size:18px !important; font-weight:800 !important; color:#00703f !important; line-height:1.1 !important; }
 
+/* ── Seller row on cards ── */
+.ad-seller-row { display:flex; align-items:center; gap:8px; margin-top:6px; margin-bottom:2px; }
+.ad-seller-avatar { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; font-family:var(--font-d); }
+.ad-seller-name { font-size:12px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
 /* ── Ad views always visible ── */
 .ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.88 !important; font-size:12px !important; font-weight:500 !important; }
 
@@ -907,8 +912,11 @@ nav {
 </style>
 <body>
 
+<!-- SKIP TO MAIN CONTENT — accessibility for keyboard / screen-reader users -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <!-- BACK TO TOP FAB -->
-<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top" title="Back to top">↑</button>
 
 <!-- LIVE BANNER (hidden — shown only on error) -->
 <div class="setup-banner" id="setupBanner" style="display:none">
@@ -958,7 +966,7 @@ nav {
 </nav>
 
 <!-- ─── HOME PAGE ─── -->
-<div id="page-home" class="page active">
+<div id="page-home" class="page active" role="main" aria-label="Browse listings">
   <!-- HERO with AI search -->
   <div class="hero">
     <div class="hero-content">
@@ -1557,7 +1565,7 @@ nav {
 </div>
 
 <!-- FLOATING AI CHAT (desktop) -->
-<button class="ai-fab" id="aiFab" onclick="toggleFloatChat()">🤖</button>
+<button class="ai-fab" id="aiFab" onclick="toggleFloatChat()" aria-label="Open AI assistant" title="Ask the AI assistant">🤖</button>
 <div class="ai-float-chat" id="aiFloatChat">
   <div class="ai-float-header">
     <span class="ai-float-header-icon">🤖</span>
@@ -1583,11 +1591,11 @@ nav {
 </div>
 
 <!-- FULLSCREEN LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
-  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <button class="lightbox-nav lightbox-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" onclick="if(event.target===this)closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()" aria-label="Close photo viewer">✕</button>
+  <button class="lightbox-nav lightbox-prev" id="lbPrev" onclick="lbNav(-1)" aria-label="Previous photo">‹</button>
   <img class="lightbox-img" id="lbImg" src="" alt="">
-  <button class="lightbox-nav lightbox-next" id="lbNext" onclick="lbNav(1)">›</button>
+  <button class="lightbox-nav lightbox-next" id="lbNext" onclick="lbNav(1)" aria-label="Next photo">›</button>
   <div class="lightbox-dots" id="lbDots"></div>
   <div class="lightbox-counter" id="lbCounter"></div>
 </div>
@@ -3345,6 +3353,10 @@ function cardHTML(ad, idx) {
     <div class="ad-card-body">
       <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
       <div class="ad-title">${ad.title}</div>
+      <div class="ad-seller-row">
+        <div class="ad-seller-avatar" style="background:${avatarColor(ad.seller).bg};color:${avatarColor(ad.seller).fg}">${ad.sellerInit || '?'}</div>
+        <span class="ad-seller-name">${escHtml(ad.seller || 'Anonymous')}</span>
+      </div>
       <div class="ad-meta">
         <span>📍 ${ad.parish}</span>
         <span>${ago(ad.date)}</span>
