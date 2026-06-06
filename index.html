@@ -253,7 +253,13 @@
     animation: navAiPulse 3s ease-in-out infinite;
   }
   .nav-search-placeholder {
-    flex: 1;
+    position: absolute;
+    left: 32px;
+    right: 60px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
     font-size: 13px;
     color: rgba(255,255,255,0.55);
     font-weight: 400;
@@ -262,14 +268,6 @@
     text-overflow: ellipsis;
     letter-spacing: 0.2px;
     pointer-events: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    padding-left: 32px;
   }
   .nav-search-pill:focus-within .nav-search-placeholder {
     display: none;
@@ -361,6 +359,15 @@ if ('serviceWorker' in navigator) {
 
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9656521698490533" crossorigin="anonymous"></script>
+
+<!-- ═══════════════════════════════════════════
+     YAAD ADZ — Custom GA4 event tracking
+     Patches existing app functions to fire
+     search / login / sign_up / post_ad /
+     add_to_wishlist / share / select_item /
+     filter_category / open_ai_sheet events.
+     ═══════════════════════════════════════════ -->
+<script src="/analytics.js"></script>
 
 <!-- ═══════════════════════════════════════════
      PERFORMANCE HINTS
@@ -3091,7 +3098,6 @@ function renderNav() {
     <form class="nav-search-pill" id="navSearchPill" role="search" autocomplete="off" onsubmit="handleNavSearch(event)">
       <span class="nav-search-icon" aria-hidden="true">🔍</span>
       <input class="nav-search-input" id="navSearchInput" type="search" autocomplete="off" spellcheck="false"
-             placeholder="Search cars, phones, houses…"
              aria-label="Search Yaad Adz listings"
              oninput="navSearchPlaceholderSync()"
              onfocus="this.parentElement.classList.add('has-focus')"
