@@ -1051,11 +1051,10 @@ ${similarHTML}
   <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
   <p>Jamaica's free classifieds marketplace</p>
   <div style="margin-top:10px">
-    <a href="${BASE_URL}">Home</a>
-    <a href="${BASE_URL}/">All Listings</a>
-    <a href="${BASE_URL}/sitemap.html">Browse Index</a>
-    <a href="${BASE_URL}/sitemap.html">All Listings</a>
-    <a href="${BASE_URL}/gas-prices">Gas Prices</a>
+    <a href="https://yaadadz.com">Home</a>
+    <a href="https://yaadadz.com/">All Listings</a>
+    <a href="https://yaadadz.com/sitemap.html">Browse Index</a>
+    <a href="https://yaadadz.com/gas-prices">Gas Prices</a>
   </div>
   <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
