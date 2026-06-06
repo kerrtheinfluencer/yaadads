@@ -261,6 +261,21 @@
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: 0.2px;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding-left: 32px;
+  }
+  .nav-search-pill:focus-within .nav-search-placeholder {
+    display: none;
+  }
+  .nav-search-pill.has-text .nav-search-placeholder {
+    display: none;
   }
   /* Real search input — blends with the existing glass pill */
   .nav-search-input {
@@ -291,6 +306,8 @@
   }
   .nav-search-kbd {
     background: rgba(255,255,255,0.1);
+    position: relative;
+    z-index: 1;
     border: 1px solid rgba(255,255,255,0.18);
     border-radius: 5px;
     padding: 2px 7px;
@@ -3136,10 +3153,12 @@ function navSearchPlaceholderSync() {
   const inp = document.getElementById('navSearchInput');
   const ph  = document.getElementById('navSearchPlaceholder');
   const kbd = document.getElementById('navSearchKbd');
+  const pill = document.getElementById('navSearchPill');
   if (!inp || !ph) return;
   const hasValue = (inp.value || '').length > 0;
   ph.style.opacity = hasValue ? '0' : '';
   if (kbd) kbd.style.opacity = hasValue ? '0' : '';
+  if (pill) pill.classList.toggle('has-text', hasValue);
 }
 
 /* ═══════════════════════════════════════════════════════════
