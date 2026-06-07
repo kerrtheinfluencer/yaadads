@@ -1679,7 +1679,11 @@ const DEMO = [
 /* ═══════════════════════════════════════════════════════════
    SUPABASE CLIENT
 ═══════════════════════════════════════════════════════════ */
-const _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
+// Wrapped in try/catch so a failure (e.g. ad-blocker strips supabase global)
+// does not break the entire page.
+let _db = null;
+try { _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key); }
+catch (e) { console.error("[Yaad Adz] supabase.createClient FAILED:", e); }
 
 /* ═══════════════════════════════════════════════════════════
    IN-MEMORY CACHE (populated on init, kept in sync)
@@ -1714,14 +1718,26 @@ async function loadAds() {
 
   let data, error;
   try {
+    // ── Guard: if Supabase JS failed to load (CDN issue, ad-blocker, network)
+    // then `_db` is undefined and `.from()` would throw a TypeError.
+    if (typeof _db === 'undefined') {
+      const msg = (typeof supabase === 'undefined')
+        ? 'Supabase JS library did not load. Check the <script> tag for the CDN (cdn.jsdelivr.net) — it may be blocked, the URL is wrong, or the network is offline.'
+        : '_db is undefined but supabase exists. Client creation failed — check CFG.supabase.url / key.';
+      throw new Error(msg);
+    }
     const result = await _db.from('ads')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(500);
     data = result.data; error = result.error;
   } catch (e) {
-    console.error('[loadAds] Supabase threw:', e);
-    _yaadLastLoad = { ok: false, reason: 'exception', count: _ads.length, fromDb: false, message: String(e && e.message || e) };
+    console.error("[loadAds] Supabase threw:", e);
+    // Build a more useful message — distinguish "JS didn't load" from "API error"
+    let errMsg = String(e && e.message || e);
+    if (typeof _db === 'undefined') errMsg = 'Supabase client not initialized (CDN script likely blocked or 404). Check browser network tab for the @supabase/supabase-js CDN request.';
+    else if (String(errMsg).indexOf("TypeError: load fail") !== -1) errMsg = "Supabase call threw — likely a network error, CORS issue, or invalid anon key. Open browser DevTools → Network tab to inspect the /rest/v1/ads request.";
+    _yaadLastLoad = { ok: false, reason: 'exception', count: _ads.length, fromDb: false, message: errMsg };
     if (!_ads.length) _ads = DEMO;
     return;
   }
