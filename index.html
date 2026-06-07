@@ -1686,6 +1686,7 @@ const _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key);
 ═══════════════════════════════════════════════════════════ */
 let _ads  = [];        // live ads cache from Supabase
 let _msgs = {};        // messages cache (keyed by conversation)
+let _yaadLastLoad = null; // { ok: bool, reason: string, count: number, fromDb: bool, message: string }
 
 /* ═══════════════════════════════════════════════════════════
    LOCAL-ONLY STORAGE (preferences, session, favourites)
@@ -1708,19 +1709,46 @@ const L = {
 
 // Load all active ads into cache
 async function loadAds() {
-  const { data, error } = await _db.from('ads')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(200);
-  if (error) { console.error('loadAds:', error); _ads = DEMO; return; }
-  const prevIds = new Set();
+  // ── Capture OLD ids BEFORE we replace _ads (so we can detect new arrivals) ──
+  const prevIds = new Set(_ads.map(a => a.id));
+
+  let data, error;
+  try {
+    const result = await _db.from('ads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    data = result.data; error = result.error;
+  } catch (e) {
+    console.error('[loadAds] Supabase threw:', e);
+    _yaadLastLoad = { ok: false, reason: 'exception', count: _ads.length, fromDb: false, message: String(e && e.message || e) };
+    if (!_ads.length) _ads = DEMO;
+    return;
+  }
+
+  if (error) {
+    console.error('[loadAds] Supabase error:', error);
+    // Don't silently overwrite real listings with DEMO — preserve whatever
+    // the realtime channel has already pushed in. Only fall back to DEMO
+    // on the very first load (when _ads is still empty).
+    if (!_ads.length) _ads = DEMO;
+    _yaadLastLoad = { ok: false, reason: 'supabase_error', count: _ads.length, fromDb: false, message: String(error.message || error) };
+    return;
+  }
+
   if (!data || !Array.isArray(data) || data.length === 0) {
-    _ads = DEMO;
+    // Genuine empty result — keep realtime-pushed ads if any, otherwise
+    // fall back to DEMO so the page never appears broken
+    console.warn('[loadAds] Supabase returned no ads (table empty or RLS blocking)');
+    if (!_ads.length) _ads = DEMO;
+    _yaadLastLoad = { ok: true, count: _ads.length, fromDb: false };
   } else {
     _ads = data.map(dbToAd);
+    _yaadLastLoad = { ok: true, count: _ads.length, fromDb: true };
+    console.info('[loadAds] Loaded ' + _ads.length + ' ads from Supabase');
   }
-  _ads.forEach(a => prevIds.add(a.id));
-  // Check saved search alerts for any newly added listings
+
+  // ── Detect newly added listings (in current _ads but NOT in prevIds) ──
   const newAds = _ads.filter(a => !prevIds.has(a.id));
   if (newAds.length && prevIds.size > 0) {
     setTimeout(function() { checkSavedSearchAlerts(newAds); }, 1500);
@@ -2951,6 +2979,25 @@ async function init() {
       const banner = document.getElementById('setupBanner');
       if (banner) { banner.style.display = 'block'; }
     }
+  }
+
+  // ── DIAGNOSTIC: surface load status to the user ──
+  // If the previous "fix" silently fell back to DEMO ads, the user thought
+  // their real ads were broken. Now we tell them what actually happened.
+  if (_yaadLastLoad && !_yaadLastLoad.ok) {
+    const banner = document.getElementById('setupBanner');
+    if (banner) {
+      let msg = '⚠️ <strong>Connection issue</strong> — Showing demo listings. Your real ads are safe. ';
+      if (_yaadLastLoad.reason === 'supabase_error') msg += 'Supabase error: ' + (_yaadLastLoad.message || 'unknown');
+      else if (_yaadLastLoad.reason === 'exception') msg += 'Error: ' + (_yaadLastLoad.message || 'unknown');
+      banner.innerHTML = msg;
+      banner.style.display = 'block';
+    }
+    console.warn('[Yaad Adz] Loaded from DEMO fallback — DB not connected:', _yaadLastLoad);
+  } else if (_yaadLastLoad && _yaadLastLoad.fromDb === false && _yaadLastLoad.count > 0) {
+    console.warn('[Yaad Adz] Supabase returned 0 ads — using DEMO fallback. Check that your ads table has rows and the RLS policy allows public reads.');
+  } else if (_yaadLastLoad && _yaadLastLoad.fromDb) {
+    console.info('[Yaad Adz] Loaded ' + _yaadLastLoad.count + ' ads from Supabase ✓');
   }
 
   renderCats();
