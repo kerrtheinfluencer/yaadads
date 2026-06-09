@@ -3133,16 +3133,21 @@ function cardHTML(ad, idx) {
     ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
-  // ── Seller chip ──
+  // ── iOS 27-style seller row ──
   const sellerName  = ad.seller || 'Seller';
   const sellerInit  = ad.sellerInit || initials(sellerName);
   const sellerClr   = avatarColor(sellerName);
-  const sellerFirst = sellerName.split(' ')[0];
-  const sellerChip  = ad.sellerId
-    ? `<button class="ad-seller-chip" onclick="event.stopPropagation();openProfile('${ad.sellerId}')" aria-label="View ${escHtml(sellerName)}'s profile">
-        <span class="ad-seller-avatar" style="background:${sellerClr.bg};color:${sellerClr.fg}">${escHtml(sellerInit)}</span>
-        <span class="ad-seller-name">${escHtml(sellerFirst)}</span>
-       </button>`
+  const sellerRow   = ad.sellerId
+    ? `<div class="ad-seller-row">
+        <a class="ad-seller-row-link" onclick="event.stopPropagation();openProfile('${ad.sellerId}')" aria-label="View ${escHtml(sellerName)}'s profile">
+          <span class="ad-seller-avatar" style="background:${sellerClr.bg};color:${sellerClr.fg}">${escHtml(sellerInit)}</span>
+          <div class="ad-seller-info">
+            <span class="ad-seller-name">${escHtml(sellerName)}</span>
+            <span class="ad-seller-sub">Member</span>
+          </div>
+        </a>
+        <span class="ad-seller-verified" title="Verified seller">✓</span>
+       </div>`
     : '';
 
   return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
@@ -3157,7 +3162,7 @@ function cardHTML(ad, idx) {
         <span>${ago(ad.date)}</span>
         <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
       </div>
-      ${sellerChip}
+      ${sellerRow}
     </div>
   </div>`;
 }

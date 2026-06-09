@@ -827,30 +827,111 @@ nav {
 }
 
 /* ── Card body — refined spacing ── */
-.ad-card-body { padding: 14px 16px 16px; }
+.ad-card-body { padding: 12px 14px 14px; }
 .ad-price {
-  font-family: var(--font-d); font-size: 20px; font-weight: 700;
-  color: var(--green); margin-bottom: 3px; line-height: 1.2;
+  font-family: var(--font-d); font-size: 20px; font-weight: 800;
+  color: var(--green); margin-bottom: 2px; line-height: 1.15;
+  letter-spacing: -0.3px;
 }
 .ad-price.negotiable::after {
-  content: ' · neg.'; font-size: 11px; font-weight: 500;
+  content: ' · neg.'; font-size: 10px; font-weight: 500;
   color: var(--text-3); font-family: var(--font-b);
 }
 .ad-title {
-  font-weight: 600; font-size: 13.5px; color: var(--text-1);
-  margin-bottom: 8px;
+  font-weight: 600; font-size: 13px; color: var(--text-1);
+  margin-bottom: 6px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.3;
 }
 .ad-meta {
-  display: flex; gap: 10px; font-size: 11.5px; color: var(--text-3);
+  display: flex; gap: 8px; font-size: 11px; color: var(--text-3);
   align-items: center; flex-wrap: wrap;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 .ad-views {
   display: inline-flex; align-items: center; gap: 3px;
   margin-left: auto; font-size: 11px; color: var(--text-3);
 }
 .ad-views svg { width: 11px; height: 11px; opacity: .45; }
+
+/* ── iOS 27-style seller row on ad cards ── */
+.ad-seller-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0 0;
+  min-height: 32px;
+}
+.ad-seller-row-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  min-width: 0;
+  flex: 1;
+}
+.ad-seller-row-link:hover { opacity: 0.75; }
+.ad-seller-row-link:active { opacity: 0.6; }
+.ad-seller-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  font-family: var(--font-b);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.ad-seller-row-link:active .ad-seller-avatar {
+  transform: scale(0.92);
+}
+.ad-seller-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.ad-seller-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ad-seller-sub {
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.2;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ad-seller-verified {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1db954;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  box-shadow: 0 1px 6px rgba(29,185,84,0.25);
+  margin-left: auto;
+  flex-shrink: 0;
+}
 
 /* ═══════════════════════════════════════════════════════════
    FILTERS BAR
