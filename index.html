@@ -3113,6 +3113,55 @@ function updateStats() {
   } catch(e) {}
 })();
 
+function cardHTML(ad, idx) {
+  const cat   = CATS.find(c => c.id === ad.category);
+  const catColor = cat?.color || '#f5f5f5';
+  const img   = ad.image
+    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
+    : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
+  const fav   = isFav(ad.id) ? '❤️' : '🤍';
+  const tag   = ad.status === 'sold'
+    ? `<span class="sold-tag">Sold</span>`
+    : `<span class="ad-cat-tag">${cat?.name||'Other'}</span>`;
+  const views = getViews(ad.id);
+  const trending = views >= 80 && ad.status !== 'sold'
+    ? `<span class="trending-badge">Trending</span>` : '';
+  const ageDays = (Date.now() - new Date(ad.date||0)) / 86400000;
+  const freshBadge = ageDays < 2 && ad.status !== 'sold'
+    ? `<span class="fresh-badge">New</span>` : '';
+  const photoCount = (ad.photos && ad.photos.length > 1)
+    ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
+  const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+  // ── Seller chip ──
+  const sellerName  = ad.seller || 'Seller';
+  const sellerInit  = ad.sellerInit || initials(sellerName);
+  const sellerClr   = avatarColor(sellerName);
+  const sellerFirst = sellerName.split(' ')[0];
+  const sellerChip  = ad.sellerId
+    ? `<button class="ad-seller-chip" onclick="event.stopPropagation();openProfile('${ad.sellerId}')" aria-label="View ${escHtml(sellerName)}'s profile">
+        <span class="ad-seller-avatar" style="background:${sellerClr.bg};color:${sellerClr.fg}">${escHtml(sellerInit)}</span>
+        <span class="ad-seller-name">${escHtml(sellerFirst)}</span>
+       </button>`
+    : '';
+
+  return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
+    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
+      <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
+    </div>
+    <div class="ad-card-body">
+      <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
+      <div class="ad-title">${ad.title}</div>
+      <div class="ad-meta">
+        <span>📍 ${ad.parish}</span>
+        <span>${ago(ad.date)}</span>
+        <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
+      </div>
+      ${sellerChip}
+    </div>
+  </div>`;
+}
+
 function fillParishSelects() {
   const opts = PARISHES.map(p => `<option>${p}</option>`).join('');
   ['rParish','aParish'].forEach(id => {
@@ -3354,40 +3403,7 @@ function getViews(id) {
   return ad ? (ad.views || 0) : 0;
 }
 
-function cardHTML(ad, idx) {
-  const cat   = CATS.find(c => c.id === ad.category);
-  const catColor = cat?.color || '#f5f5f5';
-  const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
-    : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
-  const fav   = isFav(ad.id) ? '❤️' : '🤍';
-  const tag   = ad.status === 'sold'
-    ? `<span class="sold-tag">Sold</span>`
-    : `<span class="ad-cat-tag">${cat?.name||'Other'}</span>`;
-  const views = getViews(ad.id);
-  const trending = views >= 80 && ad.status !== 'sold'
-    ? `<span class="trending-badge">Trending</span>` : '';
-  const ageDays = (Date.now() - new Date(ad.date||0)) / 86400000;
-  const freshBadge = ageDays < 2 && ad.status !== 'sold'
-    ? `<span class="fresh-badge">New</span>` : '';
-  const photoCount = (ad.photos && ad.photos.length > 1)
-    ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
-  const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  return `<div class="ad-card ${ad.status==='sold'?'sold':''}" onclick="openDetail('${ad.id}')">
-    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
-      <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
-    </div>
-    <div class="ad-card-body">
-      <div class="ad-price${ad.neg?' negotiable':''}">J$${fmtN(ad.price)}</div>
-      <div class="ad-title">${ad.title}</div>
-      <div class="ad-meta">
-        <span>📍 ${ad.parish}</span>
-        <span>${ago(ad.date)}</span>
-        <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
-      </div>
-    </div>
-  </div>`;
-}
+
 
 function emptyEl(msg, action='') {
   return `<div class="empty" style="grid-column:1/-1">
