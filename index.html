@@ -178,134 +178,7 @@
 
 <!-- Inline SVG splash fallback — used when PNG splash files aren't present yet.
      iOS will show this as a solid dark green screen with the logo centred. -->
-<style>
-  /* Safe area insets — critical for iPhone notch / Dynamic Island */
-  :root {
-    --sat: env(safe-area-inset-top,    0px);
-    --sar: env(safe-area-inset-right,  0px);
-    --sab: env(safe-area-inset-bottom, 0px);
-    --sal: env(safe-area-inset-left,   0px);
-  }
-  /* PWA standalone mode — fix nav and bottom bar for iPhone notch / home indicator */
-  /* Applied only when body.pwa-mode is set by JS — never bleeds into browser view */
-  body.pwa-mode nav {
-    height: calc(56px + env(safe-area-inset-top, 0px)) !important;
-    padding-top: env(safe-area-inset-top, 0px) !important;
-    padding-left: max(24px, env(safe-area-inset-left, 24px)) !important;
-    padding-right: max(24px, env(safe-area-inset-right, 24px)) !important;
-  }
-  body.pwa-mode .mob-nav {
-    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-  }
-  body.pwa-mode { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
-  /* Nav actions — prevent overflow on narrow screens regardless of mode */
-  .nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 1;
-    min-width: 0;
-    overflow: hidden;
-  }
-  /* Shrink nav buttons slightly on very small screens */
-  @media (max-width: 390px) {
-    .nav-actions .btn { font-size: 12px !important; padding: 6px 10px !important; }
-    .nav-actions .user-pill { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  }
-  /* On mobile, hide nav items that are already in the bottom nav */
-  @media (max-width: 640px) {
-    .nav-hide-mobile { display: none !important; }
-  }
 
-  /* ── PREMIUM NAV SEARCH PILL ── */
-  .nav-search-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1.5px solid rgba(255,255,255,0.14);
-    border-radius: 28px;
-    padding: 7px 14px 7px 12px;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
-    flex: 1;
-    max-width: 380px;
-    min-width: 0;
-    position: relative;
-    overflow: hidden;
-    user-select: none;
-  }
-  .nav-search-pill:hover {
-    background: rgba(255,255,255,0.14);
-    border-color: rgba(244,195,0,0.5);
-    box-shadow: 0 0 0 3px rgba(244,195,0,0.12), 0 4px 24px rgba(0,0,0,0.2);
-    transform: translateY(-1px);
-  }
-  .nav-search-pill:active {
-    transform: scale(0.97);
-  }
-  .nav-search-icon {
-    font-size: 15px;
-    flex-shrink: 0;
-    animation: navAiPulse 3s ease-in-out infinite;
-  }
-
-  /* Real search input — blends with the existing glass pill */
-  .nav-search-input {
-    flex: 1;
-    min-width: 0;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #fff;
-    font: 400 13px Outfit, -apple-system, sans-serif;
-    padding: 0;
-    letter-spacing: 0.2px;
-  }
-  .nav-search-input::placeholder {
-    color: rgba(255,255,255,0.45);
-  }
-  .nav-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
-  /* Focus ring for the whole pill on input focus */
-  .nav-search-pill:has(.nav-search-input:focus),
-  .nav-search-pill.has-focus {
-    background: rgba(255,255,255,0.14);
-    border-color: rgba(244,195,0,0.6);
-    box-shadow: 0 0 0 3px rgba(244,195,0,0.14), 0 4px 24px rgba(0,0,0,0.25);
-  }
-  .nav-search-pill:has(.nav-search-input:focus) .nav-search-icon,
-  .nav-search-pill.has-focus .nav-search-icon {
-    animation: none;
-  }
-  .nav-search-kbd {
-    background: rgba(255,255,255,0.1);
-    position: relative;
-    z-index: 1;
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 5px;
-    padding: 2px 7px;
-    font-size: 10px;
-    color: rgba(255,255,255,0.4);
-    font-family: monospace;
-    flex-shrink: 0;
-    line-height: 1.4;
-  }
-  /* On mobile, expand the pill to fill available space */
-  @media (max-width: 640px) {
-    .nav-search-pill {
-      max-width: none;
-      padding: 6px 10px;
-    }
-    .nav-search-kbd { display: none; }
-  }
-  @media (max-width: 390px) {
-    .nav-search-pill { padding: 5px 8px; gap: 5px; }
-
-  }
-</style>
 
 <!-- PWA Manifest (inline blob) -->
 <script>
@@ -348,532 +221,10 @@ if ('serviceWorker' in navigator) {
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
-<style>
-/* ── AI chat panels: force-hide on load ── */
-#aiFloatChat        { display:none !important; }
-#aiFloatChat.open   { display:flex !important; }
-#aiSheet            { display:none !important; }
-#aiSheet.open       { display:flex !important; }
-#aiSheetOverlay     { display:none; }
-#aiSheetOverlay.open{ display:block; }
-
-/* ── Hide desktop AI FAB on mobile (bottom sheet handles it instead) ── */
-@media (max-width: 640px) {
-  #aiFab { display:none !important; }
-}
-
-/* ── GAS PRICE FLOATING BANNER ── */
-#gasBanner {
-  position: fixed;
-  /* On mobile: sit just above mob-nav with safe gap, on left so it doesn't block message/account tabs */
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 8px);
-  left: 12px;
-  right: auto;
-  z-index: 250; /* above scroll content, below modals (300) */
-  background: linear-gradient(135deg, #0e1f16 0%, #142a1c 100%);
-  border: 1px solid rgba(0,200,83,0.35);
-  border-radius: 14px;
-  padding: 9px 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,200,83,0.1);
-  cursor: pointer;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  max-width: 180px;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  backdrop-filter: blur(12px);
-  -webkit-tap-highlight-color: transparent;
-  animation: bannerSlide 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-  animation-delay: 1.8s;
-}
-/* Hide banner when AI sheet is open — never cover the chat */
-body.ai-sheet-open #gasBanner {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(16px);
-}
-@keyframes bannerSlide {
-  from { transform: translateX(120px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
-}
-#gasBanner:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,200,83,0.25); }
-#gasBanner:active { transform: scale(0.97); }
-.gas-banner-icon {
-  font-size: 22px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.gas-banner-body { min-width: 0; }
-.gas-banner-label {
-  font-size: 9px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: rgba(0,200,83,0.7);
-  font-weight: 600;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-.gas-banner-price {
-  font-family: 'Fraunces', serif;
-  font-size: 18px;
-  font-weight: 800;
-  color: #1db954;
-  line-height: 1;
-  white-space: nowrap;
-}
-.gas-banner-sub {
-  font-size: 9px;
-  color: rgba(255,255,255,0.35);
-  margin-top: 1px;
-  white-space: nowrap;
-}
-.gas-banner-arrow {
-  font-size: 12px;
-  color: rgba(0,200,83,0.5);
-  flex-shrink: 0;
-  margin-left: 2px;
-}
-/* On desktop: position above AI FAB so they don't overlap */
-@media (min-width: 641px) {
-  #gasBanner {
-    bottom: 100px;
-    right: 24px;
-    left: auto;
-    max-width: none;
-  }
-}
-
-/* ── Eliminate 300ms tap delay everywhere ── */
-* { touch-action: manipulation; }
-
-/* ══════════════════════════════════════════
-   MOBILE UX IMPROVEMENTS
-══════════════════════════════════════════ */
-@media (max-width: 640px) {
-  /* Inputs: 16px prevents iOS auto-zoom on focus */
-  input[type="text"],input[type="email"],input[type="number"],
-  input[type="tel"],input[type="password"],textarea,select {
-    font-size: 16px !important;
-  }
-
-  /* Card image taller for visual impact */
-  .ad-img { height: 185px !important; }
-
-  /* Price bolder */
-  .ad-price { font-size: 17px !important; font-weight: 800 !important; }
-
-  /* Category pills — bigger touch target */
-  .cat-tab {
-    padding: 9px 16px !important;
-    font-size: 13px !important;
-    border-radius: 50px !important;
-    min-height: 40px !important;
-    white-space: nowrap;
-  }
-
-  /* Modals — full-screen sheet style */
-  .overlay-inner, .modal-inner {
-    border-radius: 20px 20px 0 0 !important;
-    max-height: 92vh !important;
-  }
-
-  /* Hero — tighter */
-  .hero { padding: 20px 16px 14px !important; }
-
-  /* Nav top */
-  nav { padding: 0 12px !important; }
-
-  /* Gas banner compact — hide sub-label to save space */
-  #gasBanner { padding: 7px 10px !important; gap: 7px !important; max-width: 175px; }
-  .gas-banner-price { font-size: 15px !important; }
-  .gas-banner-label { font-size: 8px !important; }
-  .gas-banner-sub   { display: none !important; }
-
-  /* Body bottom padding so last card isn't under mob-nav+banner */
-  body { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 72px) !important; }
-}
-
-/* ── Pull-to-refresh indicator ── */
-.ptr-bar {
-  position: fixed; top: 50px; left: 50%; z-index: 9998;
-  transform: translateX(-50%) translateY(-56px);
-  background: rgba(29,185,84,0.12);
-  border: 1px solid rgba(29,185,84,0.28);
-  color: #1db954; border-radius: 20px;
-  padding: 5px 14px; font-size: 12px; font-weight: 600;
-  pointer-events: none; white-space: nowrap;
-  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  display: none;
-}
-.ptr-bar.show { transform: translateX(-50%) translateY(0); display: block; }
-/* Force-hide on desktop — override any stuck state */
-@media (min-width: 641px) {
-  .ptr-bar { display: none !important; }
-}
-
-/* ── Sheet drag handle ── */
-.sheet-handle {
-  width: 36px; height: 4px;
-  background: rgba(255,255,255,0.18); border-radius: 2px;
-  margin: 10px auto 4px; flex-shrink: 0;
-}
-
-/* ── Image skeleton shimmer ── */
-@keyframes shimmerImg {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
-.img-skeleton {
-  background: linear-gradient(90deg, #1c1c1c 25%, #252525 50%, #1c1c1c 75%);
-  background-size: 200% 100%;
-  animation: shimmerImg 1.4s infinite;
-}
 
 
-/* ── Prevent layout flash on initial load ── */
-#homeGrid, #catRow { will-change: contents; }
 
-/* ── Card enter animation — only fires when .animate is added by JS ── */
-@keyframes cardIn {
-  from { opacity:0; transform:translateY(8px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.ad-card.animate { animation: cardIn 0.22s ease both; }
 
-/* ── Smooth page transitions ── */
-.page { opacity:0; transition:opacity 0.15s ease; pointer-events:none; }
-.page.active { opacity:1; pointer-events:auto; }
-
-/* ── Image fade-in instead of pop ── */
-.ad-card-img img { opacity:0; transition:opacity 0.2s ease; }
-.ad-card-img img.loaded { opacity:1; }
-
-/* ── Stabilise ad slots — no layout shift ── */
-.ad-slot-banner, .ad-slot-infeed { min-height:0 !important; overflow:hidden; }
-
-/* ── iOS overscroll — keep background consistent ── */
-html { background:#f5f3ee; }
-body { overscroll-behavior-y:contain; }
-
-/* ── GPU-composite the bottom nav — no flicker on scroll ── */
-.mob-nav { transform:translateZ(0); -webkit-transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-
-/* ── Hero compact transition ── */
-.hero { transition:padding 0.2s ease, min-height 0.2s ease; }
-
-/* ── GPU-accelerated skeleton shimmer ── */
-@keyframes shimmerSkel {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
-}
-.sk-card { opacity:1 !important; pointer-events:none; }
-.sk-img, .sk-line {
-  background: linear-gradient(90deg, #ececec 25%, #f8f8f8 50%, #ececec 75%);
-  background-size: 800px 100%;
-  animation: shimmerSkel 1.4s ease-in-out infinite;
-  border-radius: 6px;
-}
-.sk-img { width:100%; height:100%; min-height:160px; }
-.sk-line { margin-bottom:0; }
-
-/* ── Smooth scroll for the whole page ── */
-html { scroll-behavior: smooth; }
-
-/* ── Detail gallery ── */
-.gallery-track::-webkit-scrollbar { display:none; }
-.gallery-slide { flex:0 0 100%; scroll-snap-align:start; }
-.gallery-dots  { position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2; }
-.gallery-dot   { width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:background .2s; }
-.gallery-dot.active { background:#fff; }
-.gallery-nav   { position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;transition:background .2s; }
-.gallery-nav:hover { background:rgba(0,0,0,.7); }
-.gallery-prev  { left:10px; }
-.gallery-next  { right:10px; }
-.detail-photo-count { background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:4px 9px;border-radius:20px;backdrop-filter:blur(4px); }
-
-/* ── Lightbox (fullscreen) ── */
-.lightbox { position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column; }
-.lightbox.open { display:flex; }
-.lightbox-img  { max-width:95vw;max-height:82vh;object-fit:contain;border-radius:4px;user-select:none; }
-.lightbox-close { position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000; }
-.lightbox-nav  { position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000;transition:background .2s; }
-.lightbox-nav:hover { background:rgba(255,255,255,.3); }
-.lightbox-prev { left:16px; }
-.lightbox-next { right:16px; }
-.lightbox-dots { position:absolute;bottom:54px;left:50%;transform:translateX(-50%);display:flex;gap:6px; }
-.lightbox-dot  { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:background .2s; }
-.lightbox-dot.active { background:#fff; }
-.lightbox-counter { position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:13px; }
-</style>
-<style>
-/* ── SEO ABOUT SECTION (above footer) ── */
-.seo-about {
-  border-top: 1px solid rgba(255,255,255,0.06);
-  padding: 20px 24px;
-}
-.seo-about-inner {
-  max-width: 960px;
-  margin: 0 auto;
-  color: var(--text-3, #6b7a71);
-  font-size: 12px;
-  line-height: 1.7;
-}
-.seo-about-inner strong { color: var(--text-2, #a0a8a4); }
-.seo-about-inner a { color: var(--text-3, #6b7a71); text-decoration: none; }
-.seo-about-inner a:hover { color: var(--green, #2ecc71); }
-.seo-about-cats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-top: 10px;
-  font-size: 12px;
-}
-@media (max-width: 600px) {
-  .seo-about { padding: 16px; }
-}
-</style>
-
-<style>
-/* ══════════════════════════════════════════════════════════════
-   GLASSMORPHISM LAYER — purely additive visual polish
-   All changes are cosmetic only. No layout, z-index, or
-   functional properties are touched.
-══════════════════════════════════════════════════════════════ */
-
-/* ── Ad Cards ─────────────────────────────────────────────── */
-.ad-card {
-  background: rgba(255,255,255,0.72) !important;
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  border: 1px solid rgba(255,255,255,0.55) !important;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(255,255,255,0.3) inset !important;
-  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
-}
-.ad-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(255,255,255,0.4) inset !important;
-}
-
-/* ── Category Pills ───────────────────────────────────────── */
-.cat-pill-sm {
-  background: rgba(255,255,255,0.6) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.5) !important;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.06) !important;
-}
-.cat-pill-sm.active {
-  background: rgba(0,92,53,0.9) !important;
-  border-color: rgba(0,112,63,0.6) !important;
-  box-shadow: 0 2px 12px rgba(0,92,53,0.3) !important;
-}
-
-/* ── Hero section ─────────────────────────────────────────── */
-.hero {
-  background: linear-gradient(160deg, rgba(12,30,20,0.97) 0%, rgba(18,45,28,0.95) 100%) !important;
-}
-.ai-search-bar {
-  background: rgba(255,255,255,0.08) !important;
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
-}
-
-/* ── Modals ───────────────────────────────────────────────── */
-.modal {
-  background: rgba(255,255,255,0.92) !important;
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid rgba(255,255,255,0.7) !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.4) inset !important;
-}
-
-/* ── AI Sheet ─────────────────────────────────────────────── */
-.ai-sheet {
-  background: rgba(12,30,20,0.88) !important;
-  backdrop-filter: blur(28px) saturate(1.4);
-  -webkit-backdrop-filter: blur(28px) saturate(1.4);
-  border-top: 1px solid rgba(255,255,255,0.1) !important;
-}
-
-/* ── AI Float Chat ────────────────────────────────────────── */
-.ai-float-chat {
-  background: rgba(12,30,20,0.88) !important;
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.4) !important;
-}
-
-/* ── AI Response Card ─────────────────────────────────────── */
-.ai-response-card {
-  background: rgba(255,255,255,0.75) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.6) !important;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06) !important;
-}
-
-/* ── Bottom Nav ───────────────────────────────────────────── */
-.mob-nav {
-  background: rgba(255,255,255,0.82) !important;
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border-top: 1px solid rgba(255,255,255,0.6) !important;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
-}
-
-/* ── Nav Bar ──────────────────────────────────────────────── */
-nav {
-  background: rgba(12,30,20,0.82) !important;
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-}
-
-/* ── Toast ────────────────────────────────────────────────── */
-.toast {
-  background: rgba(26,26,26,0.88) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.12) !important;
-}
-
-/* ── PWA Install Banner ───────────────────────────────────── */
-.pwa-banner {
-  background: rgba(23,42,31,0.9) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
-}
-
-/* ── Section result cards / sheet result cards ────────────── */
-.sheet-result-card {
-  background: rgba(255,255,255,0.08) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.1) !important;
-}
-.sheet-result-card:hover {
-  background: rgba(255,255,255,0.14) !important;
-}
-
-/* ── Performance: disable blur on low-end / battery saver ─── */
-@media (prefers-reduced-motion: reduce) {
-  .ad-card, .modal, .ai-sheet, .mob-nav, nav,
-  .ai-float-chat, .cat-pill-sm, .toast, .pwa-banner,
-  .sheet-result-card, .ai-response-card, .ai-search-bar {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-
-/* ── iOS zoom prevention ── */
-/* iOS Safari zooms in when input font-size < 16px. Force 16px on all inputs. */
-@media screen and (max-width: 768px) {
-  input, textarea, select,
-  .form-inp, .ai-search-input, .ai-sheet-input,
-  #floatInput, #sheetInput, #aiInput,
-  #lEmail, #lPass, #rName, #rEmail, #rPhone, #rPass,
-  #aTitle, #aDesc, #aPrice, #aPhone,
-  #eaTitle, #eaDesc, #eaPrice, #eaPhone,
-  #editName, #editPhone, #offerAmt, #rateComment {
-    font-size: 16px !important;
-  }
-}
-
-/* ── Toast fix — override style.css centering that clips on mobile ── */
-.toast {
-  left: 16px !important;
-  right: 16px !important;
-  transform: none !important;
-  text-align: center !important;
-  width: auto !important;
-  max-width: none !important;
-}
-
-/* ── Price row with negotiable pill ── */
-.ad-price-row { display:flex; align-items:center; gap:6px; }
-.neg-pill { background:#f5c842; color:#7a5c00; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
-
-/* ── Share button on card ── */
-.share-card-btn { position:absolute; bottom:8px; left:8px; background:rgba(255,255,255,0.55); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.7); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#1a2e22; transition:all 0.18s; padding:0; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-.share-card-btn:hover { background:rgba(255,255,255,0.85); transform:scale(1.08); }
-
-/* ── Ad price on cards ── */
-.ad-price { font-size:18px !important; font-weight:800 !important; color:#00703f !important; line-height:1.1 !important; }
-
-/* ── Ad views always visible ── */
-.ad-views { display:inline-flex !important; align-items:center !important; gap:3px !important; opacity:0.88 !important; font-size:12px !important; font-weight:500 !important; }
-
-/* ── Grid columns ── */
-.listings-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
-@media (min-width:900px) { .listings-grid { grid-template-columns:repeat(4,1fr) !important; gap:16px !important; } }
-@media (max-width:600px) { .listings-grid { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; } }
-
-/* ════════════════════════════════════════════════════════════
-   AI SHEET — FULL UI REDESIGN
-════════════════════════════════════════════════════════════ */
-#aiSheet { position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; max-height:92vh !important; border-radius:24px 24px 0 0 !important; display:none !important; flex-direction:column !important; overflow:hidden !important; z-index:8000 !important; background:#0e1f16 !important; border-top:1px solid rgba(255,255,255,0.1) !important; box-shadow:0 -12px 60px rgba(0,0,0,0.5) !important; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.32,0.72,0,1) !important; padding-bottom:env(safe-area-inset-bottom,0px) !important; }
-#aiSheet.open { transform:translateY(0) !important; display:flex !important; }
-.ai-sheet-handle { width:36px !important; height:4px !important; background:rgba(255,255,255,0.2) !important; border-radius:2px !important; margin:12px auto 0 !important; flex-shrink:0 !important; }
-.ai-sheet-header { display:flex !important; align-items:center !important; padding:14px 18px 12px !important; border-bottom:1px solid rgba(255,255,255,0.07) !important; flex-shrink:0 !important; }
-.ai-sheet-title { display:flex !important; align-items:center !important; gap:11px !important; flex:1 !important; }
-.ai-sheet-icon { font-size:28px !important; width:44px !important; height:44px !important; background:rgba(29,185,84,0.12) !important; border:1px solid rgba(29,185,84,0.25) !important; border-radius:14px !important; display:flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0 !important; }
-.ai-sheet-name { font-size:17px !important; font-weight:700 !important; color:#e8ede9 !important; letter-spacing:-0.2px !important; }
-.ai-sheet-sub { font-size:12px !important; color:rgba(255,255,255,0.4) !important; margin-top:1px !important; }
-.ai-sheet-close { width:32px !important; height:32px !important; background:rgba(255,255,255,0.08) !important; border:none !important; border-radius:50% !important; color:rgba(255,255,255,0.5) !important; font-size:14px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; transition:background 0.15s !important; flex-shrink:0 !important; }
-.ai-sheet-close:hover { background:rgba(255,255,255,0.15) !important; }
-.ai-sheet-body { flex:1 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; padding:16px 16px 8px !important; scrollbar-width:none !important; }
-.ai-sheet-body::-webkit-scrollbar { display:none !important; }
-.ai-sheet-recent { margin-bottom:18px !important; }
-.sheet-recent-label { font-size:10px !important; font-weight:700 !important; letter-spacing:0.8px !important; text-transform:uppercase !important; color:rgba(255,255,255,0.3) !important; margin-bottom:10px !important; }
-.sheet-recent-list { display:flex !important; flex-wrap:wrap !important; gap:8px !important; }
-.sheet-recent-chip { display:inline-flex !important; align-items:center !important; gap:5px !important; background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.1) !important; border-radius:20px !important; padding:6px 12px !important; font-size:13px !important; color:rgba(255,255,255,0.65) !important; cursor:pointer !important; transition:all 0.15s !important; white-space:nowrap !important; }
-.sheet-recent-chip::before { content:'🕐'; font-size:11px !important; }
-.sheet-recent-chip:hover { background:rgba(255,255,255,0.12) !important; color:#e8ede9 !important; }
-.ai-sheet-sugs { display:flex !important; flex-wrap:wrap !important; gap:8px !important; margin-bottom:4px !important; }
-.sheet-sug { display:inline-flex !important; align-items:center !important; gap:6px !important; background:rgba(255,255,255,0.07) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:20px !important; padding:8px 14px !important; font-size:13px !important; font-weight:500 !important; color:#c8d4cc !important; cursor:pointer !important; transition:all 0.15s !important; white-space:nowrap !important; }
-.sheet-sug:hover, .sheet-sug:active { background:rgba(29,185,84,0.15) !important; border-color:rgba(29,185,84,0.35) !important; color:#1db954 !important; transform:scale(0.97) !important; }
-.ai-sheet-chat { display:flex !important; flex-direction:column !important; gap:12px !important; margin-top:16px !important; }
-.sheet-msg-user { align-self:flex-end !important; background:#1db954 !important; color:#fff !important; border-radius:18px 18px 4px 18px !important; padding:10px 14px !important; font-size:14px !important; max-width:82% !important; line-height:1.45 !important; font-weight:500 !important; }
-.sheet-msg-ai { align-self:flex-start !important; background:rgba(255,255,255,0.07) !important; border:1px solid rgba(255,255,255,0.1) !important; color:#d8e4dc !important; border-radius:4px 18px 18px 18px !important; padding:10px 14px !important; font-size:14px !important; max-width:88% !important; line-height:1.55 !important; }
-.sheet-msg-typing { align-self:flex-start !important; background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.08) !important; border-radius:4px 18px 18px 18px !important; padding:12px 16px !important; display:flex !important; gap:4px !important; align-items:center !important; }
-.sheet-msg-typing span { width:7px !important; height:7px !important; background:rgba(255,255,255,0.35) !important; border-radius:50% !important; animation:typingBounce 1.2s ease infinite !important; display:block !important; }
-.sheet-msg-typing span:nth-child(2) { animation-delay:0.15s !important; }
-.sheet-msg-typing span:nth-child(3) { animation-delay:0.30s !important; }
-@keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
-.sheet-result-card { background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.1) !important; border-top:none !important; border-radius:12px !important; padding:10px !important; cursor:pointer !important; transition:all 0.15s !important; display:flex !important; align-items:center !important; gap:10px !important; }
-.sheet-result-card:hover, .sheet-result-card:active { background:rgba(255,255,255,0.1) !important; border-color:rgba(29,185,84,0.3) !important; }
-.src-thumb { width:56px !important; height:56px !important; object-fit:cover !important; border-radius:8px !important; flex-shrink:0 !important; }
-.src-icon { width:56px !important; height:56px !important; border-radius:8px !important; background:rgba(255,255,255,0.06) !important; display:flex !important; align-items:center !important; justify-content:center !important; font-size:22px !important; flex-shrink:0 !important; }
-.src-info { flex:1 !important; min-width:0 !important; }
-.src-price { font-size:15px !important; font-weight:700 !important; color:#1db954 !important; line-height:1.2 !important; }
-.src-title { font-size:13px !important; color:#d8e4dc !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; margin-top:2px !important; }
-.src-meta { font-size:11px !important; color:rgba(255,255,255,0.35) !important; margin-top:3px !important; }
-.src-arrow { color:rgba(255,255,255,0.25) !important; font-size:18px !important; flex-shrink:0 !important; }
-.src-neg-badge { background:rgba(245,200,66,0.15) !important; color:#f5c842 !important; font-size:10px !important; font-weight:700 !important; padding:1px 6px !important; border-radius:10px !important; margin-left:4px !important; }
-.src-new-badge { background:rgba(29,185,84,0.15) !important; color:#1db954 !important; font-size:10px !important; font-weight:700 !important; padding:1px 6px !important; border-radius:10px !important; margin-left:4px !important; }
-.sheet-count-tag { font-size:12px !important; color:rgba(255,255,255,0.4) !important; background:rgba(255,255,255,0.06) !important; border:1px solid rgba(255,255,255,0.1) !important; border-radius:20px !important; padding:3px 10px !important; display:inline-block !important; margin:8px 0 10px !important; }
-.sheet-results { display:flex !important; flex-direction:column !important; gap:8px !important; margin-top:8px !important; }
-.sheet-view-all { width:100% !important; padding:10px !important; background:rgba(29,185,84,0.1) !important; border:1px solid rgba(29,185,84,0.25) !important; border-radius:10px !important; color:#1db954 !important; font-size:13px !important; font-weight:600 !important; cursor:pointer !important; text-align:center !important; margin-top:4px !important; transition:all 0.15s !important; font-family:var(--font-s,sans-serif) !important; }
-.sheet-view-all:hover { background:rgba(29,185,84,0.18) !important; }
-.sheet-msg-text { line-height:1.55 !important; }
-.ai-sheet-input-wrap { flex-shrink:0 !important; padding:10px 14px 12px !important; border-top:1px solid rgba(255,255,255,0.07) !important; background:#0e1f16 !important; }
-.ai-sheet-input-bar { display:flex !important; align-items:center !important; gap:10px !important; background:rgba(255,255,255,0.07) !important; border:1.5px solid rgba(255,255,255,0.12) !important; border-radius:28px !important; padding:6px 6px 6px 16px !important; transition:border-color 0.2s !important; }
-.ai-sheet-input-bar:focus-within { border-color:rgba(29,185,84,0.5) !important; background:rgba(255,255,255,0.09) !important; }
-.ai-sheet-input { flex:1 !important; background:transparent !important; border:none !important; outline:none !important; color:#e8ede9 !important; font-size:15px !important; font-family:var(--font-s,sans-serif) !important; padding:6px 0 !important; min-width:0 !important; }
-.ai-sheet-input::placeholder { color:rgba(255,255,255,0.3) !important; }
-.ai-sheet-send { width:38px !important; height:38px !important; background:#1db954 !important; border:none !important; border-radius:50% !important; color:#fff !important; font-size:18px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; flex-shrink:0 !important; transition:all 0.15s !important; box-shadow:0 2px 12px rgba(29,185,84,0.35) !important; }
-.ai-sheet-send:hover { transform:scale(1.08) !important; background:#1ed760 !important; }
-.ai-sheet-send:active { transform:scale(0.95) !important; }
-.ai-sheet-hint { text-align:center !important; font-size:11px !important; color:rgba(255,255,255,0.2) !important; margin-top:8px !important; letter-spacing:0.2px !important; }
-.ai-sheet-overlay { position:fixed !important; inset:0 !important; background:rgba(0,0,0,0.5) !important; backdrop-filter:blur(4px) !important; -webkit-backdrop-filter:blur(4px) !important; z-index:7999 !important; display:none !important; }
-.ai-sheet-overlay.open { display:block !important; }
-</style>
 <body>
 
 <!-- BACK TO TOP FAB -->
@@ -1565,52 +916,13 @@ nav {
 /* ═══════════════════════════════════════════════════════════
    ⚙️  CONFIG — Production credentials
    
-   SUPABASE SQL — run this once in the SQL Editor:
-   
-   create table if not exists users (
-     id text primary key, name text, email text unique,
-     phone text, parish text, password text, joined timestamptz default now()
-   );
-   create table if not exists ads (
-     id text primary key, title text, category text, parish text,
-     price numeric, description text, phone text, image_url text,
-     negotiable boolean default false, seller_name text, seller_init text,
-     seller_id text, status text default 'active', views integer default 0,
-     created_at timestamptz default now()
-   );
-   create table if not exists messages (
-     id text primary key, conversation_key text, from_user_id text,
-     text text, read boolean default false,
-     ad_id text, ad_title text, seller_id text, seller_name text, seller_init text,
-     buyer_id text, buyer_name text, buyer_init text,
-     created_at timestamptz default now()
-   );
-   alter table ads    enable row level security;
-   alter table users  enable row level security;
-   alter table messages enable row level security;
-   create policy "Public read ads"     on ads      for select using (true);
-   create policy "Public insert ads"   on ads      for insert with check (true);
-   create policy "Public update ads"   on ads      for update using (true);
-   create policy "Public delete ads"   on ads      for delete using (true);
-   create policy "Public read users"   on users    for select using (true);
-   create policy "Public insert users" on users    for insert with check (true);
-   create policy "Public read msgs"    on messages for select using (true);
-   create policy "Public insert msgs"  on messages for insert with check (true);
-   create policy "Public update msgs"  on messages for update using (true);
-
-   -- SUPABASE STORAGE SETUP (do this in the Storage tab):
-   -- 1. Create a bucket called "ad-images" 
-   -- 2. Set it to PUBLIC
-   -- 3. Add these RLS policies in SQL Editor:
-   
-   insert into storage.buckets (id, name, public) values ('ad-images', 'ad-images', true)
-     on conflict (id) do nothing;
-   create policy "Anyone can upload images" on storage.objects
-     for insert with check (bucket_id = 'ad-images');
-   create policy "Anyone can view images" on storage.objects
-     for select using (bucket_id = 'ad-images');
-   create policy "Anyone can delete own images" on storage.objects
-     for delete using (bucket_id = 'ad-images');
+   SUPABASE SETUP — run supabase-migration.sql in the SQL Editor once.
+   It creates:
+     - profiles table (linked to auth.users via trigger)
+     - RLS policies for profiles, ads, messages
+     - Storage bucket + policies for ad-images
+     - increment_view() RPC function
+   Auth uses Supabase Auth (signUp / signInWithPassword / signOut).
 ═══════════════════════════════════════════════════════════ */
 const CFG = {
   supabase: {
@@ -1834,7 +1146,7 @@ async function sbDeleteAd(id) {
 
 // Update user profile
 async function sbUpdateUser(id, fields) {
-  const { error } = await _db.from('users').update(fields).eq('id', id);
+  const { error } = await _db.from('profiles').update(fields).eq('id', id);
   if (error) throw error;
 }
 
@@ -1874,26 +1186,36 @@ function sbIncrView(id) {
 // ── USER AUTH ──────────────────────────────────────────
 
 async function sbRegister(name, email, phone, parish, password) {
-  // Check duplicate email
-  const { data: existing } = await _db.from('users').select('id').eq('email', email).single();
-  if (existing) throw new Error('An account with that email already exists.');
-  const user = {
-    id: 'u' + Date.now(),
-    name, email, phone, parish,
-    password,          // NOTE: hash passwords server-side in a real app
-    joined: new Date().toISOString(),
-  };
-  const { error } = await _db.from('users').insert(user);
-  if (error) throw error;
-  return { id: user.id, name, email, phone, parish };
+  // Use Supabase Auth for proper password hashing
+  const { data, error } = await _db.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name, phone, parish }  // stored in raw_user_meta_data
+    }
+  });
+  if (error) {
+    if (String(error.message).includes('already registered')) {
+      throw new Error('An account with that email already exists.');
+    }
+    throw error;
+  }
+  if (!data.user) throw new Error('Registration failed — no user returned.');
+  // Profile is auto-created by the trigger; fetch it
+  const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
+  const p = profile || {};
+  return { id: data.user.id, name: p.name || name, email: p.email || email, phone: p.phone || phone || '', parish: p.parish || parish || '' };
 }
 
 async function sbLogin(email, password) {
-  const { data, error } = await _db.from('users')
-    .select('id,name,email,phone,parish')
-    .eq('email', email).eq('password', password).single();
-  if (error || !data) throw new Error('Incorrect email or password.');
-  return data;
+  // Use Supabase Auth for proper authentication
+  const { data, error } = await _db.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(error.message || 'Incorrect email or password.');
+  if (!data.user) throw new Error('Login failed — no user returned.');
+  // Fetch profile data
+  const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
+  const p = profile || {};
+  return { id: data.user.id, name: p.name || data.user.email, email: p.email || email, phone: p.phone || '', parish: p.parish || '' };
 }
 
 // ── MESSAGES ──────────────────────────────────────────
@@ -2187,12 +1509,12 @@ async function doRegister() {
   }
 }
 function doLogout() {
-  if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
+if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
+  if (_db && _db.auth) _db.auth.signOut().catch(function(){});
   CU = null; L.sess = null; _msgs = {};
   renderNav(); updateMsgBadge(); goHome();
   showToast('Logged out successfully.', '👋');
 }
-
 /* ═══════════════════════════════════════════════════════════
    MSG BADGE
 ═══════════════════════════════════════════════════════════ */
@@ -2745,7 +2067,20 @@ document.addEventListener('scroll', function(e) {
 }, { passive: true });
 
 
-let CU = L.sess;          // current user (from localStorage)
+let CU = L.sess;
+(async function() {
+  if (_db && _db.auth) {
+    try {
+      const { data: { session } } = await _db.auth.getSession();
+      if (session && session.user) {
+        const { data: profile } = await _db.from('profiles').select('*').eq('id', session.user.id).single();
+        const p = profile || {};
+        CU = { id: session.user.id, name: p.name||session.user.email, email: p.email||session.user.email, phone: p.phone||'', parish: p.parish||'' };
+        L.sess = CU;
+      }
+    } catch(e) { console.warn('[Yaad Adz] Session restore failed:', e); }
+  }
+})();
 let activeF = 'all';      // active category filter
 let searchQ = '';         // search query
 let uploadUrl = '';       // current upload image url
