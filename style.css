@@ -2122,6 +2122,16 @@ nav {
   background: rgba(7, 30, 21, .64);
   border: 1px solid rgba(255,255,255,.16);
   box-shadow: 0 18px 55px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15);
+  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+/* iOS 27-style: nav becomes ultra-transparent when scrolled */
+nav.scrolled-transparent {
+  background: rgba(7, 30, 21, .18) !important;
+  border-color: rgba(255,255,255,.08) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  -webkit-backdrop-filter: saturate(140%) blur(40px) !important;
+  backdrop-filter: saturate(140%) blur(40px) !important;
 }
 
 .nav-ai-btn,
@@ -2311,13 +2321,24 @@ nav {
 .mob-nav {
   left: 10px;
   right: 10px;
-  bottom: max(8px, env(safe-area-inset-bottom));
+  bottom: max(10px, env(safe-area-inset-bottom));
   width: auto;
   height: 64px;
-  border-radius: 28px;
+  border-radius: 32px;
   background: rgba(255,255,255,.72);
   border: 1px solid rgba(255,255,255,.78);
   box-shadow: 0 20px 52px rgba(0,32,22,.2), inset 0 1px 0 rgba(255,255,255,.7);
+  padding: 0 6px;
+  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+/* iOS 27-style: bottom pill fades when scrolling */
+.mob-nav.scrolled-transparent {
+  background: rgba(255,255,255,.28) !important;
+  border-color: rgba(255,255,255,.32) !important;
+  box-shadow: 0 8px 28px rgba(0,32,22,.10), inset 0 1px 0 rgba(255,255,255,.3) !important;
+  -webkit-backdrop-filter: saturate(160%) blur(36px) !important;
+  backdrop-filter: saturate(160%) blur(36px) !important;
 }
 
 .mob-nav-item {
@@ -2360,7 +2381,7 @@ footer {
     top: 8px;
     width: calc(100% - 16px);
     margin-top: 8px;
-    border-radius: 24px;
+    border-radius: 26px;
     padding-left: 16px;
     padding-right: 16px;
   }

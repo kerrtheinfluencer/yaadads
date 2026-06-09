@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en-JM" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
@@ -252,31 +252,7 @@
     flex-shrink: 0;
     animation: navAiPulse 3s ease-in-out infinite;
   }
-  .nav-search-placeholder {
-    flex: 1;
-    font-size: 13px;
-    color: rgba(255,255,255,0.55);
-    font-weight: 400;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    letter-spacing: 0.2px;
-    pointer-events: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    padding-left: 32px;
-  }
-  .nav-search-pill:focus-within .nav-search-placeholder {
-    display: none;
-  }
-  .nav-search-pill.has-text .nav-search-placeholder {
-    display: none;
-  }
+
   /* Real search input — blends with the existing glass pill */
   .nav-search-input {
     flex: 1;
@@ -327,7 +303,7 @@
   }
   @media (max-width: 390px) {
     .nav-search-pill { padding: 5px 8px; gap: 5px; }
-    .nav-search-placeholder { font-size: 12px; }
+
   }
 </style>
 
@@ -3163,7 +3139,7 @@ function renderNav() {
              oninput="navSearchPlaceholderSync()"
              onfocus="this.parentElement.classList.add('has-focus')"
              onblur="this.parentElement.classList.remove('has-focus')">
-      <span class="nav-search-placeholder" id="navSearchPlaceholder">Search cars, phones, houses…</span>
+
       <span class="nav-search-kbd" id="navSearchKbd">⌘K</span>
     </form>`;
   if (CU) {
@@ -3217,14 +3193,12 @@ function handleNavSearch(ev) {
 
 /* Sync the decorative placeholder span to the input's actual state. */
 function navSearchPlaceholderSync() {
-  const inp = document.getElementById('navSearchInput');
-  const ph  = document.getElementById('navSearchPlaceholder');
-  const kbd = document.getElementById('navSearchKbd');
+  const inp  = document.getElementById('navSearchInput');
+  const kbd  = document.getElementById('navSearchKbd');
   const pill = document.getElementById('navSearchPill');
-  if (!inp || !ph) return;
+  if (!inp) return;
   const hasValue = (inp.value || '').length > 0;
-  ph.style.opacity = hasValue ? '0' : '';
-  if (kbd) kbd.style.opacity = hasValue ? '0' : '';
+  if (kbd)  kbd.style.opacity = hasValue ? '0' : '';
   if (pill) pill.classList.toggle('has-text', hasValue);
 }
 
@@ -5654,16 +5628,24 @@ window.addEventListener('resize', () => {
 ═══════════════════════════════════════════════════════════ */
 (function() {
   let ticking = false;
+  const TRANSPARENT_THRESHOLD = 60; // px before bars go translucent
+
   window.addEventListener('scroll', function() {
     if (!ticking) {
       requestAnimationFrame(function() {
         const scrollY = window.scrollY || window.pageYOffset;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        
+
         // Back to top visibility
         const fab = document.getElementById('backToTop');
         if (fab) fab.classList.toggle('visible', scrollY > 400);
-        
+
+        // ── iOS 27 pill transparency ──────────────────────────
+        const isScrolled = scrollY > TRANSPARENT_THRESHOLD;
+        const navEl    = document.querySelector('nav');
+        const mobNavEl = document.querySelector('.mob-nav');
+        if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
+        if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
+
         ticking = false;
       });
       ticking = true;
