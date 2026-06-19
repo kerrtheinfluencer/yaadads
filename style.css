@@ -199,26 +199,26 @@ nav.scrolled-transparent {
 .nav-search-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.08);
+  gap: 10px;
+  background: rgba(255,255,255,0.1);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255,255,255,0.14);
-  border-radius: 28px;
-  padding: 7px 14px 7px 12px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 32px;
+  padding: 10px 18px 10px 16px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
   flex: 1;
-  max-width: 380px;
+  max-width: 480px;
   min-width: 0;
   position: relative;
   overflow: hidden;
   user-select: none;
 }
 .nav-search-pill:hover {
-  background: rgba(255,255,255,0.14);
-  border-color: rgba(244,195,0,0.5);
-  box-shadow: 0 0 0 3px rgba(244,195,0,0.12), 0 4px 24px rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(244,195,0,0.55);
+  box-shadow: 0 0 0 4px rgba(244,195,0,0.14), 0 6px 28px rgba(0,0,0,0.22);
   transform: translateY(-1px);
 }
 .nav-search-pill:active {
@@ -236,9 +236,9 @@ nav.scrolled-transparent {
   border: none;
   outline: none;
   color: #fff;
-  font: 400 13px Outfit, -apple-system, sans-serif;
-  padding: 0;
-  letter-spacing: 0.2px;
+  font: 400 14px Outfit, -apple-system, sans-serif;
+  padding: 6px 0;
+  letter-spacing: 0.3px;
 }
 .nav-search-input::placeholder {
   color: rgba(255,255,255,0.45);
@@ -246,26 +246,27 @@ nav.scrolled-transparent {
 .nav-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
 .nav-search-pill:has(.nav-search-input:focus),
 .nav-search-pill.has-focus {
-  background: rgba(255,255,255,0.14);
-  border-color: rgba(244,195,0,0.6);
-  box-shadow: 0 0 0 3px rgba(244,195,0,0.14), 0 4px 24px rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(244,195,0,0.65);
+  box-shadow: 0 0 0 4px rgba(244,195,0,0.18), 0 6px 28px rgba(0,0,0,0.28);
 }
 .nav-search-pill:has(.nav-search-input:focus) .nav-search-icon,
 .nav-search-pill.has-focus .nav-search-icon {
   animation: none;
 }
 .nav-search-kbd {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.12);
   position: relative;
   z-index: 1;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 5px;
-  padding: 2px 7px;
-  font-size: 10px;
-  color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
   font-family: monospace;
   flex-shrink: 0;
   line-height: 1.4;
+  font-weight: 500;
 }
 
 /* Nav action buttons (login, register, user pill) */

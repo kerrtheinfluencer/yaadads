@@ -2477,11 +2477,10 @@ function cardHTML(ad, idx) {
         <a class="ad-seller-row-link" onclick="event.stopPropagation();openProfile('${ad.sellerId}')" aria-label="View ${escHtml(sellerName)}'s profile">
           <span class="ad-seller-avatar" style="background:${sellerClr.bg};color:${sellerClr.fg}">${escHtml(sellerInit)}</span>
           <div class="ad-seller-info">
-            <span class="ad-seller-name">${escHtml(sellerName)}</span>
+            <span class="ad-seller-name">${escHtml(sellerName)} <span class="ad-seller-verified" title="Verified seller">✓</span></span>
             <span class="ad-seller-sub">Member</span>
           </div>
         </a>
-        <span class="ad-seller-verified" title="Verified seller">✓</span>
        </div>`
     : '';
 
