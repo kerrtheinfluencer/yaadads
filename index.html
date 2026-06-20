@@ -1384,10 +1384,62 @@ function scrollToResults() {
   if (el) setTimeout(function(){ el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 50);
 }
 
-/** Google Analytics helper (safe no-op if gtag missing) */
+/** Google Analytics helper — ad-blocker resilient with localStorage fallback queue */
 function gaEvent(name, params) {
+  var path = location.pathname + location.search;
+  // Primary: gtag via GTM/GA4 snippet
   try {
-    if (typeof gtag === 'function') gtag('event', name, params || {});
+    if (typeof gtag === 'function') {
+      console.log('[YaadAdz GA] gtag("event", "' + name + '",', params, ') —', path);
+      gtag('event', name, params || {});
+      console.log('[YaadAdz GA] ✅ Sent via gtag()');
+      return;
+    }
+  } catch (e) {
+    console.warn('[YaadAdz GA] ❌ gtag() threw:', e);
+    /* gtag not available — fall through */
+  }
+
+  // Fallback 1: dataLayer push (works even if gtag function hasn't loaded yet)
+  try {
+    if (typeof window.dataLayer !== 'undefined' && Array.isArray(window.dataLayer)) {
+      console.log('[YaadAdz GA] dataLayer push event="' + name + '"', params, '—', path);
+      window.dataLayer.push({ 'event': name, ...(params || {}) });
+      console.log('[YaadAdz GA] ✅ Pushed to dataLayer');
+      return;
+    }
+  } catch (e) {
+    console.warn('[YaadAdz GA] ❌ dataLayer push failed:', e);
+    /* dataLayer unavailable */
+  }
+
+  // Fallback 2: Queue to localStorage for retry on next page load
+  try {
+    var queue = JSON.parse(localStorage.getItem('ya_ga_queue') || '[]');
+    queue.push({ name: name, params: params || {}, ts: Date.now() });
+    // Keep only last 20 events
+    if (queue.length > 20) queue = queue.slice(-20);
+    localStorage.setItem('ya_ga_queue', JSON.stringify(queue));
+    console.log('[YaadAdz GA] ⏳ Queued to localStorage (fallback 2) — event="' + name + '"');
+  } catch (e) {
+    console.warn('[YaadAdz GA] ❌ localStorage fallback failed:', e);
+    /* localStorage unavailable */
+  }
+}
+
+/** Retry any queued GA events on page load */
+function flushGaQueue() {
+  try {
+    var queue = JSON.parse(localStorage.getItem('ya_ga_queue') || '[]');
+    if (!queue.length || typeof gtag !== 'function') return;
+    var keep = [];
+    queue.forEach(function(item) {
+      // Only replay events from last 30 minutes
+      if (Date.now() - item.ts < 30 * 60 * 1000) {
+        try { gtag('event', item.name, item.params || {}); } catch (e) { keep.push(item); }
+      }
+    });
+    localStorage.setItem('ya_ga_queue', JSON.stringify(keep));
   } catch (e) {}
 }
 
@@ -1472,6 +1524,8 @@ async function doLogin() {
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+    // Track login
+    gaEvent('login', { method: 'email' });
     // Ask for push permission after login (polite — user just chose to engage)
     setTimeout(requestPushPermission, 4000);
   } catch(e) {
@@ -1500,6 +1554,8 @@ async function doRegister() {
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome to Yaad Adz, ' + name.split(' ')[0] + '! 🎉', '🎉');
     launchConfetti();
+    // Track registration
+    gaEvent('sign_up', { method: 'email' });
     // Ask for push permission after registration
     setTimeout(requestPushPermission, 5000);
   } catch(e) {
@@ -2106,11 +2162,16 @@ async function toggleSold(id) {
 }
 
 async function doPostAd() {
+  console.log('[YaadAdz doPostAd] 🚀 Function called');
   const cat   = CATS.find(function(c){ return c.id===document.getElementById('aCat').value; });
   const title = document.getElementById('aTitle').value.trim();
   const parish= document.getElementById('aParish').value;
   const price = parseFloat(document.getElementById('aPrice').value)||0;
-  if (!title || !parish || !price) return showPostErr('Please fill in all required fields.');
+  if (!title || !parish || !price) {
+    console.warn('[YaadAdz doPostAd] ❌ Validation failed — missing fields');
+    return showPostErr('Please fill in all required fields.');
+  }
+  console.log('[YaadAdz doPostAd] Fields valid:', { title, parish, price });
 
   const btn = document.querySelector('#sp3 .btn-gold');
   if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
@@ -2118,11 +2179,14 @@ async function doPostAd() {
   try {
     // Upload all photos to Supabase Storage and get public URLs
     const imageUrls = [];
+    console.log('[YaadAdz doPostAd] 📸 Uploading ' + uploadPhotos.length + ' photos…');
     for (let i = 0; i < uploadPhotos.length; i++) {
       if (btn) btn.textContent = `⏳ Uploading image ${i+1}/${uploadPhotos.length}…`;
       const url = await uploadToSupabase(uploadPhotos[i].file);
       if (url) imageUrls.push(url);
+      console.log('[YaadAdz doPostAd]   Photo ' + (i+1) + '/' + uploadPhotos.length + ' uploaded: ' + (url ? url.slice(0, 60) + '…' : 'FAILED'));
     }
+    console.log('[YaadAdz doPostAd] ✅ All uploads complete — ' + imageUrls.length + ' URLs');
 
     if (btn) btn.textContent = '⏳ Publishing…';
 
@@ -2145,16 +2209,24 @@ async function doPostAd() {
       status:     'active',
       views:      0,
     };
+    console.log('[YaadAdz doPostAd] 📦 Ad object built:', { id: ad.id, title: ad.title, cat: ad.category, parish: ad.parish, price: ad.price, photos: ad.photos.length });
 
     await sbInsertAd(ad);
+    console.log('[YaadAdz doPostAd] ✅ Ad inserted into Supabase — id=' + ad.id);
     closeOverlay('ovPost');
     renderCats(); renderHome(); updateStats();
     showToast('Your ad is live! 🎉', '🎉');
     launchConfetti();
+    // Track ad post
+    console.log('[YaadAdz doPostAd] 📊 About to fire gaEvent("post_ad")…');
+    gaEvent('post_ad', { category: ad.category, parish: ad.parish, price: ad.price });
+    console.log('[YaadAdz doPostAd] ✅ gaEvent("post_ad") completed');
   } catch(e) {
+    console.error('[YaadAdz doPostAd] ❌ ERROR: ' + (e.message||e));
     showPostErr('Failed to post: ' + (e.message||'please try again'));
   } finally {
     if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }
+    console.log('[YaadAdz doPostAd] 🏁 Function complete');
   }
 }
 
@@ -2326,6 +2398,31 @@ async function init() {
   } else if (_yaadLastLoad && _yaadLastLoad.fromDb) {
     console.info('[Yaad Adz] Loaded ' + _yaadLastLoad.count + ' ads from Supabase ✓');
   }
+
+  // Flush any queued GA events from previous page loads
+  flushGaQueue();
+
+  // Track UTM params on page load (main site — mirrors admin dashboard logic)
+  (function() {
+    try {
+      var utmParams = new URLSearchParams(location.search);
+      var hasUtm = utmParams.get('utm_source');
+      if (hasUtm) {
+        gaEvent('campaign_detail', {
+          source: utmParams.get('utm_source'),
+          medium: utmParams.get('utm_medium'),
+          campaign: utmParams.get('utm_campaign'),
+          content: utmParams.get('utm_content')
+        });
+      }
+      // Track initial page view as enhanced event
+      gaEvent('page_view_initial', {
+        page_title: document.title,
+        page_location: location.href,
+        page_path: location.pathname
+      });
+    } catch(e) {}
+  })();
 
   renderCats();
   renderHome();
@@ -2644,6 +2741,9 @@ function goPage(p) {
   if (p==='browse')  renderBrowse();
   if (p==='myads')   renderMyAds();
   if (p==='msgs')    renderInbox();
+
+  // Track SPA page navigation
+  gaEvent('page_view_spa', { page_name: p, page_path: '/page-' + p });
 }
 
 function handleAccountTab() {
@@ -4244,6 +4344,15 @@ function openDetail(id) {
   });
 
   // Navigate after tiny delay to let fetch initiate
+  // Track listing view
+  gaEvent('view_item', {
+    item_id: ad.id,
+    item_name: ad.title,
+    category: ad.category,
+    price: ad.price,
+    parish: ad.parish
+  });
+
   // Check if static page exists before navigating away from SPA
   var xhr = new XMLHttpRequest();
   xhr.open('HEAD', dest, true);
