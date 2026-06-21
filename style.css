@@ -177,23 +177,53 @@ nav.nav-hidden {
 
 /* ── Scroll-driven: shrink bottom nav on scroll down ── */
 .mob-nav.nav-shrunk {
-  height: 48px !important;
-  transform: translateY(calc(100% - 8px)) !important;
+  height: 36px !important;
+  transform: translateY(calc(100% - 4px)) !important;
+  border-radius: 18px !important;
+  padding: 0 4px !important;
 }
 .mob-nav.nav-shrunk .mob-nav-item {
-  padding: 2px 2px !important;
+  padding: 0 2px !important;
   gap: 0 !important;
 }
 .mob-nav.nav-shrunk .mob-nav-icon {
-  font-size: 18px;
+  font-size: 14px !important;
 }
 .mob-nav.nav-shrunk .mob-nav-item:not(:has(.mob-nav-post)) span:last-child {
-  display: none;
+  display: none !important;
 }
 .mob-nav.nav-shrunk .mob-nav-post {
-  width: 36px;
-  height: 36px;
-  font-size: 22px;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 16px !important;
+}
+.mob-nav.nav-shrunk .mob-nav-item:has(.mob-nav-post) {
+  padding: 0 !important;
+}
+
+/* ── Scroll-driven: shrink gas banner on scroll down ── */
+#gasBanner.gas-shrunk {
+  max-width: 48px !important;
+  padding: 6px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+#gasBanner.gas-shrunk .gas-banner-body,
+#gasBanner.gas-shrunk .gas-banner-arrow {
+  display: none !important;
+}
+#gasBanner.gas-shrunk .gas-banner-icon {
+  font-size: 20px !important;
+  margin: 0 !important;
+}
+
+/* ── Scroll-driven: shrink back-to-top on scroll down ── */
+.back-to-top.btt-shrunk {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 14px !important;
+  bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom) + 8px) !important;
+  right: 8px !important;
 }
 
 .nav-logo {

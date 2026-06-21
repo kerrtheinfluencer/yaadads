@@ -5059,17 +5059,23 @@ window.addEventListener('resize', () => {
         if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
         if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
 
-        // ── Scroll-driven nav hide/show (direction-based, no threshold) ──
+        // ── Scroll-driven nav/hide/show/shrink + gas/btt shrink ──
         if (scrollY >= 0) { // iOS bounce safety
           const delta = scrollY - lastScrollY;
+          const gasBanner = document.getElementById('gasBanner');
+          const btt = document.getElementById('backToTop');
           if (delta > 0) {
-            // scrolling down — hide navs
+            // scrolling down — hide top nav, shrink bottom nav, shrink gas banner, shrink back-to-top
             if (navEl)    navEl.classList.add('nav-hidden');
             if (mobNavEl) mobNavEl.classList.add('nav-shrunk');
+            if (gasBanner) gasBanner.classList.add('gas-shrunk');
+            if (btt) btt.classList.add('btt-shrunk');
           } else if (delta < 0) {
-            // scrolling up — show navs
+            // scrolling up — show everything
             if (navEl)    navEl.classList.remove('nav-hidden');
             if (mobNavEl) mobNavEl.classList.remove('nav-shrunk');
+            if (gasBanner) gasBanner.classList.remove('gas-shrunk');
+            if (btt) btt.classList.remove('btt-shrunk');
           }
           lastScrollY = scrollY;
         }
