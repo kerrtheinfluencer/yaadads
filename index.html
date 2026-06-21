@@ -5257,5 +5257,84 @@ init();
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════
+     SCROLL-DRIVEN NAVIGATION ANIMATIONS (mobile UX)
+     - Top nav hides on scroll down, reappears on scroll up
+     - Bottom nav shrinks on scroll down, expands on scroll up
+     - Uses rAF throttling + 10px delta threshold
+     - Ignores negative scroll (iOS bounce safety)
+═══════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  if (window.matchMedia('(min-width: 641px)').matches) return;
+
+  let lastScrollY = window.scrollY || window.pageYOffset;
+  let ticking = false;
+  const DELTA_THRESHOLD = 10;
+
+  const navEl = document.querySelector('nav');
+  const mobNavEl = document.querySelector('.mob-nav');
+
+  function clamp(val, min, max) { return val < min ? min : (val > max ? max : val); }
+
+  function updateNav() {
+    const scrollY = clamp(window.scrollY || window.pageYOffset, 0, 1e9);
+    if (scrollY < 0) {
+      ticking = false;
+      return;
+    }
+
+    const delta = scrollY - lastScrollY;
+
+    if (Math.abs(delta) >= DELTA_THRESHOLD) {
+      if (delta > 0) {
+        // scrolling down
+        if (navEl) navEl.classList.add('nav-hidden');
+        if (mobNavEl) mobNavEl.classList.add('nav-shrunk');
+      } else {
+        // scrolling up
+        if (navEl) navEl.classList.remove('nav-hidden');
+        if (mobNavEl) mobNavEl.classList.remove('nav-shrunk');
+      }
+      lastScrollY = scrollY;
+    }
+
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        updateNav();
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  // Initialise state on load / resize
+  function initState() {
+    const scrollY = clamp(window.scrollY || window.pageYOffset, 0, 1e9);
+    lastScrollY = scrollY;
+    if (scrollY > 10) {
+      if (navEl) navEl.classList.add('nav-hidden');
+      if (mobNavEl) mobNavEl.classList.add('nav-shrunk');
+    } else {
+      if (navEl) navEl.classList.remove('nav-hidden');
+      if (mobNavEl) mobNavEl.classList.remove('nav-shrunk');
+    }
+  }
+
+  initState();
+  window.addEventListener('resize', function() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        initState();
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+</script>
+
 </body>
 </html>
