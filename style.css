@@ -177,15 +177,12 @@ nav.nav-hidden {
 
 /* ── Scroll-driven: shrink bottom nav on scroll down ── */
 .mob-nav.nav-shrunk {
-  height: 48px;
-  transform: translateY(calc(100% - 48px));
-  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+  height: 48px !important;
+  transform: translateY(calc(100% - 8px)) !important;
 }
 .mob-nav.nav-shrunk .mob-nav-item {
-  padding: 4px 2px;
-  gap: 0;
+  padding: 2px 2px !important;
+  gap: 0 !important;
 }
 .mob-nav.nav-shrunk .mob-nav-icon {
   font-size: 18px;
