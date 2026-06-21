@@ -5037,9 +5037,11 @@ window.addEventListener('resize', () => {
 (function() {
   let ticking = false;
   const TRANSPARENT_THRESHOLD = 60; // px before bars go translucent
-  const DELTA_THRESHOLD = 10;      // px before triggering hide/show
+  const SCROLL_DOWN_THRESHOLD = 30; // px cumulative before morphing nav to pill
+  const SCROLL_UP_THRESHOLD  = 10;  // px cumulative before expanding nav back
 
   let lastScrollY = window.scrollY || window.pageYOffset;
+  let scrollAccum = 0; // tracks cumulative scroll distance for morph toggle
 
   function clamp(val, min, max) { return val < min ? min : (val > max ? max : val); }
 
@@ -5059,24 +5061,51 @@ window.addEventListener('resize', () => {
         if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
         if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
 
-        // ── Scroll-driven nav/hide/show/shrink + gas/btt shrink ──
+        // ── Scroll-driven nav hide/show + morph shrink ──
         if (scrollY >= 0) { // iOS bounce safety
           const delta = scrollY - lastScrollY;
           const gasBanner = document.getElementById('gasBanner');
           const btt = document.getElementById('backToTop');
+
+          // Accumulate scroll distance for hysteresis-based toggling
           if (delta > 0) {
-            // scrolling down — hide top nav, shrink bottom nav, shrink gas banner, shrink back-to-top
-            if (navEl)    navEl.classList.add('nav-hidden');
-            if (mobNavEl) mobNavEl.classList.add('nav-shrunk');
-            if (gasBanner) gasBanner.classList.add('gas-shrunk');
-            if (btt) btt.classList.add('btt-shrunk');
+            scrollAccum += delta;
+            // Hide top nav immediately on any downward scroll
+            if (navEl) navEl.classList.add('nav-hidden');
+            // Only morph bottom nav + gas + btt after threshold
+            if (scrollAccum >= SCROLL_DOWN_THRESHOLD) {
+              if (mobNavEl && !mobNavEl.classList.contains('nav-shrunk')) {
+                mobNavEl.classList.add('nav-shrunk');
+              }
+              if (gasBanner && !gasBanner.classList.contains('gas-shrunk')) {
+                gasBanner.classList.add('gas-shrunk');
+              }
+              if (btt && !btt.classList.contains('btt-shrunk')) {
+                btt.classList.add('btt-shrunk');
+              }
+            }
           } else if (delta < 0) {
-            // scrolling up — show everything
-            if (navEl)    navEl.classList.remove('nav-hidden');
-            if (mobNavEl) mobNavEl.classList.remove('nav-shrunk');
-            if (gasBanner) gasBanner.classList.remove('gas-shrunk');
-            if (btt) btt.classList.remove('btt-shrunk');
+            scrollAccum = Math.min(0, scrollAccum + delta); // reduce accum on scroll up
+            // Show top nav immediately on any upward scroll
+            if (navEl) navEl.classList.remove('nav-hidden');
+            // Expand bottom nav + gas + btt once we've scrolled up enough
+            if (scrollAccum <= -SCROLL_UP_THRESHOLD) {
+              if (mobNavEl && mobNavEl.classList.contains('nav-shrunk')) {
+                mobNavEl.classList.remove('nav-shrunk');
+              }
+              if (gasBanner && gasBanner.classList.contains('gas-shrunk')) {
+                gasBanner.classList.remove('gas-shrunk');
+              }
+              if (btt && btt.classList.contains('btt-shrunk')) {
+                btt.classList.remove('btt-shrunk');
+              }
+              scrollAccum = 0; // reset after expand
+            }
+          } else {
+            // delta === 0 — on pause, reset accum slowly
+            scrollAccum = 0;
           }
+
           lastScrollY = scrollY;
         }
 

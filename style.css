@@ -175,30 +175,50 @@ nav.nav-hidden {
   pointer-events: none;
 }
 
-/* ── Scroll-driven: shrink bottom nav on scroll down ── */
+/* ── Scroll-driven: morph bottom nav into compact pill dock ── */
 .mob-nav.nav-shrunk {
-  height: 36px !important;
-  transform: translateY(calc(100% - 4px)) !important;
-  border-radius: 18px !important;
-  padding: 0 4px !important;
+  height: 52px !important;
+  padding: 0 8px !important;
+  border-radius: 26px !important;
+  width: auto !important;
+  left: 16px !important;
+  right: 16px !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  /* NEVER use translateY to push it off-screen — stays anchored to bottom */
+  transform: none !important;
+  background: rgba(7, 30, 21, 0.92) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
 }
 .mob-nav.nav-shrunk .mob-nav-item {
-  padding: 0 2px !important;
+  padding: 0 4px !important;
   gap: 0 !important;
+  font-size: 0 !important;
 }
 .mob-nav.nav-shrunk .mob-nav-icon {
-  font-size: 14px !important;
+  font-size: 20px !important;
+  transition: font-size 0.3s ease !important;
 }
 .mob-nav.nav-shrunk .mob-nav-item:not(:has(.mob-nav-post)) span:last-child {
   display: none !important;
+  opacity: 0;
 }
 .mob-nav.nav-shrunk .mob-nav-post {
-  width: 28px !important;
-  height: 28px !important;
-  font-size: 16px !important;
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 18px !important;
 }
 .mob-nav.nav-shrunk .mob-nav-item:has(.mob-nav-post) {
   padding: 0 !important;
+}
+.mob-nav.nav-shrunk .unread-badge {
+  min-width: 14px !important;
+  height: 14px !important;
+  font-size: 8px !important;
+  top: -2px !important;
+  right: -2px !important;
 }
 
 /* ── Scroll-driven: shrink gas banner on scroll down ── */
@@ -1865,12 +1885,23 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   background: rgba(255,255,255,.9);
   border: 1px solid rgba(255,255,255,.78);
   box-shadow: 0 20px 52px rgba(0,32,22,.2), inset 0 1px 0 rgba(255,255,255,.7);
-  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+  /* Smooth morphing transitions: height, padding, border-radius, bg, shadow all animate */
+  transition:
+    height 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    padding 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    border-radius 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    width 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    left 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    right 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+    background 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
   /* GPU layer */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  will-change: height, padding, border-radius, width, left, right;
 }
 @media (max-width: 640px) {
   .mob-nav { display: flex; }
