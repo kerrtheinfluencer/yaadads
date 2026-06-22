@@ -407,10 +407,10 @@ if ('serviceWorker' in navigator) {
 <!-- ─── MOBILE BOTTOM NAV ─── -->
 <div class="mob-nav">
   <button class="mob-nav-item active" id="mnHome" onclick="goHome()">
-    <span class="mob-nav-icon">🏠</span>Home
+    <span class="mob-nav-icon">🏠</span><span class="mob-nav-label">Home</span>
   </button>
   <button class="mob-nav-item" id="mnSearch" onclick="openAiSheet()">
-    <span class="mob-nav-icon">🤖</span>Search
+    <span class="mob-nav-icon">🤖</span><span class="mob-nav-label">Search</span>
   </button>
   <button class="mob-nav-item" onclick="openPostAd()">
     <div class="mob-nav-post">＋</div>
@@ -420,11 +420,11 @@ if ('serviceWorker' in navigator) {
       <span class="mob-nav-icon">💬</span>
       <span class="unread-badge" id="mobMsgBadge"></span>
     </div>
-    Messages
+    <span class="mob-nav-label">Messages</span>
   </button>
   <button class="mob-nav-item" id="mnAccount" onclick="handleAccountTab()">
     <span class="mob-nav-icon" id="mobAccountIcon">👤</span>
-    <span id="mobAccountLabel">Account</span>
+    <span class="mob-nav-label" id="mobAccountLabel">Account</span>
   </button>
 </div>
 

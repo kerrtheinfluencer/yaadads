@@ -187,8 +187,9 @@ nav.nav-hidden {
   margin: 0 auto !important;
   /* NEVER use translateY to push it off-screen — stays anchored to bottom */
   transform: none !important;
-  background: rgba(7, 30, 21, 0.92) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px rgba(0,32,22,0.18), inset 0 1px 0 rgba(255,255,255,0.55) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
 }
