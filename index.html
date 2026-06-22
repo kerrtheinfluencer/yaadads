@@ -1509,9 +1509,110 @@ if (_msgChannel) { _db.removeChannel(_msgChannel); _msgChannel = null; }
   renderNav(); updateMsgBadge(); goHome();
   showToast('Logged out successfully.', '👋');
 }
+
 /* ═══════════════════════════════════════════════════════════
-   MSG BADGE
-═══════════════════════════════════════════════════════════ */
+   LEGACY USER MIGRATION — one-time use to port old users
+   from the 'users' table into Supabase Auth + profiles.
+   Run once via browser console: migrateLegacyUsers()
+   ═══════════════════════════════════════════════════════════ */
+async function migrateLegacyUsers() {
+  if (!_db) { alert('Supabase not connected. Check your connection and try again.'); return; }
+  const confirm1 = prompt(
+    '⚠️ LEGACY USER MIGRATION\n\n' +
+    'This will migrate all users from the old "users" table into Supabase Auth.\n\n' +
+    'Each user will receive a temporary password and MUST reset it on first login.\n' +
+    'Their existing ads and data will be preserved.\n\n' +
+    'Type "YES" to confirm:'
+  );
+  if (confirm1 !== 'YES') { showToast('Migration cancelled.', 'ℹ️'); return; }
+
+  showToast('Migration started — check console for progress...', '🔄');
+  console.log('[Migration] Starting legacy user migration...');
+
+  let legacyUsers;
+  try {
+    const result = await _db.from('users').select('*');
+    legacyUsers = result.data;
+    if (result.error) throw result.error;
+  } catch(e) {
+    console.error('[Migration] Failed to fetch legacy users:', e);
+    showToast('Failed to read legacy users: ' + (e.message || 'unknown error'), '⚠️');
+    return;
+  }
+
+  if (!legacyUsers || !legacyUsers.length) {
+    showToast('No legacy users found in the "users" table.', 'ℹ️');
+    console.log('[Migration] No legacy users found.');
+    return;
+  }
+
+  console.log(`[Migration] Found ${legacyUsers.length} legacy users. Beginning migration...`);
+  let migrated = 0, failed = 0, skipped = 0;
+
+  for (const u of legacyUsers) {
+    try {
+      if (!u.email) {
+        console.warn(`[Migration] Skipping user ${u.id} — no email address`);
+        skipped++;
+        continue;
+      }
+
+      const tempPass = 'Temp' + Math.random().toString(36).slice(2, 10) + '!';
+      const { data, error } = await _db.auth.signUp({
+        email: u.email,
+        password: tempPass,
+        options: {
+          data: {
+            name: u.name || '',
+            phone: u.phone || '',
+            parish: u.parish || ''
+          }
+        }
+      });
+
+      if (error) {
+        console.error(`[Migration] Failed to migrate ${u.email}:`, error.message || error);
+        failed++;
+        continue;
+      }
+
+      if (!data.user) {
+        console.error(`[Migration] No user returned for ${u.email}`);
+        failed++;
+        continue;
+      }
+
+      // Ensure profile row exists with correct data
+      const { error: profileError } = await _db.from('profiles').upsert({
+        id: data.user.id,
+        name: u.name || data.user.email,
+        email: u.email,
+        phone: u.phone || '',
+        parish: u.parish || '',
+        joined: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+      if (profileError) {
+        console.warn(`[Migration] Profile upsert warning for ${u.email}:`, profileError);
+      }
+
+      migrated++;
+      console.log(`[Migration] ✅ Migrated: ${u.email} → auth uid: ${data.user.id}`);
+    } catch(e) {
+      console.error(`[Migration] Exception migrating ${u.email}:`, e);
+      failed++;
+    }
+  }
+
+  const summary = `Migration complete: ${migrated} migrated, ${failed} failed, ${skipped} skipped (no email) out of ${legacyUsers.length} total.`;
+  console.log(`[Migration] ${summary}`);
+  showToast(
+    `Migration complete: ${migrated} migrated, ${failed} failed. Check console for details.`,
+    migrated > 0 && failed === 0 ? '✅' : '⚠️'
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
 function updateMsgBadge() {
   const count = typeof unreadCount === 'function' ? unreadCount() : 0;
   // Mobile bottom nav badge
