@@ -258,7 +258,13 @@ nav.nav-hidden {
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
+/* SVG brand sizing — responsive via viewBox, sized via CSS height */
+.nav-logo .nav-svg { height: 38px; width: auto; display: block; }
+.footer-logo .footer-svg { height: 48px; width: auto; display: block; opacity: 0.9; }
+.m-logo .modal-svg { height: 56px; width: auto; display: block; }
 .nav-logo em { font-style: italic; color: var(--gold); }
 .nav-logo-icon { font-size: 20px; }
 .nav-spacer { flex: 1; }
@@ -2084,6 +2090,11 @@ footer {
     gap: 8px;
   }
   .nav-logo { font-size: 18px; gap: 6px; }
+  /* Responsive SVG sizing on mobile */
+  .nav-logo .nav-svg { height: 32px; width: auto; }
+  .footer-logo .footer-svg { height: 64px; width: auto; opacity: 0.9; }
+  .m-logo .modal-svg { height: 48px; width: auto; }
+  .footer-logo { margin-bottom: 6px; }
   .nav-logo-icon { font-size: 16px; }
   .nav-search-pill { max-width: none; padding: 6px 10px; }
   .nav-search-kbd { display: none; }
