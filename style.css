@@ -1415,27 +1415,31 @@ nav.nav-hidden {
 .fchip {
   padding: 7px 16px;
   border-radius: 22px;
-  background: rgba(255,255,255,.18);
-  border: 1.5px solid rgba(255,255,255,.16);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   font-size: 13px;
   font-family: var(--font-b);
   cursor: pointer;
-  transition: all .15s;
-  font-weight: 500;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: var(--transition-smooth);
+  font-weight: 600;
   color: var(--text-2);
-  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,.04), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .fchip:hover {
-  background: rgba(255,255,255,.12);
-  border-color: var(--green);
+  background: rgba(255, 255, 255, 0.65);
+  border-color: var(--green-mid);
   color: var(--green);
-  box-shadow: 0 4px 12px rgba(0,92,53,.15);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 92, 83, 0.16), inset 0 1px 0 rgba(255,255,255,0.6);
 }
 .fchip.active {
-  background: rgba(0,92,53,0.9);
-  border-color: rgba(255,255,255,.32);
+  background: linear-gradient(135deg, var(--green), var(--green-mid));
+  border-color: rgba(255, 255, 255, 0.25);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(0,92,53,.3);
+  transform: scale(0.98);
+  box-shadow: 0 8px 24px rgba(0, 92, 53, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .fselect {
   margin-left: auto;
@@ -1971,27 +1975,35 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
    ═══════════════════════════════════════════════════════════════════════════ */
 .toast {
   position: fixed;
-  bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom) + 12px);
-  left: 16px; right: 16px;
+  bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+  left: 50%;
+  transform: translate(-50%, 20px) scale(0.95);
   text-align: center;
-  background: rgba(26,26,26,0.95);
+  background: rgba(12, 30, 20, 0.88);
   color: #fff;
-  padding: 10px 18px;
+  padding: 12px 24px;
   border-radius: 50px;
   font-size: 14px;
   font-weight: 600;
-  z-index: 500;
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.4);
-  border: 1px solid rgba(255,255,255,0.12);
-  transform: translateY(16px);
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 20px 40px rgba(0, 32, 22, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   opacity: 0;
-  transition: all .3s;
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
-  width: auto;
-  max-width: none;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
-.toast.show { transform: none; opacity: 1; }
+.toast.show {
+  transform: translate(-50%, 0) scale(1);
+  opacity: 1;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SKELETON SHIMMER
@@ -2350,12 +2362,26 @@ footer {
   transition: all .3s;
 }
 .sheet-sug {
-  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.13);
-  color: rgba(255,255,255,.75); padding: 7px 14px; border-radius: 20px;
-  font-size: 12px; font-weight: 500; cursor: pointer;
-  font-family: var(--font-b); transition: all .18s;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-b);
+  transition: var(--transition-smooth);
 }
-.sheet-sug:hover { background: rgba(244,195,0,.18); border-color: rgba(244,195,0,.5); color: var(--gold); }
+.sheet-sug:hover {
+  background: rgba(244, 195, 0, 0.14);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-1.5px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(244, 195, 0, 0.15);
+}
 .ai-sheet-sugs.hidden { display: none; }
 
 /* Chat messages area */
@@ -2496,13 +2522,29 @@ footer {
 .sheet-recent-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.3); margin-bottom: 8px; }
 .sheet-recent-list { display: flex; gap: 7px; flex-wrap: wrap; }
 .sheet-recent-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-  color: rgba(255,255,255,.65); padding: 5px 12px; border-radius: 16px;
-  font-size: 12px; font-weight: 500; cursor: pointer;
-  font-family: var(--font-b); transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-b);
+  transition: var(--transition-smooth);
 }
-.sheet-recent-chip:hover { background: rgba(255,255,255,.14); color: #fff; }
+.sheet-recent-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
 .src-chip-icon { font-size: 11px; opacity: .7; }
 .ai-sheet-send.sending { animation: sendPulse .8s ease-in-out infinite; }
 @keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
