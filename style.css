@@ -77,6 +77,9 @@ html {
   background: #f5f3ee;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* Prevent horizontal overflow on all devices */
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -88,6 +91,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: contain;
+  /* Prevent horizontal scroll on any device */
+  overflow-x: hidden;
+  min-width: 320px;
 }
 
 @media (max-width: 640px) {
@@ -2075,7 +2081,8 @@ footer {
 /* ── TABLET LANDSCAPE / SMALL DESKTOP (769px–1024px) ── */
 @media (max-width: 1024px) {
   nav { padding: 0 20px; gap: 14px; }
-  .listings-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  /* Prevent single oversized card on wide tablets */
+  .listings-grid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 45%), 1fr)); gap: 16px; }
   .results-area { padding: 0 20px 48px; }
 }
 
@@ -2190,7 +2197,11 @@ footer {
   .overlay { align-items: flex-end; }
   .modal {
     border-radius: 24px 24px 0 0;
-    padding: 24px 18px calc(24px + env(safe-area-inset-bottom));
+    /* safe-area fallback for older iOS that don't support env() */
+    padding: 24px 18px 24px;
+    padding-bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));
+    max-height: 92dvh;
+    max-height: 92vh; /* fallback for browsers without dvh support */
     max-height: 92dvh;
     overflow-y: auto;
     max-width: 100%;
@@ -2240,11 +2251,18 @@ footer {
   .my-ad-price { font-size: 14px; }
   .my-ad-meta { font-size: 11px; }
 
-  /* Toast */
+  /* Toast — fix centering on mobile (override desktop left:50% transform trick) */
   .toast {
-    left: 12px; right: 12px;
-    bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom) + 10px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    bottom: calc(var(--mob-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 10px);
+    transform: translateY(20px) scale(0.95);
     font-size: 13px;
+  }
+  .toast.show {
+    transform: translateY(0) scale(1);
   }
 
   /* Hero compact */
@@ -2285,6 +2303,10 @@ footer {
   .listings-grid { grid-template-columns: 1fr; }
   .mob-nav-item { font-size: 9px; }
   .mob-nav-icon { font-size: 18px; }
+  /* Prevent overflow on extremely small devices */
+  .hero { padding-left: 12px; padding-right: 12px; }
+  .results-area { padding-left: 8px; padding-right: 8px; }
+  .cat-row { gap: 4px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2864,7 +2886,7 @@ body.pwa-mode { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
    ═══════════════════════════════════════════════════════════════════════════ */
 #homeGrid, #catRow { will-change: contents; }
 
-/* ── iOS zoom prevention ── */
+/* ── iOS zoom prevention — force 16px on all form inputs ── */
 @media screen and (max-width: 768px) {
   input, textarea, select,
   .form-inp, .ai-search-input, .ai-sheet-input,
@@ -2874,6 +2896,27 @@ body.pwa-mode { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
   #eaTitle, #eaDesc, #eaPrice, #eaPhone,
   #editName, #editPhone, #offerAmt, #rateComment {
     font-size: 16px;
+  }
+
+  /* Minimum 44×44px touch targets on mobile (WCAG 2.5.5) */
+  button,
+  .btn,
+  .btn-sm,
+  .mob-nav-item,
+  .fav-btn,
+  .cat-pill-sm,
+  .fchip,
+  .sheet-sug,
+  .sheet-recent-chip {
+    min-height: 44px;
+  }
+
+  /* Cat pills and chips can be slightly shorter */
+  .cat-pill-sm,
+  .fchip,
+  .sheet-sug,
+  .sheet-recent-chip {
+    min-height: 36px;
   }
 }
 
@@ -2925,7 +2968,12 @@ body {
     radial-gradient(circle at 92% 10%, rgba(0, 112, 63, .2), transparent 25rem),
     radial-gradient(circle at 50% 95%, rgba(26, 115, 232, .11), transparent 30rem),
     #eef7f2;
-  background-attachment: fixed;
+  /* background-attachment:fixed is broken on iOS Safari — use scroll instead */
+  background-attachment: scroll;
+}
+/* Restore fixed attachment only for desktop where it works */
+@media (min-width: 1025px) {
+  body { background-attachment: fixed; }
 }
 
 /* ── Nav/btn frosted overrides ── */
