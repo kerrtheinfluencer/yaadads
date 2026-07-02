@@ -17,7 +17,7 @@ const path = require('path');
 
 // ── Config ────────────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cquwshpsfybvgqodbxsf.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
 const BASE_URL     = 'https://yaadadz.com';
 const OUT_DIR      = path.join(__dirname, 'ad');
 
@@ -1420,25 +1420,17 @@ ${adXml}
   fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
   console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
 
-  // ── Ping Google sitemap ───────────────────────────────────────
-  try {
-    const https = require('https');
-    const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(BASE_URL + '/sitemap.xml')}`;
-    https.get(pingUrl, (res) => {
-      console.log(`   📡 Google pinged — sitemap submitted (HTTP ${res.statusCode})`);
-    }).on('error', () => {
-      console.log('   ⚠️  Google ping failed (non-fatal)');
-    });
-  } catch(e) {
-    console.log('   ⚠️  Google ping skipped');
-  }
-
   // ── IndexNow — instant page discovery for Bing/Yandex/Google ──
   // Submits all new ad URLs immediately so they get crawled within hours
-  // Key: use the same key for yaadadz.com (create file /indexnow-key.txt)
+  // Key: use the same key for yaadadz.com (writes verification file automatically)
   try {
     const https2 = require('https');
     const INDEXNOW_KEY = 'yaadadz2026indexnow';
+    
+    // Auto-generate IndexNow verification key file so ownership validation passes
+    fs.writeFileSync(path.join(__dirname, INDEXNOW_KEY + '.txt'), INDEXNOW_KEY, 'utf8');
+    console.log(`   🔑 IndexNow verification key file written (${INDEXNOW_KEY}.txt)`);
+
     const urlList = adEntries.slice(0, 100).map(e => e.url); // Max 100 per call
     urlList.push(BASE_URL + '/');
     urlList.push(BASE_URL + '/sitemap.html');

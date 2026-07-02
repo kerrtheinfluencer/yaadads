@@ -183,7 +183,7 @@
 <!-- PWA Manifest (inline blob) -->
 <script>
 (function(){
-const m={name:"Yaad Adz",short_name:"Yaad Adz",description:"Jamaica's free marketplace — buy and sell across all 14 parishes",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",categories:["shopping","classifieds","marketplace"],icons:[{src:"https://fav.farm/🇯🇲",sizes:"192x192",type:"image/png"},{src:"https://fav.farm/🇯🇲",sizes:"512x512",type:"image/png"}],screenshots:[{src:"https://yaadadz.com/screenshot.jpg",sizes:"1080x1920",type:"image/jpeg",label:"Yaad Adz home — listings across Jamaica"}]};
+const m={name:"Yaad Adz",short_name:"Yaad Adz",description:"Jamaica's free marketplace — buy and sell across all 14 parishes",start_url:"/",display:"standalone",background_color:"#0c1e14",theme_color:"#0c1e14",categories:["shopping","classifieds","marketplace"],icons:[{src:"/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/icon-512.png",sizes:"512x512",type:"image/png"}],screenshots:[{src:"https://yaadadz.com/screenshot.jpg",sizes:"1080x1920",type:"image/jpeg",label:"Yaad Adz home — listings across Jamaica"}]};
 const b=new Blob([JSON.stringify(m)],{type:"application/json"});
 const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(b);
 document.head.appendChild(l);
