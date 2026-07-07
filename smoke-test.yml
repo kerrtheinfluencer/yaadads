@@ -1,0 +1,78 @@
+name: Smoke Test
+
+# Runs automatically on every push to main. Doesn't block your commit,
+# just gives you a green ✓ or red ✗ next to it on GitHub so you know
+# immediately if something's broken — instead of finding out from a
+# broken homepage days later.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check index.html has a Supabase key configured
+        run: |
+          if ! grep -q "key: 'eyJ" index.html; then
+            echo "::error::No Supabase anon key found in index.html — CFG.supabase.key looks empty or malformed."
+            exit 1
+          fi
+          echo "✓ Supabase key present in config"
+
+      - name: Check inline JS has no syntax errors
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('index.html', 'utf8');
+            const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+            if (scripts.length === 0) { console.error('No inline <script> blocks found — check the file wasn\'t corrupted on paste.'); process.exit(1); }
+            let ok = true;
+            scripts.forEach((m, i) => {
+              try { new Function(m[1]); }
+              catch(e) { ok = false; console.error('Syntax error in inline script block ' + i + ': ' + e.message); }
+            });
+            if (!ok) process.exit(1);
+            console.log('✓ All ' + scripts.length + ' inline script blocks parse correctly');
+          "
+
+      - name: Verify the anon key isn't expired
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('index.html', 'utf8');
+            const match = html.match(/key:\s*'([^']+)'/);
+            if (!match) { console.error('Could not find CFG.supabase.key in index.html'); process.exit(1); }
+            const key = match[1];
+            const payload = JSON.parse(Buffer.from(key.split('.')[1], 'base64').toString());
+            const expDate = new Date(payload.exp * 1000);
+            const now = new Date();
+            const daysLeft = Math.floor((expDate - now) / (1000*60*60*24));
+            console.log('Key expires: ' + expDate.toISOString().slice(0,10) + ' (' + daysLeft + ' days from now)');
+            if (daysLeft < 0) {
+              console.error('::error::Supabase anon key is EXPIRED. This will silently break every database call. Generate a new key in Supabase → Settings → API and update CFG.supabase.key.');
+              process.exit(1);
+            }
+            if (daysLeft < 30) {
+              console.error('::warning::Supabase anon key expires in ' + daysLeft + ' days — plan to rotate it soon.');
+            }
+          "
+
+      - name: Ping live Supabase REST endpoint
+        run: |
+          URL=$(grep -oP "url:\s*'\K[^']+" index.html | head -1)
+          KEY=$(grep -oP "key:\s*'\K[^']+" index.html | head -1)
+          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" "${URL}/rest/v1/ads?select=id&limit=1" \
+            -H "apikey: ${KEY}" -H "Authorization: Bearer ${KEY}")
+          echo "Supabase REST responded: HTTP $STATUS"
+          cat /tmp/resp.json
+          if [ "$STATUS" -ge 400 ]; then
+            echo "::error::Supabase REST endpoint returned HTTP $STATUS — check RLS policies, table name, or key validity."
+            exit 1
+          fi
+          echo "✓ Supabase is reachable and responding"
