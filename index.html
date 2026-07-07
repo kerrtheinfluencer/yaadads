@@ -1000,7 +1000,7 @@ const L = {
 ═══════════════════════════════════════════════════════════ */
 
 // Load all active ads into cache
-async function loadAds() {
+async function loadAds(_isRetry) {
   // ── Capture OLD ids BEFORE we replace _ads (so we can detect new arrivals) ──
   const prevIds = new Set(_ads.map(a => a.id));
 
@@ -1020,6 +1020,13 @@ async function loadAds() {
       .limit(500);
     data = result.data; error = result.error;
   } catch (e) {
+    // ── One retry after 1.5s: mobile connections drop mid-request often;
+    // don't declare a connection issue on the very first blip.
+    if (!_isRetry) {
+      console.warn('[loadAds] First attempt failed, retrying once in 1.5s:', e && e.message);
+      await new Promise(r => setTimeout(r, 1500));
+      return loadAds(true);
+    }
     console.error("[loadAds] Supabase threw:", e);
     // Build a more useful message — distinguish "JS didn't load" from "API error"
     let errMsg = String(e && e.message || e);
@@ -2430,11 +2437,21 @@ function updateStats() {
     // Cache so next load shows the right number immediately, not 0
     try { localStorage.setItem('ya_last_count', _ads.length); } catch(e) {}
   }
+  const uEl = document.getElementById('uStat');
+  // Show cached count immediately so it never sits at "0" while waiting
+  try {
+    const cachedUsers = localStorage.getItem('ya_last_users');
+    if (uEl && cachedUsers) uEl.textContent = cachedUsers;
+  } catch(e) {}
+
   _db.from('users').select('id', { count: 'exact', head: true })
-    .then(({ count }) => {
-      const el = document.getElementById('uStat');
-      if (el) el.textContent = (count || 1);
-    });
+    .then(({ count, error }) => {
+      if (error) { console.error('[updateStats] users count failed:', error.message); return; }
+      const val = count || 1;
+      if (uEl) uEl.textContent = val;
+      try { localStorage.setItem('ya_last_users', val); } catch(e) {}
+    })
+    .catch(e => console.error('[updateStats] users query threw:', e));
 }
 
 // Apply cached count immediately on paint — before Supabase responds
