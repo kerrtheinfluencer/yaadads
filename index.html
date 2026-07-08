@@ -500,6 +500,7 @@ if ('serviceWorker' in navigator) {
     <div id="fLogin">
       <div class="form-grp"><label class="form-lbl">Email</label><input class="form-inp" id="lEmail" type="email" placeholder="you@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="form-grp"><label class="form-lbl">Password</label><input class="form-inp" id="lPass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <p style="text-align:right;margin:-8px 0 12px"><a href="#" id="forgotPwLink" style="font-size:12px;color:var(--text-3)" onclick="doForgotPassword();return false">Forgot password?</a></p>
       <button class="btn btn-green btn-block btn-lg" onclick="doLogin()">Log In</button>
       <div class="divider">or</div>
       <p style="text-align:center;font-size:13px;color:var(--text-3)">No account? <a href="#" style="color:var(--green);font-weight:600" onclick="authTab('register');return false">Join Free</a></p>
