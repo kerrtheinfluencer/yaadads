@@ -354,6 +354,35 @@ async function sbRegister(name, email, phone, parish, password) {
   return { id: data.user.id, name: p.name || name, email: p.email || email, phone: p.phone || phone || '', parish: p.parish || parish || '' };
 }
 
+async function sbResetPassword(email) {
+  const { error } = await _db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if (error) throw new Error(error.message || 'Could not send reset email.');
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('lEmail').value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return authErr('Enter your email above first, then tap "Forgot password?"');
+  }
+  const link = document.getElementById('forgotPwLink');
+  if (link) { link.textContent = 'Sending…'; link.style.pointerEvents = 'none'; }
+  try {
+    await sbResetPassword(email);
+    const el = document.getElementById('authAlert');
+    if (el) {
+      el.className = 'alert-box';
+      el.style.cssText = 'display:block;background:var(--green-light);color:var(--green);border-color:var(--green)';
+      el.textContent = 'Check your email for a password reset link.';
+    }
+  } catch(e) {
+    authErr(e.message || 'Could not send reset email — please try again.');
+  } finally {
+    if (link) { link.textContent = 'Forgot password?'; link.style.pointerEvents = ''; }
+  }
+}
+
 async function sbLogin(email, password) {
   // Use Supabase Auth for proper authentication
   const { data, error } = await _db.auth.signInWithPassword({ email, password });

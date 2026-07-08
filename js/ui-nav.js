@@ -14,6 +14,17 @@ async function init() {
   await restoreSession();
   renderNav();
 
+  if (CU && (!CU.parish || !CU.phone)) {
+    try {
+      if (!sessionStorage.getItem('ya_profile_nudged')) {
+        sessionStorage.setItem('ya_profile_nudged', '1');
+        setTimeout(function() {
+          showToast('Add your parish & phone to your profile so buyers can find and reach you', '📍');
+        }, 2500);
+      }
+    } catch(e) {}
+  }
+
   // Detect PWA standalone mode — apply safe area CSS only when installed
   if (window.navigator.standalone === true ||
       window.matchMedia('(display-mode: standalone)').matches) {

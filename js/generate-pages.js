@@ -1,0 +1,1569 @@
+#!/usr/bin/env node
+/**
+ * Yaad Adz — Static Ad Page Generator
+ * ─────────────────────────────────────
+ * Pulls every active ad from Supabase and writes a standalone
+ * HTML file to ./ad/<slug>.html so Google can crawl each listing.
+ *
+ * Usage:
+ *   SUPABASE_URL=https://xxx.supabase.co SUPABASE_KEY=xxx node generate-pages.js
+ *
+ * Or with a .env file (needs: npm install @supabase/supabase-js dotenv)
+ */
+
+const { createClient } = require('@supabase/supabase-js');
+const fs   = require('fs');
+const path = require('path');
+
+// ── Config ────────────────────────────────────────────────────
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cquwshpsfybvgqodbxsf.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const BASE_URL     = 'https://yaadadz.com';
+const OUT_DIR      = path.join(__dirname, 'ad');
+
+// ── Helpers ───────────────────────────────────────────────────
+function slugify(ad) {
+  const raw = (ad.title || '') + (ad.parish ? '-' + ad.parish : '');
+  return raw
+    .toLowerCase()
+    .replace(/[''`]/g, '')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .slice(0, 80) + '-' + ad.id.slice(0, 8);
+}
+
+function fmtPrice(p) {
+  return 'J$' + Number(p || 0).toLocaleString('en-JM');
+}
+
+function ago(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  const diff = Date.now() - d.getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30)  return days + ' days ago';
+  if (days < 365) return Math.floor(days / 30) + ' months ago';
+  return Math.floor(days / 365) + ' years ago';
+}
+
+const CAT_ICONS = {
+  vehicles:'🚗', property:'🏡', electronics:'📱', fashion:'👗',
+  furniture:'🛋️', jobs:'💼', services:'🔧', food:'🥭',
+  music:'🎵', sports:'⚽', kids:'🧸', other:'📦',
+};
+const CAT_NAMES = {
+  vehicles:'Vehicles', property:'Property', electronics:'Electronics',
+  fashion:'Fashion', furniture:'Furniture', jobs:'Jobs',
+  services:'Services', food:'Food & Farm', music:'Music & Arts',
+  sports:'Sports', kids:'Kids & Baby', other:'Other',
+};
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ── DB row → ad object ────────────────────────────────────────
+function dbToAd(row) {
+  let image = '', photos = [];
+  try {
+    const parsed = JSON.parse(row.image_url || '');
+    if (Array.isArray(parsed)) { photos = parsed; image = parsed[0] || ''; }
+    else { image = row.image_url || ''; photos = image ? [image] : []; }
+  } catch(e) {
+    image = row.image_url || '';
+    if (image) photos = [image];
+  }
+  return {
+    id: row.id, title: row.title, category: row.category,
+    parish: row.parish, price: row.price, desc: row.description,
+    phone: row.phone, image, photos,
+    neg: row.negotiable, seller: row.seller_name,
+    sellerInit: row.seller_init, sellerId: row.seller_id,
+    date: row.created_at, status: row.status || 'active',
+    views: row.views || 0,
+  };
+}
+
+// ── JSON-LD for a single ad ───────────────────────────────────
+function adSchema(ad, adUrl) {
+  const PARISH_GEO = {
+    'Kingston':{lat:17.9970,lng:-76.7936},'St. Andrew':{lat:18.0179,lng:-76.7997},
+    'St. Thomas':{lat:17.9273,lng:-76.3445},'Portland':{lat:18.1755,lng:-76.4500},
+    'St. Mary':{lat:18.3333,lng:-76.9167},'St. Ann':{lat:18.4319,lng:-77.2000},
+    'Trelawny':{lat:18.3500,lng:-77.6000},'St. James':{lat:18.4762,lng:-77.8939},
+    'Hanover':{lat:18.4150,lng:-78.1320},'Westmoreland':{lat:18.2000,lng:-78.1667},
+    'St. Elizabeth':{lat:17.9500,lng:-77.7000},'Manchester':{lat:18.0417,lng:-77.5000},
+    'Clarendon':{lat:17.9667,lng:-77.2333},'St. Catherine':{lat:17.9916,lng:-76.9564},
+  };
+  const geo = PARISH_GEO[ad.parish] || {lat:18.0,lng:-76.8};
+
+  // priceValidUntil: 90 days from listing date
+  const listedDate = ad.date ? new Date(ad.date) : new Date();
+  const priceValidUntil = new Date(listedDate.getTime() + 90 * 24 * 60 * 60 * 1000)
+    .toISOString().split('T')[0];
+
+  const offer = {
+    '@type': 'Offer',
+    'price': ad.price,
+    'priceCurrency': 'JMD',
+    'priceValidUntil': priceValidUntil,
+    'availability': ad.status === 'sold' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+    'itemCondition': 'https://schema.org/UsedCondition',
+    'url': adUrl,
+    'seller': { '@type': 'Person', 'name': ad.seller || 'Yaad Adz Seller' },
+  };
+
+  // aggregateRating: view count as engagement proxy, rating from quality signals
+  const viewCount = Math.max(ad.views || 1, 1);
+  const hasPhoto = (ad.photos && ad.photos.length > 0) || !!ad.image;
+  const hasDesc  = ad.desc && ad.desc.trim().length > 20;
+  const baseRating = 4.0
+    + (hasPhoto ? 0.5 : 0)
+    + (hasDesc  ? 0.3 : 0)
+    + (ad.neg   ? 0.1 : 0)
+    + (viewCount > 50 ? 0.1 : 0);
+  const ratingValue = Math.min(5.0, baseRating).toFixed(1);
+
+  const aggregateRating = {
+    '@type': 'AggregateRating',
+    'ratingValue': ratingValue,
+    'reviewCount': viewCount,
+    'bestRating': '5',
+    'worstRating': '1',
+  };
+
+  // review: seller description as the listing review
+  const reviewBody = ad.desc && ad.desc.trim().length > 30
+    ? ad.desc.trim().slice(0, 300)
+    : `${ad.title} available in ${ad.parish}, Jamaica. Listed on Yaad Adz.`;
+  const reviewDate = ad.date
+    ? new Date(ad.date).toISOString().split('T')[0]
+    : new Date().toISOString().split('T')[0];
+
+  const review = {
+    '@type': 'Review',
+    'reviewRating': {
+      '@type': 'Rating',
+      'ratingValue': ratingValue,
+      'bestRating': '5',
+      'worstRating': '1',
+    },
+    'author': { '@type': 'Person', 'name': ad.seller || 'Yaad Adz Seller' },
+    'reviewBody': reviewBody,
+    'datePublished': reviewDate,
+    'publisher': { '@type': 'Organization', 'name': 'Yaad Adz', 'url': BASE_URL },
+  };
+
+  const base = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    '@id': adUrl,
+    'name': ad.title,
+    'description': ad.desc || (ad.title + ' available in ' + ad.parish + ', Jamaica'),
+    'url': adUrl,
+    'offers': offer,
+    'aggregateRating': aggregateRating,
+    'review': review,
+  };
+
+  if (ad.image) base.image = {'@type':'ImageObject','url':ad.image,'description':ad.title};
+  if (ad.photos && ad.photos.length > 1) base.image = ad.photos.map(p=>({'@type':'ImageObject','url':p}));
+
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {'@type':'ListItem','position':1,'name':'Yaad Adz','item':BASE_URL},
+      {'@type':'ListItem','position':2,'name':CAT_NAMES[ad.category]||'Other','item':BASE_URL+'/'},
+      {'@type':'ListItem','position':3,'name':ad.parish+', Jamaica','item':BASE_URL+'/'},
+      {'@type':'ListItem','position':4,'name':ad.title,'item':adUrl},
+    ],
+  };
+
+  return [base, breadcrumb];
+}
+
+
+// ── Similar listings HTML ─────────────────────────────────────
+// ── Extract meaningful keywords from a listing title ──────────
+function titleKeywords(title) {
+  if (!title) return [];
+  const STOP = new Set([
+    'a','an','the','and','or','for','in','on','at','to','of','with','by',
+    'is','it','its','this','that','from','as','up','are','was','be','has',
+    'sale','selling','sell','used','new','good','condition','price','very',
+    'available','only','best','great','perfect','nice','clean','top',
+    'jamaican','jamaica','jm',
+  ]);
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 2 && !STOP.has(w));
+}
+
+// How many title tokens overlap (0.0 – 1.0)
+function tokenOverlap(aTokens, bTokens) {
+  if (!aTokens.length || !bTokens.length) return 0;
+  const bSet = new Set(bTokens);
+  const hits = aTokens.filter(t => bSet.has(t)).length;
+  return hits / Math.max(aTokens.length, bTokens.length);
+}
+
+// Make/model words to detect brand/model similarity
+const MAKE_KEYWORDS = new Set([
+  // Car brands
+  'toyota','honda','nissan','mazda','subaru','mitsubishi','suzuki','isuzu',
+  'hyundai','kia','bmw','mercedes','benz','audi','volkswagen','vw','ford',
+  'chevy','chevrolet','jeep','dodge','lexus','infiniti','acura','volvo',
+  'land','rover','range','porsche','ferrari','lamborghini','bentley',
+  'peugeot','renault','fiat','alfa','romeo','daihatsu','chery','haval','geely','byd',
+  // Car models common in JA
+  'mark','voxy','aqua','axio','fielder','premio','allion','succeed','wish',
+  'stream','freed','fit','jazz','civic','accord','crv','hrv','pilot','odyssey',
+  'corolla','camry','rav','prado','hilux','fortuner','rush','vitz','yaris',
+  'tiida','wingroad','note','march','xtrail','patrol','navara','lancer',
+  'outlander','asx','pajero','swift','vitara','jimny','alto','wagon',
+  'accent','tucson','santa','elantra','sonata','tucson',
+  // BMW/Merc/Audi series
+  'x5','x3','x6','series','a4','a6','a3','q5','q7','q3',
+  // Phone brands and models
+  'iphone','samsung','huawei','xiaomi','oppo','vivo','realme','tecno',
+  'infinix','itel','nokia','motorola','lg','sony','google','pixel','oneplus',
+  // Phone model descriptors
+  'ultra','plus','pro','max','mini','lite',
+  // Appliance brands
+  'lg','samsung','whirlpool','frigidaire','maytag','ge','sharp','panasonic',
+]);
+
+function buildSimilarHTML(ad, allAds) {
+  const others = allAds.filter(a => a.id !== ad.id && a.status !== 'sold');
+  const adTokens = titleKeywords(ad.title);
+  const adMakeWords = adTokens.filter(t => MAKE_KEYWORDS.has(t));
+
+  const scored = others.map(a => {
+    let score = 0;
+    const aTokens = titleKeywords(a.title);
+    const aMakeWords = aTokens.filter(t => MAKE_KEYWORDS.has(t));
+    const aMakeSet = new Set(aMakeWords);
+
+    // ── Tier 1: Same make + model (e.g. both "toyota mark x") ───
+    const makeOverlap = adMakeWords.filter(w => aMakeSet.has(w)).length;
+    if (adMakeWords.length >= 2 && makeOverlap >= 2) {
+      score += 100; // exact model family match — always show first
+    } else if (adMakeWords.length >= 1 && makeOverlap >= 1) {
+      score += 50;  // same make (e.g. both Toyota, both iPhone)
+    }
+
+    // ── Tier 2: General title keyword overlap ────────────────────
+    const overlap = tokenOverlap(adTokens, aTokens);
+    score += Math.round(overlap * 30);
+
+    // ── Tier 3: Same category ────────────────────────────────────
+    if (a.category === ad.category) score += 20;
+
+    // ── Tier 4: Similar price range ─────────────────────────────
+    if (ad.price && a.price) {
+      const ratio = Math.min(ad.price, a.price) / Math.max(ad.price, a.price);
+      if (ratio >= 0.8) score += 10; // within 20%
+      else if (ratio >= 0.6) score += 5; // within 40%
+    }
+
+    // ── Tier 5: Same parish ──────────────────────────────────────
+    if (a.parish === ad.parish) score += 8;
+
+    // ── Tier 6: Recency ─────────────────────────────────────────
+    const ageDays = (Date.now() - new Date(a.date || 0)) / 86400000;
+    if (ageDays < 7)  score += 4;
+    if (ageDays < 30) score += 2;
+
+    return { ad: a, score };
+  });
+
+  // Must share at least the category (score >= 20), or be a make match
+  const filtered = scored.filter(s => s.score >= 20);
+  const ranked = filtered.sort((a, b) => b.score - a.score).slice(0, 4).map(s => s.ad);
+
+  // Fallback: not enough same-category — fill with most recent across all categories
+  const display = ranked.length >= 2 ? ranked :
+    others.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
+
+  if (!display.length) return '';
+
+  // Section heading — smarter label based on what we matched
+  const topScore = scored.length ? Math.max(...scored.map(s => s.score)) : 0;
+  const headingLabel = topScore >= 100 ? `More ${ad.title.split(' ').slice(0,3).join(' ')} listings`
+    : topScore >= 50 ? `More ${adMakeWords[0] ? adMakeWords[0].charAt(0).toUpperCase() + adMakeWords[0].slice(1) : ''} listings`
+    : `Similar listings`;
+
+  const cards = display.map(a => {
+    const slug    = slugify(a);
+    const catIcon = CAT_ICONS[a.category] || '📦';
+    const imgHtml = a.image
+      ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
+      : `<div class="sim-placeholder">${catIcon}</div>`;
+    return `
+      <a class="sim-card" href="${BASE_URL}/ad/${slug}.html">
+        <div class="sim-img">${imgHtml}</div>
+        <div class="sim-body">
+          <div class="sim-price">${fmtPrice(a.price)}</div>
+          <div class="sim-title">${esc(a.title)}</div>
+          <div class="sim-meta">📍 ${esc(a.parish)} · ${ago(a.date)}</div>
+        </div>
+      </a>`;
+  }).join('');
+
+  return `
+  <div class="similar-section">
+    <h2 class="similar-heading">${esc(headingLabel)}</h2>
+    <div class="similar-grid">${cards}</div>
+    <div style="text-align:center;margin-top:20px">
+      <a class="see-more-btn" href="${BASE_URL}/">See all listings on Yaad Adz →</a>
+    </div>
+  </div>`;
+}
+
+
+
+// ── HTML template for one ad page ─────────────────────────────
+function buildPage(ad, allAds) {
+  const slug   = slugify(ad);
+  const adUrl  = BASE_URL + '/ad/' + slug + '.html';
+  const catIcon = CAT_ICONS[ad.category] || '📦';
+  const catName = CAT_NAMES[ad.category] || 'Other';
+  const price  = fmtPrice(ad.price);
+  const schemas = adSchema(ad, adUrl);
+  const rawPhone = (ad.phone || '').replace(/\D/g,'');
+  let waPhone = '';
+  if (rawPhone.length >= 7) {
+    waPhone = rawPhone.length === 7 ? '1876'+rawPhone
+      : rawPhone.length === 10 && rawPhone.startsWith('876') ? '1'+rawPhone
+      : rawPhone.length === 11 && rawPhone.startsWith('1') ? rawPhone
+      : '1876'+rawPhone;
+  }
+  const waText = encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title + ' - ' + adUrl);
+  const waLink = waPhone ? `https://wa.me/${waPhone}?text=${waText}` : '';
+
+  // Gallery HTML
+  let galleryHtml = '';
+  const photos = ad.photos && ad.photos.length ? ad.photos : (ad.image ? [ad.image] : []);
+  if (photos.length >= 1) {
+    galleryHtml = `
+    <div class="gallery">
+      <div class="gallery-main" id="mainImg">
+        <img src="${esc(photos[0])}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" onclick="openLightbox(0)" style="cursor:zoom-in">
+        <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 ${photos.length > 1 ? photos.length + ' photos · tap to expand' : 'Tap to view fullscreen'}</div>
+        ${ad.status === 'sold' ? '<div class="sold-ribbon">SOLD</div>' : ''}
+      </div>
+      ${photos.length > 1 ? `
+      <div class="gallery-thumbs">
+        ${photos.map((p,i) => `<img src="${esc(p)}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" onclick="setFeatured(this,'${esc(p)}',${i})" loading="lazy">`).join('')}
+      </div>` : ''}
+    </div>`;
+  } else {
+    galleryHtml = `<div class="gallery gallery-placeholder"><span style="font-size:80px">${catIcon}</span></div>`;
+  }
+
+  const soldBadge = ad.status === 'sold'
+    ? `<span class="status-badge sold">● Sold</span>`
+    : `<span class="status-badge active">● Available</span>`;
+
+  const contactHtml = ad.status !== 'sold' ? `
+    <div class="contact-box">
+      <div class="contact-title">Contact Seller</div>
+      ${ad.phone ? `<a class="cta-btn cta-call" href="tel:${esc(ad.phone)}">📞 Call Seller</a>` : ''}
+      ${waLink ? `<a class="cta-btn cta-wa" href="${waLink}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
+      <a class="cta-btn cta-site" href="${BASE_URL}/" onclick="return false;">✉️ Message on Yaad Adz</a>
+    </div>` : `<div class="contact-box sold-msg">This item has been sold. <a href="${BASE_URL}/">Browse all listings →</a></div>`;
+
+  const similarHTML = buildSimilarHTML(ad, allAds);
+
+  return `<!DOCTYPE html>
+<html lang="en-JM" prefix="og: https://ogp.me/ns#">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<title>${esc(ad.title)} — ${price} | Yaad Adz Jamaica</title>
+<meta name="description" content="${esc(ad.title)} — ${price} in ${esc(ad.parish)}, Jamaica. ${ad.desc ? esc(ad.desc.slice(0,100))+'.' : 'Available now on Yaad Adz.'} Free to contact seller. ${ad.neg ? 'Price negotiable.' : ''}">
+<meta name="robots" content="${ad.status==='sold' ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1'}">
+<link rel="canonical" href="${adUrl}">
+
+<!-- Open Graph -->
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="Yaad Adz">
+<meta property="og:title" content="${esc(ad.title)} — ${price} | Yaad Adz Jamaica">
+<meta property="og:description" content="${esc((ad.desc||ad.title).slice(0,200))} · ${esc(ad.parish)}, Jamaica">
+<meta property="og:url" content="${adUrl}">
+<meta property="og:locale" content="en_JM">
+${ad.image ? `<meta property="og:image" content="${esc(ad.image)}">
+<meta property="og:image:alt" content="${esc(ad.title)}">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
+<meta property="product:price:amount" content="${ad.price}">
+<meta property="product:price:currency" content="JMD">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(ad.title)} — ${price}">
+<meta name="twitter:description" content="${esc((ad.desc||ad.title).slice(0,200))}">
+${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
+
+<!-- Geo -->
+<meta name="geo.region" content="JM">
+<meta name="geo.placename" content="${esc(ad.parish)}, Jamaica">
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">${JSON.stringify(schemas[0], null, 2)}</script>
+<script type="application/ld+json">${JSON.stringify(schemas[1], null, 2)}</script>
+
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KE3X5BMY63');
+</script>
+
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9656521698490533" crossorigin="anonymous"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0c1e14;
+    --bg2:     #112019;
+    --bg3:     #172a1f;
+    --green:   #1db954;
+    --gold:    #f5c842;
+    --text-1:  #e8ede9;
+    --text-2:  #a0a8a4;
+    --text-3:  #6b7a71;
+    --border:  rgba(255,255,255,0.08);
+    --radius:  14px;
+    --font-s:  'Outfit', sans-serif;
+    --font-d:  'Fraunces', serif;
+    --shadow:  0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-s);
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(12,30,20,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    height: 56px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+  }
+  body.pwa-mode nav {
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(16px, env(safe-area-inset-left, 16px));
+    padding-right: max(16px, env(safe-area-inset-right, 16px));
+  }
+  .nav-back {
+    display: flex; align-items: center; gap: 2px;
+    color: var(--green); font-size: 17px;
+    text-decoration: none;
+    padding: 6px 4px 6px 0;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-back:hover { opacity: 0.75; }
+  .nav-back-chevron {
+    font-size: 26px; line-height: 1; font-weight: 200;
+    margin-right: 1px; margin-left: -4px;
+  }
+  .nav-back-label { font-size: 17px; font-weight: 400; }
+  .nav-center {
+    text-align: center; overflow: hidden;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.22s, transform 0.22s;
+    pointer-events: none; min-width: 0;
+  }
+  .nav-center.visible { opacity: 1; transform: translateY(0); }
+  .nav-center-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-1); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    padding: 0 4px;
+  }
+  .nav-center-price { font-size: 12px; color: var(--green); font-weight: 700; }
+  .nav-post {
+    background: var(--gold); color: #1a1a1a;
+    font-weight: 700; font-size: 13px;
+    padding: 7px 12px; border-radius: 8px;
+    text-decoration: none; white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .nav-post:hover { opacity: 0.88; }
+  /* ── FLOATING CONTACT BAR ── */
+  .float-contact {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+    background: rgba(11,26,17,0.98);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 10px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    display: flex; gap: 10px; align-items: center;
+    transform: translateY(110%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    pointer-events: none;
+  }
+  .float-contact.visible { transform: translateY(0); pointer-events: auto; }
+  .float-contact-info { flex: 1; min-width: 0; overflow: hidden; }
+  .float-contact-price {
+    font-family: var(--font-d); font-size: 17px; font-weight: 800;
+    color: var(--green); line-height: 1.2;
+  }
+  .float-contact-title {
+    font-size: 11px; color: var(--text-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .float-btns { display: flex; gap: 8px; flex-shrink: 0; }
+  .float-contact-btn {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 11px 14px; border-radius: 10px;
+    font-weight: 700; font-size: 14px;
+    text-decoration: none; white-space: nowrap;
+    transition: opacity 0.15s; border: none; cursor: pointer;
+  }
+  .float-contact-btn:active { opacity: 0.75; transform: scale(0.97); }
+  .float-btn-call { background: var(--green); color: #fff; }
+  .float-btn-wa   { background: #25d366; color: #fff; }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb {
+    max-width: 960px; margin: 0 auto;
+    padding: 14px 24px 0;
+    font-size: 12px; color: var(--text-3);
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .breadcrumb a { color: var(--text-3); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--green); }
+  .breadcrumb span { opacity: 0.5; }
+
+  /* ── MAIN LAYOUT ── */
+  .page-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 24px 60px;
+  }
+
+  .ad-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+    align-content: start;
+    margin-top: 20px;
+  }
+
+  /* ── GALLERY ── */
+  .gallery { width: 100%; }
+  .gallery-main {
+    position: relative;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 4/3;
+  }
+  .gallery-main img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.2s;
+  }
+  .gallery-zoom-hint {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,0.55);
+    color: #fff; font-size: 11px;
+    padding: 5px 10px; border-radius: 20px;
+    cursor: zoom-in;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.2s;
+  }
+  .gallery-zoom-hint:hover { opacity: 0.8; }
+  .gallery-thumbs {
+    display: flex; gap: 8px;
+    margin-top: 10px; flex-wrap: wrap;
+  }
+  .gallery-thumbs .thumb {
+    width: 72px; height: 54px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.6;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .gallery-thumbs .thumb.active,
+  .gallery-thumbs .thumb:hover { opacity: 1; border-color: var(--green); }
+  .gallery-placeholder {
+    background: var(--bg3);
+    border-radius: var(--radius);
+    min-height: 260px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sold-ribbon {
+    position: absolute; top: 16px; left: 0;
+    background: #e53935; color: #fff;
+    font-weight: 800; font-size: 13px; letter-spacing: 2px;
+    padding: 6px 16px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .ad-panel {
+    position: sticky; top: 76px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .price-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .price-main {
+    font-family: var(--font-d);
+    font-size: 32px; font-weight: 800;
+    color: var(--green);
+    line-height: 1.1;
+  }
+  .price-neg {
+    font-size: 13px; font-weight: 400;
+    color: var(--text-3); margin-top: 2px;
+  }
+  .ad-title-panel {
+    font-size: 18px; font-weight: 700;
+    color: var(--text-1); margin-top: 10px; line-height: 1.3;
+  }
+  .ad-meta-tags {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+  }
+  .meta-tag {
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 12px; color: var(--text-2);
+  }
+  .status-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  .status-badge.active { background: rgba(29,185,84,0.15); color: var(--green); }
+  .status-badge.sold   { background: rgba(229,57,53,0.15); color: #e53935; }
+
+  /* ── CONTACT BOX ── */
+  .contact-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .contact-title {
+    font-weight: 700; font-size: 14px; color: var(--text-2);
+    margin-bottom: 2px;
+  }
+  .cta-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 16px; border-radius: 10px;
+    font-weight: 600; font-size: 15px;
+    text-decoration: none; transition: opacity 0.2s;
+    cursor: pointer;
+  }
+  .cta-btn:hover { opacity: 0.85; }
+  .cta-call { background: var(--green); color: #fff; }
+  .cta-wa   { background: #25d366; color: #fff; }
+  .cta-site { background: rgba(255,255,255,0.08); color: var(--text-1); border: 1px solid var(--border); }
+  .sold-msg { font-size: 14px; color: var(--text-2); }
+  .sold-msg a { color: var(--green); }
+
+  /* ── AD BODY (left column below gallery) ── */
+  .ad-body { display: flex; flex-direction: column; gap: 20px; }
+  .section-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .section-card h2 {
+    font-family: var(--font-d);
+    font-size: 17px; font-weight: 800;
+    color: var(--text-1); margin-bottom: 12px;
+  }
+  .desc-text {
+    font-size: 15px; color: var(--text-2);
+    line-height: 1.75; white-space: pre-wrap;
+  }
+  .seller-row {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .seller-avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; flex-shrink: 0;
+    background: #1db954; color: #fff;
+  }
+  .seller-name { font-weight: 700; font-size: 15px; color: var(--text-1); }
+  .seller-sub  { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+  /* ── AD SLOT ── */
+  .ad-slot-wrap {
+    display: none !important;
+  }
+
+  /* ── VIEW COUNT ── */
+  .view-count-tag { color: var(--text-3) !important; }
+
+  /* ── WHATSAPP SHARE BOX ── */
+  .wa-share-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .wa-share-label {
+    font-size: 12px; font-weight: 700;
+    color: var(--text-3); text-transform: uppercase; letter-spacing: .5px;
+  }
+  .wa-share-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 16px; border-radius: 10px;
+    background: #25d366; color: #fff;
+    font-weight: 600; font-size: 15px;
+    text-decoration: none; transition: opacity 0.2s;
+  }
+  .wa-share-btn:hover { opacity: 0.88; }
+  .copy-link-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 16px; border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; width: 100%;
+  }
+  .copy-link-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── SIMILAR LISTINGS ── */
+  .similar-section {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .similar-heading {
+    font-family: var(--font-d);
+    font-size: 22px; font-weight: 800;
+    color: var(--text-1);
+    margin-bottom: 18px;
+  }
+  .similar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .sim-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    display: flex; flex-direction: column;
+  }
+  .sim-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--green);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .sim-img {
+    width: 100%; aspect-ratio: 4/3;
+    overflow: hidden; background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sim-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; transition: transform 0.2s;
+  }
+  .sim-card:hover .sim-img img { transform: scale(1.04); }
+  .sim-placeholder { font-size: 36px; }
+  .sim-body { padding: 12px; flex: 1; }
+  .sim-price {
+    font-family: var(--font-d);
+    font-size: 16px; font-weight: 800;
+    color: var(--green); margin-bottom: 4px;
+  }
+  .sim-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-1); line-height: 1.4;
+    margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .sim-meta { font-size: 11px; color: var(--text-3); }
+  .see-more-btn {
+    display: inline-block;
+    padding: 10px 24px; border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .see-more-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.96);
+    z-index: 9999;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .lightbox.open { display: flex; }
+  .lb-img {
+    max-width: 95vw; max-height: 85vh;
+    object-fit: contain; border-radius: 6px;
+    user-select: none; display: block;
+  }
+  .lb-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; border-radius: 50%;
+    width: 40px; height: 40px; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-close:hover { background: rgba(255,255,255,0.3); }
+  .lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; border-radius: 50%;
+    width: 48px; height: 48px; font-size: 26px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-nav:hover { background: rgba(255,255,255,0.3); }
+  .lb-prev { left: 16px; }
+  .lb-next { right: 16px; }
+  .lb-counter {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.65); font-size: 13px;
+  }
+  .lb-dots {
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px;
+  }
+  .lb-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s;
+  }
+  .lb-dot.active { background: #fff; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 28px 24px;
+    font-size: 13px; color: var(--text-3);
+  }
+  footer a { color: var(--text-3); text-decoration: none; margin: 0 8px; }
+  footer a:hover { color: var(--green); }
+  .footer-logo { font-family: var(--font-d); font-size: 18px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
+  .footer-logo em { color: var(--gold); font-style: italic; }
+
+  /* ── SEO CONTENT BLOCK ── */
+  .seo-section { background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); padding: 28px 24px; }
+  .seo-wrap { max-width: 760px; margin: 0 auto; }
+  .seo-wrap h2 { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 10px; }
+  .seo-wrap p { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 10px; }
+  .seo-links { font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+  .seo-links strong { color: var(--text-2); }
+  .seo-links a { color: var(--green); text-decoration: none; font-weight: 500; }
+  .seo-links a:hover { text-decoration: underline; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .ad-layout { grid-template-columns: 1fr; }
+    .ad-panel { position: static; }
+    .page-wrap { padding: 16px 16px 48px; }
+    nav { padding: 0 12px; }
+    .nav-back-label { font-size: 15px; }
+    .nav-back-chevron { font-size: 22px; }
+    .nav-post { font-size: 12px; padding: 6px 10px; }
+    .breadcrumb { padding: 12px 16px 0; }
+    .price-main { font-size: 26px; }
+    .similar-section { padding: 0 16px 48px; }
+    .similar-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="topNav">
+  <!-- Left: iPhone-style back -->
+  <a class="nav-back" href="${BASE_URL}/" onclick="if(history.length>1&&document.referrer.includes('yaadadz.com')){history.back();return false;}">
+    <span class="nav-back-chevron">‹</span>
+    <span class="nav-back-label">${catName}</span>
+  </a>
+  <!-- Centre: title+price (fades in on scroll) -->
+  <div class="nav-center" id="navCenter">
+    <div class="nav-center-title">${esc(ad.title)}</div>
+    <div class="nav-center-price">${price}</div>
+  </div>
+  <!-- Right: Post Ad -->
+  <a class="nav-post" href="${BASE_URL}/#post">+ Post Ad</a>
+</nav>
+
+<div class="breadcrumb">
+  <a href="${BASE_URL}">Yaad Adz</a>
+  <span>›</span>
+  <a href="${BASE_URL}/sitemap.html">${catIcon} ${catName}</a>
+  <span>›</span>
+  <a href="${BASE_URL}/sitemap.html">${esc(ad.parish)}</a>
+  <span>›</span>
+  <span style="color:var(--text-2)">${esc(ad.title.slice(0,40))}${ad.title.length>40?'…':''}</span>
+</div>
+
+<div class="page-wrap">
+  <div class="ad-layout">
+
+    <!-- LEFT: Gallery + Description -->
+    <div class="ad-body">
+      ${galleryHtml}
+
+      <div class="section-card">
+        <h2>Description</h2>
+        <p class="desc-text">${esc(ad.desc || 'No description provided.')}</p>
+      </div>
+
+      <div class="section-card">
+        <h2>Seller</h2>
+        <div class="seller-row">
+          <div class="seller-avatar">${esc(ad.sellerInit || (ad.seller||'?').charAt(0))}</div>
+          <div>
+            <div class="seller-name">${esc(ad.seller || 'Anonymous')}</div>
+            <div class="seller-sub">Yaad Adz Member · ${esc(ad.parish)}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AdSense in-content — only shown on listings with real content -->
+      ${(ad.desc && ad.desc.trim().length > 30 && photos.length > 0) ? `
+      <div class="ad-slot-wrap">
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-9656521698490533"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+      </div>` : ''}
+    </div>
+
+    <!-- RIGHT: Price + Contact -->
+    <div class="ad-panel">
+      <div class="price-card">
+        <div class="price-main">${price}</div>
+        ${ad.neg ? '<div class="price-neg">Price is negotiable</div>' : ''}
+        <div class="ad-title-panel">${esc(ad.title)}</div>
+        <div class="ad-meta-tags">
+          <span class="meta-tag">📍 ${esc(ad.parish)}</span>
+          <span class="meta-tag">${catIcon} ${catName}</span>
+          <span class="meta-tag">🕐 ${ago(ad.date)}</span>
+          <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">${ad.views || 0}</span> views</span>
+          ${soldBadge}
+        </div>
+      </div>
+
+      ${contactHtml}
+
+      <!-- WhatsApp Share button — prominent, Jamaica is WhatsApp-first -->
+      <div class="wa-share-box">
+        <div class="wa-share-label">Share this listing</div>
+        <a class="wa-share-btn" href="https://wa.me/?text=${encodeURIComponent(ad.title + ' — ' + price + ' · ' + ad.parish + ', Jamaica\n' + adUrl)}" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Share on WhatsApp
+        </a>
+        <button class="copy-link-btn" onclick="copyAdLink('${esc(adUrl)}', this)">🔗 Copy Link</button>
+      </div>
+
+      <!-- AdSense sidebar — only shown on listings with real content -->
+      ${(ad.desc && ad.desc.trim().length > 30 && photos.length > 0) ? `
+      <div class="ad-slot-wrap">
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-9656521698490533"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+      </div>` : ''}
+    </div>
+
+  </div>
+</div>
+
+<!-- SIMILAR LISTINGS -->
+${similarHTML}
+
+<!-- SEO CONTENT BLOCK — Genuinely useful context for buyers -->
+<section class="seo-section" aria-label="About this listing">
+  <div class="seo-wrap">
+    <h2>About this ${catName} for Sale in ${esc(ad.parish)}, Jamaica</h2>
+    <p>${esc(ad.title)} is available for ${price} in ${esc(ad.parish)}, Jamaica. ${ad.desc && ad.desc.length > 20 ? "Seller's description: " + esc(ad.desc.slice(0,250)) + (ad.desc.length > 250 ? "…" : "") : "This " + catName.toLowerCase() + " was listed on Yaad Adz, Jamaica's free classifieds marketplace."} ${ad.neg ? 'The asking price of ' + price + ' is negotiable.' : 'Price is ' + price + ' firm.'}</p>
+    <p>This ${catName.toLowerCase()} listing was posted in ${esc(ad.parish)}, Jamaica${ad.date ? ' on ' + new Date(ad.date).toLocaleDateString('en-JM', {month:'long', day:'numeric', year:'numeric'}) : ''}. ${ad.status === 'sold' ? 'This item has been sold.' : 'It is currently available — use the Call or WhatsApp buttons above to reach the seller directly.'} Yaad Adz is Jamaica\'s free AI-powered classifieds marketplace covering all 14 parishes: Kingston, St. Andrew, St. Catherine, St. James, Manchester, Clarendon, St. Ann, Trelawny, Portland, St. Mary, St. Thomas, Hanover, Westmoreland, and St. Elizabeth.</p>
+    <div class="seo-links">
+      <strong>Browse more ${catName} listings:</strong>
+      <a href="${BASE_URL}/">All Listings on Yaad Adz</a>
+      <a href="${BASE_URL}/sitemap.html">Full Listings Index</a>
+      <a href="${BASE_URL}/gas-prices">Jamaica Gas Prices Today</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Yaad <em>Adz</em> 🇯🇲</div>
+  <p>Jamaica's free classifieds marketplace</p>
+  <div style="margin-top:10px">
+    <a href="https://yaadadz.com">Home</a>
+    <a href="https://yaadadz.com/">All Listings</a>
+    <a href="https://yaadadz.com/sitemap.html">Browse Index</a>
+    <a href="https://yaadadz.com/gas-prices">Gas Prices</a>
+  </div>
+  <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
+</footer>
+
+<!-- FLOATING CONTACT BAR — slides up when contact box scrolls off screen -->
+${ad.status !== 'sold' && (ad.phone || waLink) ? `
+<div class="float-contact" id="floatContact">
+  <div class="float-contact-info">
+    <div class="float-contact-price">${price}</div>
+    <div class="float-contact-title">${esc(ad.title)}</div>
+  </div>
+  <div class="float-btns">
+    ${ad.phone ? `<a class="float-contact-btn float-btn-call" href="tel:${esc(ad.phone)}">📞 Call</a>` : ''}
+    ${waLink   ? `<a class="float-contact-btn float-btn-wa"   href="${waLink}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
+  </div>
+</div>` : ''}
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">‹</button>
+  <img class="lb-img" id="lbImg" src="" alt="${esc(ad.title)}">
+  <button class="lb-nav lb-next" id="lbNext" onclick="lbNav(1)">›</button>
+  <div class="lb-dots" id="lbDots"></div>
+  <div class="lb-counter" id="lbCounter"></div>
+</div>
+
+<script>
+  // ── Photos array ─────────────────────────────────────────────
+  var PHOTOS = ${JSON.stringify(photos)};
+  var lbIndex = 0;
+
+  // ── Thumbnail switcher ────────────────────────────────────────
+  function setFeatured(thumb, src, idx) {
+    var img = document.getElementById('featuredImg');
+    img.style.opacity = '0';
+    setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 150);
+    document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
+    thumb.classList.add('active');
+    lbIndex = idx;
+  }
+
+  // ── Lightbox ──────────────────────────────────────────────────
+  function openLightbox(startIndex) {
+    if (!PHOTOS.length) return;
+    lbIndex = startIndex || 0;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    renderLightbox();
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function lbNav(dir) {
+    lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
+    renderLightbox();
+  }
+  function lbGoTo(i) { lbIndex = i; renderLightbox(); }
+  function renderLightbox() {
+    var img = document.getElementById('lbImg');
+    img.src = PHOTOS[lbIndex];
+
+    // Counter
+    document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
+
+    // Nav arrows
+    var showNav = PHOTOS.length > 1;
+    document.getElementById('lbPrev').style.display = showNav ? '' : 'none';
+    document.getElementById('lbNext').style.display = showNav ? '' : 'none';
+
+    // Dots
+    var dotsEl = document.getElementById('lbDots');
+    if (PHOTOS.length > 1 && PHOTOS.length <= 10) {
+      dotsEl.innerHTML = PHOTOS.map(function(_, i) {
+        return '<span class="lb-dot' + (i === lbIndex ? ' active' : '') + '" onclick="lbGoTo(' + i + ')"></span>';
+      }).join('');
+      dotsEl.style.display = 'flex';
+    } else {
+      dotsEl.style.display = 'none';
+    }
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById('lightbox');
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape')      closeLightbox();
+    if (e.key === 'ArrowLeft')   lbNav(-1);
+    if (e.key === 'ArrowRight')  lbNav(1);
+  });
+
+  // Touch swipe
+  (function() {
+    var sx = 0;
+    var lb = document.getElementById('lightbox');
+    lb.addEventListener('touchstart', function(e) { sx = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend',   function(e) {
+      var dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+
+  // ── Push AdSense ──────────────────────────────────────────────
+  window.addEventListener('load', function() {
+    try {
+      var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
+      ads.forEach(function() { (adsbygoogle = window.adsbygoogle || []).push({}); });
+    } catch(e) {}
+
+    // Apply safe area only when running as installed PWA (not in browser)
+    if (window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches) {
+      document.body.classList.add('pwa-mode');
+    }
+  });
+
+  // ── Copy link to clipboard ────────────────────────────────────
+  function copyAdLink(url, btn) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function() {
+        btn.textContent = '✅ Copied!';
+        setTimeout(function() { btn.textContent = '🔗 Copy Link'; }, 2000);
+      }).catch(function() { fallbackCopy(url, btn); });
+    } else {
+      fallbackCopy(url, btn);
+    }
+  }
+  function fallbackCopy(url, btn) {
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); btn.textContent = '✅ Copied!'; } catch(e) {}
+    document.body.removeChild(ta);
+    setTimeout(function() { btn.textContent = '🔗 Copy Link'; }, 2000);
+  }
+
+  // ── Nav centre title + floating contact bar scroll logic ────
+  (function() {
+    var priceCard   = document.querySelector('.price-card');
+    var contactBox  = document.querySelector('.contact-box');
+    var navCenter   = document.getElementById('navCenter');
+    var floatBar    = document.getElementById('floatContact');
+
+    if (!priceCard && !contactBox) return;
+
+    var priceShown   = false;
+    var floatShown   = false;
+
+    function onScroll() {
+      // Show nav title+price once price card scrolls off top
+      if (priceCard && navCenter) {
+        var pcBottom = priceCard.getBoundingClientRect().bottom;
+        if (pcBottom < 60 && !priceShown) {
+          navCenter.classList.add('visible'); priceShown = true;
+        } else if (pcBottom >= 60 && priceShown) {
+          navCenter.classList.remove('visible'); priceShown = false;
+        }
+      }
+
+      // Show float bar once contact box scrolls out of view
+      if (contactBox && floatBar) {
+        var rect = contactBox.getBoundingClientRect();
+        var pastContact = rect.bottom < 0;   // scrolled above viewport
+        var beforeContact = rect.top > window.innerHeight; // not yet reached
+        var shouldShow = pastContact || beforeContact;
+        if (shouldShow && !floatShown) {
+          floatBar.classList.add('visible'); floatShown = true;
+          document.body.style.paddingBottom = '80px';
+        } else if (!shouldShow && floatShown) {
+          floatBar.classList.remove('visible'); floatShown = false;
+          document.body.style.paddingBottom = '';
+        }
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // run once on load
+  })();
+
+  // ── View counter ─────────────────────────────────────────────
+  // Increments on first visit per session. Tries RPC first (bypasses
+  // RLS), falls back to direct PATCH (works if RLS policy allows it).
+  (function() {
+    var el    = document.getElementById('viewCountEl');
+    var adId  = '${ad.id}';
+    var BASE  = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
+    var KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+    var H     = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+    var sKey  = 'ya_v_' + adId;
+    var seen  = sessionStorage.getItem(sKey);
+    // If navigating from yaadadz.com, index.html already fired the increment
+    // via keepalive fetch — mark as seen to avoid double-counting
+    if (!seen && document.referrer && document.referrer.includes('yaadadz.com') &&
+        !document.referrer.includes('/ad/')) {
+      sessionStorage.setItem(sKey, '1');
+      seen = '1';
+    }
+
+    function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
+    function dbg(msg) { console.log('[YaadAdz views]', msg); }
+
+    // Fetch current count first
+    fetch(BASE + '/ads?id=eq.' + adId + '&select=views', { headers: H })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var cur = (d && d[0] && d[0].views != null) ? Number(d[0].views) : 0;
+        dbg('current views in DB: ' + cur + ' | seen this session: ' + !!seen);
+        show(seen ? cur : cur + 1);
+
+        if (seen) { dbg('already counted, skipping'); return; }
+
+        // Try RPC first
+        dbg('calling increment_view RPC...');
+        fetch(BASE + '/rpc/increment_view', {
+          method: 'POST', headers: H,
+          body: JSON.stringify({ ad_id: adId })
+        }).then(function(r) {
+          r.text().then(function(body) {
+            dbg('RPC status: ' + r.status + ' body: ' + body);
+            if (r.ok) {
+              sessionStorage.setItem(sKey, '1');
+              dbg('RPC success ✅');
+            } else {
+              dbg('RPC failed, trying PATCH...');
+              fetch(BASE + '/ads?id=eq.' + adId, {
+                method: 'PATCH',
+                headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
+                body: JSON.stringify({ views: cur + 1 })
+              }).then(function(r2) {
+                dbg('PATCH status: ' + r2.status);
+                if (r2.ok) { sessionStorage.setItem(sKey, '1'); dbg('PATCH success ✅'); }
+                else { show(cur); dbg('PATCH also failed ❌'); }
+              }).catch(function(e) { show(cur); dbg('PATCH error: ' + e); });
+            }
+          });
+        }).catch(function(e) { dbg('RPC error: ' + e); show(cur); });
+      }).catch(function(e) { dbg('GET error: ' + e); });
+  })();
+</script>
+</body>
+</html>`;
+}
+
+// ── Main ──────────────────────────────────────────────────────
+async function main() {
+  console.log('🇯🇲 Yaad Adz — Ad Page Generator');
+  console.log('──────────────────────────────────');
+
+  if (!fs.existsSync(OUT_DIR)) {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    console.log('📁 Created ./ad/ directory');
+  }
+
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log('🔌 Connecting to Supabase…');
+
+  let allRows = [];
+  let from = 0;
+  const PAGE = 1000;
+  while (true) {
+    const { data, error } = await db
+      .from('ads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error) { console.error('❌ Supabase error:', error.message); process.exit(1); }
+    if (!data || data.length === 0) break;
+    allRows = allRows.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+
+  console.log(`📋 Found ${allRows.length} ads`);
+
+  const allAds = allRows.map(dbToAd);
+
+  const existingFiles = new Set(
+    fs.existsSync(OUT_DIR)
+      ? fs.readdirSync(OUT_DIR).filter(f => f.endsWith('.html'))
+      : []
+  );
+  const generatedFiles = new Set();
+
+  let created = 0, deleted = 0;
+
+  for (const ad of allAds) {
+    const slug = slugify(ad);
+    const file = slug + '.html';
+    const dest = path.join(OUT_DIR, file);
+    generatedFiles.add(file);
+    const html = buildPage(ad, allAds);
+    fs.writeFileSync(dest, html, 'utf8');
+    created++;
+    if (created % 50 === 0) console.log(`  ✅ ${created} pages written…`);
+  }
+
+  for (const file of existingFiles) {
+    if (!generatedFiles.has(file)) {
+      fs.unlinkSync(path.join(OUT_DIR, file));
+      deleted++;
+    }
+  }
+
+  // ── Generate sitemap.xml ──────────────────────────────────────
+  console.log('🗺️  Generating sitemap.xml…');
+  const today = new Date().toISOString().split('T')[0];
+
+  // Only include REAL crawlable pages in sitemap — no SPA ?param= URLs.
+  // Google can't index JavaScript-rendered category/parish pages, and
+  // robots.txt explicitly disallows crawling ?parish=/?cat= etc — listing
+  // them here would just tell Google to crawl a page it's blocked from
+  // fetching, wasting crawl budget on 4xx/blocked responses.
+  const staticPages = [
+    { url: BASE_URL + '/',           priority: '1.0', changefreq: 'hourly' },
+    { url: BASE_URL + '/gas-prices', priority: '0.8', changefreq: 'weekly' },
+  ];
+
+  const activeAds = allAds.filter(ad => ad.status !== 'sold');
+  const adEntries = activeAds.map(ad => {
+    const lastmod = ad.date ? new Date(ad.date).toISOString().split('T')[0] : today;
+    // Use clean URL without .html for sitemap — Google prefers canonical clean URLs
+    return { url: BASE_URL + '/ad/' + slugify(ad) + '.html', lastmod, priority: '0.8', changefreq: 'weekly', image: ad.image || null, title: ad.title };
+  });
+
+  const staticXml = staticPages.map(p => `
+  <url>
+    <loc>${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join('');
+
+  const adXml = adEntries.map(p => `
+  <url>
+    <loc>${p.url}</loc>
+    <lastmod>${p.lastmod}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>${p.image ? `
+    <image:image>
+      <image:loc>${p.image}</image:loc>
+      <image:title>${p.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</image:title>
+    </image:image>` : ''}
+  </url>`).join('');
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Generated by Yaad Adz on ${new Date().toISOString()} -->
+  <!-- ${staticPages.length} static pages + ${adEntries.length} active listings -->
+${staticXml}
+${adXml}
+</urlset>`;
+
+  fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemap, 'utf8');
+  console.log(`   ✅ sitemap.xml written — ${staticPages.length} static + ${adEntries.length} ad pages`);
+
+  // ── Ping Google sitemap ───────────────────────────────────────
+  try {
+    const https = require('https');
+    const pingUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(BASE_URL + '/sitemap.xml')}`;
+    https.get(pingUrl, (res) => {
+      console.log(`   📡 Google pinged — sitemap submitted (HTTP ${res.statusCode})`);
+    }).on('error', () => {
+      console.log('   ⚠️  Google ping failed (non-fatal)');
+    });
+  } catch(e) {
+    console.log('   ⚠️  Google ping skipped');
+  }
+
+  // ── IndexNow — instant page discovery for Bing/Yandex/Google ──
+  // Submits all new ad URLs immediately so they get crawled within hours
+  // Key: use the same key for yaadadz.com (create file /indexnow-key.txt)
+  try {
+    const https2 = require('https');
+    const INDEXNOW_KEY = 'yaadadz2026indexnow';
+    const urlList = adEntries.slice(0, 100).map(e => e.url); // Max 100 per call
+    urlList.push(BASE_URL + '/');
+    urlList.push(BASE_URL + '/sitemap.html');
+    const body = JSON.stringify({
+      host: 'yaadadz.com',
+      key: INDEXNOW_KEY,
+      keyLocation: `${BASE_URL}/${INDEXNOW_KEY}.txt`,
+      urlList: urlList
+    });
+    const req = https2.request({
+      hostname: 'api.indexnow.org',
+      path: '/indexnow',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) }
+    }, (res) => {
+      console.log(`   ⚡ IndexNow pinged — ${urlList.length} URLs submitted (HTTP ${res.statusCode})`);
+    });
+    req.on('error', () => console.log('   ⚠️  IndexNow ping skipped'));
+    req.write(body);
+    req.end();
+  } catch(e) {
+    console.log('   ⚠️  IndexNow skipped');
+  }
+
+  // ── HTML Sitemap page (/sitemap.html) ─────────────────────────
+  // A human-readable page Google can crawl without JS — guaranteed link path to every ad
+  console.log('📄 Generating sitemap.html…');
+  const catGroups = {};
+  activeAds.forEach(ad => {
+    if (!catGroups[ad.category]) catGroups[ad.category] = [];
+    catGroups[ad.category].push(ad);
+  });
+  const catSections = Object.entries(catGroups).map(([catId, ads]) => {
+    const catName = CAT_NAMES[catId] || catId;
+    const catIcon = CAT_ICONS[catId] || '📦';
+    const links = ads.slice(0, 100).map(ad => {
+      const slug = slugify(ad);
+      return `      <li><a href="/ad/${slug}.html">${esc(ad.title)} — ${fmtPrice(ad.price)} · ${esc(ad.parish)}</a></li>`;
+    }).join('\n');
+    return `    <div class="cat-group">
+      <h2>${catIcon} ${catName} <span class="count">(${ads.length})</span></h2>
+      <ul>\n${links}\n      </ul>
+    </div>`;
+  }).join('\n');
+
+  const sitemapHtml = `<!DOCTYPE html>
+<html lang="en-JM">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Listings — Yaad Adz Jamaica Free Classifieds</title>
+<meta name="description" content="Browse all free classifieds listings on Yaad Adz — cars, property, phones, jobs and more across all 14 parishes in Jamaica.">
+<link rel="canonical" href="${BASE_URL}/sitemap.html">
+<style>
+  body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 24px 16px; color: #222; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  .count { font-size: 13px; color: #888; font-weight: normal; }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px; }
+  li a { font-size: 13px; color: #1a6b35; text-decoration: none; display: block; padding: 4px 0; }
+  li a:hover { text-decoration: underline; }
+  .nav { margin-bottom: 20px; font-size: 14px; }
+  .nav a { color: #1a6b35; margin-right: 12px; }
+  footer { margin-top: 40px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="${BASE_URL}">← Yaad Adz Home</a>
+  <a href="${BASE_URL}/">All Listings</a>
+  <a href="${BASE_URL}/sitemap.xml">XML Sitemap</a>
+</div>
+<h1>All Listings on Yaad Adz</h1>
+<p style="color:#666;font-size:14px;margin-bottom:24px">${activeAds.length} active listings across Jamaica — updated ${today}</p>
+${catSections}
+<footer>
+  <p>Yaad Adz — Jamaica's free classifieds marketplace. <a href="${BASE_URL}/sitemap.xml">XML Sitemap</a> · <a href="${BASE_URL}">Home</a></p>
+  <p>Generated: ${new Date().toISOString()}</p>
+</footer>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(__dirname, 'sitemap.html'), sitemapHtml, 'utf8');
+  console.log(`   ✅ sitemap.html written — ${activeAds.length} listings linked`);
+
+  // ── Static links fragment for homepage (crawlable without JS) ─
+  // Saved as static-links.html, included via SSI or referenced in index.html
+  console.log('🔗 Generating static-links.html…');
+  const recentAds = activeAds.slice(0, 60);
+  const staticLinks = recentAds.map(ad => {
+    const slug = slugify(ad);
+    const catIcon = CAT_ICONS[ad.category] || '📦';
+    return `  <a href="/ad/${slug}.html" class="static-link-item">
+    <span class="sli-icon">${catIcon}</span>
+    <span class="sli-title">${esc(ad.title)}</span>
+    <span class="sli-price">${fmtPrice(ad.price)}</span>
+    <span class="sli-parish">📍 ${esc(ad.parish)}</span>
+  </a>`;
+  }).join('\n');
+
+  const staticLinksHtml = `<!-- Yaad Adz static listing links — crawlable by Google without JavaScript -->
+<!-- Generated: ${new Date().toISOString()} -->
+<div id="static-listings" style="display:none" aria-hidden="true">
+<style>
+  #static-listings { display:none !important; }
+</style>
+${staticLinks}
+<p><a href="/sitemap.html">Browse all ${activeAds.length} listings →</a></p>
+</div>`;
+
+  fs.writeFileSync(path.join(__dirname, 'static-links.html'), staticLinksHtml, 'utf8');
+  console.log(`   ✅ static-links.html written — ${recentAds.length} latest listings`);
+
+  const robotsPath = path.join(__dirname, 'robots.txt');
+  let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
+  if (!robots.includes('Sitemap:')) {
+    robots += `\nSitemap: ${BASE_URL}/sitemap.xml\n`;
+    fs.writeFileSync(robotsPath, robots, 'utf8');
+    console.log('   ✅ robots.txt updated with Sitemap link');
+  }
+
+  console.log('');
+  console.log(`✅ Done!`);
+  console.log(`   📄 ${created} ad pages written to ./ad/`);
+  if (deleted) console.log(`   🗑️  ${deleted} stale pages deleted`);
+  console.log(`   🗺️  sitemap.xml + sitemap.html updated (${staticPages.length + adEntries.length} URLs total)`);
+  if (allRows.length > 0) console.log(`   🌐 Example: ${BASE_URL}/ad/${slugify(dbToAd(allRows[0]))}`);
+}
+
+main().catch(err => {
+  console.error('💥 Fatal error:', err);
+  process.exit(1);
+});

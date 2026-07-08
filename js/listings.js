@@ -315,6 +315,19 @@ async function doPostAd() {
   const price = parseFloat(document.getElementById('aPrice').value)||0;
   if (!title || !parish || !price) return showPostErr('Please fill in all required fields.');
 
+  // ── Duplicate-listing check ──
+  const oneDayAgo = Date.now() - 24*60*60*1000;
+  const possibleDupe = _ads.find(function(a) {
+    return a.sellerId === CU.id &&
+      a.title.trim().toLowerCase() === title.toLowerCase() &&
+      a.price === price &&
+      new Date(a.date).getTime() > oneDayAgo;
+  });
+  if (possibleDupe) {
+    const proceed = confirm('You already posted "' + title + '" for the same price in the last 24 hours. Post it again anyway?');
+    if (!proceed) return;
+  }
+
   const btn = document.querySelector('#sp3 .btn-gold');
   if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
 
