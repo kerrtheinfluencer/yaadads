@@ -316,6 +316,19 @@ function sbIncrView(id) {
 
 // ── USER AUTH ──────────────────────────────────────────
 
+// ── GOOGLE SIGN-IN — bypasses Supabase's email rate limit entirely,
+// since Google handles verification, not Supabase's default mailer ──
+async function signInWithGoogle() {
+  const { error } = await _db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) {
+    const el = document.getElementById('authAlert');
+    if (el) { el.textContent = 'Google sign-in failed: ' + error.message; el.style.display = 'block'; }
+  }
+}
+
 async function sbRegister(name, email, phone, parish, password) {
   // Use Supabase Auth for proper password hashing
   const { data, error } = await _db.auth.signUp({
@@ -328,6 +341,9 @@ async function sbRegister(name, email, phone, parish, password) {
   if (error) {
     if (String(error.message).includes('already registered')) {
       throw new Error('An account with that email already exists.');
+    }
+    if (String(error.message).toLowerCase().includes('rate limit')) {
+      throw new Error('Too many signups right now — please try again in a few minutes. (This is a temporary email-sending limit, not a problem with your details.)');
     }
     throw error;
   }

@@ -268,19 +268,22 @@ document.addEventListener('scroll', function(e) {
 
 
 let CU = L.sess;
-(async function() {
-  if (_db && _db.auth) {
-    try {
-      const { data: { session } } = await _db.auth.getSession();
-      if (session && session.user) {
-        const { data: profile } = await _db.from('profiles').select('*').eq('id', session.user.id).single();
-        const p = profile || {};
-        CU = { id: session.user.id, name: p.name||session.user.email, email: p.email||session.user.email, phone: p.phone||'', parish: p.parish||'' };
-        L.sess = CU;
-      }
-    } catch(e) { console.warn('[Yaad Adz] Session restore failed:', e); }
-  }
-})();
+// Restores an existing Supabase session on page load — used both for
+// normal returning visitors AND for users landing back from a Google
+// OAuth redirect. init() (in ui-nav.js) awaits this before the first
+// renderNav() so the nav never flashes "Log In" for a signed-in user.
+async function restoreSession() {
+  if (!(_db && _db.auth)) return;
+  try {
+    const { data: { session } } = await _db.auth.getSession();
+    if (session && session.user) {
+      const { data: profile } = await _db.from('profiles').select('*').eq('id', session.user.id).single();
+      const p = profile || {};
+      CU = { id: session.user.id, name: p.name||session.user.email, email: p.email||session.user.email, phone: p.phone||'', parish: p.parish||'' };
+      L.sess = CU;
+    }
+  } catch(e) { console.warn('[Yaad Adz] Session restore failed:', e); }
+}
 let activeF = 'all';      // active category filter
 let searchQ = '';         // search query
 let uploadUrl = '';       // current upload image url

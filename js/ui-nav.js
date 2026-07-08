@@ -11,6 +11,7 @@ function pushAds() {
 async function init() {
   fillParishSelects();
   fillCatSelect();
+  await restoreSession();
   renderNav();
 
   // Detect PWA standalone mode — apply safe area CSS only when installed
