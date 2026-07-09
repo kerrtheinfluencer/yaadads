@@ -406,7 +406,9 @@ window.addEventListener('resize', () => {
 ═══════════════════════════════════════════════════════════ */
 (function() {
   let ticking = false;
+  let lastY = window.scrollY || 0;
   const TRANSPARENT_THRESHOLD = 60; // px before bars go translucent
+  const DIRECTION_THRESHOLD = 6;    // px of movement before we react — avoids jitter from tiny scroll bounces
 
   window.addEventListener('scroll', function() {
     if (!ticking) {
@@ -420,9 +422,23 @@ window.addEventListener('resize', () => {
         // ── iOS 27 pill transparency ──────────────────────────
         const isScrolled = scrollY > TRANSPARENT_THRESHOLD;
         const navEl    = document.querySelector('nav');
-        const mobNavEl = document.querySelector('.mob-nav');
+        const mobNavEl = document.getElementById('mobNav');
         if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
         if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
+
+        // ── Scroll-direction: hide top pill / shrink bottom pill on
+        // scroll down, restore both on scroll up.
+        const delta = scrollY - lastY;
+        if (Math.abs(delta) > DIRECTION_THRESHOLD) {
+          const scrollingDown = delta > 0 && scrollY > TRANSPARENT_THRESHOLD;
+          if (navEl)    navEl.classList.toggle('nav-hidden', scrollingDown);
+          if (mobNavEl) mobNavEl.classList.toggle('mob-nav-compact', scrollingDown);
+          lastY = scrollY;
+        }
+        if (scrollY <= TRANSPARENT_THRESHOLD) {
+          if (navEl)    navEl.classList.remove('nav-hidden');
+          if (mobNavEl) mobNavEl.classList.remove('mob-nav-compact');
+        }
 
         ticking = false;
       });

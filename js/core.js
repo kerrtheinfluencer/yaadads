@@ -109,11 +109,11 @@ let _yaadLastLoad = null; // { ok: bool, reason: string, count: number, fromDb: 
    These stay in localStorage — they're per-device by design
 ═══════════════════════════════════════════════════════════ */
 const L = {
-  get sess()     { return JSON.parse(localStorage.getItem('ya_sess')  || 'null'); },
+  get sess()     { try { return JSON.parse(localStorage.getItem('ya_sess')  || 'null'); } catch(e) { console.warn('[L.sess] corrupted localStorage, resetting:', e); return null; } },
   set sess(v)    { localStorage.setItem('ya_sess', JSON.stringify(v)); },
-  get favs()     { return JSON.parse(localStorage.getItem('ya_favs')  || '[]'); },
+  get favs()     { try { return JSON.parse(localStorage.getItem('ya_favs')  || '[]'); } catch(e) { console.warn('[L.favs] corrupted localStorage, resetting:', e); localStorage.removeItem('ya_favs'); return []; } },
   set favs(v)    { localStorage.setItem('ya_favs', JSON.stringify(v)); },
-  get searches() { return JSON.parse(localStorage.getItem('ya_searches') || '[]'); },
+  get searches() { try { return JSON.parse(localStorage.getItem('ya_searches') || '[]'); } catch(e) { console.warn('[L.searches] corrupted localStorage, resetting:', e); localStorage.removeItem('ya_searches'); return []; } },
   set searches(v){ localStorage.setItem('ya_searches', JSON.stringify(v.slice(0,8))); },
   // ads now use the _ads cache — L.ads stays for compatibility
   get ads()      { return _ads; },

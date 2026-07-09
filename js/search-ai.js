@@ -110,7 +110,11 @@ function renderHome() {
   let html = '';
   if (visible.length) {
     visible.forEach(function(a, i) {
-      html += cardHTML(a, i);
+      try {
+        html += cardHTML(a, i);
+      } catch(e) {
+        console.error('[renderHome] Failed to render ad, skipping:', a && a.id, e);
+      }
       // Ad slots hidden until AdSense inventory is ready
     });
   } else {
