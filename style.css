@@ -162,7 +162,20 @@ nav {
   -webkit-backdrop-filter: saturate(170%) blur(28px);
   backdrop-filter: saturate(170%) blur(28px);
   height: var(--nav-h);
-  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease,
+              backdrop-filter 0.4s ease, transform 0.35s cubic-bezier(.4,0,.2,1),
+              opacity 0.35s ease;
+}
+
+/* ── Hides while scrolling down, reappears on scroll up — mobile only.
+   Desktop keeps the nav always visible since there's no bottom pill
+   duplicating navigation there. ── */
+@media (max-width: 640px) {
+  nav.nav-hidden {
+    transform: translateY(-140%);
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* iOS 27-style: nav becomes ultra-transparent when scrolled */
@@ -869,7 +882,11 @@ nav.scrolled-transparent {
   contain: layout style;
   -webkit-tap-highlight-color: transparent;
   will-change: transform, box-shadow;
-  backface-visibility: hidden;
+  /* NOTE: backface-visibility:hidden was removed here — combined with
+     backdrop-filter + contain + an animated transform, it's a known
+     WebKit/Safari bug that renders the element fully invisible while
+     it still exists correctly in the DOM (count shows, card doesn't).
+     Nothing on this card does a 3D flip, so it wasn't needed. */
 
   /* Left gold accent on hover - hidden by default */
 }
@@ -1859,16 +1876,25 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   box-shadow: 0 20px 52px rgba(0,32,22,.2), inset 0 1px 0 rgba(255,255,255,.7);
   -webkit-backdrop-filter: saturate(170%) blur(28px);
   backdrop-filter: saturate(170%) blur(28px);
-  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
-  /* GPU layer */
+  transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease,
+              backdrop-filter 0.4s ease, height 0.3s cubic-bezier(.4,0,.2,1),
+              padding 0.3s cubic-bezier(.4,0,.2,1);
+  /* GPU layer — backface-visibility removed: combined with backdrop-filter
+     it's a known WebKit/Safari bug that renders the whole bar invisible */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 @media (max-width: 640px) {
   .mob-nav { display: flex; }
 }
+/* ── Compact mode: shrinks while scrolling down, like Safari's toolbar ── */
+.mob-nav.mob-nav-compact {
+  height: 46px;
+}
+.mob-nav.mob-nav-compact .mn-label { display: none; }
+.mob-nav.mob-nav-compact .mob-nav-icon { font-size: 22px; }
+.mob-nav.mob-nav-compact .mob-nav-post { width: 40px; height: 40px; font-size: 22px; }
+.mn-label { transition: opacity .15s ease; }
 /* iOS 27-style: bottom pill fades when scrolling */
 .mob-nav.scrolled-transparent {
   background: rgba(255,255,255,.28);
