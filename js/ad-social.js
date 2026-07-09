@@ -55,7 +55,7 @@ function openProfile(sellerId) {
       '<div class="prof-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + ini + '</div>' +
       '<div class="prof-info">' +
         '<div class="prof-name">' + escHtml(name) + (verified ? ' <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#005c35"/><path d="M5 8l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') + '</div>' +
-        '<div class="prof-since">📍 ' + (sample.parish||'Jamaica') + ' · Yaad Adz Seller</div>' +
+        '<div class="prof-since" id="profSinceLine">📍 ' + (sample.parish||'Jamaica') + ' · <span id="profJoinDate">Yaad Adz Seller</span></div>' +
         (avgRating ? '<div style="font-size:13px;color:#888;margin-top:2px">⭐ ' + avgRating + ' avg · ' + ratings.length + ' review' + (ratings.length!==1?'s':'') + '</div>' : '') +
         '<div class="prof-stats">' +
           '<div><div class="prof-stat-n">' + activeAds.length + '</div><div class="prof-stat-l">Active Ads</div></div>' +
@@ -83,6 +83,19 @@ function openProfile(sellerId) {
 
   closeOverlay('ovDetail');
   openOverlay('ovProfile');
+
+  // Fetch the real join date from the profiles table — not derivable from
+  // cached ad data, so this loads in just after the rest of the profile.
+  _db.from('profiles').select('created_at').eq('id', sellerId).single()
+    .then(function(res) {
+      const el = document.getElementById('profJoinDate');
+      if (!el || res.error || !res.data || !res.data.created_at) return;
+      const d = new Date(res.data.created_at);
+      if (isNaN(d.getTime())) return;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      el.textContent = 'Member since ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    })
+    .catch(function(e) { console.warn('[openProfile] Could not load join date:', e); });
 }
 
 
@@ -93,11 +106,15 @@ let _currentRateSellerId = null;
 let _currentRateStars = 0;
 
 function getRatings(sellerId) {
-  const all = JSON.parse(localStorage.getItem('ya_ratings')||'[]');
+  let all;
+  try { all = JSON.parse(localStorage.getItem('ya_ratings')||'[]'); }
+  catch(e) { console.warn('[getRatings] corrupted localStorage, resetting:', e); localStorage.removeItem('ya_ratings'); all = []; }
   return all.filter(r => r.sellerId === sellerId);
 }
 function saveRating(sellerId, stars, comment) {
-  const all = JSON.parse(localStorage.getItem('ya_ratings')||'[]');
+  let all;
+  try { all = JSON.parse(localStorage.getItem('ya_ratings')||'[]'); }
+  catch(e) { console.warn('[saveRating] corrupted localStorage, resetting:', e); all = []; }
   // One review per reviewer per seller
   const filtered = all.filter(r => !(r.sellerId===sellerId && r.reviewerId===CU.id));
   filtered.push({ sellerId, reviewerId: CU.id, reviewerName: CU.name, stars, comment, ts: Date.now() });

@@ -383,9 +383,20 @@ function compressImage(file, maxWidth, quality) {
   maxWidth = maxWidth || 1200;
   quality = quality || 0.82;
   return new Promise(function(resolve, reject) {
+    // Guard against accidentally-picked huge files (e.g. Live Photos,
+    // videos mis-selected from a phone gallery) — decoding a 50MB+ file
+    // into an <img> can hang or crash on lower-end phones before
+    // compression even has a chance to shrink it.
+    const MAX_INPUT_BYTES = 25 * 1024 * 1024; // 25MB
+    if (file.size > MAX_INPUT_BYTES) {
+      reject(new Error('That photo is too large (' + (file.size/1024/1024).toFixed(1) + 'MB). Please choose a photo under 25MB.'));
+      return;
+    }
     // If it's already small enough, skip compression
     if (file.size < 150000) { resolve(file); return; }
     var img = new Image();
+    var objectUrl = URL.createObjectURL(file);
+    var cleanup = function() { URL.revokeObjectURL(objectUrl); };
     img.onload = function() {
       var w = img.width, h = img.height;
       if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
@@ -394,12 +405,13 @@ function compressImage(file, maxWidth, quality) {
       var ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
       canvas.toBlob(function(blob) {
+        cleanup();
         if (blob) resolve(new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' }));
         else resolve(file);
       }, 'image/jpeg', quality);
     };
-    img.onerror = function() { resolve(file); };
-    img.src = URL.createObjectURL(file);
+    img.onerror = function() { cleanup(); resolve(file); };
+    img.src = objectUrl;
   });
 }
 
