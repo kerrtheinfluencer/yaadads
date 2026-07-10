@@ -423,21 +423,27 @@ window.addEventListener('resize', () => {
         const isScrolled = scrollY > TRANSPARENT_THRESHOLD;
         const navEl    = document.querySelector('nav');
         const mobNavEl = document.getElementById('mobNav');
+        const gasEl    = document.getElementById('gasBanner');
         if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
         if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
 
-        // ── Scroll-direction: hide top pill / shrink bottom pill on
-        // scroll down, restore both on scroll up.
+        // ── Scroll-direction: hide top pill / shrink bottom pill,
+        // gas banner, and back-to-top button on scroll down, restore
+        // all of them on scroll up.
         const delta = scrollY - lastY;
         if (Math.abs(delta) > DIRECTION_THRESHOLD) {
           const scrollingDown = delta > 0 && scrollY > TRANSPARENT_THRESHOLD;
           if (navEl)    navEl.classList.toggle('nav-hidden', scrollingDown);
           if (mobNavEl) mobNavEl.classList.toggle('mob-nav-compact', scrollingDown);
+          if (gasEl)    gasEl.classList.toggle('gas-banner-compact', scrollingDown);
+          if (fab)      fab.classList.toggle('back-to-top-compact', scrollingDown);
           lastY = scrollY;
         }
         if (scrollY <= TRANSPARENT_THRESHOLD) {
           if (navEl)    navEl.classList.remove('nav-hidden');
           if (mobNavEl) mobNavEl.classList.remove('mob-nav-compact');
+          if (gasEl)    gasEl.classList.remove('gas-banner-compact');
+          if (fab)      fab.classList.remove('back-to-top-compact');
         }
 
         ticking = false;
