@@ -1280,6 +1280,18 @@ function closeAiSheet(){
   setTimeout(function(){if(!sheetOpen){sheet.style.display='none';overlay.style.display='none';}},380);
 }
 
+function clearSheetChat(){
+  const chat=document.getElementById('sheetChat');
+  if(chat) chat.innerHTML='';
+  sheetHistory=[];
+  _sheetLastQTerms=[];
+  document.getElementById('sheetSugs')?.classList.remove('hidden');
+  document.getElementById('sheetRecentWrap')?.style.removeProperty('display');
+  renderRecentSearches();
+  updateSheetSugs();
+  showToast('Conversation cleared','🗑️');
+}
+
 function sheetSearch(query){
   const inp=document.getElementById('sheetInput');
   if(inp) inp.value=query;
@@ -1411,16 +1423,21 @@ function checkSavedSearchAlerts(newAds){
 function addSheetMsg(role,text,results,filters,allResults,qTerms){
   const chat=document.getElementById('sheetChat');
   const body=document.getElementById('aiSheetBody');
-  const el=document.createElement('div');
   const scrollToBottom=function(){requestAnimationFrame(function(){if(body) body.scrollTop=body.scrollHeight;});};
 
   if(role==='user'){
+    const el=document.createElement('div');
     el.className='sheet-msg-user';el.textContent=text;
     chat.appendChild(el);scrollToBottom();return el;
   }
 
+  const row=document.createElement('div');
+  row.className='sheet-msg-ai-row';
+  row.innerHTML='<div class="sheet-msg-avatar">🤖</div>';
+  const el=document.createElement('div');
   el.className='sheet-msg-ai';
   el.innerHTML='<div class="sheet-msg-text">'+escHtml(text).replace(/\n/g,'<br>')+'</div>';
+  row.appendChild(el);
 
   if(results!==null){
     const count=results?results.length:0;
@@ -1511,18 +1528,19 @@ function addSheetMsg(role,text,results,filters,allResults,qTerms){
     }
   }
 
-  chat.appendChild(el);scrollToBottom();return el;
+  chat.appendChild(row);scrollToBottom();return row;
 }
 
 function addTyping(){
   const chat=document.getElementById('sheetChat');
   const body=document.getElementById('aiSheetBody');
-  const el=document.createElement('div');
-  el.className='sheet-msg-typing';
-  el.innerHTML='<span></span><span></span><span></span>';
-  chat.appendChild(el);
+  const row=document.createElement('div');
+  row.className='sheet-msg-ai-row';
+  row.innerHTML='<div class="sheet-msg-avatar">🤖</div>'+
+    '<div class="sheet-typing"><span></span><span></span><span></span></div>';
+  chat.appendChild(row);
   requestAnimationFrame(function(){if(body) body.scrollTop=body.scrollHeight;});
-  return el;
+  return row;
 }
 
 function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
