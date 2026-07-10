@@ -1485,7 +1485,8 @@ nav.scrolled-transparent {
 .inbox-item:hover { background: var(--green-light); border-color: var(--green); }
 .inbox-item.unread { border-left: 3px solid var(--green); }
 .inbox-avatar {
-  width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+  width: 46px; height: 46px;
+  border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-d); font-weight: 800; font-size: 16px;
 }
@@ -1670,7 +1671,8 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .gallery-dot.active { background: #fff; }
 .gallery-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
-  width: 36px; height: 36px; background: rgba(0,0,0,.45); border: none; border-radius: 50%;
+  width: 36px; height: 36px;
+  background: rgba(0,0,0,.45); border: none; border-radius: 50%;
   color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
   z-index: 3; transition: background .2s;
 }
@@ -1785,7 +1787,9 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   background: var(--surface-2); border-radius: var(--r); padding: 18px 20px;
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
 }
-.s-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-weight: 800; font-size: 20px; flex-shrink: 0; }
+.s-avatar { width: 50px; height: 50px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d); font-weight: 800; font-size: 20px; flex-shrink: 0; }
 .s-info { flex: 1; }
 .s-name { font-weight: 700; font-size: 15px; cursor: pointer; }
 .s-name:hover { text-decoration: underline; color: var(--green); }
@@ -1821,7 +1825,8 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
    SELLER PROFILE
    ═══════════════════════════════════════════════════════════════════════════ */
 .prof-header { background: var(--nav-bg); padding: 36px 32px; display: flex; align-items: center; gap: 24px; }
-.prof-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-weight: 800; font-size: 30px; flex-shrink: 0; }
+.prof-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d); font-weight: 800; font-size: 30px; flex-shrink: 0; }
 .prof-info { flex: 1; }
 .prof-name { font-family: var(--font-d); font-size: 26px; font-weight: 800; color: #fff; }
 .prof-since { color: rgba(255,255,255,.5); font-size: 13px; margin-top: 4px; }
@@ -3032,85 +3037,132 @@ button:disabled,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   AI SEARCH SHEET FIXES (Mobile scrolling + no bleeding)
+   AI SEARCH SHEET — RESTORED GLASSMORPHIC + MOBILE FIXES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* === MOBILE AI SHEET FIXES === */
+/* Main sheet container — strong glass effect */
 .ai-sheet {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  height: 88vh;
-  max-height: 92vh;
-  background: #0f241c;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -12px 40px rgba(0,0,0,0.6);
+  bottom: 0;
+  height: 90dvh;
+  max-height: 92dvh;
+  background: rgba(7, 30, 21, 0.55);
+  border-radius: 22px 22px 0 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 -12px 48px rgba(0,0,0,0.55);
+  z-index: 99999;
   display: flex;
   flex-direction: column;
-  z-index: 99999;
   overflow: hidden;
   transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-  -webkit-transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  -webkit-backdrop-filter: saturate(180%) blur(26px);
+  backdrop-filter: saturate(180%) blur(26px);
 }
 
 .ai-sheet.open {
   transform: translateY(0);
-  -webkit-transform: translateY(0);
 }
 
+/* Body — better width usage and padding */
 .ai-sheet-body {
   flex: 1 1 auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 0 16px 24px;
-  padding-bottom: calc(95px + env(safe-area-inset-bottom, 20px));
+  padding: 0 18px 110px;
   scroll-behavior: smooth;
+  width: 100%;
 }
 
+/* Results cards inside sheet — glass style */
+.sheet-result-card {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.sheet-result-card:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(244,195,0,0.45);
+}
+
+/* View All + Notify Me row — fixed bleeding */
+.sheet-results .sheet-view-all {
+  background: rgba(244,195,0,0.12);
+  border: 1px solid rgba(244,195,0,0.35);
+  color: var(--gold);
+  font-weight: 700;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* Notify Me button — better contrast and no bleeding */
+.sheet-results button[style*="Notify me"],
+.sheet-results button[style*="Saved"] {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  color: rgba(255,255,255,0.85) !important;
+  padding: 11px 14px !important;
+  font-size: 13px !important;
+  border-radius: 12px !important;
+}
+
+/* Bottom input bar — glass + safe area */
 .ai-sheet-input-wrap {
+  flex-shrink: 0;
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+  background: rgba(7,30,21,0.75);
+  border-top: 1px solid rgba(255,255,255,0.1);
   position: sticky;
   bottom: 0;
-  background: #0f241c;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 20px));
-  border-top: 1px solid #1f3a2f;
-  z-index: 20;
-  flex-shrink: 0;
+  z-index: 30;
 }
 
-/* Prevent content bleeding */
-.sheet-result-card,
-.ai-sheet-chat .sheet-msg-ai,
-.ai-sheet-chat .sheet-msg-user {
-  overflow: hidden;
-  word-wrap: break-word;
-  box-sizing: border-box;
+.ai-sheet-input-bar {
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  border-radius: 28px;
 }
 
-/* Highlighted card styling */
-.sheet-result-card[style*="border"] {
-  box-shadow: 0 0 0 2.5px #f4c300;
-  border-color: #f4c300 !important;
+/* Keyboard open state */
+.ai-sheet.ai-sheet-keyboard-open .ai-sheet-body {
+  max-height: 48vh;
 }
 
-/* iOS safe area support */
+/* iOS safe area extra */
 @supports (padding: env(safe-area-inset-bottom)) {
   .ai-sheet-body {
-    padding-bottom: calc(95px + env(safe-area-inset-bottom));
+    padding-bottom: calc(105px + env(safe-area-inset-bottom));
   }
 }
 
-/* Keyboard handling */
-.ai-sheet.ai-sheet-keyboard-open .ai-sheet-body {
-  max-height: 52vh;
+/* Highlighted card (from your screenshot) */
+.sheet-result-card[style*="border"] {
+  box-shadow: 0 0 0 3px #f4c300;
+  border-color: #f4c300 !important;
 }
 
-/* View all button + Notify me row */
-.sheet-view-all {
-  background: #1a3a2e;
-  color: #f4c300;
-  border: 1px solid #2a5c47;
-  font-weight: 600;
+/* Make sure content uses full width efficiently */
+.ai-sheet-body > * {
+  width: 100%;
+}
+
+.sheet-results {
+  width: 100%;
+}
+
+/* Prevent any text/button bleeding */
+.sheet-msg-ai,
+.sheet-result-card {
+  overflow: hidden;
+  word-break: break-word;
 }
