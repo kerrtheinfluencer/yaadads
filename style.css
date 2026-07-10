@@ -3045,15 +3045,6 @@ button:disabled,
    set earlier in this file) so the listing cards stack normally instead
    of being squeezed into a single row. No override needed here. */
 
-.sheet-view-all,
-.sheet-results button {
-  white-space: nowrap !important;
-  flex: 1;
-  padding: 10px 14px !important;
-  font-size: 13px !important;
-  border-radius: 12px !important;
-}
-
 /* Stronger glass + no content bleeding */
 .sheet-result-card {
   background: rgba(255,255,255,0.08) !important;
@@ -3071,10 +3062,60 @@ button:disabled,
   max-width: 100%;
 }
 
-/* Notify Me button fix */
-.sheet-results button[style*="Notify me"],
-.sheet-results button[style*="Saved"] {
-  background: rgba(255,255,255,0.09) !important;
-  border: 1px solid rgba(255,255,255,0.22) !important;
-  color: rgba(255,255,255,0.9) !important;
+/* View All + Notify Me row — full width, premium two-tone pair */
+.sheet-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  width: 100%;
+}
+.sheet-btn-primary {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  color: #1a1206;
+  background: linear-gradient(135deg, var(--gold), #d9a900);
+  box-shadow: 0 4px 16px rgba(244,195,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+  transition: transform .15s, box-shadow .15s, filter .15s;
+}
+.sheet-btn-primary:hover  { filter: brightness(1.06); }
+.sheet-btn-primary:active { transform: scale(.97); }
+
+.sheet-btn-notify {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 118px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font-b);
+  white-space: nowrap;
+  border-radius: 13px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.09);
+  color: rgba(255,255,255,.85);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+.sheet-btn-notify:hover  { background: rgba(255,255,255,.16); }
+.sheet-btn-notify:active { transform: scale(.97); }
+.sheet-btn-notify.is-saved {
+  background: rgba(29,185,84,.16);
+  border-color: rgba(29,185,84,.4);
+  color: #4caf7d;
+}
+@media (max-width: 360px) {
+  .sheet-btn-notify { min-width: 96px; padding: 12px 10px; font-size: 11.5px; }
 }
