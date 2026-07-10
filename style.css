@@ -8,6 +8,12 @@
    DESIGN TOKENS
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
+  /* Shared "premium" easing — a smooth expo-out curve (fast start, long
+     silky settle) used consistently across every scroll-driven animation
+     below, so the hide/shrink motions feel like one cohesive system
+     rather than several mismatched transitions. */
+  --ease-premium: cubic-bezier(.16, 1, .3, 1);
+
   --green:       #005c35;
   --green-mid:   #00703f;
   --green-light: #e6f4ec;
@@ -163,8 +169,8 @@ nav {
   backdrop-filter: saturate(170%) blur(28px);
   height: var(--nav-h);
   transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease,
-              backdrop-filter 0.4s ease, transform 0.35s cubic-bezier(.4,0,.2,1),
-              opacity 0.35s ease;
+              backdrop-filter 0.4s ease, transform 0.45s var(--ease-premium),
+              opacity 0.35s var(--ease-premium);
 }
 
 /* ── Hides while scrolling down, reappears on scroll up — mobile only.
@@ -1877,8 +1883,9 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   -webkit-backdrop-filter: saturate(170%) blur(28px);
   backdrop-filter: saturate(170%) blur(28px);
   transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease,
-              backdrop-filter 0.4s ease, height 0.3s cubic-bezier(.4,0,.2,1),
-              padding 0.3s cubic-bezier(.4,0,.2,1);
+              backdrop-filter 0.4s ease, height 0.45s var(--ease-premium),
+              padding 0.45s var(--ease-premium), left 0.45s var(--ease-premium),
+              right 0.45s var(--ease-premium);
   /* GPU layer — backface-visibility removed: combined with backdrop-filter
      it's a known WebKit/Safari bug that renders the whole bar invisible */
   transform: translateZ(0);
@@ -1887,9 +1894,12 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 @media (max-width: 640px) {
   .mob-nav { display: flex; }
 }
-/* ── Compact mode: shrinks while scrolling down, like Safari's toolbar ── */
+/* ── Compact mode: shrinks in height AND width while scrolling down,
+   like Safari's collapsing toolbar — restores on scroll up ── */
 .mob-nav.mob-nav-compact {
   height: 46px;
+  left: 64px;
+  right: 64px;
 }
 .mob-nav.mob-nav-compact .mn-label { display: none; }
 .mob-nav.mob-nav-compact .mob-nav-icon { font-size: 22px; }
@@ -2548,9 +2558,11 @@ footer {
   display: flex; align-items: center; justify-content: center; font-size: 18px;
   cursor: pointer; box-shadow: 0 4px 16px rgba(0,92,53,.35); z-index: 250;
   opacity: 0; transform: translateY(16px) scale(.8); pointer-events: none;
-  transition: opacity .3s, transform .3s, background .15s;
+  transition: opacity .3s ease, transform .3s var(--ease-premium), background .15s ease,
+              width .38s var(--ease-premium), height .38s var(--ease-premium), font-size .38s var(--ease-premium);
 }
 .back-to-top.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+.back-to-top.visible.back-to-top-compact { width: 34px; height: 34px; font-size: 14px; }
 .back-to-top:hover { transform: translateY(-2px) scale(1.1); background: var(--green-mid); box-shadow: 0 8px 24px rgba(0,92,53,0.5); }
 @media (min-width: 641px) { .back-to-top { bottom: 32px; right: 32px; } }
 
@@ -2688,7 +2700,9 @@ footer {
   align-items: center;
   gap: 9px;
   max-width: 180px;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  transition: transform 0.38s var(--ease-premium), box-shadow 0.3s ease, opacity 0.3s ease,
+              max-width 0.38s var(--ease-premium), padding 0.38s var(--ease-premium),
+              border-radius 0.38s var(--ease-premium), gap 0.38s var(--ease-premium);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   -webkit-tap-highlight-color: transparent;
@@ -2696,6 +2710,18 @@ footer {
   animation-delay: 1.8s;
   overflow: hidden;
   color: var(--text-1);
+}
+/* ── Compact mode: collapses to just the icon while scrolling down,
+   matching the nav pills' shrink behavior — expands back on scroll up ── */
+#gasBanner.gas-banner-compact {
+  max-width: 40px;
+  padding: 9px;
+  gap: 0;
+  border-radius: 50%;
+}
+#gasBanner.gas-banner-compact .gas-banner-body,
+#gasBanner.gas-banner-compact .gas-banner-arrow {
+  display: none;
 }
 #gasBanner::before {
   content: "";
