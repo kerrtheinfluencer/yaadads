@@ -571,7 +571,8 @@ nav.scrolled-transparent {
 }
 .ai-search-btn::before {
   content: '';
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
   background: linear-gradient(135deg, rgba(255,255,255,.18) 0%, transparent 60%);
   border-radius: inherit;
 }
@@ -1457,7 +1458,6 @@ nav.scrolled-transparent {
   background: var(--surface-2); display: flex; align-items: center; justify-content: center;
   font-size: 28px; flex-shrink: 0; overflow: hidden;
 }
-.my-ad-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .my-ad-info { flex: 1; min-width: 0; }
 .my-ad-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .my-ad-price { font-family: var(--font-d); font-weight: 700; color: var(--green); font-size: 15px; }
@@ -1816,7 +1816,8 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
    SELLER PROFILE
    ═══════════════════════════════════════════════════════════════════════════ */
 .prof-header { background: var(--nav-bg); padding: 36px 32px; display: flex; align-items: center; gap: 24px; }
-.prof-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+.prof-avatar { width: 80px; height: 80px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-d); font-weight: 800; font-size: 30px; flex-shrink: 0; }
 .prof-info { flex: 1; }
 .prof-name { font-family: var(--font-d); font-size: 26px; font-weight: 800; color: #fff; }
@@ -3029,132 +3030,54 @@ button:disabled,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   AI SEARCH SHEET — RESTORED GLASSMORPHIC + MOBILE FIXES
+   MINIMAL AI SHEET MOBILE FIXES (appended safely at end)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Main sheet container — strong glass effect */
-.ai-sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 90dvh;
-  max-height: 92dvh;
-  background: rgba(7, 30, 21, 0.55);
-  border-radius: 22px 22px 0 0;
-  border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 -12px 48px rgba(0,0,0,0.55);
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: translateY(100%);
-  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-  -webkit-backdrop-filter: saturate(180%) blur(26px);
-  backdrop-filter: saturate(180%) blur(26px);
-}
-
-.ai-sheet.open {
-  transform: translateY(0);
-}
-
-/* Body — better width usage and padding */
 .ai-sheet-body {
-  flex: 1 1 auto;
-  overflow-y: auto;
+  padding: 0 16px 120px !important;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  padding: 0 18px 110px;
-  scroll-behavior: smooth;
-  width: 100%;
 }
 
-/* Results cards inside sheet — glass style */
-.sheet-result-card {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 14px;
-  padding: 10px 12px;
-  display: flex;
+/* Horizontal View All + Notify Me (fixes tall vertical pill + bleeding) */
+.sheet-results,
+.sheet-results .btn-row {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px !important;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  flex-wrap: nowrap;
 }
 
-.sheet-result-card:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(244,195,0,0.45);
-}
-
-/* View All + Notify Me row — fixed bleeding */
-.sheet-results .sheet-view-all {
-  background: rgba(244,195,0,.12);
-  border: 1px solid rgba(244,195,0,.35);
-  color: var(--gold);
-  font-weight: 700;
-  padding: 11px 16px;
-  border-radius: 12px;
-  font-size: 13px;
-}
-
-/* Notify Me button — better contrast and no bleeding */
-.sheet-results button[style*="Notify me"],
-.sheet-results button[style*="Saved"] {
-  background: rgba(255,255,255,0.08) !important;
-  border: 1px solid rgba(255,255,255,0.2) !important;
-  color: rgba(255,255,255,0.85) !important;
-  padding: 11px 14px !important;
+.sheet-view-all,
+.sheet-results button {
+  white-space: nowrap !important;
+  flex: 1;
+  padding: 10px 14px !important;
   font-size: 13px !important;
   border-radius: 12px !important;
 }
 
-/* Bottom input bar — glass + safe area */
-.ai-sheet-input-wrap {
-  flex-shrink: 0;
-  padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
-  background: rgba(7,30,21,0.75);
-  border-top: 1px solid rgba(255,255,255,0.1);
-  position: sticky;
-  bottom: 0;
-  z-index: 30;
-}
-
-.ai-sheet-input-bar {
-  background: rgba(255,255,255,0.08);
-  border: 1.5px solid rgba(255,255,255,0.18);
-  border-radius: 28px;
-}
-
-/* Keyboard open state */
-.ai-sheet.ai-sheet-keyboard-open .ai-sheet-body {
-  max-height: 48vh;
-}
-
-/* iOS safe area extra */
-@supports (padding: env(safe-area-inset-bottom)) {
-  .ai-sheet-body {
-    padding-bottom: calc(105px + env(safe-area-inset-bottom));
-  }
-}
-
-/* Highlighted card (from your screenshot) */
-.sheet-result-card[style*="border"] {
-  box-shadow: 0 0 0 3px #f4c300;
-  border-color: #f4c300 !important;
-}
-
-/* Make sure content uses full width efficiently */
-.ai-sheet-body > * {
-  width: 100%;
-}
-
-.sheet-results {
-  width: 100%;
-}
-
-/* Prevent any text/button bleeding */
-.sheet-msg-ai,
+/* Stronger glass + no content bleeding */
 .sheet-result-card {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  overflow: hidden;
+}
+
+.sheet-msg-ai {
   overflow: hidden;
   word-break: break-word;
+}
+
+/* Better space usage */
+.ai-sheet-body > * {
+  max-width: 100%;
+}
+
+/* Notify Me button fix */
+.sheet-results button[style*="Notify me"],
+.sheet-results button[style*="Saved"] {
+  background: rgba(255,255,255,0.09) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  color: rgba(255,255,255,0.9) !important;
 }
