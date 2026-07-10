@@ -2848,10 +2848,10 @@ body.pwa-mode nav {
   padding-right: max(24px, env(safe-area-inset-right, 24px));
 }
 body.pwa-mode .mob-nav {
-  height: calc(56px + env(safe-area-inset-bottom, 0px));
+  height: calc(var(--mob-nav-h) + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-body.pwa-mode { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
+body.pwa-mode { padding-bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom, 0px)); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SHEET DRAG HANDLE (mobile AI sheet)
