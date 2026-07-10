@@ -52,7 +52,6 @@ function getViews(id) {
 }
 
 
-
 function emptyEl(msg, action='') {
   return `<div class="empty" style="grid-column:1/-1">
     <div class="empty-icon">🔍</div><h3>No listings found</h3>
@@ -413,7 +412,7 @@ const SEO = (() => {
     const setMeta = function(sel, val) {
       var el = document.querySelector(sel); if (el) el.setAttribute('content', val);
     };
-    document.title = "Yaad Adz — Free Classifieds Jamaica | Cars, Property, Phones & Jobs";
+    document.title = "Yaad Adz — Free Classifieds Jamaica | Cars, Property, Jobs & More";
     setMeta('meta[property="og:title"]', "Yaad Adz — Free Classifieds Jamaica | Cars, Property, Jobs & More");
     setMeta('meta[property="og:description"]', "Jamaica's free classifieds site. Find cars for sale, houses for rent, phones, jobs and more across all 14 parishes. Post free ads — no hidden fees.");
     setMeta('meta[property="og:url"]', BASE_URL + '/');
@@ -1205,7 +1204,7 @@ function renderRecentSearches(){
   if(!wrap||!list) return;
   if(!recent.length){wrap.style.display='none';return;}
   wrap.style.display='block';
-  list.innerHTML=recent.slice(0,6).map(s=>`<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'")}')"><span class="src-chip-icon">🕐</span>${s}</button>`).join('');
+  list.innerHTML=recent.slice(0,6).map(s=>`<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'") }')"><span class="src-chip-icon">🕐</span>${s}</button>`).join('');
 }
 
 function updateSheetSugs(){
@@ -1239,45 +1238,75 @@ function updateSheetSugs(){
     });
   }
   if(!sugs.length) return;
-  const extra=sugs.map(s=>`<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'")}'">${s.label}</button>`).join('');
+  const extra=sugs.map(s=>`<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'") }'">${s.label}</button>`).join('');
   wrap.insertAdjacentHTML('beforeend',extra);
 }
 
-function openAiSheet(prefill){
-  if(sheetOpen){
-    if(prefill){
-      const inp=document.getElementById('sheetInput');
-      if(inp){inp.value=prefill;sheetSubmit();}
+function openAiSheet(prefill) {
+  if (sheetOpen) {
+    if (prefill) {
+      const inp = document.getElementById('sheetInput');
+      if (inp) { inp.value = prefill; sheetSubmit(); }
     }
     return;
   }
-  sheetOpen=true;
-  const sheet=document.getElementById('aiSheet');
-  const overlay=document.getElementById('aiSheetOverlay');
-  sheet.style.display='flex';
-  overlay.style.display='block';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.classList.add('open');overlay.classList.add('open');});});
-  document.body.style.overflow='hidden';
+  sheetOpen = true;
+
+  const sheet = document.getElementById('aiSheet');
+  const overlay = document.getElementById('aiSheetOverlay');
+
+  sheet.style.display = 'flex';
+  overlay.style.display = 'block';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      sheet.classList.add('open');
+      overlay.classList.add('open');
+    });
+  });
+
+  document.body.style.overflow = 'hidden';
   document.body.classList.add('ai-sheet-open');
-  document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
+
+  // Clear any previous keyboard class
+  sheet.classList.remove('ai-sheet-keyboard-open');
+
+  document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
+
   renderRecentSearches();
   updateSheetSugs();
-  const heroQ=(typeof prefill==='string'?prefill:'')||document.getElementById('aiInput')?.value?.trim()||'';
-  const sheetInp=document.getElementById('sheetInput');
-  if(sheetInp&&heroQ) sheetInp.value=heroQ;
-  setTimeout(function(){document.getElementById('sheetInput')?.focus();},380);
+
+  const heroQ = (typeof prefill === 'string' ? prefill : '') || document.getElementById('aiInput')?.value?.trim() || '';
+  const sheetInp = document.getElementById('sheetInput');
+  if (sheetInp && heroQ) sheetInp.value = heroQ;
+
+  setTimeout(() => {
+    const body = document.getElementById('aiSheetBody');
+    if (body) body.scrollTop = 0;           // Force scroll to top on open
+    document.getElementById('sheetInput')?.focus();
+  }, 420);
 }
 
-function closeAiSheet(){
-  sheetOpen=false;
-  const sheet=document.getElementById('aiSheet');
-  const overlay=document.getElementById('aiSheetOverlay');
-  sheet.classList.remove('open');overlay.classList.remove('open');
-  document.body.style.overflow='';
-  document.body.classList.remove('ai-sheet-open');
-  if(document.activeElement) document.activeElement.blur();
-  setTimeout(function(){if(!sheetOpen){sheet.style.display='none';overlay.style.display='none';}},380);
+function closeAiSheet() {
+  sheetOpen = false;
+  const sheet = document.getElementById('aiSheet');
+  const overlay = document.getElementById('aiSheetOverlay');
+
+  sheet.classList.remove('open', 'ai-sheet-keyboard-open');
+  overlay.classList.remove('open');
+
+  document.body.style.overflow = '';
+  document.body.classList.remove('ai-sheet-open', 'ai-sheet-keyboard-open');
+
+  if (document.activeElement) document.activeElement.blur();
+
+  setTimeout(() => {
+    if (!sheetOpen) {
+      sheet.style.display = 'none';
+      overlay.style.display = 'none';
+    }
+  }, 380);
 }
 
 function clearSheetChat(){
@@ -1543,5 +1572,5 @@ function addTyping(){
   return row;
 }
 
-function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(s){return(s||'').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');}
 
