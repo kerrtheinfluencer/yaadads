@@ -1492,8 +1492,8 @@ function addSheetMsg(role,text,results,filters,allResults,qTerms){
 
       // View All + Notify Me button row
       if(filters&&totalCount>0){
-        const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;margin-top:4px';
-        const viewAll=document.createElement('button');viewAll.className='sheet-view-all';viewAll.style.flex='1';
+        const btnRow=document.createElement('div');btnRow.className='sheet-btn-row';
+        const viewAll=document.createElement('button');viewAll.className='sheet-btn-primary';
         viewAll.textContent='View all '+totalCount+' results →';
         viewAll.onclick=function(){
           closeAiSheet();
@@ -1505,16 +1505,17 @@ function addSheetMsg(role,text,results,filters,allResults,qTerms){
           showAiResponse(text,totalCount);scrollToResults();
         };
         btnRow.appendChild(viewAll);
-        const notifyBtn=document.createElement('button');notifyBtn.className='sheet-view-all';
-        notifyBtn.style.cssText='flex:0 0 auto;padding:10px 14px;font-size:12px;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6)';
+        const notifyBtn=document.createElement('button');notifyBtn.className='sheet-btn-notify';
         notifyBtn.title='Get notified when new listings match';
         const currentQuery=sheetHistory.length?sheetHistory[sheetHistory.length-2]?.text||'':'';
         const isSaved=getSavedSearches().find(s=>s.query===currentQuery);
-        notifyBtn.textContent=isSaved?'🔔 Saved':'🔔 Notify me';
+        if(isSaved) notifyBtn.classList.add('is-saved');
+        notifyBtn.innerHTML=isSaved?'🔔 <span>Saved</span>':'🔔 <span>Notify me</span>';
         notifyBtn.onclick=function(){
           if(!currentQuery) return;
           saveSearchAlert(currentQuery,filters);
-          notifyBtn.textContent='🔔 Saved';notifyBtn.style.color='#1db954';notifyBtn.style.borderColor='rgba(29,185,84,0.3)';
+          notifyBtn.innerHTML='🔔 <span>Saved</span>';
+          notifyBtn.classList.add('is-saved');
         };
         btnRow.appendChild(notifyBtn);
         resWrap.appendChild(btnRow);
