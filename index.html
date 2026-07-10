@@ -5,6 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 
 <!-- ═══════════════════════════════════════════
+     ERROR MONITORING (Sentry, free tier)
+     Replace YOUR_DSN_HERE with your real DSN from sentry.io — see the
+     comment right below for how to get one. Until you do, this script
+     loads but does nothing (no DSN = Sentry silently no-ops).
+═══════════════════════════════════════════ -->
+<script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
+<script>
+  if (typeof Sentry !== 'undefined') {
+    Sentry.init({
+      dsn: "https://672a536550bdffd5c553e008403480a4@o4511709070426112.ingest.us.sentry.io/4511709074489344",
+      environment: location.hostname === 'yaadadz.com' ? 'production' : 'dev',
+      tracesSampleRate: 0.1, // only trace 10% of page loads — plenty for a site this size, keeps you well within the free quota
+      beforeSend(event) {
+        // Don't bother reporting errors caused by ad-blockers or browser
+        // extensions — they're noise, not real bugs in your code.
+        if (event.exception && JSON.stringify(event.exception).includes('extension://')) return null;
+        return event;
+      }
+    });
+  }
+</script>
+
+<!-- ═══════════════════════════════════════════
      PRIMARY META
 ═══════════════════════════════════════════ -->
 <title>Yaad Adz — Free Classifieds Jamaica | Cars, Property, Phones &amp; Jobs</title>
