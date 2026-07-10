@@ -3038,15 +3038,12 @@ button:disabled,
   -webkit-overflow-scrolling: touch;
 }
 
-/* Horizontal View All + Notify Me (fixes tall vertical pill + bleeding) */
-.sheet-results,
-.sheet-results .btn-row {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 10px !important;
-  align-items: center;
-  flex-wrap: nowrap;
-}
+/* NOTE: the View All + Notify Me row is built in search-ai.js as an
+   inline-styled div (display:flex;gap:8px) appended into .sheet-results
+   alongside the listing cards — it already lays out horizontally on its
+   own. .sheet-results itself must stay column (flex-direction: column,
+   set earlier in this file) so the listing cards stack normally instead
+   of being squeezed into a single row. No override needed here. */
 
 .sheet-view-all,
 .sheet-results button {
