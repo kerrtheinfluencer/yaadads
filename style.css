@@ -2586,10 +2586,17 @@ footer {
   cursor: pointer; box-shadow: 0 4px 16px rgba(0,92,53,.35); z-index: 250;
   opacity: 0; transform: translateY(16px) scale(.8); pointer-events: none;
   transition: opacity .3s ease, transform .3s var(--ease-premium), background .15s ease,
-              width .38s var(--ease-premium), height .38s var(--ease-premium), font-size .38s var(--ease-premium);
+              width .38s var(--ease-premium), height .38s var(--ease-premium), font-size .38s var(--ease-premium),
+              bottom .38s var(--ease-premium), right .38s var(--ease-premium);
 }
 .back-to-top.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
-.back-to-top.visible.back-to-top-compact { width: 34px; height: 34px; font-size: 14px; }
+.back-to-top.visible.back-to-top-compact {
+  width: 34px; height: 34px; font-size: 14px;
+  /* Moves down to sit flush beside the shrunk bottom pill, in the space
+     freed up when the pill narrows, instead of floating above it */
+  bottom: max(10px, env(safe-area-inset-bottom));
+  right: 14px;
+}
 .back-to-top:hover { transform: translateY(-2px) scale(1.1); background: var(--green-mid); box-shadow: 0 8px 24px rgba(0,92,53,0.5); }
 @media (min-width: 641px) { .back-to-top { bottom: 32px; right: 32px; } }
 
@@ -2729,7 +2736,8 @@ footer {
   max-width: 180px;
   transition: transform 0.38s var(--ease-premium), box-shadow 0.3s ease, opacity 0.3s ease,
               max-width 0.38s var(--ease-premium), padding 0.38s var(--ease-premium),
-              border-radius 0.38s var(--ease-premium), gap 0.38s var(--ease-premium);
+              border-radius 0.38s var(--ease-premium), gap 0.38s var(--ease-premium),
+              bottom 0.38s var(--ease-premium), left 0.38s var(--ease-premium);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   -webkit-tap-highlight-color: transparent;
@@ -2745,6 +2753,10 @@ footer {
   padding: 9px;
   gap: 0;
   border-radius: 50%;
+  /* Moves down to sit flush beside the shrunk bottom pill, mirroring
+     the back-to-top button on the opposite side */
+  bottom: max(10px, env(safe-area-inset-bottom));
+  left: 14px;
 }
 #gasBanner.gas-banner-compact .gas-banner-body,
 #gasBanner.gas-banner-compact .gas-banner-arrow {
