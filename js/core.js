@@ -494,15 +494,45 @@ function initials(name) {
   if (!name) return '?';
   return name.trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
 }
-function avatarColor(name) {
-  const colors = [
-    {bg:'#1a3a2a',fg:'#4ade80'},{bg:'#1e1a3a',fg:'#818cf8'},
-    {bg:'#3a1a1a',fg:'#f87171'},{bg:'#3a2e1a',fg:'#fbbf24'},
-    {bg:'#1a2e3a',fg:'#38bdf8'},{bg:'#2e1a3a',fg:'#e879f9'},
-    {bg:'#1a3a2e',fg:'#34d399'},{bg:'#3a1a2e',fg:'#f472b6'},
-  ];
-  let hash = 0;
-  for (let i = 0; i < (name||'?').length; i++) hash = (hash*31 + (name||'?').charCodeAt(i)) & 0xffffffff;
-  return colors[Math.abs(hash) % colors.length];
+
+/* ═══════════════════════════════════════════════════════════
+   §PUSH — Push notification permission + send
+   NOTE: these were called from auth-account.js / ui-nav.js but
+   were never actually written, so notifications silently failed
+   with a console ReferenceError. This covers foreground/backgrounded
+   tab notifications. True notifications while the app is fully
+   closed require a server (e.g. a Supabase Edge Function using
+   web-push + VAPID keys) — this does not cover that case yet.
+═══════════════════════════════════════════════════════════ */
+function requestPushPermission() {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+    Notification.requestPermission().then(function(perm) {
+      if (perm === 'granted') showToast('Notifications enabled! 🔔', '🔔');
+    });
+  } catch(e) { console.error('requestPushPermission error:', e); }
 }
+
+function sendPushNotification(title, body, url) {
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!document.hidden) return; // tab is focused — the in-app toast already covers this case
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(function(reg) {
+        reg.showNotification(title, {
+          body: body,
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          data: { url: url || '/' },
+          tag: 'yaadadz-msg',
+        });
+      });
+    } else {
+      const n = new Notification(title, { body: body, icon: '/icon-192.png' });
+      n.onclick = function() { window.focus(); if (url) location.href = url; n.close(); };
+    }
+  } catch(e) { console.error('sendPushNotification error:', e); }
+}
+
 
