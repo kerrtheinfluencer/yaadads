@@ -649,7 +649,10 @@ if ('serviceWorker' in navigator) {
         <div class="ai-sheet-sub">Ask anything · Search listings</div>
       </div>
     </div>
-    <button class="ai-sheet-close" onclick="closeAiSheet()">✕</button>
+    <div style="display:flex;gap:8px">
+      <button class="ai-sheet-close" onclick="clearSheetChat()" title="Clear conversation" style="font-size:13px">🗑️</button>
+      <button class="ai-sheet-close" onclick="closeAiSheet()">✕</button>
+    </div>
   </div>
 
   <!-- Scrollable body -->

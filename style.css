@@ -2369,24 +2369,46 @@ footer {
   color: #fff; padding: 10px 16px;
   border-radius: 18px 18px 4px 18px;
   font-size: 14px; max-width: 82%;
+  box-shadow: 0 4px 14px rgba(0,92,53,.3);
   animation: msgIn .25s cubic-bezier(.34,1.2,.64,1) both;
 }
-/* AI response bubble */
+/* AI response — now with a small avatar, like a real chat participant
+   rather than a floating card, plus the same liquid-highlight sheen
+   used on cards elsewhere for visual consistency across the site */
+.sheet-msg-ai-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  align-self: flex-start; max-width: 92%;
+  animation: msgIn .3s cubic-bezier(.34,1.2,.64,1) both;
+}
+.sheet-msg-avatar {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--green), var(--green-mid));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; margin-top: 2px;
+  box-shadow: 0 2px 8px rgba(0,92,53,.4);
+}
 .sheet-msg-ai {
-  align-self: flex-start;
   background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.12);
   color: rgba(255,255,255,.9); padding: 14px 16px;
   border-radius: 4px 18px 18px 18px;
-  font-size: 14px; max-width: 90%; line-height: 1.6;
-  animation: msgIn .3s cubic-bezier(.34,1.2,.64,1) both;
+  font-size: 14px; max-width: 100%; line-height: 1.6;
   position: relative;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
+  overflow: hidden;
 }
 .sheet-msg-ai::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, var(--green), var(--gold));
   border-radius: 4px 18px 0 0;
+}
+.sheet-msg-ai::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--liquid-highlight);
+  opacity: .05;
+  pointer-events: none;
 }
 /* Mini listing results inside sheet */
 .sheet-results {
@@ -2395,13 +2417,14 @@ footer {
 }
 .sheet-result-card {
   background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: 12px; padding: 10px 12px;
-  cursor: pointer; transition: background .15s, border-color .15s, transform .15s;
+  cursor: pointer; transition: background .15s, border-color .15s, transform .15s, box-shadow .15s;
   display: flex; align-items: center; gap: 10px;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 10px rgba(0,0,0,.12);
 }
-.sheet-result-card:hover  { background: rgba(255,255,255,.12); border-color: rgba(244,195,0,.45); }
+.sheet-result-card:hover  { background: rgba(255,255,255,.12); border-color: rgba(244,195,0,.45); box-shadow: 0 4px 16px rgba(0,0,0,.2); }
 .sheet-result-card:active { transform: scale(.98); }
 .src-thumb {
   width: 46px; height: 46px; border-radius: 8px;
@@ -2440,11 +2463,15 @@ footer {
   background: rgba(255,255,255,.07); border-radius: 8px; padding: 3px 9px;
 }
 
-/* Typing indicator */
+/* Typing indicator — sits inside .sheet-msg-ai-row alongside the avatar,
+   styled as its own small glass bubble to match real AI messages */
 .sheet-typing {
   display: flex; align-items: center; gap: 5px;
-  padding: 12px 16px; align-self: flex-start;
-  animation: msgIn .25s both;
+  padding: 13px 16px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 4px 18px 18px 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
 }
 .sheet-typing span {
   width: 7px; height: 7px; background: rgba(255,255,255,.4);
