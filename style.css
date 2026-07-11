@@ -21,7 +21,7 @@
   --gold-dark:   #c9a000;
   --gold-pale:   #fffbe6;
   --nav-bg:      #0c1e14;
-  --bg:          #f6f4ef;
+  --bg:          linear-gradient(165deg, #f8faf5 0%, #f3f2e9 32%, #f6efdc 68%, #f1ead2 100%);
   --surface:     #ffffff;
   --surface-2:   #f0ede5;
   --border:      #e2ddd4;
@@ -103,10 +103,11 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(38rem 30rem at 8% 15%, rgba(244,195,0,.14), transparent 60%),
-    radial-gradient(34rem 28rem at 92% 8%, rgba(0,92,53,.16), transparent 60%),
-    radial-gradient(32rem 30rem at 15% 78%, rgba(0,92,53,.12), transparent 60%),
-    radial-gradient(30rem 26rem at 88% 82%, rgba(244,195,0,.10), transparent 60%);
+    radial-gradient(40rem 32rem at 6% 12%, rgba(244,195,0,.38), transparent 60%),
+    radial-gradient(36rem 30rem at 94% 6%, rgba(0,92,53,.42), transparent 60%),
+    radial-gradient(34rem 32rem at 12% 82%, rgba(0,92,53,.36), transparent 60%),
+    radial-gradient(32rem 28rem at 90% 86%, rgba(244,195,0,.32), transparent 60%),
+    radial-gradient(44rem 36rem at 50% 45%, rgba(0,160,96,.12), transparent 65%);
 }
 
 @media (max-width: 640px) {
@@ -887,9 +888,9 @@ nav.scrolled-transparent {
 }
 
 .ad-card {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(28px) saturate(2);
-  -webkit-backdrop-filter: blur(28px) saturate(2);
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(22px) saturate(2.2);
+  -webkit-backdrop-filter: blur(22px) saturate(2.2);
   border-radius: 28px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.62);
