@@ -2934,17 +2934,17 @@ html {
 
 body {
   background:
-    radial-gradient(38rem 30rem at 4% 6%, rgba(244,195,0,.4), transparent 55%),
-    radial-gradient(34rem 28rem at 97% 3%, rgba(0,92,53,.46), transparent 55%),
-    radial-gradient(32rem 30rem at 8% 26%, rgba(0,140,80,.3), transparent 55%),
-    radial-gradient(34rem 28rem at 94% 30%, rgba(244,195,0,.3), transparent 55%),
-    radial-gradient(36rem 30rem at 6% 50%, rgba(0,92,53,.36), transparent 55%),
-    radial-gradient(32rem 26rem at 95% 55%, rgba(244,195,0,.32), transparent 55%),
-    radial-gradient(34rem 30rem at 10% 74%, rgba(0,140,80,.3), transparent 55%),
-    radial-gradient(32rem 28rem at 92% 78%, rgba(244,195,0,.28), transparent 55%),
-    radial-gradient(30rem 26rem at 12% 95%, rgba(0,92,53,.38), transparent 55%),
-    radial-gradient(30rem 26rem at 90% 97%, rgba(244,195,0,.34), transparent 55%),
-    linear-gradient(165deg, #eef6ee 0%, #e8f2ea 30%, #eef2df 62%, #f2ead0 100%);
+    radial-gradient(38rem 30rem at 4% 6%, rgba(244,195,0,.5), transparent 55%),
+    radial-gradient(34rem 28rem at 97% 3%, rgba(0,72,42,.6), transparent 55%),
+    radial-gradient(32rem 30rem at 8% 26%, rgba(0,110,64,.44), transparent 55%),
+    radial-gradient(34rem 28rem at 94% 30%, rgba(244,195,0,.4), transparent 55%),
+    radial-gradient(36rem 30rem at 6% 50%, rgba(0,72,42,.48), transparent 55%),
+    radial-gradient(32rem 26rem at 95% 55%, rgba(244,195,0,.42), transparent 55%),
+    radial-gradient(34rem 30rem at 10% 74%, rgba(0,110,64,.44), transparent 55%),
+    radial-gradient(32rem 28rem at 92% 78%, rgba(244,195,0,.38), transparent 55%),
+    radial-gradient(30rem 26rem at 12% 95%, rgba(0,72,42,.5), transparent 55%),
+    radial-gradient(30rem 26rem at 90% 97%, rgba(244,195,0,.44), transparent 55%),
+    linear-gradient(165deg, #d7e8dc 0%, #cfe3d6 30%, #dde2ba 62%, #e2d29c 100%);
 }
 
 /* ── Nav/btn frosted overrides ── */
