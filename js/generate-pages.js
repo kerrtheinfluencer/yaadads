@@ -551,14 +551,32 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .float-btns { display: flex; gap: 8px; flex-shrink: 0; }
   .float-contact-btn {
     display: flex; align-items: center; justify-content: center; gap: 5px;
-    padding: 11px 14px; border-radius: 10px;
+    padding: 11px 16px; border-radius: 13px;
     font-weight: 700; font-size: 14px;
     text-decoration: none; white-space: nowrap;
-    transition: opacity 0.15s; border: none; cursor: pointer;
+    transition: transform 0.2s cubic-bezier(.16,1,.3,1), box-shadow 0.2s ease, filter 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.28);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
   }
-  .float-contact-btn:active { opacity: 0.75; transform: scale(0.97); }
-  .float-btn-call { background: var(--green); color: #fff; }
-  .float-btn-wa   { background: #25d366; color: #fff; }
+  .float-contact-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,.32), rgba(255,255,255,0) 55%);
+    pointer-events: none;
+  }
+  .float-contact-btn:active { transform: scale(0.96); filter: brightness(0.95); }
+  .float-btn-call {
+    background: linear-gradient(155deg, var(--green), #004526);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,92,53,.35), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .float-btn-wa {
+    background: linear-gradient(155deg, #2fe374, #1da851);
+    color: #06301a;
+    box-shadow: 0 6px 18px rgba(37,211,102,.35), inset 0 1px 0 rgba(255,255,255,.35);
+  }
 
   /* ── BREADCRUMB ── */
   .breadcrumb {
@@ -613,20 +631,31 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   }
   .gallery-zoom-hint:hover { opacity: 0.8; }
   .gallery-thumbs {
-    display: flex; gap: 8px;
-    margin-top: 10px; flex-wrap: wrap;
+    display: flex; gap: 9px;
+    margin-top: 12px; flex-wrap: wrap;
   }
   .gallery-thumbs .thumb {
     width: 72px; height: 54px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    opacity: 0.6;
-    border: 2px solid transparent;
-    transition: all 0.2s;
+    opacity: 0.62;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 3px 10px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.1);
+    transition: opacity .2s ease, transform .2s cubic-bezier(.16,1,.3,1),
+                box-shadow .2s ease, border-color .2s ease;
   }
-  .gallery-thumbs .thumb.active,
-  .gallery-thumbs .thumb:hover { opacity: 1; border-color: var(--green); }
+  .gallery-thumbs .thumb:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+  .gallery-thumbs .thumb.active {
+    opacity: 1;
+    border-color: var(--green);
+    box-shadow: 0 4px 16px rgba(0,92,53,.35), 0 0 0 3px rgba(0,92,53,.16),
+                inset 0 1px 0 rgba(255,255,255,.25);
+    transform: translateY(-2px);
+  }
   .gallery-placeholder {
     background: var(--bg3);
     border-radius: var(--radius);
@@ -694,14 +723,32 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   }
   .cta-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 16px; border-radius: 10px;
-    font-weight: 600; font-size: 15px;
-    text-decoration: none; transition: opacity 0.2s;
+    padding: 12px 16px; border-radius: 13px;
+    font-weight: 700; font-size: 15px;
+    text-decoration: none; transition: transform 0.2s cubic-bezier(.16,1,.3,1), filter 0.2s ease;
     cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.28);
+    position: relative;
+    overflow: hidden;
   }
-  .cta-btn:hover { opacity: 0.85; }
-  .cta-call { background: var(--green); color: #fff; }
-  .cta-wa   { background: #25d366; color: #fff; }
+  .cta-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,.3), rgba(255,255,255,0) 55%);
+    pointer-events: none;
+  }
+  .cta-btn:hover  { filter: brightness(1.05); }
+  .cta-btn:active { transform: scale(0.97); }
+  .cta-call {
+    background: linear-gradient(155deg, var(--green), #004526);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,92,53,.3), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .cta-wa {
+    background: linear-gradient(155deg, #2fe374, #1da851);
+    color: #06301a;
+    box-shadow: 0 6px 18px rgba(37,211,102,.3), inset 0 1px 0 rgba(255,255,255,.35);
+  }
   .cta-site { background: rgba(255,255,255,0.08); color: var(--text-1); border: 1px solid var(--border); }
   .sold-msg { font-size: 14px; color: var(--text-2); }
   .sold-msg a { color: var(--green); }
