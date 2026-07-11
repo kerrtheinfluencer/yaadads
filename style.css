@@ -91,6 +91,22 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: contain;
+  position: relative;
+}
+
+/* Fixed gradient mesh so .ad-card's backdrop-filter blur actually has
+   something colorful behind it to refract, instead of blurring flat beige */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38rem 30rem at 8% 15%, rgba(244,195,0,.14), transparent 60%),
+    radial-gradient(34rem 28rem at 92% 8%, rgba(0,92,53,.16), transparent 60%),
+    radial-gradient(32rem 30rem at 15% 78%, rgba(0,92,53,.12), transparent 60%),
+    radial-gradient(30rem 26rem at 88% 82%, rgba(244,195,0,.10), transparent 60%);
 }
 
 @media (max-width: 640px) {
