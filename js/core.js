@@ -494,6 +494,17 @@ function initials(name) {
   if (!name) return '?';
   return name.trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
 }
+function avatarColor(name) {
+  const colors = [
+    {bg:'#1a3a2a',fg:'#4ade80'},{bg:'#1e1a3a',fg:'#818cf8'},
+    {bg:'#3a1a1a',fg:'#f87171'},{bg:'#3a2e1a',fg:'#fbbf24'},
+    {bg:'#1a2e3a',fg:'#38bdf8'},{bg:'#2e1a3a',fg:'#e879f9'},
+    {bg:'#1a3a2e',fg:'#34d399'},{bg:'#3a1a2e',fg:'#f472b6'},
+  ];
+  let hash = 0;
+  for (let i = 0; i < (name||'?').length; i++) hash = (hash*31 + (name||'?').charCodeAt(i)) & 0xffffffff;
+  return colors[Math.abs(hash) % colors.length];
+}
 
 /* ═══════════════════════════════════════════════════════════
    §PUSH — Push notification permission + send

@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v6'; // bump this any time style.css or js/*.js changes — otherwise
+const CACHE_VERSION  = 'yaadadz-v7'; // bump this any time style.css or js/*.js changes — otherwise
                                       // Cache-First below will keep serving the OLD file forever,
                                       // no matter how many times the actual file is updated on GitHub.
 const STATIC_CACHE   = CACHE_VERSION + '-static';
@@ -19,20 +19,6 @@ const PRECACHE_URLS = [
   '/style.css',
   '/offline.html',
 ];
-
-// ── Notification tap: focus an existing tab or open a new one ────
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        if ('focus' in client) { client.focus(); if ('navigate' in client) client.navigate(url); return; }
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
-  );
-});
 
 // ── Install: precache static assets ──────────────────────────────
 self.addEventListener('install', event => {
