@@ -91,8 +91,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: contain;
-  overflow-x: hidden;
-  max-width: 100vw;
 }
 
 @media (max-width: 640px) {
