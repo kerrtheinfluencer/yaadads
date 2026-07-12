@@ -1282,9 +1282,9 @@ nav.scrolled-transparent {
 }
 .ad-views {
   display: inline-flex; align-items: center; gap: 4px;
-  margin-left: auto; font-size: 11px; font-weight: 500; color: rgba(255,255,255,.5); opacity: 0.85;
+  margin-left: auto; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.75);
 }
-.ad-views svg { width: 12px; height: 12px; opacity: .5; }
+.ad-views svg { width: 12px; height: 12px; opacity: .8; }
 
 /* ── Seller row on ad cards — premium ── */
 .ad-seller-row {
@@ -1343,12 +1343,16 @@ nav.scrolled-transparent {
   font-size: 13px; font-weight: 600;
   color: #fff;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+.ad-seller-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .ad-seller-sub {
   font-size: 10.5px; color: rgba(255,255,255,.5);
