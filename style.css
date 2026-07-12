@@ -1509,10 +1509,10 @@ nav.scrolled-transparent {
 }
 .overlay.open { display: flex; }
 .modal {
-  background: rgba(248, 252, 249, .5);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255,255,255,.4);
+  background: rgba(10, 22, 16, .58);
+  backdrop-filter: blur(24px) saturate(2.2);
+  -webkit-backdrop-filter: blur(24px) saturate(2.2);
+  border: 1px solid rgba(255,255,255,.14);
   border-radius: 22px;
   padding: 40px;
   width: 100%;
@@ -1524,15 +1524,30 @@ nav.scrolled-transparent {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  box-shadow: 0 24px 80px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.5);
+  box-shadow: 0 24px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
+  color: #fff;
 }
+/* Scoped overrides — only inside modals, nothing else on the site is touched */
+.modal h1, .modal h2, .modal h3 { color: #fff; }
+.modal p, .modal label, .modal span { color: rgba(255,255,255,.7); }
+.modal .form-inp {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.16);
+  color: #fff;
+}
+.modal .form-inp::placeholder { color: rgba(255,255,255,.4); }
+.modal .form-inp:focus {
+  border-color: var(--gold);
+  background: rgba(255,255,255,.13);
+}
+.modal a:not(.cta-btn):not([class*="btn"]) { color: var(--gold); }
 .modal::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--liquid-highlight);
-  opacity: .42;
+  background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,0) 45%);
+  opacity: 1;
   pointer-events: none;
 }
 .modal-wide { max-width: 560px; }
@@ -1865,12 +1880,12 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   display: none;
   z-index: 150;
   padding: 0 6px;
-  /* iOS 27 glass */
-  background: rgba(255,255,255,.72);
-  border: 1px solid rgba(255,255,255,.78);
-  box-shadow: 0 20px 52px rgba(0,32,22,.2), inset 0 1px 0 rgba(255,255,255,.7);
-  -webkit-backdrop-filter: saturate(170%) blur(28px);
-  backdrop-filter: saturate(170%) blur(28px);
+  /* iOS 27 glass — dark */
+  background: rgba(10, 22, 16, .62);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 20px 52px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
+  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  backdrop-filter: saturate(180%) blur(28px);
   transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease,
               backdrop-filter 0.4s ease, height 0.45s var(--ease-premium),
               padding 0.45s var(--ease-premium), left 0.45s var(--ease-premium),
@@ -1896,11 +1911,11 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .mn-label { transition: opacity .15s ease; }
 /* iOS 27-style: bottom pill fades when scrolling */
 .mob-nav.scrolled-transparent {
-  background: rgba(255,255,255,.28);
-  border-color: rgba(255,255,255,.32);
-  box-shadow: 0 8px 28px rgba(0,32,22,.10), inset 0 1px 0 rgba(255,255,255,.3);
-  -webkit-backdrop-filter: saturate(160%) blur(36px);
-  backdrop-filter: saturate(160%) blur(36px);
+  background: rgba(10, 22, 16, .32);
+  border-color: rgba(255,255,255,.1);
+  box-shadow: 0 8px 28px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
+  -webkit-backdrop-filter: saturate(170%) blur(36px);
+  backdrop-filter: saturate(170%) blur(36px);
 }
 .mob-nav-item {
   flex: 1; display: flex; flex-direction: column;
@@ -1913,9 +1928,9 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   -webkit-tap-highlight-color: transparent;
   transition: color .15s;
   min-width: 0;
-  color: rgba(6,22,15,.62);
+  color: rgba(255,255,255,.6);
 }
-.mob-nav-item.active { color: var(--green); }
+.mob-nav-item.active { color: var(--gold); }
 .mob-nav-item.active .mob-nav-icon { transform: scale(1.12); }
 .mob-nav-icon {
   font-size: 20px; line-height: 1;
@@ -1945,7 +1960,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   background: var(--red); color: #fff;
   border-radius: 8px; font-size: 9px; font-weight: 800;
   display: none; align-items: center; justify-content: center;
-  padding: 0 4px; border: 1.5px solid var(--surface);
+  padding: 0 4px; border: 1.5px solid rgba(10,22,16,.85);
 }
 .mob-msg-badge.show { display: flex; }
 
