@@ -445,7 +445,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   :root {
     --bg:      #0c1e14;
     --bg2:     #112019;
-    --bg3:     #172a1f;
+    --bg3:     rgba(23, 42, 31, 0.5);
     --green:   #1db954;
     --gold:    #f5c842;
     --text-1:  #e8ede9;
@@ -462,20 +462,47 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
   body {
     font-family: var(--font-s);
-    background: var(--bg);
+    background:
+      radial-gradient(34rem 28rem at 6% 4%, rgba(244,195,0,.22), transparent 55%),
+      radial-gradient(32rem 26rem at 96% 6%, rgba(0,92,53,.34), transparent 55%),
+      radial-gradient(30rem 26rem at 10% 60%, rgba(0,140,80,.2), transparent 55%),
+      radial-gradient(30rem 26rem at 92% 70%, rgba(244,195,0,.18), transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text-1);
     min-height: 100vh;
     line-height: 1.6;
   }
 
-  /* ── NAV ── */
+  /* ── LIQUID GLASS — shared across every --bg3 surface ── */
+  .gallery-main, .gallery-placeholder, .price-card, .contact-box,
+  .section-card, .wa-share-box, .sim-card {
+    -webkit-backdrop-filter: blur(22px) saturate(2.2);
+    backdrop-filter: blur(22px) saturate(2.2);
+    box-shadow: 0 10px 34px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .gallery-main::before, .gallery-placeholder::before, .price-card::before,
+  .contact-box::before, .section-card::before, .wa-share-box::before, .sim-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,0) 45%);
+    pointer-events: none;
+  }
+
+  /* ── NAV — floating inset pill, matching main app ── */
   nav {
-    position: sticky; top: 0; z-index: 200;
-    background: rgba(12,30,20,0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 16px;
+    position: sticky; top: 12px; z-index: 200;
+    width: min(calc(100% - 24px), 960px);
+    margin: 12px auto 0;
+    background: rgba(10, 22, 16, .62);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 55px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    backdrop-filter: saturate(180%) blur(28px);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
+    border-radius: 28px;
+    padding: 0 20px;
     height: 56px;
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -485,8 +512,6 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   body.pwa-mode nav {
     height: calc(56px + env(safe-area-inset-top, 0px));
     padding-top: env(safe-area-inset-top, 0px);
-    padding-left: max(16px, env(safe-area-inset-left, 16px));
-    padding-right: max(16px, env(safe-area-inset-right, 16px));
   }
   .nav-back {
     display: flex; align-items: center; gap: 2px;
@@ -527,14 +552,16 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .nav-post:hover { opacity: 0.88; }
   /* ── FLOATING CONTACT BAR ── */
   .float-contact {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
-    background: rgba(11,26,17,0.98);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding: 10px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    position: fixed; bottom: max(12px, env(safe-area-inset-bottom, 12px)); left: 12px; right: 12px; z-index: 150;
+    max-width: 960px; margin: 0 auto;
+    background: rgba(10, 22, 16, .62);
+    backdrop-filter: blur(24px) saturate(2.2); -webkit-backdrop-filter: blur(24px) saturate(2.2);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 28px;
+    box-shadow: 0 18px 55px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
+    padding: 10px 14px;
     display: flex; gap: 10px; align-items: center;
-    transform: translateY(110%);
+    transform: translateY(140%);
     transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
     pointer-events: none;
   }
@@ -542,7 +569,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
   .float-contact-info { flex: 1; min-width: 0; overflow: hidden; }
   .float-contact-price {
     font-family: var(--font-d); font-size: 17px; font-weight: 800;
-    color: var(--green); line-height: 1.2;
+    color: var(--gold); line-height: 1.2;
   }
   .float-contact-title {
     font-size: 11px; color: var(--text-3);
@@ -580,10 +607,16 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 
   /* ── BREADCRUMB ── */
   .breadcrumb {
-    max-width: 960px; margin: 0 auto;
-    padding: 14px 24px 0;
+    max-width: 960px; margin: 12px auto 0;
+    padding: 10px 20px;
     font-size: 12px; color: var(--text-3);
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    backdrop-filter: blur(16px) saturate(1.8);
+    -webkit-backdrop-filter: blur(16px) saturate(1.8);
+    width: min(calc(100% - 48px), 960px);
   }
   .breadcrumb a { color: var(--text-3); text-decoration: none; }
   .breadcrumb a:hover { color: var(--green); }
