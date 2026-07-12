@@ -227,14 +227,18 @@ Features: ✅
     pointer-events: none;
   }
 
-  /* ── NAV ── */
+  /* ── NAV — floating inset pill, matching main app ── */
   nav {
-    position: sticky; top: 0; z-index: 200;
-    background: rgba(12,30,20,0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 16px;
+    position: sticky; top: 12px; z-index: 200;
+    width: min(calc(100% - 24px), 960px);
+    margin: 12px auto 0;
+    background: rgba(10, 22, 16, .62);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 55px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    backdrop-filter: saturate(180%) blur(28px);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
+    border-radius: 28px;
+    padding: 0 20px;
     height: 56px;
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -244,8 +248,6 @@ Features: ✅
   body.pwa-mode nav {
     height: calc(56px + env(safe-area-inset-top, 0px));
     padding-top: env(safe-area-inset-top, 0px);
-    padding-left: max(16px, env(safe-area-inset-left, 16px));
-    padding-right: max(16px, env(safe-area-inset-right, 16px));
   }
   .nav-back {
     display: flex; align-items: center; gap: 2px;
@@ -286,15 +288,16 @@ Features: ✅
   .nav-post:hover { opacity: 0.88; }
   /* ── FLOATING CONTACT BAR ── */
   .float-contact {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
-    background: rgba(11,26,17,0.6);
+    position: fixed; bottom: max(12px, env(safe-area-inset-bottom, 12px)); left: 12px; right: 12px; z-index: 150;
+    max-width: 960px; margin: 0 auto;
+    background: rgba(10, 22, 16, .62);
     backdrop-filter: blur(24px) saturate(2.2); -webkit-backdrop-filter: blur(24px) saturate(2.2);
-    border-top: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 -8px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
-    padding: 10px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 28px;
+    box-shadow: 0 18px 55px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
+    padding: 10px 14px;
     display: flex; gap: 10px; align-items: center;
-    transform: translateY(110%);
+    transform: translateY(140%);
     transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
     pointer-events: none;
   }
@@ -302,7 +305,7 @@ Features: ✅
   .float-contact-info { flex: 1; min-width: 0; overflow: hidden; }
   .float-contact-price {
     font-family: var(--font-d); font-size: 17px; font-weight: 800;
-    color: var(--green); line-height: 1.2;
+    color: var(--gold); line-height: 1.2;
   }
   .float-contact-title {
     font-size: 11px; color: var(--text-3);
