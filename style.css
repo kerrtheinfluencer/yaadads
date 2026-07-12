@@ -1152,7 +1152,7 @@ nav.scrolled-transparent {
 
 /* ── Fresh badge — premium with glow pulse ── */
 .fresh-badge {
-  position: absolute; bottom: 10px; right: 12px; z-index: 4;
+  position: absolute; top: 54px; right: 12px; z-index: 4;
   background: rgba(0, 92, 53, 0.88);
   backdrop-filter: blur(14px) saturate(1.6);
   -webkit-backdrop-filter: blur(14px) saturate(1.6);
@@ -1264,7 +1264,7 @@ nav.scrolled-transparent {
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.35;
-  min-height: 0;
+  min-height: 2.7em;
 }
 .ad-meta {
   display: flex; gap: 10px; font-size: 11.5px; color: rgba(255,255,255,.58);
@@ -2192,11 +2192,11 @@ footer {
   .ad-title { font-size: 12px; -webkit-line-clamp: 2; margin-bottom: 6px; }
   .ad-meta { font-size: 10.5px; gap: 6px; padding-bottom: 6px; margin-bottom: 6px; }
   .ad-meta span:first-child::before { content: '📍 '; font-size: 9px; }
-  .ad-views { display: none; }
+  .ad-views { font-size: 9.5px; }
   .ad-cat-tag { font-size: 8px; padding: 3px 7px; top: 8px; left: 8px; border-radius: 7px; }
   .sold-tag { font-size: 8px; padding: 3px 7px; top: 8px; left: 8px; }
   .fav-btn { width: 28px; height: 28px; font-size: 12px; top: 8px; right: 8px; }
-  .fresh-badge { font-size: 8px; padding: 3px 8px; bottom: 6px; right: 8px; border-radius: 7px; }
+  .fresh-badge { font-size: 8px; padding: 3px 8px; top: 42px; right: 8px; border-radius: 7px; }
   .trending-badge { font-size: 8px; padding: 3px 8px; bottom: 6px; left: 8px; border-radius: 7px; }
   .photo-count-badge { font-size: 8px; padding: 2px 7px; bottom: 6px; right: 8px; border-radius: 6px; }
   .neg-pill { font-size: 8px; padding: 2px 6px; }
