@@ -308,7 +308,7 @@ function requestPushPermission() {
     '</div>' +
     '<div style="display:flex;gap:8px;flex-shrink:0">' +
       '<button onclick="dismissPushBanner()" style="background:rgba(255,255,255,0.08);border:none;color:#a0a8a4;padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer">Not now</button>' +
-      '<button onclick="enablePushNotifications()" style="background:#1db954;border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Enable</button>' +
+      '<button onclick="enablePushNotifications()" style="background:linear-gradient(135deg,#005c35,#00703f);border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Enable</button>' +
     '</div>';
   document.body.appendChild(banner);
 
