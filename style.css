@@ -1365,14 +1365,14 @@ nav.scrolled-transparent {
 .ad-seller-verified {
   flex-shrink: 0;
   display: inline-flex; align-items: center; gap: 3px;
-  background: linear-gradient(135deg, #1db954, #17a34a);
+  background: linear-gradient(135deg, var(--green), var(--green-mid));
   color: #fff;
   font-size: 8px; font-weight: 800;
   padding: 2px 7px;
   border-radius: 8px;
   text-transform: uppercase;
   letter-spacing: .4px;
-  box-shadow: 0 1px 6px rgba(29,185,84,0.3);
+  box-shadow: 0 1px 6px rgba(0,92,53,.3);
   margin-left: auto;
   line-height: 1.3;
   animation: verifiedPulse 2.5s ease-in-out infinite;
@@ -1962,20 +1962,29 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .step-bar { display: flex; gap: 0; margin-bottom: 28px; }
 .step {
   flex: 1; text-align: center; position: relative;
-  padding-bottom: 14px; border-bottom: 2px solid var(--border);
+  padding-bottom: 14px; border-bottom: 2px solid rgba(0,0,0,.08);
   font-size: 12px; font-weight: 600; color: var(--text-3); transition: all .2s;
 }
-.step.done { border-bottom-color: var(--green); color: var(--green); }
-.step.active { border-bottom-color: var(--green); color: var(--green); }
+.step.done { border-bottom-color: var(--gold); color: var(--green); }
+.step.active { border-bottom-color: var(--gold); color: var(--green); }
 .step-num {
   width: 26px; height: 26px; border-radius: 50%;
-  background: var(--border); color: var(--text-3);
+  background: rgba(255,255,255,.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.55);
+  color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; margin: 0 auto 6px;
   transition: all .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
-.step.active .step-num { background: var(--green); color: #fff; }
-.step.done  .step-num { background: var(--green); color: #fff; }
+.step.active .step-num, .step.done .step-num {
+  background: linear-gradient(135deg, var(--gold), #ffe680 45%, var(--green-mid));
+  color: #1a1206;
+  border-color: rgba(255,255,255,.5);
+  box-shadow: 0 4px 14px rgba(244,195,0,.35), inset 0 1px 0 rgba(255,255,255,.5);
+}
 .step-panel { display: none; }
 .step-panel.active { display: block; }
 .step-nav { display: flex; gap: 10px; margin-top: 20px; }
@@ -2109,12 +2118,16 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
    ═══════════════════════════════════════════════════════════════════════════ */
 @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
 .skel {
-  background: linear-gradient(90deg, #e8e3da 25%, #f5f1ea 50%, #e8e3da 75%);
+  background: linear-gradient(90deg, rgba(0,0,0,.05) 25%, rgba(0,0,0,.02) 50%, rgba(0,0,0,.05) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
   border-radius: var(--r-sm);
 }
-.skel-card { height: 300px; border-radius: var(--r); }
+.skel-card {
+  height: 300px; border-radius: var(--r);
+  background-color: rgba(255,255,255,.35);
+  border: 1px solid rgba(255,255,255,.5);
+}
 
 /* GPU-accelerated skeleton shimmer */
 @keyframes shimmerSkel {
@@ -2123,12 +2136,12 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 }
 .sk-card { opacity: 1; pointer-events: none; }
 .sk-img, .sk-line {
-  background: linear-gradient(90deg, #ececec 25%, #f8f8f8 50%, #ececec 75%);
+  background: linear-gradient(90deg, rgba(0,0,0,.06) 25%, rgba(0,0,0,.025) 50%, rgba(0,0,0,.06) 75%);
   background-size: 800px 100%;
   animation: shimmerSkel 1.4s ease-in-out infinite;
   border-radius: 6px;
 }
-.sk-img { width:100%; height:100%; min-height:160px; }
+.sk-img { width:100%; height:100%; min-height:160px; background-color: rgba(255,255,255,.3); }
 .sk-line { margin-bottom:0; }
 
 /* ── Image skeleton shimmer ── */
@@ -2928,7 +2941,7 @@ body.ai-sheet-open #gasBanner {
 }
 .gas-banner-price {
   font-family: 'Fraunces', serif; font-size: 18px; font-weight: 800;
-  color: #1db954; line-height: 1; white-space: nowrap;
+  color: var(--green); line-height: 1; white-space: nowrap;
 }
 .gas-banner-sub {
   font-size: 9px; color: rgba(17,17,17,.58); margin-top: 1px; white-space: nowrap;
@@ -2948,11 +2961,14 @@ body.ai-sheet-open #gasBanner {
 .ptr-bar {
   position: fixed; top: 50px; left: 50%; z-index: 9998;
   transform: translateX(-50%) translateY(-56px);
-  background: rgba(29,185,84,0.12);
-  border: 1px solid rgba(29,185,84,0.28);
-  color: #1db954; border-radius: 20px;
+  background: rgba(7, 30, 21, .64);
+  -webkit-backdrop-filter: saturate(170%) blur(20px);
+  backdrop-filter: saturate(170%) blur(20px);
+  border: 1px solid rgba(255,255,255,.16);
+  color: var(--gold); border-radius: 20px;
   padding: 5px 14px; font-size: 12px; font-weight: 600;
   pointer-events: none; white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.12);
   transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
   display: none;
 }
