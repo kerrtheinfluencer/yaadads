@@ -799,10 +799,10 @@ const YaadBrain = (() => {
     [/(safe|trust|scam|fraud|legit|real|verify|secure)/i, 'safety'],  // before is_free
     [/(is it|it is|is yaad adz|cost|fee|charge|paid|free)\b/i, 'is_free'],
     [/how.*(contact|reach|message|talk|call|whatsapp|chat with)/i, 'how_contact'],
-    [/(how.*(work|use)|what is yaad adz|about yaad adz|explain|tell me about)/i, 'how_it_works'],
+    [/how.*(does|do|can|to).*(yaad ?adz|this (site|app|website))|what is yaad ?adz|about yaad ?adz|explain yaad ?adz|tell me about yaad ?adz/i, 'how_it_works'],
     [/(delete|remove|edit|update|change).*(ad|listing|post)/i, 'manage_ads'],
-    [/(pay|payment|accept|transfer|method)/i, 'payment'],
-    [/(deliver|ship|shipping|pick.?up|drop.?off|meet)/i, 'delivery'],
+    [/\b(pay|payment|accept payment|transfer money|payment method)\b/i, 'payment'],
+    [/\b(deliver|delivery|shipping|pick.?up|drop.?off|meet ?up)\b/i, 'delivery'],
     [/^(hi|hello|hey|yo|good\s*(morning|afternoon|evening|night)|wah\s*gwaan|whaapen|whappen|ello|hail|greetings|sup)\b/i, 'greeting'],
     [/^(thank|thanks|tanx|bless up|nuff respect|respect|big up|good looking|appreciate|nice|great|good job)/i, 'thanks'],
     [/(help|assist|what can you|what do you)/i, 'help'],
@@ -811,7 +811,7 @@ const YaadBrain = (() => {
     [/(most popular|trending|hot|most viewed|top listing|most wanted)/i, 'compare_popular'],
     [/(newest|latest|just posted|just listed|most recent|fresh listing)/i, 'compare_newest'],
     [/(how much|what.*price|average price|price range|going rate|market price|worth)/i, 'price_check'],
-    [/(compare|versus|vs|or|better|which one|difference|recommendation|recommend|suggest)/i, 'compare_general'],
+    [/\b(compare|versus|\bvs\.?\b|which one is better|what's the difference|any recommendations|can you recommend|suggest something)\b/i, 'compare_general'],
     [/(how many|count|total|number of|stats|statistics|data)/i, 'stats'],
     [/(who|which).*(seller|top seller|best seller|most listings)/i, 'top_sellers'],
   ];
