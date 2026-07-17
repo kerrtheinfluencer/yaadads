@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yaad Adz - Offline</title>
+  <meta name="theme-color" content="#0c1e14">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c1e14;
+      --panel: #13291d;
+      --text: #e8ede9;
+      --muted: #9aa79f;
+      --green: #1db954;
+      --gold: #f5c842;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+    }
+
+    main {
+      width: min(100%, 420px);
+      padding: 30px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    .brand {
+      margin: 0 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      line-height: 1.05;
+    }
+
+    .brand em {
+      color: var(--gold);
+      font-style: italic;
+    }
+
+    p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 24px;
+      background: var(--green);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 class="brand">Yaad <em>Adz</em></h1>
+    <p>You are offline right now. Check your connection, then try loading the page again.</p>
+    <button type="button" onclick="location.reload()">Try Again</button>
+  </main>
+</body>
+</html>

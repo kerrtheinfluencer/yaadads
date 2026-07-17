@@ -10,6 +10,7 @@
     "stations:snapshot": "node scrape-gas-stations.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0"
+    "@supabase/supabase-js": "^2.110.0",
+    "supabase": "^2.109.1"
   }
 }
