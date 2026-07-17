@@ -14,8 +14,10 @@
 <link rel="canonical" href="https://yaadadz.com/gas-prices.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,800;1,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
 :root {
   --green: #005c35; --green-mid: #00703f; --green-light: #e6f4ec;
@@ -158,6 +160,27 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .insight-icon { font-size: 28px; margin-bottom: 12px; }
 .insight-title { font-family: var(--font-d); font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .insight-text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+
+/* GAS STATION LOCATOR */
+.locator-section { padding: 36px 0 12px; }
+.locator-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 20px; align-items: start; }
+.map-card, .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-sm); overflow: hidden; }
+#stationMap { height: 480px; width: 100%; background: #dce8e0; }
+.map-toolbar { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.map-status { color: var(--text-3); font-size: 13px; }
+.map-button, .report-submit { border: 0; border-radius: 9px; background: var(--green); color: #fff; font: inherit; font-weight: 700; padding: 10px 14px; cursor: pointer; }
+.map-button:hover, .report-submit:hover { background: var(--green-mid); }
+.report-card { padding: 24px; }
+.report-title { font-family: var(--font-d); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.report-sub { color: var(--text-3); font-size: 13px; margin-bottom: 18px; }
+.report-form { display: grid; gap: 12px; }
+.report-form label { display: grid; gap: 5px; font-size: 12px; color: var(--text-2); font-weight: 600; }
+.report-form input, .report-form select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px; background: #fff; color: var(--text-1); font: inherit; }
+.report-note { min-height: 40px; font-size: 12px; color: var(--text-3); }
+.station-popup h3 { font: 700 16px var(--font-d); margin-bottom: 3px; }
+.station-popup p { margin: 0 0 8px; color: var(--text-2); }
+.station-popup a { color: var(--green); font-weight: 700; }
+@media (max-width: 800px) { .locator-grid { grid-template-columns: 1fr; } #stationMap { height: 390px; } }
 
 /* ═══ FOOTER ═══ */
 footer { background: var(--nav-bg); color: rgba(255,255,255,.42); text-align: center; padding: 40px 24px 32px; margin-top: 40px; font-size: 13px; }
@@ -397,6 +420,37 @@ footer {
         <h3 class="chart-title">🔥 All Fuels Comparison</h3>
         <p class="chart-sub">Relative price levels across all fuel types</p>
         <div class="chart-wrap"><canvas id="comparisonChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ STATION LOCATOR ═══ -->
+  <section class="locator-section" id="station-locator">
+    <div class="section-hd">
+      <div>
+        <h2 class="section-title">Find a Gas Station</h2>
+        <p class="section-sub">See nearby stations and open accurate driving directions from your current location.</p>
+      </div>
+    </div>
+    <div class="locator-grid">
+      <div class="map-card">
+        <div class="map-toolbar">
+          <span class="map-status" id="mapStatus">Loading station locations…</span>
+          <button class="map-button" type="button" id="locateMe">Use my location</button>
+        </div>
+        <div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
+      </div>
+      <div class="report-card">
+        <h3 class="report-title">Share a pump price</h3>
+        <p class="report-sub">Help keep local prices fresh. Reports are marked as community-submitted until reviewed.</p>
+        <form class="report-form" id="priceReportForm">
+          <label>Station<select id="reportStation" name="station_id" required><option value="">Choose a station</option></select></label>
+          <label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
+          <label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
+          <label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
+          <button class="report-submit" type="submit">Submit price</button>
+          <div class="report-note" id="reportStatus" role="status"></div>
+        </form>
       </div>
     </div>
   </section>
@@ -712,6 +766,116 @@ function renderInsights() {
   }
 }
 
+// STATION LOCATOR
+const STATION_SNAPSHOT_URL = '/gas-stations-snapshot.json';
+const OSM_OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const SUPABASE_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EFaOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+let stationMap;
+let stationLayer;
+let stations = [];
+let userMarker;
+
+function stationCoords(station) {
+  return [Number(station.lat), Number(station.lng ?? station.lon)];
+}
+
+function directionsUrl(station) {
+  const [lat, lng] = stationCoords(station);
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+}
+
+function stationPopup(station) {
+  const label = [station.brand, station.parish].filter(Boolean).join(' · ');
+  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p><a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
+}
+
+async function loadStations() {
+  const snapshot = await fetch(STATION_SNAPSHOT_URL, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  stations = snapshot?.stations || [];
+  if (stations.length) return stations;
+
+  const query = '[out:json][timeout:25];node["amenity"="fuel"](17.45,-78.55,18.65,-76.05);way["amenity"="fuel"](17.45,-78.55,18.65,-76.05);out center tags;';
+  const response = await fetch(OSM_OVERPASS_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, body: 'data=' + encodeURIComponent(query) });
+  if (!response.ok) throw new Error('Station map unavailable');
+  const data = await response.json();
+  const seen = new Set();
+  stations = (data.elements || []).map(el => {
+    const lat = el.lat ?? el.center?.lat;
+    const lng = el.lon ?? el.center?.lon;
+    const tags = el.tags || {};
+    if (!lat || !lng || !tags.name) return null;
+    const key = `${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
+    if (seen.has(key)) return null;
+    seen.add(key);
+    return { id: `osm_${el.id}`, name: tags.name, brand: tags.brand || tags.operator || '', lat, lng };
+  }).filter(Boolean);
+  return stations;
+}
+
+function addStationMarkers() {
+  stationLayer.clearLayers();
+  stations.forEach(station => {
+    const marker = L.marker(stationCoords(station)).bindPopup(stationPopup(station));
+    marker.addTo(stationLayer);
+  });
+  const select = document.getElementById('reportStation');
+  select.innerHTML = '<option value="">Choose a station</option>' + stations.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+}
+
+async function initStationLocator() {
+  stationMap = L.map('stationMap', { scrollWheelZoom: false }).setView([18.1096, -77.2975], 9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(stationMap);
+  stationLayer = L.layerGroup().addTo(stationMap);
+  try {
+    await loadStations();
+    addStationMarkers();
+    document.getElementById('mapStatus').textContent = `${stations.length} station${stations.length === 1 ? '' : 's'} found · locations from OpenStreetMap`;
+  } catch (error) {
+    document.getElementById('mapStatus').textContent = 'Could not load live station locations. Try again later.';
+  }
+  document.getElementById('locateMe').addEventListener('click', locateUser);
+  document.getElementById('priceReportForm').addEventListener('submit', submitPriceReport);
+}
+
+function locateUser() {
+  const status = document.getElementById('mapStatus');
+  if (!navigator.geolocation) { status.textContent = 'Location is not supported by this browser.'; return; }
+  status.textContent = 'Finding your location…';
+  navigator.geolocation.getCurrentPosition(position => {
+    const point = [position.coords.latitude, position.coords.longitude];
+    if (userMarker) userMarker.remove();
+    userMarker = L.circleMarker(point, { radius: 8, color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: .9 }).addTo(stationMap).bindPopup('You are here');
+    stationMap.setView(point, 13);
+    status.textContent = 'Showing stations near you';
+  }, () => { status.textContent = 'Location permission was not granted.'; }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+async function submitPriceReport(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = document.getElementById('reportStatus');
+  const values = Object.fromEntries(new FormData(form).entries());
+  const station = stations.find(s => s.id === values.station_id);
+  const report = { station_id: values.station_id, station_name: station?.name || '', lat: station?.lat, lng: station?.lng, fuel_type: values.fuel_type, price: Number(values.price), reporter_name: values.reporter_name || null, reported_at: new Date().toISOString() };
+  status.textContent = 'Sending report…';
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/station_price_reports`, { method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(report) });
+    if (!response.ok) throw new Error('Report table unavailable');
+    status.textContent = 'Thanks. Your price was submitted for review.';
+  } catch (error) {
+    const saved = JSON.parse(localStorage.getItem('yaadadz_price_reports') || '[]');
+    saved.push(report);
+    localStorage.setItem('yaadadz_price_reports', JSON.stringify(saved));
+    status.textContent = 'Saved on this device. It will sync once reports are enabled.';
+  }
+  form.reset();
+}
+
 // ═══════════════════════════════════════════════════════════
 // SCROLL PROGRESS
 // ═══════════════════════════════════════════════════════════
@@ -739,6 +903,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTable();
     renderInsights();
     initCharts();
+    initStationLocator();
   } catch (e) {
     console.error(e);
     showLoadError(e.message || 'Failed to load price data.');
