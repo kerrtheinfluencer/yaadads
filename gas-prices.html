@@ -15,26 +15,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,800;1,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
 <style>
 :root {
-  --green: #005c35; --green-mid: #00703f; --green-light: #e6f4ec;
-  --gold: #f4c300; --gold-dark: #c9a000; --gold-pale: #fffbe6;
-  --nav-bg: #0c1e14; --bg: #f6f4ef; --surface: #ffffff; --surface-2: #f0ede5;
-  --border: #e2ddd4; --text-1: #111111; --text-2: #555555; --text-3: #999999;
-  --red: #e63946; --blue: #1a73e8; --orange: #f97316; --purple: #7c3aed;
-  --shadow-sm: 0 1px 8px rgba(0,0,0,.07); --shadow-md: 0 4px 24px rgba(0,0,0,.1);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,.16); --r: 16px; --r-sm: 10px; --r-lg: 24px;
-  --font-d: 'Fraunces', Georgia, serif; --font-b: 'Outfit', system-ui, sans-serif;
+--green: #005c35; --green-mid: #00703f; --green-light: #e6f4ec;
+--gold: #f4c300; --gold-dark: #c9a000; --gold-pale: #fffbe6;
+--nav-bg: #0c1e14; --bg: #f6f4ef; --surface: #ffffff; --surface-2: #f0ede5;
+--border: #e2ddd4; --text-1: #111111; --text-2: #555555; --text-3: #999999;
+--red: #e63946; --blue: #1a73e8; --orange: #f97316; --purple: #7c3aed;
+--shadow-sm: 0 1px 8px rgba(0,0,0,.07); --shadow-md: 0 4px 24px rgba(0,0,0,.1);
+--shadow-lg: 0 16px 48px rgba(0,0,0,.16); --r: 16px; --r-sm: 10px; --r-lg: 24px;
+--font-d: 'Fraunces', Georgia, serif; --font-b: 'Outfit', system-ui, sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body { font-family: var(--font-b); background: var(--bg); color: var(--text-1); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 img { display: block; max-width: 100%; }
 a { text-decoration: none; color: inherit; }
-
 /* ═══ NAV ═══ */
 nav { background: var(--nav-bg); height: 64px; display: flex; align-items: center; padding: 0 28px; gap: 18px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 16px rgba(0,0,0,.28); }
 .nav-logo { font-family: var(--font-d); font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 9px; cursor: pointer; white-space: nowrap; }
@@ -42,7 +44,6 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .nav-spacer { flex: 1; }
 .nav-link { color: rgba(255,255,255,.6); font-size: 14px; font-weight: 500; transition: color .2s; }
 .nav-link:hover { color: #fff; }
-
 /* ═══ HERO ═══ */
 .hero { background: var(--nav-bg); position: relative; overflow: hidden; padding: 48px 24px 56px; text-align: center; }
 .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 20% 80%, rgba(0,112,63,.45) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 80% 20%, rgba(244,195,0,.14) 0%, transparent 55%); pointer-events: none; }
@@ -54,26 +55,23 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .last-updated { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.6); padding: 8px 18px; border-radius: 24px; font-size: 13px; }
 .last-updated .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.2)} }
-
 /* ═══ WRAP ═══ */
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-
 /* ═══ PRICE CARDS GRID ═══ */
 .price-section { padding: 40px 0 20px; }
 .section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 .section-title { font-family: var(--font-d); font-size: 24px; font-weight: 700; letter-spacing: -.3px; }
 .section-sub { color: var(--text-3); font-size: 14px; }
 .price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-
 .price-card {
-  background: var(--surface); border-radius: var(--r); padding: 24px;
-  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
-  transition: transform .25s, box-shadow .25s; position: relative; overflow: hidden;
+background: var(--surface); border-radius: var(--r); padding: 24px;
+box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+transition: transform .25s, box-shadow .25s; position: relative; overflow: hidden;
 }
 .price-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 .price-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, var(--green), var(--gold));
+content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+background: linear-gradient(90deg, var(--green), var(--gold));
 }
 .price-card.gasoline-87::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
 .price-card.gasoline-90::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
@@ -82,7 +80,6 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .price-card.kerosene::before { background: linear-gradient(90deg, #ec4899, #db2777); }
 .price-card.propane::before { background: linear-gradient(90deg, #06b6d4, #0891b2); }
 .price-card.butane::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
-
 .fuel-icon { font-size: 32px; margin-bottom: 12px; }
 .fuel-name { font-size: 13px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
 .fuel-price { font-family: var(--font-d); font-size: 36px; font-weight: 800; color: var(--text-1); line-height: 1; margin-bottom: 6px; }
@@ -91,25 +88,23 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .fuel-pump strong { color: var(--green); font-weight: 700; }
 .fuel-ex { font-size: 12px; color: var(--text-3); }
 .fuel-ex strong { color: var(--text-2); }
-
 .change-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
-  margin-top: 10px;
+display: inline-flex; align-items: center; gap: 4px;
+padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+margin-top: 10px;
 }
 .change-badge.up { background: #fef2f2; color: var(--red); }
 .change-badge.down { background: #f0fdf4; color: #16a34a; }
 .change-badge.same { background: var(--surface-2); color: var(--text-3); }
-
 /* ═══ MARKUP CALCULATOR ═══ */
 .calc-section { padding: 32px 0; }
 .calc-card {
-  background: linear-gradient(135deg, var(--nav-bg) 0%, #1a3d28 100%);
-  border-radius: var(--r-lg); padding: 32px; color: #fff; position: relative; overflow: hidden;
+background: linear-gradient(135deg, var(--nav-bg) 0%, #1a3d28 100%);
+border-radius: var(--r-lg); padding: 32px; color: #fff; position: relative; overflow: hidden;
 }
 .calc-card::before {
-  content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(244,195,0,.1) 0%, transparent 70%); pointer-events: none;
+content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px;
+background: radial-gradient(circle, rgba(244,195,0,.1) 0%, transparent 70%); pointer-events: none;
 }
 .calc-title { font-family: var(--font-d); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
 .calc-sub { color: rgba(255,255,255,.5); font-size: 14px; margin-bottom: 24px; }
@@ -119,19 +114,17 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .calc-value { font-family: var(--font-d); font-size: 28px; font-weight: 800; }
 .calc-value .currency { font-size: 16px; color: rgba(255,255,255,.5); }
 .calc-note { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 4px; }
-
 /* ═══ CHARTS ═══ */
 .chart-section { padding: 32px 0; }
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; }
 @media (max-width: 640px) { .chart-grid { grid-template-columns: 1fr; } }
 .chart-card {
-  background: var(--surface); border-radius: var(--r); padding: 24px;
-  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+background: var(--surface); border-radius: var(--r); padding: 24px;
+box-shadow: var(--shadow-sm); border: 1px solid var(--border);
 }
 .chart-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
 .chart-sub { font-size: 13px; color: var(--text-3); margin-bottom: 16px; }
 .chart-wrap { position: relative; height: 300px; }
-
 /* ═══ COMPARISON TABLE ═══ */
 .table-section { padding: 32px 0; }
 .table-card { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; }
@@ -149,18 +142,16 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .trend-up { color: var(--red); }
 .trend-down { color: #16a34a; }
 .trend-same { color: var(--text-3); }
-
 /* ═══ INSIGHTS ═══ */
 .insights-section { padding: 32px 0 48px; }
 .insights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .insight-card {
-  background: var(--surface); border-radius: var(--r); padding: 24px;
-  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+background: var(--surface); border-radius: var(--r); padding: 24px;
+box-shadow: var(--shadow-sm); border: 1px solid var(--border);
 }
 .insight-icon { font-size: 28px; margin-bottom: 12px; }
 .insight-title { font-family: var(--font-d); font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .insight-text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
-
 /* GAS STATION LOCATOR */
 .locator-section { padding: 36px 0 12px; }
 .locator-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 20px; align-items: start; }
@@ -180,8 +171,32 @@ nav { background: var(--nav-bg); height: 64px; display: flex; align-items: cente
 .station-popup h3 { font: 700 16px var(--font-d); margin-bottom: 3px; }
 .station-popup p { margin: 0 0 8px; color: var(--text-2); }
 .station-popup a { color: var(--green); font-weight: 700; }
+/* ═══ STATION SEARCH (combobox, list-only selection) ═══ */
+.station-search { position: relative; flex: 1; min-width: 200px; }
+.station-search input {
+width: 100%; border: 1px solid var(--border); border-radius: 8px;
+padding: 10px 34px 10px 12px; background: #fff; color: var(--text-1); font: inherit;
+}
+.station-search input:focus { outline: 2px solid var(--green); outline-offset: -1px; }
+.station-search-clear {
+position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+border: 0; background: none; color: var(--text-3); font-size: 16px; cursor: pointer;
+padding: 4px; line-height: 1; display: none;
+}
+.station-search-clear.show { display: block; }
+.station-search-results {
+display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+background: #fff; border: 1px solid var(--border); border-radius: 10px;
+box-shadow: var(--shadow-md); max-height: 260px; overflow-y: auto; z-index: 500;
+}
+.station-search-results.show { display: block; }
+.station-search-item { padding: 10px 14px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); }
+.station-search-item:last-child { border-bottom: none; }
+.station-search-item:hover, .station-search-item.active { background: var(--green-light); }
+.station-search-item .ssi-name { font-weight: 600; color: var(--text-1); }
+.station-search-item .ssi-meta { color: var(--text-3); font-size: 12px; margin-top: 2px; }
+.station-search-empty { padding: 12px 14px; color: var(--text-3); font-size: 13px; }
 @media (max-width: 800px) { .locator-grid { grid-template-columns: 1fr; } #stationMap { height: 390px; } }
-
 /* ═══ FOOTER ═══ */
 footer { background: var(--nav-bg); color: rgba(255,255,255,.42); text-align: center; padding: 40px 24px 32px; margin-top: 40px; font-size: 13px; }
 .footer-logo { font-family: var(--font-d); font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px; }
@@ -189,341 +204,326 @@ footer { background: var(--nav-bg); color: rgba(255,255,255,.42); text-align: ce
 .footer-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 14px 0 10px; }
 .footer-links a { color: rgba(255,255,255,.4); font-size: 13px; transition: color .2s; }
 .footer-links a:hover { color: #fff; }
-
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 640px) {
-  nav { padding: 0 16px; height: 56px; }
-  .nav-logo { font-size: 18px; }
-  .hero { padding: 36px 16px 44px; }
-  .hero h1 { font-size: clamp(28px, 8vw, 38px); }
-  .wrap { padding: 0 16px; }
-  .price-grid { grid-template-columns: 1fr; }
-  .chart-grid { grid-template-columns: 1fr; }
-  .calc-grid { grid-template-columns: 1fr; }
-  .comparison-table th, .comparison-table td { padding: 12px 16px; font-size: 13px; }
-  .chart-wrap { height: 240px; }
+nav { padding: 0 16px; height: 56px; }
+.nav-logo { font-size: 18px; }
+.hero { padding: 36px 16px 44px; }
+.hero h1 { font-size: clamp(28px, 8vw, 38px); }
+.wrap { padding: 0 16px; }
+.price-grid { grid-template-columns: 1fr; }
+.chart-grid { grid-template-columns: 1fr; }
+.calc-grid { grid-template-columns: 1fr; }
+.comparison-table th, .comparison-table td { padding: 12px 16px; font-size: 13px; }
+.chart-wrap { height: 240px; }
 }
-
 /* ═══ SCROLL PROGRESS ═══ */
 .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, var(--green), var(--gold)); z-index: 201; pointer-events: none; }
-
 /* ═══ LIQUID CLEAR GLASS UI ═══ */
 :root {
-  --bg: #eef7f2;
-  --surface: rgba(255,255,255,.58);
-  --surface-2: rgba(255,255,255,.34);
-  --border: rgba(255,255,255,.56);
-  --glass-shadow: 0 18px 55px rgba(0,32,22,.16), inset 0 1px 0 rgba(255,255,255,.68);
-  --glass-shadow-strong: 0 28px 80px rgba(0,32,22,.24), inset 0 1px 0 rgba(255,255,255,.78);
+--bg: #eef7f2;
+--surface: rgba(255,255,255,.58);
+--surface-2: rgba(255,255,255,.34);
+--border: rgba(255,255,255,.56);
+--glass-shadow: 0 18px 55px rgba(0,32,22,.16), inset 0 1px 0 rgba(255,255,255,.68);
+--glass-shadow-strong: 0 28px 80px rgba(0,32,22,.24), inset 0 1px 0 rgba(255,255,255,.78);
 }
-
 html {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(244,195,0,.24), transparent 28rem),
-    radial-gradient(circle at 84% 4%, rgba(0,112,63,.22), transparent 28rem),
-    linear-gradient(135deg, #f8fbf8 0%, #e8f5ef 48%, #f7f0d7 100%);
+background:
+radial-gradient(circle at 14% 12%, rgba(244,195,0,.24), transparent 28rem),
+radial-gradient(circle at 84% 4%, rgba(0,112,63,.22), transparent 28rem),
+linear-gradient(135deg, #f8fbf8 0%, #e8f5ef 48%, #f7f0d7 100%);
 }
-
 body {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.44), rgba(255,255,255,0) 28rem),
-    radial-gradient(circle at 6% 8%, rgba(244,195,0,.22), transparent 23rem),
-    radial-gradient(circle at 92% 10%, rgba(0,112,63,.2), transparent 25rem),
-    #eef7f2;
-  background-attachment: fixed;
+background:
+linear-gradient(180deg, rgba(255,255,255,.44), rgba(255,255,255,0) 28rem),
+radial-gradient(circle at 6% 8%, rgba(244,195,0,.22), transparent 23rem),
+radial-gradient(circle at 92% 10%, rgba(0,112,63,.2), transparent 25rem),
+#eef7f2;
+background-attachment: fixed;
 }
-
 nav {
-  top: 12px;
-  width: min(calc(100% - 24px), 1180px);
-  margin: 12px auto 0;
-  border-radius: 28px;
-  background: rgba(7,30,21,.64);
-  border: 1px solid rgba(255,255,255,.16);
-  box-shadow: 0 18px 55px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15);
-  -webkit-backdrop-filter: saturate(170%) blur(28px);
-  backdrop-filter: saturate(170%) blur(28px);
+top: 12px;
+width: min(calc(100% - 24px), 1180px);
+margin: 12px auto 0;
+border-radius: 28px;
+background: rgba(7,30,21,.64);
+border: 1px solid rgba(255,255,255,.16);
+box-shadow: 0 18px 55px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15);
+-webkit-backdrop-filter: saturate(170%) blur(28px);
+backdrop-filter: saturate(170%) blur(28px);
 }
-
 .hero {
-  margin-top: -88px;
-  padding-top: 136px;
-  background:
-    linear-gradient(145deg, rgba(8,31,22,.78), rgba(0,92,53,.58)),
-    radial-gradient(circle at 22% 24%, rgba(244,195,0,.28), transparent 28rem),
-    radial-gradient(circle at 86% 10%, rgba(255,255,255,.16), transparent 20rem);
-  isolation: isolate;
+margin-top: -88px;
+padding-top: 136px;
+background:
+linear-gradient(145deg, rgba(8,31,22,.78), rgba(0,92,53,.58)),
+radial-gradient(circle at 22% 24%, rgba(244,195,0,.28), transparent 28rem),
+radial-gradient(circle at 86% 10%, rgba(255,255,255,.16), transparent 20rem);
+isolation: isolate;
 }
-
 .hero::before {
-  background:
-    linear-gradient(115deg, rgba(255,255,255,.14), rgba(255,255,255,0) 34%, rgba(244,195,0,.1) 70%, rgba(255,255,255,.08)),
-    radial-gradient(ellipse 60% 48% at 18% 74%, rgba(0,112,63,.42) 0%, transparent 64%),
-    radial-gradient(ellipse 42% 36% at 78% 22%, rgba(255,255,255,.16) 0%, transparent 60%);
+background:
+linear-gradient(115deg, rgba(255,255,255,.14), rgba(255,255,255,0) 34%, rgba(244,195,0,.1) 70%, rgba(255,255,255,.08)),
+radial-gradient(ellipse 60% 48% at 18% 74%, rgba(0,112,63,.42) 0%, transparent 64%),
+radial-gradient(ellipse 42% 36% at 78% 22%, rgba(255,255,255,.16) 0%, transparent 60%);
 }
-
 .hero-eyebrow,
 .last-updated,
 .calc-item {
-  background: rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.42);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.36), 0 8px 26px rgba(0,32,22,.08);
-  -webkit-backdrop-filter: saturate(160%) blur(18px);
-  backdrop-filter: saturate(160%) blur(18px);
+background: rgba(255,255,255,.18);
+border: 1px solid rgba(255,255,255,.42);
+box-shadow: inset 0 1px 0 rgba(255,255,255,.36), 0 8px 26px rgba(0,32,22,.08);
+-webkit-backdrop-filter: saturate(160%) blur(18px);
+backdrop-filter: saturate(160%) blur(18px);
 }
-
 .price-card,
 .chart-card,
 .table-card,
 .insight-card {
-  background: rgba(255,255,255,.62);
-  border: 1px solid rgba(255,255,255,.62);
-  box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: saturate(175%) blur(26px);
-  backdrop-filter: saturate(175%) blur(26px);
+background: rgba(255,255,255,.62);
+border: 1px solid rgba(255,255,255,.62);
+box-shadow: var(--glass-shadow);
+-webkit-backdrop-filter: saturate(175%) blur(26px);
+backdrop-filter: saturate(175%) blur(26px);
 }
-
 .price-card:hover,
 .chart-card:hover,
 .insight-card:hover {
-  transform: translateY(-5px) scale(1.01);
-  box-shadow: var(--glass-shadow-strong);
+transform: translateY(-5px) scale(1.01);
+box-shadow: var(--glass-shadow-strong);
 }
-
 .price-card::after,
 .chart-card::after,
 .table-card::after,
 .insight-card::after,
 .calc-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.18) 38%, rgba(255,255,255,.05) 62%, rgba(255,255,255,.42));
-  opacity: .18;
-  pointer-events: none;
+content: "";
+position: absolute;
+inset: 0;
+border-radius: inherit;
+background: linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.18) 38%, rgba(255,255,255,.05) 62%, rgba(255,255,255,.42));
+opacity: .18;
+pointer-events: none;
 }
-
 .price-card,
 .chart-card,
 .table-card,
 .insight-card,
 .calc-card {
-  position: relative;
-  overflow: hidden;
+position: relative;
+overflow: hidden;
 }
-
 .calc-card,
 footer {
-  background:
-    linear-gradient(145deg, rgba(7,30,21,.84), rgba(0,92,53,.62)),
-    radial-gradient(circle at 50% 0%, rgba(244,195,0,.16), transparent 28rem);
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: var(--glass-shadow);
+background:
+linear-gradient(145deg, rgba(7,30,21,.84), rgba(0,92,53,.62)),
+radial-gradient(circle at 50% 0%, rgba(244,195,0,.16), transparent 28rem);
+border: 1px solid rgba(255,255,255,.14);
+box-shadow: var(--glass-shadow);
 }
-
 .table-header,
 .comparison-table th,
 .comparison-table tr:hover td {
-  background: rgba(255,255,255,.36);
+background: rgba(255,255,255,.36);
 }
-
 .change-badge,
 .fuel-dot {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.36);
+box-shadow: inset 0 1px 0 rgba(255,255,255,.36);
 }
-
 .scroll-progress {
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255,255,255,.85), var(--gold), #54d68c);
+height: 2px;
+background: linear-gradient(90deg, rgba(255,255,255,.85), var(--gold), #54d68c);
 }
-
 @media (max-width: 640px) {
-  nav {
-    top: 8px;
-    width: calc(100% - 16px);
-    margin-top: 8px;
-    border-radius: 24px;
-  }
-
-  .hero {
-    margin-top: -72px;
-    padding-top: 108px;
-  }
+nav {
+top: 8px;
+width: calc(100% - 16px);
+margin-top: 8px;
+border-radius: 24px;
+}
+.hero {
+margin-top: -72px;
+padding-top: 108px;
+}
 }
 </style>
 <base target="_blank">
 </head>
 <body>
-
 <div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- ═══ NAV ═══ -->
 <nav>
-  <a href="/" class="nav-logo">Yaad<em>Adz</em> <span style="font-size:14px;font-weight:500;color:rgba(255,255,255,.5)">⛽ Gas Prices</span></a>
-  <div class="nav-spacer"></div>
-  <a href="/" class="nav-link">Marketplace</a>
-  <a href="/gas-prices.html" class="nav-link" style="color:var(--gold)">Gas Prices</a>
+<a href="/" class="nav-logo">Yaad<em>Adz</em> <span style="font-size:14px;font-weight:500;color:rgba(255,255,255,.5)">⛽ Gas Prices</span></a>
+<div class="nav-spacer"></div>
+<a href="/" class="nav-link">Marketplace</a>
+<a href="/gas-prices.html" class="nav-link" style="color:var(--gold)">Gas Prices</a>
 </nav>
 
 <!-- ═══ HERO ═══ -->
 <section class="hero">
-  <div class="hero-content">
-    <div class="hero-eyebrow">⛽ Petrojam Official · Weekly Updates</div>
-    <h1>Jamaica <em>Fuel</em> Prices</h1>
-    <p class="hero-sub">Track ex-refinery and estimated pump prices for gasoline, diesel, kerosene & LPG. Updated weekly from Petrojam.</p>
-    <div class="last-updated"><span class="dot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
-  </div>
+<div class="hero-content">
+<div class="hero-eyebrow">⛽ Petrojam Official · Weekly Updates</div>
+<h1>Jamaica <em>Fuel</em> Prices</h1>
+<p class="hero-sub">Track ex-refinery and estimated pump prices for gasoline, diesel, kerosene & LPG. Updated weekly from Petrojam.</p>
+<div class="last-updated"><span class="dot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
+</div>
 </section>
 
 <div class="wrap">
 
-  <!-- ═══ PRICE CARDS ═══ -->
-  <section class="price-section">
-    <div class="section-hd">
-      <div>
-        <h2 class="section-title">This Week's Prices</h2>
-        <p class="section-sub">Ex-refinery prices from the <a href="https://www.petrojam.com/price/" target="_blank" rel="noopener noreferrer" style="color:var(--green);text-decoration:underline">Petrojam archive</a> + estimated pump prices (J$15–35/L markup)</p>
-      </div>
-    </div>
-    <div class="price-grid" id="priceCards">
-      <!-- Injected by JS -->
-    </div>
-  </section>
+<!-- ═══ PRICE CARDS ═══ -->
+<section class="price-section">
+<div class="section-hd">
+<div>
+<h2 class="section-title">This Week's Prices</h2>
+<p class="section-sub">Ex-refinery prices from the <a href="https://www.petrojam.com/price/" target="_blank" rel="noopener noreferrer" style="color:var(--green);text-decoration:underline">Petrojam archive</a> + estimated pump prices (J$15–35/L markup)</p>
+</div>
+</div>
+<div class="price-grid" id="priceCards">
+<!-- Injected by JS -->
+</div>
+</section>
 
-  <!-- ═══ MARKUP CALCULATOR ═══ -->
-  <section class="calc-section">
-    <div class="calc-card">
-      <h2 class="calc-title">💰 Pump Price Estimator</h2>
-      <p class="calc-sub">See what you're really paying at the pump. Retailers typically add J$15–J$35 per litre.</p>
-      <div class="calc-grid" id="calcGrid">
-        <!-- Injected by JS -->
-      </div>
-    </div>
-  </section>
+<!-- ═══ MARKUP CALCULATOR ═══ -->
+<section class="calc-section">
+<div class="calc-card">
+<h2 class="calc-title">💰 Pump Price Estimator</h2>
+<p class="calc-sub">See what you're really paying at the pump. Retailers typically add J$15–J$35 per litre.</p>
+<div class="calc-grid" id="calcGrid">
+<!-- Injected by JS -->
+</div>
+</div>
+</section>
 
-  <!-- ═══ CHARTS ═══ -->
-  <section class="chart-section">
-    <div class="section-hd">
-      <div>
-        <h2 class="section-title">Price Trends</h2>
-        <p class="section-sub">Historical movement over the last 12 weeks</p>
-      </div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3 class="chart-title">📈 Gasoline vs Diesel</h3>
-        <p class="chart-sub">87, 90 octane and auto diesel ex-refinery prices</p>
-        <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3 class="chart-title">🔥 All Fuels Comparison</h3>
-        <p class="chart-sub">Relative price levels across all fuel types</p>
-        <div class="chart-wrap"><canvas id="comparisonChart"></canvas></div>
-      </div>
-    </div>
-  </section>
+<!-- ═══ CHARTS ═══ -->
+<section class="chart-section">
+<div class="section-hd">
+<div>
+<h2 class="section-title">Price Trends</h2>
+<p class="section-sub">Historical movement over the last 12 weeks</p>
+</div>
+</div>
+<div class="chart-grid">
+<div class="chart-card">
+<h3 class="chart-title">📈 Gasoline vs Diesel</h3>
+<p class="chart-sub">87, 90 octane and auto diesel ex-refinery prices</p>
+<div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+</div>
+<div class="chart-card">
+<h3 class="chart-title">🔥 All Fuels Comparison</h3>
+<p class="chart-sub">Relative price levels across all fuel types</p>
+<div class="chart-wrap"><canvas id="comparisonChart"></canvas></div>
+</div>
+</div>
+</section>
 
-  <!-- ═══ STATION LOCATOR ═══ -->
-  <section class="locator-section" id="station-locator">
-    <div class="section-hd">
-      <div>
-        <h2 class="section-title">Find a Gas Station</h2>
-        <p class="section-sub">See nearby stations and open accurate driving directions from your current location.</p>
-      </div>
-    </div>
-    <div class="locator-grid">
-      <div class="map-card">
-        <div class="map-toolbar">
-          <span class="map-status" id="mapStatus">Loading station locations…</span>
-          <button class="map-button" type="button" id="locateMe">Use my location</button>
-        </div>
-        <div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
-      </div>
-      <div class="report-card">
-        <h3 class="report-title">Share a pump price</h3>
-        <p class="report-sub">Help keep local prices fresh. Reports are marked as community-submitted until reviewed.</p>
-        <form class="report-form" id="priceReportForm">
-          <label>Station<select id="reportStation" name="station_id" required><option value="">Choose a station</option></select></label>
-          <label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
-          <label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
-          <label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
-          <button class="report-submit" type="submit">Submit price</button>
-          <div class="report-note" id="reportStatus" role="status"></div>
-        </form>
-      </div>
-    </div>
-  </section>
+<!-- ═══ STATION LOCATOR ═══ -->
+<section class="locator-section" id="station-locator">
+<div class="section-hd">
+<div>
+<h2 class="section-title">Find a Gas Station</h2>
+<p class="section-sub">Search, browse, or use your location to find nearby stations and get accurate driving directions.</p>
+</div>
+</div>
+<div class="locator-grid">
+<div class="map-card">
+<div class="map-toolbar">
+<div class="station-search" id="stationSearch">
+<input type="text" id="stationSearchInput" placeholder="Search for a gas station…" autocomplete="off" aria-label="Search for a gas station">
+<button type="button" class="station-search-clear" id="stationSearchClear" aria-label="Clear search">✕</button>
+<div id="stationSearchResults" class="station-search-results"></div>
+</div>
+<span class="map-status" id="mapStatus">Loading station locations…</span>
+<button class="map-button" type="button" id="locateMe">Use my location</button>
+</div>
+<div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
+</div>
+<div class="report-card">
+<h3 class="report-title">Share a pump price</h3>
+<p class="report-sub">Help keep local prices fresh. Reports are marked as community-submitted until reviewed.</p>
+<form class="report-form" id="priceReportForm">
+<label>Station<select id="reportStation" name="station_id" required><option value="">Choose a station</option></select></label>
+<label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
+<label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
+<label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
+<button class="report-submit" type="submit">Submit price</button>
+<div class="report-note" id="reportStatus" role="status"></div>
+</form>
+</div>
+</div>
+</section>
 
-  <!-- ═══ WEEK OVER WEEK TABLE ═══ -->
-  <section class="table-section">
-    <div class="section-hd">
-      <div>
-        <h2 class="section-title">Week-over-Week Breakdown</h2>
-        <p class="section-sub">Detailed comparison with previous week's prices</p>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:20px">📊</span>
-        <h3>Price Changes This Week</h3>
-      </div>
-      <table class="comparison-table" id="comparisonTable">
-        <thead>
-          <tr>
-            <th>Fuel Type</th>
-            <th>Ex-Refinery</th>
-            <th>Est. Pump (J$30)</th>
-            <th>vs Last Week</th>
-            <th>vs 4 Weeks Ago</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <!-- Injected by JS -->
-        </tbody>
-      </table>
-    </div>
-  </section>
+<!-- ═══ WEEK OVER WEEK TABLE ═══ -->
+<section class="table-section">
+<div class="section-hd">
+<div>
+<h2 class="section-title">Week-over-Week Breakdown</h2>
+<p class="section-sub">Detailed comparison with previous week's prices</p>
+</div>
+</div>
+<div class="table-card">
+<div class="table-header">
+<span style="font-size:20px">📊</span>
+<h3>Price Changes This Week</h3>
+</div>
+<table class="comparison-table" id="comparisonTable">
+<thead>
+<tr>
+<th>Fuel Type</th>
+<th>Ex-Refinery</th>
+<th>Est. Pump (J$30)</th>
+<th>vs Last Week</th>
+<th>vs 4 Weeks Ago</th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<!-- Injected by JS -->
+</tbody>
+</table>
+</div>
+</section>
 
-  <!-- ═══ INSIGHTS ═══ -->
-  <section class="insights-section">
-    <div class="section-hd">
-      <div>
-        <h2 class="section-title">What This Means</h2>
-        <p class="section-sub">Quick insights on how fuel prices affect your pocket</p>
-      </div>
-    </div>
-    <div class="insights-grid">
-      <div class="insight-card">
-        <div class="insight-icon">🚗</div>
-        <h3 class="insight-title">Fill-Up Cost</h3>
-        <p class="insight-text" id="fillUpText">Based on current 90 octane prices, filling a 40L tank costs approximately <strong id="fillUpCost">—</strong> at the pump.</p>
-      </div>
-      <div class="insight-card">
-        <div class="insight-icon">📉</div>
-        <h3 class="insight-title">Trend Direction</h3>
-        <p class="insight-text" id="trendText">Analyzing price movements to see if fuel is getting cheaper or more expensive over time.</p>
-      </div>
-      <div class="insight-card">
-        <div class="insight-icon">💡</div>
-        <h3 class="insight-title">Money-Saving Tip</h3>
-        <p class="insight-text">Consider filling up early in the week before prices adjust. Some stations update prices on Wednesdays after the Petrojam announcement.</p>
-      </div>
-    </div>
-  </section>
+<!-- ═══ INSIGHTS ═══ -->
+<section class="insights-section">
+<div class="section-hd">
+<div>
+<h2 class="section-title">What This Means</h2>
+<p class="section-sub">Quick insights on how fuel prices affect your pocket</p>
+</div>
+</div>
+<div class="insights-grid">
+<div class="insight-card">
+<div class="insight-icon">🚗</div>
+<h3 class="insight-title">Fill-Up Cost</h3>
+<p class="insight-text" id="fillUpText">Based on current 90 octane prices, filling a 40L tank costs approximately <strong id="fillUpCost">—</strong> at the pump.</p>
+</div>
+<div class="insight-card">
+<div class="insight-icon">📉</div>
+<h3 class="insight-title">Trend Direction</h3>
+<p class="insight-text" id="trendText">Analyzing price movements to see if fuel is getting cheaper or more expensive over time.</p>
+</div>
+<div class="insight-card">
+<div class="insight-icon">💡</div>
+<h3 class="insight-title">Money-Saving Tip</h3>
+<p class="insight-text">Consider filling up early in the week before prices adjust. Some stations update prices on Wednesdays after the Petrojam announcement.</p>
+</div>
+</div>
+</section>
 
 </div>
 
 <!-- ═══ FOOTER ═══ -->
 <footer>
-  <div class="footer-logo">Yaad<em>Adz</em></div>
-  <p>Jamaica's free marketplace · Prices sourced from Petrojam Ltd.</p>
-  <div class="footer-links">
-    <a href="/">Marketplace</a>
-    <a href="/gas-prices.html">Gas Prices</a>
-    <a href="/sitemap.html">Sitemap</a>
-  </div>
-  <p style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.25)">Prices updated weekly. Pump estimates are approximate. Actual prices vary by station.</p>
+<div class="footer-logo">Yaad<em>Adz</em></div>
+<p>Jamaica's free marketplace · Prices sourced from Petrojam Ltd.</p>
+<div class="footer-links">
+<a href="/">Marketplace</a>
+<a href="/gas-prices.html">Gas Prices</a>
+<a href="/sitemap.html">Sitemap</a>
+</div>
+<p style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.25)">Prices updated weekly. Pump estimates are approximate. Actual prices vary by station.</p>
 </footer>
 
 <script>
@@ -534,7 +534,6 @@ const DATA_URL = '/gas-prices-data.json';
 const MARKUP_LOW = 15;
 const MARKUP_HIGH = 35;
 const MARKUP_DEFAULT = 25;
-
 let PRICES = [];
 let HISTORY = { weeks: [] };
 let PREV_WEEK = {};
@@ -546,7 +545,6 @@ async function loadPriceData() {
   if (!res.ok) throw new Error('Could not load ' + DATA_URL + ' (HTTP ' + res.status + ')');
   const data = await res.json();
   if (!data.prices || !data.prices.length) throw new Error('Invalid gas-prices-data.json');
-
   PRICES = data.prices;
   HISTORY = data.history || { weeks: [] };
   PREV_WEEK = (data.comparisons && data.comparisons.prev_week) || {};
@@ -568,7 +566,6 @@ function showLoadError(msg) {
 // ═══════════════════════════════════════════════════════════
 function fmtPrice(n) { return 'J$' + n.toFixed(2); }
 function fmtPriceInt(n) { return 'J$' + Math.round(n).toLocaleString(); }
-
 function calcChange(current, previous) {
   if (previous == null || isNaN(previous)) {
     return { text: '—', class: 'same', diff: 0, pct: '0.00' };
@@ -579,12 +576,10 @@ function calcChange(current, previous) {
   if (diff > 0) return { text: `▲ J$${diff.toFixed(2)} (${pct}%)`, class: 'up', diff, pct };
   return { text: `▼ J$${Math.abs(diff).toFixed(2)} (${pct}%)`, class: 'down', diff, pct };
 }
-
 function getTrendArrow(diff) {
   if (Math.abs(diff) < 0.01) return '→';
   return diff > 0 ? '↑' : '↓';
 }
-
 function getTrendClass(diff) {
   if (Math.abs(diff) < 0.01) return 'trend-same';
   return diff > 0 ? 'trend-up' : 'trend-down';
@@ -675,7 +670,6 @@ function initCharts() {
   Chart.defaults.font.family = 'Outfit';
   Chart.defaults.color = '#555';
 
-  // Main trend chart
   const ctx1 = document.getElementById('mainChart').getContext('2d');
   new Chart(ctx1, {
     type: 'line',
@@ -710,7 +704,6 @@ function initCharts() {
     }
   });
 
-  // Comparison bar chart (current prices)
   const ctx2 = document.getElementById('comparisonChart').getContext('2d');
   new Chart(ctx2, {
     type: 'bar',
@@ -757,6 +750,7 @@ function renderInsights() {
   const totalChange = withPrev.reduce((sum, p) => sum + (p.exRefinery - PREV_WEEK[p.key]), 0);
   const n = withPrev.length || 1;
   const trendText = document.getElementById('trendText');
+
   if (totalChange > 0.5) {
     trendText.innerHTML = `Fuel prices are <strong style="color:var(--red)">trending upward</strong> this week. The average increase across all fuel types is approximately <strong>J$${(totalChange / n).toFixed(2)}</strong> per litre. Consider filling up before prices rise further.`;
   } else if (totalChange < -0.5) {
@@ -766,13 +760,23 @@ function renderInsights() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
 // STATION LOCATOR
+// ═══════════════════════════════════════════════════════════
 const STATION_SNAPSHOT_URL = '/gas-stations-snapshot.json';
-const OSM_OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OSM_OVERPASS_URLS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter'
+];
+const OVERPASS_CACHE_KEY = 'yaadadz_stations_cache_v2';
+const OVERPASS_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 const SUPABASE_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EFaOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+
 let stationMap;
-let stationLayer;
+let stationLayer;   // marker cluster group
+let markerIndex = new Map(); // station.id -> Leaflet marker
 let stations = [];
 let userMarker;
 
@@ -794,43 +798,115 @@ function escapeHtml(value) {
   return String(value || '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
 }
 
-async function loadStations() {
-  const snapshot = await fetch(STATION_SNAPSHOT_URL, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
-  stations = snapshot?.stations || [];
-  if (stations.length) return stations;
-
-  const query = '[out:json][timeout:25];node["amenity"="fuel"](17.45,-78.55,18.65,-76.05);way["amenity"="fuel"](17.45,-78.55,18.65,-76.05);out center tags;';
-  const response = await fetch(OSM_OVERPASS_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, body: 'data=' + encodeURIComponent(query) });
-  if (!response.ok) throw new Error('Station map unavailable');
-  const data = await response.json();
+// --- Normalize raw Overpass elements into station objects, WITHOUT dropping unnamed stations ---
+function normalizeOverpassElements(elements) {
   const seen = new Set();
-  stations = (data.elements || []).map(el => {
+  return (elements || []).map(el => {
     const lat = el.lat ?? el.center?.lat;
     const lng = el.lon ?? el.center?.lon;
     const tags = el.tags || {};
-    if (!lat || !lng || !tags.name) return null;
+    if (!lat || !lng) return null; // only drop entries with no usable coordinates
     const key = `${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
     if (seen.has(key)) return null;
     seen.add(key);
-    return { id: `osm_${el.id}`, name: tags.name, brand: tags.brand || tags.operator || '', lat, lng };
+    const brand = tags.brand || tags.operator || '';
+    const name = tags.name || brand || 'Unnamed Fuel Station';
+    return {
+      id: `osm_${el.id}`,
+      name,
+      brand,
+      parish: tags['addr:parish'] || tags['addr:city'] || '',
+      lat, lng
+    };
   }).filter(Boolean);
+}
+
+function readOverpassCache() {
+  try {
+    const raw = localStorage.getItem(OVERPASS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.stations) || !parsed.stations.length) return null;
+    if (Date.now() - (parsed.cachedAt || 0) > OVERPASS_CACHE_MAX_AGE_MS) return null;
+    return parsed.stations;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeOverpassCache(list) {
+  try {
+    localStorage.setItem(OVERPASS_CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), stations: list }));
+  } catch (e) { /* storage full or unavailable — non-fatal */ }
+}
+
+async function fetchOverpass() {
+  const query = '[out:json][timeout:25];(node["amenity"="fuel"](17.45,-78.55,18.65,-76.05);way["amenity"="fuel"](17.45,-78.55,18.65,-76.05);relation["amenity"="fuel"](17.45,-78.55,18.65,-76.05););out center tags;';
+  let lastError;
+  for (const url of OSM_OVERPASS_URLS) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: 'data=' + encodeURIComponent(query)
+      });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const data = await response.json();
+      const list = normalizeOverpassElements(data.elements);
+      if (list.length) return list;
+      lastError = new Error('Empty result from ' + url);
+    } catch (err) {
+      lastError = err;
+      continue; // try next mirror
+    }
+  }
+  throw lastError || new Error('All Overpass mirrors failed');
+}
+
+async function loadStations() {
+  // 1) Prefer a committed snapshot if it actually has data
+  const snapshot = await fetch(STATION_SNAPSHOT_URL, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (snapshot?.stations?.length) {
+    stations = snapshot.stations;
+    return stations;
+  }
+
+  // 2) Fall back to a same-device cache (avoids hammering Overpass every load)
+  const cached = readOverpassCache();
+  if (cached) {
+    stations = cached;
+    // refresh in the background for next time, don't block the UI
+    fetchOverpass().then(fresh => { if (fresh.length) writeOverpassCache(fresh); }).catch(() => {});
+    return stations;
+  }
+
+  // 3) Last resort: live Overpass query (tries multiple mirrors)
+  stations = await fetchOverpass();
+  if (stations.length) writeOverpassCache(stations);
   return stations;
 }
 
 function addStationMarkers() {
   stationLayer.clearLayers();
+  markerIndex.clear();
   stations.forEach(station => {
     const marker = L.marker(stationCoords(station)).bindPopup(stationPopup(station));
-    marker.addTo(stationLayer);
+    markerIndex.set(station.id, marker);
+    stationLayer.addLayer(marker);
   });
+
   const select = document.getElementById('reportStation');
-  select.innerHTML = '<option value="">Choose a station</option>' + stations.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+  select.innerHTML = '<option value="">Choose a station</option>' +
+    stations.slice().sort((a, b) => a.name.localeCompare(b.name))
+      .map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
 }
 
 async function initStationLocator() {
   stationMap = L.map('stationMap', { scrollWheelZoom: false }).setView([18.1096, -77.2975], 9);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(stationMap);
-  stationLayer = L.layerGroup().addTo(stationMap);
+  stationLayer = L.markerClusterGroup({ maxClusterRadius: 45, spiderfyOnMaxZoom: true });
+  stationMap.addLayer(stationLayer);
+
   try {
     await loadStations();
     addStationMarkers();
@@ -838,8 +914,10 @@ async function initStationLocator() {
   } catch (error) {
     document.getElementById('mapStatus').textContent = 'Could not load live station locations. Try again later.';
   }
+
   document.getElementById('locateMe').addEventListener('click', locateUser);
   document.getElementById('priceReportForm').addEventListener('submit', submitPriceReport);
+  initStationSearch();
 }
 
 function locateUser() {
@@ -877,6 +955,129 @@ async function submitPriceReport(event) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// STATION SEARCH — list-only combobox (typing filters, but you
+// can only "select" a station by clicking a result from the list)
+// ═══════════════════════════════════════════════════════════
+function initStationSearch() {
+  const root = document.getElementById('stationSearch');
+  const input = document.getElementById('stationSearchInput');
+  const clearBtn = document.getElementById('stationSearchClear');
+  const results = document.getElementById('stationSearchResults');
+  let activeIndex = -1;
+  let currentMatches = [];
+  let selectedStationId = null;
+
+  function closeResults() {
+    results.classList.remove('show');
+    results.innerHTML = '';
+    activeIndex = -1;
+    currentMatches = [];
+  }
+
+  function highlightActive() {
+    [...results.children].forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+  }
+
+  function renderResults(list) {
+    currentMatches = list;
+    activeIndex = -1;
+    if (!list.length) {
+      results.innerHTML = '<div class="station-search-empty">No stations match — pick one from the list</div>';
+      results.classList.add('show');
+      return;
+    }
+    results.innerHTML = list.slice(0, 20).map((s, i) => `
+      <div class="station-search-item" data-id="${escapeHtml(s.id)}" data-index="${i}">
+        <div class="ssi-name">${escapeHtml(s.name)}</div>
+        <div class="ssi-meta">${escapeHtml([s.brand, s.parish].filter(Boolean).join(' · ') || 'Jamaica')}</div>
+      </div>
+    `).join('');
+    results.classList.add('show');
+  }
+
+  function selectStation(station) {
+    if (!station) return;
+    selectedStationId = station.id;
+    input.value = station.name;
+    clearBtn.classList.add('show');
+    closeResults();
+    stationMap.setView(stationCoords(station), 16);
+    const marker = markerIndex.get(station.id);
+    if (marker) {
+      if (stationLayer.zoomToShowLayer) {
+        stationLayer.zoomToShowLayer(marker, () => marker.openPopup());
+      } else {
+        marker.openPopup();
+      }
+    }
+  }
+
+  input.addEventListener('input', () => {
+    selectedStationId = null;
+    clearBtn.classList.remove('show');
+    const q = input.value.trim().toLowerCase();
+    if (!q) { closeResults(); return; }
+    const matches = stations.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      (s.brand || '').toLowerCase().includes(q) ||
+      (s.parish || '').toLowerCase().includes(q)
+    );
+    renderResults(matches);
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) input.dispatchEvent(new Event('input'));
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (!results.classList.contains('show')) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, currentMatches.length - 1);
+      highlightActive();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      highlightActive();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIndex >= 0 && currentMatches[activeIndex]) selectStation(currentMatches[activeIndex]);
+    } else if (e.key === 'Escape') {
+      closeResults();
+    }
+  });
+
+  results.addEventListener('click', (e) => {
+    const item = e.target.closest('.station-search-item');
+    if (!item || !item.dataset.id) return;
+    const station = stations.find(s => s.id === item.dataset.id);
+    selectStation(station);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    selectedStationId = null;
+    clearBtn.classList.remove('show');
+    closeResults();
+    input.focus();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#stationSearch')) closeResults();
+  });
+
+  // Enforce "choose from list only": if focus leaves without a real selection, clear the text
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!selectedStationId) {
+        input.value = '';
+        clearBtn.classList.remove('show');
+      }
+    }, 150);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
 // SCROLL PROGRESS
 // ═══════════════════════════════════════════════════════════
 function initScrollProgress() {
@@ -893,7 +1094,6 @@ function initScrollProgress() {
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('lastUpdated').textContent = 'Loading from Petrojam…';
   initScrollProgress();
-
   try {
     const data = await loadPriceData();
     document.getElementById('lastUpdated').textContent =
@@ -903,11 +1103,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTable();
     renderInsights();
     initCharts();
-    initStationLocator();
   } catch (e) {
     console.error(e);
     showLoadError(e.message || 'Failed to load price data.');
   }
+  // Station locator is independent of price data — init it regardless
+  initStationLocator();
 });
 </script>
 
@@ -927,6 +1128,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 }
 </script>
-
 </body>
 </html>
