@@ -190,7 +190,23 @@ background: #fff; box-shadow: var(--shadow-md); font-size: 18px; cursor: pointer
 display: flex; align-items: center; justify-content: center;
 }
 .map-locate-btn:active { transform: scale(.94); }
+.map-cheapest-btn { right: 66px; font-size: 17px; }
 .map-status-bar { padding: 9px 16px; font-size: 12px; color: var(--text-3); border-top: 1px solid var(--border); }
+.cheapest-panel { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 13px; }
+.cheapest-header { display: flex; align-items: center; justify-content: space-between; font-weight: 700; margin-bottom: 8px; color: var(--text-1); }
+.cheapest-close { border: 0; background: none; color: var(--text-3); font-size: 16px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+.cheapest-note { font-size: 11px; color: var(--text-3); margin: -4px 0 8px; }
+.cheapest-fuels { display: flex; gap: 6px; margin-bottom: 10px; }
+.cheapest-fuel-pill { border: 1px solid var(--border); background: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; }
+.cheapest-fuel-pill.active { background: var(--green); color: #fff; border-color: var(--green); }
+.cheapest-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.cheapest-row:last-child { border-bottom: none; }
+.cr-rank { width: 20px; height: 20px; border-radius: 50%; background: var(--green-light); color: var(--green); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cr-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cr-name { font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cr-meta { font-size: 11px; color: var(--text-3); }
+.cr-price { font-weight: 800; color: var(--green); white-space: nowrap; }
+.cheapest-empty { color: var(--text-3); padding: 8px 0; line-height: 1.5; }
 .report-submit, .map-button { border: 0; border-radius: 9px; background: var(--green); color: #fff; font: inherit; font-weight: 700; padding: 12px 14px; cursor: pointer; }
 .report-submit:hover, .map-button:hover { background: var(--green-mid); }
 .report-submit:disabled { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
@@ -343,13 +359,20 @@ backdrop-filter: saturate(160%) blur(18px);
 .chart-card,
 .table-card,
 .insight-card,
-.map-card,
 .report-card {
 background: rgba(255,255,255,.62);
 border: 1px solid rgba(255,255,255,.62);
 box-shadow: var(--glass-shadow);
 -webkit-backdrop-filter: saturate(175%) blur(26px);
 backdrop-filter: saturate(175%) blur(26px);
+}
+/* .map-card intentionally has NO backdrop-filter — blur ancestors over a
+   Leaflet tile layer trigger a known WebKit/Safari compositing bug where
+   tiles/markers don't paint until an interaction forces a repaint. */
+.map-card {
+background: rgba(255,255,255,.9);
+border: 1px solid rgba(255,255,255,.7);
+box-shadow: var(--glass-shadow);
 }
 .price-card:hover,
 .chart-card:hover,
@@ -465,8 +488,10 @@ padding-top: 108px;
 <div id="stationSearchResults" class="station-search-results"></div>
 </div>
 <button class="map-locate-btn" type="button" id="locateMe" aria-label="Use my location" title="Use my location">📍</button>
+<button class="map-locate-btn map-cheapest-btn" type="button" id="cheapestBtn" aria-label="Find cheapest gas near me" title="Find cheapest gas near me">💰</button>
 </div>
 <div class="map-status-bar" id="mapStatus">Loading station locations…</div>
+<div class="cheapest-panel" id="cheapestPanel" style="display:none"></div>
 </div>
 <div class="report-card">
 <h3 class="report-title">Report a price</h3>
@@ -1087,11 +1112,22 @@ async function initStationLocator() {
   stationLayer = L.markerClusterGroup({ maxClusterRadius: 45, spiderfyOnMaxZoom: true });
   stationMap.addLayer(stationLayer);
 
+  // Defense-in-depth against a blank/half-rendered map: force Leaflet to
+  // recompute its size at a few points where layout could still be settling
+  // (webfont swap, backdrop-filter compositing on iOS/Safari, etc).
+  requestAnimationFrame(() => stationMap.invalidateSize());
+  setTimeout(() => stationMap.invalidateSize(), 300);
+  window.addEventListener('load', () => stationMap.invalidateSize());
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => stationMap.invalidateSize());
+  }
+
   try {
     await loadStations();
     const reports = await fetchCommunityReports();
     stationReportsIndex = aggregateStationReports(reports);
     addStationMarkers();
+    stationMap.invalidateSize();
     renderCommunityPrices(aggregateCommunityReports(reports));
     document.getElementById('mapStatus').textContent = `${stations.length} station${stations.length === 1 ? '' : 's'} found · locations from OpenStreetMap`;
   } catch (error) {
@@ -1099,11 +1135,14 @@ async function initStationLocator() {
   }
 
   document.getElementById('locateMe').addEventListener('click', locateUser);
+  document.getElementById('cheapestBtn').addEventListener('click', findCheapestNearMe);
   document.getElementById('priceReportForm').addEventListener('submit', submitPriceReport);
   initStationSearch();
   renderLastReportPanel();
   syncQueuedReports();
 }
+
+let lastKnownLocation = null;
 
 function locateUser() {
   const status = document.getElementById('mapStatus');
@@ -1111,11 +1150,133 @@ function locateUser() {
   status.textContent = 'Finding your location…';
   navigator.geolocation.getCurrentPosition(position => {
     const point = [position.coords.latitude, position.coords.longitude];
+    lastKnownLocation = { lat: point[0], lng: point[1] };
     if (userMarker) userMarker.remove();
     userMarker = L.circleMarker(point, { radius: 8, color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: .9 }).addTo(stationMap).bindPopup('You are here');
     stationMap.setView(point, 13);
     status.textContent = 'Showing stations near you';
   }, () => { status.textContent = 'Location permission was not granted.'; }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHEAPEST NEAR ME — ranks stations by community-reported price
+// for a chosen fuel, combined with distance from the user.
+// ═══════════════════════════════════════════════════════════
+const CHEAPEST_RADIUS_KM = 25;
+let cheapestFuel = '87';
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function findCheapestNearMe() {
+  const panel = document.getElementById('cheapestPanel');
+  panel.style.display = 'block';
+  panel.innerHTML = `<div class="cheapest-header"><span>💰 Finding cheapest nearby…</span></div>`;
+
+  if (!navigator.geolocation) {
+    renderCheapestError('Location is not supported by this browser.');
+    return;
+  }
+  if (lastKnownLocation) {
+    renderCheapestResults();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(position => {
+    lastKnownLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+    if (userMarker) userMarker.remove();
+    userMarker = L.circleMarker([lastKnownLocation.lat, lastKnownLocation.lng], { radius: 8, color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: .9 }).addTo(stationMap).bindPopup('You are here');
+    renderCheapestResults();
+  }, () => {
+    renderCheapestError('Location permission was not granted — enable location access to find nearby prices.');
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+function renderCheapestResults() {
+  const panel = document.getElementById('cheapestPanel');
+  if (!lastKnownLocation) return;
+
+  const candidates = stations.map(station => {
+    const data = stationReportsIndex[station.id]?.[cheapestFuel];
+    if (!data || !data.prices.length) return null;
+    const avg = data.prices.reduce((a, b) => a + b, 0) / data.prices.length;
+    const [lat, lng] = stationCoords(station);
+    return {
+      station,
+      price: avg,
+      distanceKm: haversineKm(lastKnownLocation.lat, lastKnownLocation.lng, lat, lng),
+      latest: data.latest
+    };
+  }).filter(Boolean);
+
+  let pool = candidates.filter(c => c.distanceKm <= CHEAPEST_RADIUS_KM);
+  let widened = false;
+  if (!pool.length && candidates.length) { pool = candidates; widened = true; }
+  pool.sort((a, b) => a.price - b.price);
+  const top = pool.slice(0, 5);
+
+  const fuelPills = COMMUNITY_FUELS.map(f =>
+    `<button type="button" class="cheapest-fuel-pill ${f === cheapestFuel ? 'active' : ''}" data-fuel="${f}">${COMMUNITY_FUEL_LABEL[f]}</button>`
+  ).join('');
+
+  const header = `
+    <div class="cheapest-header">
+      <span>💰 Cheapest ${COMMUNITY_FUEL_LABEL[cheapestFuel]} near you</span>
+      <button type="button" class="cheapest-close" id="cheapestClose" aria-label="Close">✕</button>
+    </div>
+    <div class="cheapest-fuels">${fuelPills}</div>
+  `;
+
+  if (!top.length) {
+    panel.innerHTML = header + `<div class="cheapest-empty">No community-reported ${COMMUNITY_FUEL_LABEL[cheapestFuel]} prices anywhere yet. Be the first to report one — tap a station on the map to get started!</div>`;
+  } else {
+    const widenedNote = widened ? `<div class="cheapest-note">No reports within ${CHEAPEST_RADIUS_KM}km — showing the closest island-wide results instead.</div>` : '';
+    const rows = top.map((c, i) => `
+      <div class="cheapest-row" data-station-id="${escapeHtml(c.station.id)}">
+        <span class="cr-rank">${i + 1}</span>
+        <span class="cr-info">
+          <span class="cr-name">${escapeHtml(c.station.name)}</span>
+          <span class="cr-meta">${c.distanceKm.toFixed(1)} km away · ${freshnessLabel(c.latest).text}</span>
+        </span>
+        <span class="cr-price">J$${c.price.toFixed(2)}</span>
+      </div>
+    `).join('');
+    panel.innerHTML = header + widenedNote + rows;
+  }
+
+  panel.querySelectorAll('.cheapest-fuel-pill').forEach(btn => {
+    btn.addEventListener('click', () => { cheapestFuel = btn.dataset.fuel; renderCheapestResults(); });
+  });
+  document.getElementById('cheapestClose').addEventListener('click', () => { panel.style.display = 'none'; });
+  panel.querySelectorAll('.cheapest-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const station = stations.find(s => s.id === row.dataset.stationId);
+      if (!station) return;
+      stationMap.setView(stationCoords(station), 16);
+      const marker = markerIndex.get(station.id);
+      if (marker) {
+        if (stationLayer.zoomToShowLayer) stationLayer.zoomToShowLayer(marker, () => marker.openPopup());
+        else marker.openPopup();
+      }
+      selectStationForReport(station);
+    });
+  });
+}
+
+function renderCheapestError(message) {
+  const panel = document.getElementById('cheapestPanel');
+  panel.innerHTML = `
+    <div class="cheapest-header">
+      <span>💰 Cheapest near you</span>
+      <button type="button" class="cheapest-close" id="cheapestClose" aria-label="Close">✕</button>
+    </div>
+    <div class="cheapest-empty">${escapeHtml(message)}</div>
+  `;
+  document.getElementById('cheapestClose').addEventListener('click', () => { panel.style.display = 'none'; });
 }
 
 const REPORT_COOLDOWN_KEY = 'yaadadz_report_cooldowns';
