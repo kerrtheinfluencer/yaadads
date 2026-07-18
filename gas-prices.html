@@ -153,17 +153,33 @@ box-shadow: var(--shadow-sm); border: 1px solid var(--border);
 .insight-title { font-family: var(--font-d); font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .insight-text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
 /* GAS STATION LOCATOR */
-.locator-section { padding: 36px 0 12px; }
-.locator-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 20px; align-items: start; }
-.map-card, .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-sm); overflow: hidden; }
-#stationMap { height: 480px; width: 100%; background: #dce8e0; }
-.map-toolbar { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-.map-status { color: var(--text-3); font-size: 13px; }
-.map-button, .report-submit { border: 0; border-radius: 9px; background: var(--green); color: #fff; font: inherit; font-weight: 700; padding: 10px 14px; cursor: pointer; }
-.map-button:hover, .report-submit:hover { background: var(--green-mid); }
-.report-card { padding: 24px; }
-.report-title { font-family: var(--font-d); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-.report-sub { color: var(--text-3); font-size: 13px; margin-bottom: 18px; }
+.locator-section { padding: 24px 0 12px; }
+.locator-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 16px; align-items: start; }
+.map-card, .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-sm); }
+.map-frame { position: relative; }
+#stationMap { height: 440px; width: 100%; background: #dce8e0; border-radius: var(--r) var(--r) 0 0; overflow: hidden; }
+.map-overlay-search { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 450; }
+.map-locate-btn {
+position: absolute; bottom: 14px; right: 12px; z-index: 450;
+width: 44px; height: 44px; border-radius: 50%; border: 0;
+background: #fff; box-shadow: var(--shadow-md); font-size: 18px; cursor: pointer;
+display: flex; align-items: center; justify-content: center;
+}
+.map-locate-btn:active { transform: scale(.94); }
+.map-status-bar { padding: 9px 16px; font-size: 12px; color: var(--text-3); border-top: 1px solid var(--border); }
+.report-submit, .map-button { border: 0; border-radius: 9px; background: var(--green); color: #fff; font: inherit; font-weight: 700; padding: 12px 14px; cursor: pointer; }
+.report-submit:hover, .map-button:hover { background: var(--green-mid); }
+.report-submit:disabled { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
+.report-card { padding: 20px; }
+.report-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.selected-station {
+display: flex; align-items: center; gap: 10px; padding: 12px;
+background: var(--green-light); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px;
+}
+.selected-station .ss-icon { font-size: 20px; flex-shrink: 0; }
+.selected-station .ss-text { font-size: 13px; color: var(--text-2); line-height: 1.4; }
+.selected-station.picked .ss-text { color: var(--text-1); font-weight: 600; }
+.selected-station .ss-change { display: block; margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--green); cursor: pointer; }
 .report-form { display: grid; gap: 12px; }
 .report-form label { display: grid; gap: 5px; font-size: 12px; color: var(--text-2); font-weight: 600; }
 .report-form input, .report-form select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px; background: #fff; color: var(--text-1); font: inherit; }
@@ -171,15 +187,16 @@ box-shadow: var(--shadow-sm); border: 1px solid var(--border);
 .station-popup h3 { font: 700 16px var(--font-d); margin-bottom: 3px; }
 .station-popup p { margin: 0 0 8px; color: var(--text-2); }
 .station-popup a { color: var(--green); font-weight: 700; }
-/* ═══ STATION SEARCH (combobox, list-only selection) ═══ */
-.station-search { position: relative; flex: 1; min-width: 200px; }
+/* ═══ STATION SEARCH (combobox, list-only selection) — floats over the map ═══ */
+.station-search { position: relative; }
 .station-search input {
-width: 100%; border: 1px solid var(--border); border-radius: 8px;
-padding: 10px 34px 10px 12px; background: #fff; color: var(--text-1); font: inherit;
+width: 100%; border: 1px solid var(--border); border-radius: 10px;
+padding: 11px 36px 11px 14px; background: rgba(255,255,255,.96); color: var(--text-1); font: inherit;
+box-shadow: var(--shadow-md);
 }
 .station-search input:focus { outline: 2px solid var(--green); outline-offset: -1px; }
 .station-search-clear {
-position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
 border: 0; background: none; color: var(--text-3); font-size: 16px; cursor: pointer;
 padding: 4px; line-height: 1; display: none;
 }
@@ -196,7 +213,11 @@ box-shadow: var(--shadow-md); max-height: 260px; overflow-y: auto; z-index: 500;
 .station-search-item .ssi-name { font-weight: 600; color: var(--text-1); }
 .station-search-item .ssi-meta { color: var(--text-3); font-size: 12px; margin-top: 2px; }
 .station-search-empty { padding: 12px 14px; color: var(--text-3); font-size: 13px; }
-@media (max-width: 800px) { .locator-grid { grid-template-columns: 1fr; } #stationMap { height: 390px; } }
+@media (max-width: 800px) {
+.locator-grid { grid-template-columns: 1fr; }
+#stationMap { height: 340px; }
+.report-card { padding: 16px; }
+}
 /* ═══ FOOTER ═══ */
 footer { background: var(--nav-bg); color: rgba(255,255,255,.42); text-align: center; padding: 40px 24px 32px; margin-top: 40px; font-size: 13px; }
 .footer-logo { font-family: var(--font-d); font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px; }
@@ -280,7 +301,9 @@ backdrop-filter: saturate(160%) blur(18px);
 .price-card,
 .chart-card,
 .table-card,
-.insight-card {
+.insight-card,
+.map-card,
+.report-card {
 background: rgba(255,255,255,.62);
 border: 1px solid rgba(255,255,255,.62);
 box-shadow: var(--glass-shadow);
@@ -310,9 +333,18 @@ pointer-events: none;
 .chart-card,
 .table-card,
 .insight-card,
-.calc-card {
+.calc-card,
+.report-card {
 position: relative;
 overflow: hidden;
+}
+.map-card { position: relative; }
+.map-frame { position: relative; }
+.selected-station {
+background: rgba(255,255,255,.5);
+border: 1px solid rgba(255,255,255,.6);
+-webkit-backdrop-filter: blur(10px);
+backdrop-filter: blur(10px);
 }
 .calc-card,
 footer {
@@ -374,6 +406,51 @@ padding-top: 108px;
 
 <div class="wrap">
 
+<!-- ═══ STATION LOCATOR ═══ -->
+<section class="locator-section" id="station-locator">
+<div class="section-hd">
+<div>
+<h2 class="section-title">Find a Gas Station</h2>
+<p class="section-sub">Tap a station on the map, then just pick the fuel type and price to report it.</p>
+</div>
+</div>
+<div class="locator-grid">
+<div class="map-card">
+<div class="map-frame">
+<div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
+<div class="map-overlay-search" id="stationSearch">
+<input type="text" id="stationSearchInput" placeholder="Search stations…" autocomplete="off" aria-label="Search for a gas station">
+<button type="button" class="station-search-clear" id="stationSearchClear" aria-label="Clear search">✕</button>
+<div id="stationSearchResults" class="station-search-results"></div>
+</div>
+<button class="map-locate-btn" type="button" id="locateMe" aria-label="Use my location" title="Use my location">📍</button>
+</div>
+<div class="map-status-bar" id="mapStatus">Loading station locations…</div>
+</div>
+<div class="report-card">
+<h3 class="report-title">Report a price</h3>
+<div class="selected-station" id="selectedStationDisplay">
+<span class="ss-icon">⛽</span>
+<div class="ss-body">
+<div class="ss-text" id="selectedStationText">Tap a station on the map or search above</div>
+</div>
+</div>
+<form class="report-form" id="priceReportForm">
+<input type="hidden" id="reportStationId" name="station_id" required>
+<label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
+<label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
+<label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
+<!-- Honeypot: real users never fill this in; bots that auto-fill every field will -->
+<label style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+  Leave blank<input name="website" tabindex="-1" autocomplete="off">
+</label>
+<button class="report-submit" type="submit" id="reportSubmitBtn" disabled>Select a station first</button>
+<div class="report-note" id="reportStatus" role="status"></div>
+</form>
+</div>
+</div>
+</section>
+
 <!-- ═══ PRICE CARDS ═══ -->
 <section class="price-section">
 <div class="section-hd">
@@ -433,45 +510,6 @@ padding-top: 108px;
 </div>
 </section>
 
-<!-- ═══ STATION LOCATOR ═══ -->
-<section class="locator-section" id="station-locator">
-<div class="section-hd">
-<div>
-<h2 class="section-title">Find a Gas Station</h2>
-<p class="section-sub">Search, browse, or use your location to find nearby stations and get accurate driving directions.</p>
-</div>
-</div>
-<div class="locator-grid">
-<div class="map-card">
-<div class="map-toolbar">
-<div class="station-search" id="stationSearch">
-<input type="text" id="stationSearchInput" placeholder="Search for a gas station…" autocomplete="off" aria-label="Search for a gas station">
-<button type="button" class="station-search-clear" id="stationSearchClear" aria-label="Clear search">✕</button>
-<div id="stationSearchResults" class="station-search-results"></div>
-</div>
-<span class="map-status" id="mapStatus">Loading station locations…</span>
-<button class="map-button" type="button" id="locateMe">Use my location</button>
-</div>
-<div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
-</div>
-<div class="report-card">
-<h3 class="report-title">Share a pump price</h3>
-<p class="report-sub">Help keep local prices fresh. Reports are marked as community-submitted until reviewed.</p>
-<form class="report-form" id="priceReportForm">
-<label>Station<select id="reportStation" name="station_id" required><option value="">Choose a station</option></select></label>
-<label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
-<label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
-<label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
-<!-- Honeypot: real users never fill this in; bots that auto-fill every field will -->
-<label style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
-  Leave blank<input name="website" tabindex="-1" autocomplete="off">
-</label>
-<button class="report-submit" type="submit">Submit price</button>
-<div class="report-note" id="reportStatus" role="status"></div>
-</form>
-</div>
-</div>
-</section>
 
 <!-- ═══ WEEK OVER WEEK TABLE ═══ -->
 <section class="table-section">
@@ -1052,14 +1090,10 @@ function addStationMarkers() {
   markerIndex.clear();
   stations.forEach(station => {
     const marker = L.marker(stationCoords(station)).bindPopup(stationPopup(station));
+    marker.on('click', () => selectStationForReport(station));
     markerIndex.set(station.id, marker);
     stationLayer.addLayer(marker);
   });
-
-  const select = document.getElementById('reportStation');
-  select.innerHTML = '<option value="">Choose a station</option>' +
-    stations.slice().sort((a, b) => a.name.localeCompare(b.name))
-      .map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
 }
 
 async function initStationLocator() {
@@ -1149,6 +1183,40 @@ async function syncQueuedReports() {
   }
 }
 
+// Auto-fills the report card whenever a station is picked from the map or
+// search — the person only has to choose fuel type + price after this.
+function selectStationForReport(station) {
+  if (!station) return;
+  const display = document.getElementById('selectedStationDisplay');
+  const text = document.getElementById('selectedStationText');
+  const hiddenInput = document.getElementById('reportStationId');
+  const submitBtn = document.getElementById('reportSubmitBtn');
+
+  hiddenInput.value = station.id;
+  display.classList.add('picked');
+  const meta = [station.brand, station.parish].filter(Boolean).join(' · ');
+  text.innerHTML = `${escapeHtml(station.name)}${meta ? `<br><span style="font-weight:400;color:var(--text-3)">${escapeHtml(meta)}</span>` : ''}<span class="ss-change" id="ssChangeLink">Change station</span>`;
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Submit price';
+
+  document.getElementById('ssChangeLink').addEventListener('click', () => {
+    resetSelectedStation();
+    document.getElementById('stationSearchInput').focus();
+  });
+}
+
+function resetSelectedStation() {
+  const display = document.getElementById('selectedStationDisplay');
+  const text = document.getElementById('selectedStationText');
+  const hiddenInput = document.getElementById('reportStationId');
+  const submitBtn = document.getElementById('reportSubmitBtn');
+  hiddenInput.value = '';
+  display.classList.remove('picked');
+  text.textContent = 'Tap a station on the map or search above';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Select a station first';
+}
+
 async function submitPriceReport(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -1199,6 +1267,7 @@ async function submitPriceReport(event) {
     status.textContent = 'Saved on this device — it will sync automatically next time you visit.';
   }
   form.reset();
+  resetSelectedStation();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1249,6 +1318,7 @@ function initStationSearch() {
     clearBtn.classList.add('show');
     closeResults();
     stationMap.setView(stationCoords(station), 16);
+    selectStationForReport(station);
     const marker = markerIndex.get(station.id);
     if (marker) {
       if (stationLayer.zoomToShowLayer) {
