@@ -367,7 +367,8 @@ padding-top: 108px;
 <div class="hero-eyebrow">⛽ Petrojam Official · Weekly Updates</div>
 <h1>Jamaica <em>Fuel</em> Prices</h1>
 <p class="hero-sub">Track ex-refinery and estimated pump prices for gasoline, diesel, kerosene & LPG. Updated weekly from Petrojam.</p>
-<div class="last-updated"><span class="dot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
+<div class="last-updated"><span class="dot" id="lastUpdatedDot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
+<div id="staleWarning" style="display:none;margin-top:12px;color:var(--gold);font-size:13px;background:rgba(244,195,0,.12);border:1px solid rgba(244,195,0,.3);border-radius:20px;padding:8px 18px"></div>
 </div>
 </section>
 
@@ -382,6 +383,19 @@ padding-top: 108px;
 </div>
 </div>
 <div class="price-grid" id="priceCards">
+<!-- Injected by JS -->
+</div>
+</section>
+
+<!-- ═══ COMMUNITY-REPORTED PRICES ═══ -->
+<section class="price-section" style="padding-top:8px">
+<div class="section-hd">
+<div>
+<h2 class="section-title">What Drivers Are Actually Paying</h2>
+<p class="section-sub">Live average of prices reported by other users at real stations — visible to everyone, updates as new reports come in.</p>
+</div>
+</div>
+<div class="price-grid" id="communityPrices">
 <!-- Injected by JS -->
 </div>
 </section>
@@ -448,6 +462,10 @@ padding-top: 108px;
 <label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
 <label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
 <label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
+<!-- Honeypot: real users never fill this in; bots that auto-fill every field will -->
+<label style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+  Leave blank<input name="website" tabindex="-1" autocomplete="off">
+</label>
 <button class="report-submit" type="submit">Submit price</button>
 <div class="report-note" id="reportStatus" role="status"></div>
 </form>
@@ -553,6 +571,31 @@ async function loadPriceData() {
   return data;
 }
 
+// Petrojam publishes weekly; if the data is more than ~10 days old, flag it
+// rather than silently showing a number that looks current but isn't.
+function checkDataFreshness(data) {
+  const dot = document.getElementById('lastUpdatedDot');
+  const warn = document.getElementById('staleWarning');
+  const dateStr = data.price_date || data.last_updated;
+  if (!dateStr) {
+    warn.textContent = '⚠️ Could not verify how recent this data is.';
+    warn.style.display = 'inline-block';
+    dot.style.background = '#f59e0b';
+    return;
+  }
+  const ageMs = Date.now() - new Date(dateStr).getTime();
+  const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  if (isNaN(ageDays)) return;
+  if (ageDays > 10) {
+    warn.textContent = `⚠️ This data is ${Math.floor(ageDays)} days old — Petrojam may have published a newer price sheet.`;
+    warn.style.display = 'inline-block';
+    dot.style.background = '#f59e0b';
+  } else {
+    warn.style.display = 'none';
+    dot.style.background = '#22c55e';
+  }
+}
+
 function showLoadError(msg) {
   document.getElementById('lastUpdated').textContent = 'Update unavailable';
   document.getElementById('priceCards').innerHTML =
@@ -568,7 +611,7 @@ function fmtPrice(n) { return 'J$' + n.toFixed(2); }
 function fmtPriceInt(n) { return 'J$' + Math.round(n).toLocaleString(); }
 function calcChange(current, previous) {
   if (previous == null || isNaN(previous)) {
-    return { text: '—', class: 'same', diff: 0, pct: '0.00' };
+    return { text: 'Comparison unavailable', class: 'same', diff: 0, pct: '0.00', unavailable: true };
   }
   const diff = current - previous;
   const pct = previous ? ((diff / previous) * 100).toFixed(2) : '0.00';
@@ -595,14 +638,15 @@ function renderPriceCards() {
     const pumpLow = p.exRefinery + MARKUP_LOW;
     const pumpHigh = p.exRefinery + MARKUP_HIGH;
     const change = calcChange(p.exRefinery, PREV_WEEK[p.key]);
+    const asOf = p.as_of || _dataMeta?.price_date || '';
     return `
       <div class="price-card ${p.class}">
         <div class="fuel-icon">${p.icon}</div>
         <div class="fuel-name">${p.name}</div>
         <div class="fuel-price"><span class="currency">J$</span>${p.exRefinery.toFixed(2)}</div>
         <div class="fuel-pump">Pump est: <strong>${fmtPriceInt(pump)}</strong> <span style="color:var(--text-3);font-size:11px">(range: J$${pumpLow.toFixed(0)}–${pumpHigh.toFixed(0)})</span></div>
-        <div class="fuel-ex">Ex-refinery per litre</div>
-        <div class="change-badge ${change.class}">${change.text}</div>
+        <div class="fuel-ex">Ex-refinery per litre${asOf ? ' · as of ' + escapeHtml(asOf) : ''}</div>
+        <div class="change-badge ${change.class}"${change.unavailable ? ' title="No prior-week figure was found in the data source"' : ''}>${change.text}</div>
       </div>
     `;
   }).join('');
@@ -648,13 +692,13 @@ function renderTable() {
         <td class="price-cell">${fmtPriceInt(pump)}</td>
         <td>
           <div class="trend-cell ${getTrendClass(w1.diff)}">
-            <span>${getTrendArrow(w1.diff)}</span>
+            ${w1.unavailable ? '' : `<span>${getTrendArrow(w1.diff)}</span>`}
             <span>${w1.text}</span>
           </div>
         </td>
         <td>
           <div class="trend-cell ${getTrendClass(w4.diff)}">
-            <span>${getTrendArrow(w4.diff)}</span>
+            ${w4.unavailable ? '' : `<span>${getTrendArrow(w4.diff)}</span>`}
             <span>${w4.text}</span>
           </div>
         </td>
@@ -791,7 +835,7 @@ function directionsUrl(station) {
 
 function stationPopup(station) {
   const label = [station.brand, station.parish].filter(Boolean).join(' · ');
-  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p><a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
+  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p>${communityLinesForStation(station.id)}<a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
 }
 
 function escapeHtml(value) {
@@ -886,6 +930,123 @@ async function loadStations() {
   return stations;
 }
 
+// ═══════════════════════════════════════════════════════════
+// COMMUNITY-REPORTED PRICES — public, everyone sees the same data.
+// Pulled straight from Supabase (no per-device storage) so a report
+// from one person shows up for every visitor.
+// ═══════════════════════════════════════════════════════════
+const COMMUNITY_FUELS = ['87', '90', 'diesel'];
+const COMMUNITY_FUEL_LABEL = { '87': '87 Octane', '90': '90 Octane', diesel: 'Auto Diesel' };
+const COMMUNITY_RECENT_DAYS = 14; // reports older than this aren't counted in the average
+let stationReportsIndex = {};
+
+async function fetchCommunityReports() {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/station_price_reports?select=station_id,fuel_type,price,reported_at&order=reported_at.desc&limit=1000`;
+    const res = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch (e) {
+    return null; // table not set up yet, or offline — callers handle null gracefully
+  }
+}
+
+function aggregateCommunityReports(reports) {
+  const cutoff = Date.now() - COMMUNITY_RECENT_DAYS * 24 * 60 * 60 * 1000;
+  const agg = {};
+  COMMUNITY_FUELS.forEach(f => { agg[f] = { prices: [], latest: null }; });
+  (reports || []).forEach(r => {
+    if (!COMMUNITY_FUELS.includes(r.fuel_type)) return;
+    const t = new Date(r.reported_at).getTime();
+    if (isNaN(t) || t < cutoff) return;
+    agg[r.fuel_type].prices.push(Number(r.price));
+    if (!agg[r.fuel_type].latest || t > agg[r.fuel_type].latest) agg[r.fuel_type].latest = t;
+  });
+  return agg;
+}
+
+function aggregateStationReports(reports) {
+  const cutoff = Date.now() - COMMUNITY_RECENT_DAYS * 24 * 60 * 60 * 1000;
+  const map = {};
+  (reports || []).forEach(r => {
+    if (!COMMUNITY_FUELS.includes(r.fuel_type)) return;
+    const t = new Date(r.reported_at).getTime();
+    if (isNaN(t) || t < cutoff) return;
+    if (!map[r.station_id]) map[r.station_id] = {};
+    if (!map[r.station_id][r.fuel_type]) map[r.station_id][r.fuel_type] = { prices: [], latest: null };
+    const entry = map[r.station_id][r.fuel_type];
+    entry.prices.push(Number(r.price));
+    if (!entry.latest || t > entry.latest) entry.latest = t;
+  });
+  return map;
+}
+
+function freshnessLabel(latestTimestamp) {
+  if (!latestTimestamp) return { text: '⚪ No community reports yet', stale: true };
+  const ageHours = (Date.now() - latestTimestamp) / 3600000;
+  if (ageHours < 24) return { text: `🟢 Updated ${Math.max(1, Math.round(ageHours))}h ago`, stale: false };
+  if (ageHours < 24 * 3) return { text: `🟡 Updated ${Math.round(ageHours / 24)}d ago`, stale: false };
+  return { text: `⚪ Last report ${Math.round(ageHours / 24)}d ago — may not reflect today's price`, stale: true };
+}
+
+function communityLinesForStation(stationId) {
+  const data = stationReportsIndex[stationId];
+  if (!data || !Object.keys(data).length) {
+    return '<p style="font-size:12px;color:var(--text-3);margin:6px 0">No community price reports yet — be the first!</p>';
+  }
+  const lines = Object.keys(data).map(fuel => {
+    const { prices, latest } = data[fuel];
+    const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+    const fresh = freshnessLabel(latest);
+    return `<strong>${COMMUNITY_FUEL_LABEL[fuel] || fuel}:</strong> J$${avg.toFixed(2)} (${prices.length} report${prices.length === 1 ? '' : 's'}) · ${fresh.text}`;
+  });
+  return `<p style="font-size:12px;color:var(--text-2);margin:6px 0;line-height:1.7">${lines.join('<br>')}</p>`;
+}
+
+function renderCommunityPrices(agg) {
+  const container = document.getElementById('communityPrices');
+  if (!container) return;
+  container.innerHTML = COMMUNITY_FUELS.map(key => {
+    const p = PRICES.find(x => x.key === key);
+    if (!p) return '';
+    const data = agg[key] || { prices: [], latest: null };
+    const n = data.prices.length;
+    const avg = n ? data.prices.reduce((a, b) => a + b, 0) / n : null;
+    const official = p.exRefinery + MARKUP_DEFAULT;
+    const fresh = freshnessLabel(data.latest);
+
+    let diffBadge = '<div class="change-badge same">Not enough reports yet</div>';
+    if (avg != null) {
+      const diff = avg - official;
+      if (Math.abs(diff) < 1) {
+        diffBadge = '<div class="change-badge same">Matches official estimate</div>';
+      } else if (diff > 0) {
+        diffBadge = `<div class="change-badge up">▲ J$${diff.toFixed(2)} above official estimate</div>`;
+      } else {
+        diffBadge = `<div class="change-badge down">▼ J$${Math.abs(diff).toFixed(2)} below official estimate</div>`;
+      }
+    }
+
+    return `
+      <div class="price-card ${p.class}">
+        <div class="fuel-icon">${p.icon}</div>
+        <div class="fuel-name">${p.name} · Community avg</div>
+        <div class="fuel-price">${avg != null ? `<span class="currency">J$</span>${avg.toFixed(2)}` : '<span style="font-size:18px;color:var(--text-3)">No reports yet</span>'}</div>
+        <div class="fuel-pump">${n} report${n === 1 ? '' : 's'} in the last ${COMMUNITY_RECENT_DAYS} days</div>
+        <div class="fuel-ex" style="${fresh.stale ? 'color:var(--text-3)' : ''}">${fresh.text}</div>
+        ${diffBadge}
+      </div>
+    `;
+  }).join('');
+}
+
+async function refreshCommunityData() {
+  const reports = await fetchCommunityReports();
+  stationReportsIndex = aggregateStationReports(reports);
+  renderCommunityPrices(aggregateCommunityReports(reports));
+  addStationMarkers(); // rebuild popups so map reflects the latest community numbers too
+}
+
 function addStationMarkers() {
   stationLayer.clearLayers();
   markerIndex.clear();
@@ -909,7 +1070,10 @@ async function initStationLocator() {
 
   try {
     await loadStations();
+    const reports = await fetchCommunityReports();
+    stationReportsIndex = aggregateStationReports(reports);
     addStationMarkers();
+    renderCommunityPrices(aggregateCommunityReports(reports));
     document.getElementById('mapStatus').textContent = `${stations.length} station${stations.length === 1 ? '' : 's'} found · locations from OpenStreetMap`;
   } catch (error) {
     document.getElementById('mapStatus').textContent = 'Could not load live station locations. Try again later.';
@@ -918,6 +1082,7 @@ async function initStationLocator() {
   document.getElementById('locateMe').addEventListener('click', locateUser);
   document.getElementById('priceReportForm').addEventListener('submit', submitPriceReport);
   initStationSearch();
+  syncQueuedReports();
 }
 
 function locateUser() {
@@ -933,23 +1098,105 @@ function locateUser() {
   }, () => { status.textContent = 'Location permission was not granted.'; }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
+const REPORT_COOLDOWN_KEY = 'yaadadz_report_cooldowns';
+const REPORT_COOLDOWN_MS = 15 * 60 * 1000; // 15 min per station+fuel, per device — enough to stop rapid-fire spam without blocking real price updates
+const REPORT_QUEUE_KEY = 'yaadadz_price_reports';
+const REPORT_PRICE_MIN = 100;   // sanity bounds — J$ per litre
+const REPORT_PRICE_MAX = 400;
+
+function cooldownKey(stationId, fuelType) { return `${stationId}::${fuelType}`; }
+
+function getCooldowns() {
+  try { return JSON.parse(localStorage.getItem(REPORT_COOLDOWN_KEY) || '{}'); } catch (e) { return {}; }
+}
+function setCooldown(key) {
+  const cooldowns = getCooldowns();
+  cooldowns[key] = Date.now();
+  try { localStorage.setItem(REPORT_COOLDOWN_KEY, JSON.stringify(cooldowns)); } catch (e) {}
+}
+function cooldownRemainingMs(key) {
+  const last = getCooldowns()[key];
+  if (!last) return 0;
+  return Math.max(0, REPORT_COOLDOWN_MS - (Date.now() - last));
+}
+
+async function postReportToSupabase(report) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/station_price_reports`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify(report)
+  });
+  if (!response.ok) throw new Error('Report table unavailable (HTTP ' + response.status + ')');
+}
+
+// Retries anything saved locally from a previous failed submission attempt.
+// Runs quietly on page load — no UI unless it actually has something to sync.
+async function syncQueuedReports() {
+  let queue;
+  try { queue = JSON.parse(localStorage.getItem(REPORT_QUEUE_KEY) || '[]'); } catch (e) { queue = []; }
+  if (!queue.length) return;
+  const status = document.getElementById('reportStatus');
+  const remaining = [];
+  let synced = 0;
+  for (const report of queue) {
+    try { await postReportToSupabase(report); synced++; }
+    catch (e) { remaining.push(report); }
+  }
+  localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(remaining));
+  if (synced && status) {
+    status.textContent = `Synced ${synced} previously-saved price report${synced === 1 ? '' : 's'} from this device.`;
+    await refreshCommunityData();
+  }
+}
+
 async function submitPriceReport(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const status = document.getElementById('reportStatus');
   const values = Object.fromEntries(new FormData(form).entries());
+
+  // Honeypot: if this hidden field has anything in it, it's a bot — silently drop
+  if (values.website) { form.reset(); return; }
+
   const station = stations.find(s => s.id === values.station_id);
-  const report = { station_id: values.station_id, station_name: station?.name || '', lat: station?.lat, lng: station?.lng, fuel_type: values.fuel_type, price: Number(values.price), reporter_name: values.reporter_name || null, reported_at: new Date().toISOString() };
+  if (!station) { status.textContent = 'Please choose a station from the list first.'; return; }
+
+  const price = Number(values.price);
+  if (!price || price < REPORT_PRICE_MIN || price > REPORT_PRICE_MAX) {
+    status.textContent = `Please enter a realistic per-litre price (J$${REPORT_PRICE_MIN}–${REPORT_PRICE_MAX}).`;
+    return;
+  }
+
+  const waitMs = cooldownRemainingMs(cooldownKey(station.id, values.fuel_type));
+  if (waitMs > 0) {
+    const waitMin = Math.ceil(waitMs / 60000);
+    status.textContent = `You already reported ${COMMUNITY_FUEL_LABEL[values.fuel_type] || values.fuel_type} for this station recently. Try again in ${waitMin} minute${waitMin === 1 ? '' : 's'}.`;
+    return;
+  }
+
+  const report = {
+    station_id: values.station_id,
+    station_name: station.name,
+    lat: station.lat,
+    lng: station.lng,
+    fuel_type: values.fuel_type,
+    price,
+    reporter_name: values.reporter_name || null,
+    reported_at: new Date().toISOString()
+  };
+
   status.textContent = 'Sending report…';
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/station_price_reports`, { method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(report) });
-    if (!response.ok) throw new Error('Report table unavailable');
-    status.textContent = 'Thanks. Your price was submitted for review.';
+    await postReportToSupabase(report);
+    status.textContent = 'Thanks — your price is now live for everyone to see.';
+    setCooldown(cooldownKey(station.id, values.fuel_type));
+    await refreshCommunityData();
   } catch (error) {
-    const saved = JSON.parse(localStorage.getItem('yaadadz_price_reports') || '[]');
+    const saved = JSON.parse(localStorage.getItem(REPORT_QUEUE_KEY) || '[]');
     saved.push(report);
-    localStorage.setItem('yaadadz_price_reports', JSON.stringify(saved));
-    status.textContent = 'Saved on this device. It will sync once reports are enabled.';
+    localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(saved));
+    setCooldown(cooldownKey(station.id, values.fuel_type));
+    status.textContent = 'Saved on this device — it will sync automatically next time you visit.';
   }
   form.reset();
 }
@@ -1098,6 +1345,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const data = await loadPriceData();
     document.getElementById('lastUpdated').textContent =
       data.last_updated_display || data.price_date || 'Recently updated';
+    checkDataFreshness(data);
     renderPriceCards();
     renderCalculator();
     renderTable();
