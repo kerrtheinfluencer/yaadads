@@ -88,6 +88,8 @@ background: linear-gradient(90deg, var(--green), var(--gold));
 .fuel-pump strong { color: var(--green); font-weight: 700; }
 .fuel-ex { font-size: 12px; color: var(--text-3); }
 .fuel-ex strong { color: var(--text-2); }
+.fuel-tank { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.fuel-tank strong { color: var(--text-2); }
 .change-badge {
 display: inline-flex; align-items: center; gap: 4px;
 padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
@@ -96,7 +98,29 @@ margin-top: 10px;
 .change-badge.up { background: #fef2f2; color: var(--red); }
 .change-badge.down { background: #f0fdf4; color: #16a34a; }
 .change-badge.same { background: var(--surface-2); color: var(--text-3); }
-/* ═══ MARKUP CALCULATOR ═══ */
+/* ═══ TABS & TOGGLES ═══ */
+.tank-toggle, .price-tabs, .chart-toggle {
+display: inline-flex; background: var(--surface-2); border: 1px solid var(--border);
+border-radius: 999px; padding: 3px; gap: 2px;
+}
+.tank-btn, .price-tab, .chart-tab {
+border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 600;
+color: var(--text-2); padding: 7px 14px; border-radius: 999px; cursor: pointer;
+transition: background .18s, color .18s;
+}
+.tank-btn.active, .price-tab.active, .chart-tab.active { background: var(--green); color: #fff; }
+.price-tabs { margin-bottom: 20px; }
+/* ═══ TAKEAWAY BANNER ═══ */
+.takeaway-section { padding: 8px 0 40px; }
+.takeaway-card {
+display: flex; align-items: center; gap: 16px;
+background: linear-gradient(135deg, var(--nav-bg) 0%, #1a3d28 100%);
+border-radius: var(--r-lg); padding: 22px 28px; color: #fff;
+}
+.takeaway-icon { font-size: 28px; flex-shrink: 0; }
+.takeaway-text { font-size: 15px; line-height: 1.55; color: rgba(255,255,255,.88); }
+.takeaway-text strong { color: var(--gold); }
+/* ═══ MARKUP CALCULATOR (legacy, unused in v2 layout) ═══ */
 .calc-section { padding: 32px 0; }
 .calc-card {
 background: linear-gradient(135deg, var(--nav-bg) 0%, #1a3d28 100%);
@@ -237,6 +261,10 @@ nav { padding: 0 16px; height: 56px; }
 .calc-grid { grid-template-columns: 1fr; }
 .comparison-table th, .comparison-table td { padding: 12px 16px; font-size: 13px; }
 .chart-wrap { height: 240px; }
+.section-hd { align-items: flex-start; }
+.tank-toggle, .price-tabs, .chart-toggle { width: 100%; }
+.tank-btn, .price-tab, .chart-tab { flex: 1; text-align: center; }
+.takeaway-card { flex-direction: column; align-items: flex-start; text-align: left; }
 }
 /* ═══ SCROLL PROGRESS ═══ */
 .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, var(--green), var(--gold)); z-index: 201; pointer-events: none; }
@@ -452,119 +480,53 @@ padding-top: 108px;
 </section>
 
 <!-- ═══ PRICE CARDS ═══ -->
-<section class="price-section">
+<section class="price-section" id="pricing-section">
 <div class="section-hd">
 <div>
-<h2 class="section-title">This Week's Prices</h2>
-<p class="section-sub">Ex-refinery prices from the <a href="https://www.petrojam.com/price/" target="_blank" rel="noopener noreferrer" style="color:var(--green);text-decoration:underline">Petrojam archive</a> + estimated pump prices (J$15–35/L markup)</p>
+<h2 class="section-title">Fuel Prices</h2>
+<p class="section-sub">Official Petrojam rates vs. what drivers are reporting at the pump right now.</p>
+</div>
+<div class="tank-toggle" id="tankToggle" role="tablist" aria-label="Tank size">
+<button type="button" class="tank-btn" data-size="30">30L</button>
+<button type="button" class="tank-btn active" data-size="40">40L</button>
+<button type="button" class="tank-btn" data-size="50">50L</button>
 </div>
 </div>
-<div class="price-grid" id="priceCards">
+<div class="price-tabs" role="tablist">
+<button type="button" class="price-tab active" data-tab="official">Official (Petrojam)</button>
+<button type="button" class="price-tab" data-tab="community">Community-reported</button>
+</div>
+<div class="price-grid" id="priceCards" data-panel="official">
+<!-- Injected by JS -->
+</div>
+<div class="price-grid" id="communityPrices" data-panel="community" style="display:none">
 <!-- Injected by JS -->
 </div>
 </section>
 
-<!-- ═══ COMMUNITY-REPORTED PRICES ═══ -->
-<section class="price-section" style="padding-top:8px">
-<div class="section-hd">
-<div>
-<h2 class="section-title">What Drivers Are Actually Paying</h2>
-<p class="section-sub">Live average of prices reported by other users at real stations — visible to everyone, updates as new reports come in.</p>
-</div>
-</div>
-<div class="price-grid" id="communityPrices">
-<!-- Injected by JS -->
-</div>
-</section>
-
-<!-- ═══ MARKUP CALCULATOR ═══ -->
-<section class="calc-section">
-<div class="calc-card">
-<h2 class="calc-title">💰 Pump Price Estimator</h2>
-<p class="calc-sub">See what you're really paying at the pump. Retailers typically add J$15–J$35 per litre.</p>
-<div class="calc-grid" id="calcGrid">
-<!-- Injected by JS -->
-</div>
-</div>
-</section>
-
-<!-- ═══ CHARTS ═══ -->
+<!-- ═══ TRENDS ═══ -->
 <section class="chart-section">
 <div class="section-hd">
 <div>
 <h2 class="section-title">Price Trends</h2>
-<p class="section-sub">Historical movement over the last 12 weeks</p>
+<p class="section-sub">Movement over the last 12 weeks</p>
+</div>
+<div class="chart-toggle" id="chartToggle" role="tablist" aria-label="Chart view">
+<button type="button" class="chart-tab active" data-chart="mainChart">By fuel</button>
+<button type="button" class="chart-tab" data-chart="comparisonChart">Compare all</button>
 </div>
 </div>
-<div class="chart-grid">
 <div class="chart-card">
-<h3 class="chart-title">📈 Gasoline vs Diesel</h3>
-<p class="chart-sub">87, 90 octane and auto diesel ex-refinery prices</p>
 <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-</div>
-<div class="chart-card">
-<h3 class="chart-title">🔥 All Fuels Comparison</h3>
-<p class="chart-sub">Relative price levels across all fuel types</p>
-<div class="chart-wrap"><canvas id="comparisonChart"></canvas></div>
-</div>
+<div class="chart-wrap" style="display:none"><canvas id="comparisonChart"></canvas></div>
 </div>
 </section>
 
-
-<!-- ═══ WEEK OVER WEEK TABLE ═══ -->
-<section class="table-section">
-<div class="section-hd">
-<div>
-<h2 class="section-title">Week-over-Week Breakdown</h2>
-<p class="section-sub">Detailed comparison with previous week's prices</p>
-</div>
-</div>
-<div class="table-card">
-<div class="table-header">
-<span style="font-size:20px">📊</span>
-<h3>Price Changes This Week</h3>
-</div>
-<table class="comparison-table" id="comparisonTable">
-<thead>
-<tr>
-<th>Fuel Type</th>
-<th>Ex-Refinery</th>
-<th>Est. Pump (J$30)</th>
-<th>vs Last Week</th>
-<th>vs 4 Weeks Ago</th>
-</tr>
-</thead>
-<tbody id="tableBody">
-<!-- Injected by JS -->
-</tbody>
-</table>
-</div>
-</section>
-
-<!-- ═══ INSIGHTS ═══ -->
-<section class="insights-section">
-<div class="section-hd">
-<div>
-<h2 class="section-title">What This Means</h2>
-<p class="section-sub">Quick insights on how fuel prices affect your pocket</p>
-</div>
-</div>
-<div class="insights-grid">
-<div class="insight-card">
-<div class="insight-icon">🚗</div>
-<h3 class="insight-title">Fill-Up Cost</h3>
-<p class="insight-text" id="fillUpText">Based on current 90 octane prices, filling a 40L tank costs approximately <strong id="fillUpCost">—</strong> at the pump.</p>
-</div>
-<div class="insight-card">
-<div class="insight-icon">📉</div>
-<h3 class="insight-title">Trend Direction</h3>
-<p class="insight-text" id="trendText">Analyzing price movements to see if fuel is getting cheaper or more expensive over time.</p>
-</div>
-<div class="insight-card">
-<div class="insight-icon">💡</div>
-<h3 class="insight-title">Money-Saving Tip</h3>
-<p class="insight-text">Consider filling up early in the week before prices adjust. Some stations update prices on Wednesdays after the Petrojam announcement.</p>
-</div>
+<!-- ═══ TAKEAWAY ═══ -->
+<section class="takeaway-section">
+<div class="takeaway-card">
+<div class="takeaway-icon" id="takeawayIcon">💡</div>
+<p class="takeaway-text" id="takeawayText">Crunching this week's numbers…</p>
 </div>
 </section>
 
@@ -667,82 +629,82 @@ function getTrendClass(diff) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER PRICE CARDS
+// RENDER PRICE CARDS (folds in tank-cost estimator + 4wk trend,
+// replacing what used to be 3 separate sections)
 // ═══════════════════════════════════════════════════════════
+let currentTankSize = 40;
+const chartInstances = {};
+
 function renderPriceCards() {
   const container = document.getElementById('priceCards');
   container.innerHTML = PRICES.map(p => {
     const pump = p.exRefinery + MARKUP_DEFAULT;
-    const pumpLow = p.exRefinery + MARKUP_LOW;
-    const pumpHigh = p.exRefinery + MARKUP_HIGH;
     const change = calcChange(p.exRefinery, PREV_WEEK[p.key]);
+    const w4 = calcChange(p.exRefinery, WEEK_4_AGO[p.key]);
     const asOf = p.as_of || _dataMeta?.price_date || '';
     return `
       <div class="price-card ${p.class}">
         <div class="fuel-icon">${p.icon}</div>
         <div class="fuel-name">${p.name}</div>
         <div class="fuel-price"><span class="currency">J$</span>${p.exRefinery.toFixed(2)}</div>
-        <div class="fuel-pump">Pump est: <strong>${fmtPriceInt(pump)}</strong> <span style="color:var(--text-3);font-size:11px">(range: J$${pumpLow.toFixed(0)}–${pumpHigh.toFixed(0)})</span></div>
-        <div class="fuel-ex">Ex-refinery per litre${asOf ? ' · as of ' + escapeHtml(asOf) : ''}</div>
+        <div class="fuel-pump">Pump est: <strong>${fmtPriceInt(pump)}</strong>/L</div>
+        <div class="fuel-tank" data-tank-line data-per-litre="${pump}">Full tank (<span data-tank-size>${currentTankSize}</span>L): <strong>${fmtPriceInt(pump * currentTankSize)}</strong></div>
+        <div class="fuel-ex">Ex-refinery${asOf ? ' · as of ' + escapeHtml(asOf) : ''}</div>
         <div class="change-badge ${change.class}"${change.unavailable ? ' title="No prior-week figure was found in the data source"' : ''}>${change.text}</div>
+        ${!w4.unavailable ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px">4wk: ${w4.text}</div>` : ''}
       </div>
     `;
   }).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
-// RENDER CALCULATOR
-// ═══════════════════════════════════════════════════════════
-function renderCalculator() {
-  const container = document.getElementById('calcGrid');
-  container.innerHTML = PRICES.map(p => {
-    const pump = p.exRefinery + MARKUP_DEFAULT;
-    const tank40 = pump * 40;
-    const tank30 = pump * 30;
-    return `
-      <div class="calc-item">
-        <div class="calc-label">${p.icon} ${p.name}</div>
-        <div class="calc-value"><span class="currency">J$</span>${Math.round(pump).toLocaleString()}</div>
-        <div class="calc-note">40L tank: ${fmtPriceInt(tank40)} · 30L tank: ${fmtPriceInt(tank30)}</div>
-      </div>
-    `;
-  }).join('');
+function applyTankSize(size) {
+  currentTankSize = size;
+  document.querySelectorAll('[data-tank-line]').forEach(el => {
+    const perLitre = Number(el.dataset.perLitre);
+    el.querySelector('[data-tank-size]').textContent = size;
+    el.querySelector('strong').textContent = fmtPriceInt(perLitre * size);
+  });
 }
 
-// ═══════════════════════════════════════════════════════════
-// RENDER COMPARISON TABLE
-// ═══════════════════════════════════════════════════════════
-function renderTable() {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = PRICES.map(p => {
-    const pump = p.exRefinery + MARKUP_DEFAULT;
-    const w1 = calcChange(p.exRefinery, PREV_WEEK[p.key]);
-    const w4 = calcChange(p.exRefinery, WEEK_4_AGO[p.key]);
-    return `
-      <tr>
-        <td>
-          <div class="fuel-cell">
-            <span class="fuel-dot" style="background:${p.color}"></span>
-            <span>${p.icon} ${p.name}</span>
-          </div>
-        </td>
-        <td class="price-cell">${fmtPrice(p.exRefinery)}</td>
-        <td class="price-cell">${fmtPriceInt(pump)}</td>
-        <td>
-          <div class="trend-cell ${getTrendClass(w1.diff)}">
-            ${w1.unavailable ? '' : `<span>${getTrendArrow(w1.diff)}</span>`}
-            <span>${w1.text}</span>
-          </div>
-        </td>
-        <td>
-          <div class="trend-cell ${getTrendClass(w4.diff)}">
-            ${w4.unavailable ? '' : `<span>${getTrendArrow(w4.diff)}</span>`}
-            <span>${w4.text}</span>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+function initTankToggle() {
+  const toggle = document.getElementById('tankToggle');
+  if (!toggle) return;
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tank-btn');
+    if (!btn) return;
+    toggle.querySelectorAll('.tank-btn').forEach(b => b.classList.toggle('active', b === btn));
+    applyTankSize(Number(btn.dataset.size));
+  });
+}
+
+function initPriceTabs() {
+  const tabs = document.querySelectorAll('.price-tab');
+  const officialPanel = document.getElementById('priceCards');
+  const communityPanel = document.getElementById('communityPrices');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.toggle('active', t === tab));
+      const showCommunity = tab.dataset.tab === 'community';
+      officialPanel.style.display = showCommunity ? 'none' : 'grid';
+      communityPanel.style.display = showCommunity ? 'grid' : 'none';
+    });
+  });
+}
+
+function initChartToggle() {
+  const toggle = document.getElementById('chartToggle');
+  if (!toggle) return;
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.chart-tab');
+    if (!btn) return;
+    toggle.querySelectorAll('.chart-tab').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.chart-card .chart-wrap').forEach(wrap => {
+      const canvas = wrap.querySelector('canvas');
+      const isTarget = canvas.id === btn.dataset.chart;
+      wrap.style.display = isTarget ? 'block' : 'none';
+      if (isTarget && chartInstances[canvas.id]) chartInstances[canvas.id].resize();
+    });
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -753,7 +715,7 @@ function initCharts() {
   Chart.defaults.color = '#555';
 
   const ctx1 = document.getElementById('mainChart').getContext('2d');
-  new Chart(ctx1, {
+  chartInstances.mainChart = new Chart(ctx1, {
     type: 'line',
     data: {
       labels: HISTORY.weeks,
@@ -787,7 +749,7 @@ function initCharts() {
   });
 
   const ctx2 = document.getElementById('comparisonChart').getContext('2d');
-  new Chart(ctx2, {
+  chartInstances.comparisonChart = new Chart(ctx2, {
     type: 'bar',
     data: {
       labels: PRICES.map(p => p.name),
@@ -823,22 +785,31 @@ function initCharts() {
 // ═══════════════════════════════════════════════════════════
 function renderInsights() {
   const gas90 = PRICES.find(p => p.key === '90');
-  if (gas90) {
-    const pump90 = gas90.exRefinery + MARKUP_DEFAULT;
-    document.getElementById('fillUpCost').textContent = fmtPriceInt(pump90 * 40);
-  }
+  const fillUpCost = gas90 ? fmtPriceInt((gas90.exRefinery + MARKUP_DEFAULT) * 40) : null;
 
   const withPrev = PRICES.filter(p => PREV_WEEK[p.key] != null);
-  const totalChange = withPrev.reduce((sum, p) => sum + (p.exRefinery - PREV_WEEK[p.key]), 0);
   const n = withPrev.length || 1;
-  const trendText = document.getElementById('trendText');
+  const totalChange = withPrev.reduce((sum, p) => sum + (p.exRefinery - PREV_WEEK[p.key]), 0);
+  const avgChange = totalChange / n;
 
-  if (totalChange > 0.5) {
-    trendText.innerHTML = `Fuel prices are <strong style="color:var(--red)">trending upward</strong> this week. The average increase across all fuel types is approximately <strong>J$${(totalChange / n).toFixed(2)}</strong> per litre. Consider filling up before prices rise further.`;
-  } else if (totalChange < -0.5) {
-    trendText.innerHTML = `Good news — fuel prices are <strong style="color:#16a34a">trending downward</strong> this week. The average decrease is approximately <strong>J$${Math.abs(totalChange / n).toFixed(2)}</strong> per litre. Great time to fill up!`;
+  const icon = document.getElementById('takeawayIcon');
+  const text = document.getElementById('takeawayText');
+  if (!icon || !text) return;
+
+  const fillUpClause = fillUpCost ? ` A 40L fill-up of 90 octane runs about <strong>${fillUpCost}</strong> right now.` : '';
+
+  if (!withPrev.length) {
+    icon.textContent = '💡';
+    text.innerHTML = `No prior-week data to compare yet.${fillUpClause}`;
+  } else if (avgChange > 0.5) {
+    icon.textContent = '📈';
+    text.innerHTML = `Prices are <strong>trending up</strong> this week — average increase of about <strong>J$${avgChange.toFixed(2)}/L</strong> across fuel types. Worth filling up sooner rather than later.${fillUpClause}`;
+  } else if (avgChange < -0.5) {
+    icon.textContent = '📉';
+    text.innerHTML = `Good news — prices are <strong>trending down</strong> this week, averaging about <strong>J$${Math.abs(avgChange).toFixed(2)}/L</strong> cheaper. Good time to top up.${fillUpClause}`;
   } else {
-    trendText.innerHTML = `Fuel prices are <strong style="color:var(--text-2)">relatively stable</strong> this week with minimal changes across all fuel types. No major shifts from last week.`;
+    icon.textContent = '➖';
+    text.innerHTML = `Prices are <strong>holding steady</strong> this week with no major shifts.${fillUpClause}`;
   }
 }
 
@@ -1411,14 +1382,15 @@ function initScrollProgress() {
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('lastUpdated').textContent = 'Loading from Petrojam…';
   initScrollProgress();
+  initPriceTabs();
+  initTankToggle();
+  initChartToggle();
   try {
     const data = await loadPriceData();
     document.getElementById('lastUpdated').textContent =
       data.last_updated_display || data.price_date || 'Recently updated';
     checkDataFreshness(data);
     renderPriceCards();
-    renderCalculator();
-    renderTable();
     renderInsights();
     initCharts();
   } catch (e) {
