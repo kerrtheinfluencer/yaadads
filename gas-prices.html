@@ -207,7 +207,20 @@ background: var(--green-light); border: 1px solid var(--border); border-radius: 
 .report-form { display: grid; gap: 12px; }
 .report-form label { display: grid; gap: 5px; font-size: 12px; color: var(--text-2); font-weight: 600; }
 .report-form input, .report-form select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px; background: #fff; color: var(--text-1); font: inherit; }
-.report-note { min-height: 40px; font-size: 12px; color: var(--text-3); }
+.report-note { min-height: 40px; font-size: 12px; color: var(--text-3); line-height: 1.5; }
+.report-note.success { color: #16a34a; font-weight: 600; }
+.report-note.error { color: var(--red); font-weight: 600; }
+.report-note.info { color: var(--text-2); }
+.last-report {
+margin-top: 14px; padding: 10px 12px; background: rgba(255,255,255,.5);
+border: 1px solid rgba(255,255,255,.6); border-radius: 10px; font-size: 12px; color: var(--text-2);
+align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.edit-report-btn {
+border: 1px solid var(--green); background: none; color: var(--green); font: inherit; font-weight: 700;
+font-size: 12px; padding: 6px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+.edit-report-btn:hover { background: var(--green-light); }
 .station-popup h3 { font: 700 16px var(--font-d); margin-bottom: 3px; }
 .station-popup p { margin: 0 0 8px; color: var(--text-2); }
 .station-popup a { color: var(--green); font-weight: 700; }
@@ -475,6 +488,7 @@ padding-top: 108px;
 <button class="report-submit" type="submit" id="reportSubmitBtn" disabled>Select a station first</button>
 <div class="report-note" id="reportStatus" role="status"></div>
 </form>
+<div class="last-report" id="lastReportPanel" style="display:none"></div>
 </div>
 </div>
 </section>
@@ -1087,6 +1101,7 @@ async function initStationLocator() {
   document.getElementById('locateMe').addEventListener('click', locateUser);
   document.getElementById('priceReportForm').addEventListener('submit', submitPriceReport);
   initStationSearch();
+  renderLastReportPanel();
   syncQueuedReports();
 }
 
@@ -1128,10 +1143,29 @@ function cooldownRemainingMs(key) {
 async function postReportToSupabase(report) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/station_price_reports`, {
     method: 'POST',
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
     body: JSON.stringify(report)
   });
   if (!response.ok) throw new Error('Report table unavailable (HTTP ' + response.status + ')');
+  const rows = await response.json().catch(() => []);
+  return rows && rows[0] ? rows[0] : null;
+}
+
+// Corrects a report already submitted from this device. Matches on both id
+// and the random edit_token issued at submission time — the token is never
+// exposed through the app's own read query, so it acts as a lightweight
+// "only this browser can fix its own report" key without requiring accounts.
+async function updateReportInSupabase(id, editToken, updates) {
+  const url = `${SUPABASE_URL}/rest/v1/station_price_reports?id=eq.${encodeURIComponent(id)}&edit_token=eq.${encodeURIComponent(editToken)}`;
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify(updates)
+  });
+  if (!response.ok) throw new Error('Could not update report (HTTP ' + response.status + ')');
+  const rows = await response.json().catch(() => []);
+  if (!rows.length) throw new Error('Report not found, or the edit window has expired');
+  return rows[0];
 }
 
 // Retries anything saved locally from a previous failed submission attempt.
@@ -1140,7 +1174,6 @@ async function syncQueuedReports() {
   let queue;
   try { queue = JSON.parse(localStorage.getItem(REPORT_QUEUE_KEY) || '[]'); } catch (e) { queue = []; }
   if (!queue.length) return;
-  const status = document.getElementById('reportStatus');
   const remaining = [];
   let synced = 0;
   for (const report of queue) {
@@ -1148,8 +1181,8 @@ async function syncQueuedReports() {
     catch (e) { remaining.push(report); }
   }
   localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(remaining));
-  if (synced && status) {
-    status.textContent = `Synced ${synced} previously-saved price report${synced === 1 ? '' : 's'} from this device.`;
+  if (synced) {
+    setReportStatus(`Synced ${synced} previously-saved price report${synced === 1 ? '' : 's'} from this device.`, 'success');
     await refreshCommunityData();
   }
 }
@@ -1158,6 +1191,7 @@ async function syncQueuedReports() {
 // search — the person only has to choose fuel type + price after this.
 function selectStationForReport(station) {
   if (!station) return;
+  editingReport = null;
   const display = document.getElementById('selectedStationDisplay');
   const text = document.getElementById('selectedStationText');
   const hiddenInput = document.getElementById('reportStationId');
@@ -1186,30 +1220,120 @@ function resetSelectedStation() {
   text.textContent = 'Tap a station on the map or search above';
   submitBtn.disabled = true;
   submitBtn.textContent = 'Select a station first';
+  editingReport = null;
+}
+
+function setReportStatus(message, type) {
+  const status = document.getElementById('reportStatus');
+  if (!status) return;
+  status.className = 'report-note' + (type ? ' ' + type : '');
+  const icon = type === 'success' ? '✅ ' : type === 'error' ? '⚠️ ' : type === 'info' ? 'ℹ️ ' : '';
+  status.innerHTML = icon + message;
+}
+
+// ═══════════════════════════════════════════════════════════
+// EDIT-A-REPORT — lets someone fix a mistake in their own recent
+// submission (wrong price, wrong fuel type) without needing an account.
+// ═══════════════════════════════════════════════════════════
+const LAST_REPORT_KEY = 'yaadadz_last_report';
+const EDIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour to correct a mistake
+let editingReport = null;
+
+function getLastReport() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LAST_REPORT_KEY) || 'null');
+    if (!raw || !raw.id || !raw.edit_token) return null;
+    if (Date.now() - new Date(raw.submitted_at).getTime() > EDIT_WINDOW_MS) return null;
+    return raw;
+  } catch (e) { return null; }
+}
+function saveLastReport(data) {
+  try { localStorage.setItem(LAST_REPORT_KEY, JSON.stringify(data)); } catch (e) {}
+}
+function clearLastReport() {
+  try { localStorage.removeItem(LAST_REPORT_KEY); } catch (e) {}
+}
+
+function renderLastReportPanel() {
+  const panel = document.getElementById('lastReportPanel');
+  if (!panel) return;
+  const last = getLastReport();
+  if (!last) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+  const minsAgo = Math.max(1, Math.round((Date.now() - new Date(last.submitted_at).getTime()) / 60000));
+  const ageText = minsAgo < 60 ? `${minsAgo}m ago` : `${Math.round(minsAgo / 60)}h ago`;
+  panel.style.display = 'flex';
+  panel.innerHTML = `
+    <span>Your last report: <strong>J$${Number(last.price).toFixed(2)}</strong> · ${escapeHtml(COMMUNITY_FUEL_LABEL[last.fuel_type] || last.fuel_type)} · ${escapeHtml(last.station_name)} (${ageText})</span>
+    <button type="button" class="edit-report-btn" id="editLastReportBtn">Made a mistake?</button>
+  `;
+  document.getElementById('editLastReportBtn').addEventListener('click', beginEditLastReport);
+}
+
+function beginEditLastReport() {
+  const last = getLastReport();
+  if (!last) { renderLastReportPanel(); return; }
+  const station = stations.find(s => s.id === last.station_id);
+  if (station) {
+    selectStationForReport(station);
+  } else {
+    document.getElementById('reportStationId').value = last.station_id;
+    document.getElementById('selectedStationDisplay').classList.add('picked');
+    document.getElementById('selectedStationText').textContent = last.station_name;
+    document.getElementById('reportSubmitBtn').disabled = false;
+  }
+  document.querySelector('#priceReportForm select[name="fuel_type"]').value = last.fuel_type;
+  document.querySelector('#priceReportForm input[name="price"]').value = last.price;
+  editingReport = last;
+  document.getElementById('reportSubmitBtn').textContent = 'Update price';
+  setReportStatus('Editing your last report — change the fuel type or price, then submit.', 'info');
+  document.getElementById('priceReportForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function submitPriceReport(event) {
   event.preventDefault();
   const form = event.currentTarget;
-  const status = document.getElementById('reportStatus');
   const values = Object.fromEntries(new FormData(form).entries());
 
   // Honeypot: if this hidden field has anything in it, it's a bot — silently drop
   if (values.website) { form.reset(); return; }
 
   const station = stations.find(s => s.id === values.station_id);
-  if (!station) { status.textContent = 'Please choose a station from the list first.'; return; }
+  const stationName = station?.name || editingReport?.station_name;
+  if (!values.station_id || !stationName) { setReportStatus('Please choose a station from the list first.', 'error'); return; }
 
   const price = Number(values.price);
   if (!price || price < REPORT_PRICE_MIN || price > REPORT_PRICE_MAX) {
-    status.textContent = `Please enter a realistic per-litre price (J$${REPORT_PRICE_MIN}–${REPORT_PRICE_MAX}).`;
+    setReportStatus(`Please enter a realistic per-litre price (J$${REPORT_PRICE_MIN}–${REPORT_PRICE_MAX}).`, 'error');
     return;
   }
 
+  // ─── EDIT PATH: correcting a mistake in a report already submitted ───
+  if (editingReport) {
+    setReportStatus('Updating your report…', 'info');
+    try {
+      await updateReportInSupabase(editingReport.id, editingReport.edit_token, {
+        fuel_type: values.fuel_type,
+        price,
+        reported_at: new Date().toISOString()
+      });
+      saveLastReport({ ...editingReport, fuel_type: values.fuel_type, price });
+      setReportStatus(`Success! Updated to J$${price.toFixed(2)} for ${COMMUNITY_FUEL_LABEL[values.fuel_type] || values.fuel_type} at ${stationName}.`, 'success');
+      await refreshCommunityData();
+    } catch (error) {
+      setReportStatus("Couldn't update that report — the 1-hour edit window may have passed. Submit it again as a new report instead.", 'error');
+    }
+    editingReport = null;
+    form.reset();
+    resetSelectedStation();
+    renderLastReportPanel();
+    return;
+  }
+
+  // ─── NEW REPORT PATH ───
   const waitMs = cooldownRemainingMs(cooldownKey(station.id, values.fuel_type));
   if (waitMs > 0) {
     const waitMin = Math.ceil(waitMs / 60000);
-    status.textContent = `You already reported ${COMMUNITY_FUEL_LABEL[values.fuel_type] || values.fuel_type} for this station recently. Try again in ${waitMin} minute${waitMin === 1 ? '' : 's'}.`;
+    setReportStatus(`You already reported ${COMMUNITY_FUEL_LABEL[values.fuel_type] || values.fuel_type} for this station recently. Try again in ${waitMin} minute${waitMin === 1 ? '' : 's'}.`, 'error');
     return;
   }
 
@@ -1224,21 +1348,33 @@ async function submitPriceReport(event) {
     reported_at: new Date().toISOString()
   };
 
-  status.textContent = 'Sending report…';
+  setReportStatus('Sending report…', 'info');
   try {
-    await postReportToSupabase(report);
-    status.textContent = 'Thanks — your price is now live for everyone to see.';
+    const inserted = await postReportToSupabase(report);
+    setReportStatus(`Success! J$${price.toFixed(2)} for ${COMMUNITY_FUEL_LABEL[values.fuel_type] || values.fuel_type} at ${station.name} is now live for everyone.`, 'success');
     setCooldown(cooldownKey(station.id, values.fuel_type));
+    if (inserted && inserted.id && inserted.edit_token) {
+      saveLastReport({
+        id: inserted.id,
+        edit_token: inserted.edit_token,
+        station_id: station.id,
+        station_name: station.name,
+        fuel_type: values.fuel_type,
+        price,
+        submitted_at: new Date().toISOString()
+      });
+    }
     await refreshCommunityData();
   } catch (error) {
     const saved = JSON.parse(localStorage.getItem(REPORT_QUEUE_KEY) || '[]');
     saved.push(report);
     localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(saved));
     setCooldown(cooldownKey(station.id, values.fuel_type));
-    status.textContent = 'Saved on this device — it will sync automatically next time you visit.';
+    setReportStatus("Couldn't reach the server, so it's saved on this device — it'll sync automatically next time you visit.", 'info');
   }
   form.reset();
   resetSelectedStation();
+  renderLastReportPanel();
 }
 
 // ═══════════════════════════════════════════════════════════
