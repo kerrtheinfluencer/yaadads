@@ -19,10 +19,10 @@ jobs:
 
       - name: Check index.html has a Supabase key configured
         run: |
-          if ! grep -q "key: 'eyJ" index.html; then
-            echo "::error::No Supabase anon key found in index.html — CFG.supabase.key looks empty or malformed."
-            exit 1
-          fi
+          if ! grep -q "key: 'eyJ" js/core.js; then
+  echo "No Supabase anon key found in js/core.js. CFG.supabase.key looks empty or malformed."
+  exit 1
+fi
           echo "✓ Supabase key present in config"
 
       - name: Check inline JS has no syntax errors
