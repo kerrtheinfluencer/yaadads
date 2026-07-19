@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v15'; // bump this any time style.css or js/*.js changes — otherwise
+const CACHE_VERSION  = 'yaadadz-v17'; // bump this any time style.css or js/*.js changes — otherwise
                                       // Cache-First below will keep serving the OLD file forever,
                                       // no matter how many times the actual file is updated on GitHub.
 const STATIC_CACHE   = CACHE_VERSION + '-static';
@@ -162,3 +162,42 @@ async function networkFirst(request) {
     );
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   §PUSH — real background push notifications
+   Fires even when the app/tab is fully closed, as long as the
+   browser process is running (or, on iOS, as long as the PWA
+   was installed via Add to Home Screen — see subscribeToPush
+   in core.js for that constraint).
+═══════════════════════════════════════════════════════════ */
+self.addEventListener('push', event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { title: 'Yaad Adz', body: event.data ? event.data.text() : '' };
+  }
+  const title = data.title || 'Yaad Adz';
+  const options = {
+    body: data.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data: { url: data.url || '/' },
+    tag: data.tag || 'yaadadz-push',
+    renotify: !!data.tag,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if (client.url === url && 'focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })
+  );
+});

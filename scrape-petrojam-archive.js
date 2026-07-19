@@ -6,6 +6,12 @@
  * Usage:
  *   node scrape-petrojam-archive.js
  *   SUPABASE_URL=... SUPABASE_KEY=... node scrape-petrojam-archive.js --db
+ *
+ * Push notifications on real price changes (optional):
+ *   SUPABASE_URL, PUSH_WEBHOOK_SECRET must both be set as env vars
+ *   (e.g. GitHub Actions repo secrets) for this to fire. If either is
+ *   missing, the scraper just skips the notification step silently —
+ *   it never fails the whole run over this.
  */
 
 const fs = require('fs');
@@ -15,6 +21,7 @@ const https = require('https');
 const ARCHIVE_URL = 'https://www.petrojam.com/price/';
 const OUT_FILE = path.join(__dirname, 'gas-prices-data.json');
 const WEEKS_FOR_CHART = 12;
+const PUSH_FUNCTION_PATH = '/functions/v1/send-push';
 
 const FUEL_META = {
   '87':      { name: 'Gasolene 87', icon: '⛽', color: '#22c55e', class: 'gasoline-87' },
@@ -184,6 +191,64 @@ function rowsForDb(archiveRows) {
   return out;
 }
 
+// Compares just the identifying week to decide if this run's data is
+// actually new — Petrojam publishes once a week, so this avoids sending
+// a push every time the scraper happens to run on a schedule.
+function havePricesChanged(previousPayload, currentPayload) {
+  if (!previousPayload || !previousPayload.week_of) return false; // first-ever run — nothing to compare, don't notify
+  return previousPayload.week_of !== currentPayload.week_of;
+}
+
+function postJson(urlString, body, headers) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlString);
+    const data = JSON.stringify(body);
+    const req = https.request(url, {
+      method: 'POST',
+      headers: Object.assign({
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+      }, headers || {}),
+      timeout: 15000,
+    }, (res) => {
+      let out = '';
+      res.on('data', (c) => { out += c; });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve(out);
+        else reject(new Error('HTTP ' + res.statusCode + ': ' + out));
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('Request timed out')));
+    req.write(data);
+    req.end();
+  });
+}
+
+async function notifyPriceChange(payload) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const secret = process.env.PUSH_WEBHOOK_SECRET;
+  if (!supabaseUrl || !secret) {
+    console.warn('⚠️  SUPABASE_URL/PUSH_WEBHOOK_SECRET not set — skipping push notification');
+    return;
+  }
+  const gas90 = payload.prices.find((p) => p.key === '90');
+  const body = gas90
+    ? `Gasolene 90 now J$${gas90.exRefinery.toFixed(2)}/L ex-refinery. Tap for full prices.`
+    : 'Petrojam prices updated for this week.';
+  try {
+    await postJson(supabaseUrl + PUSH_FUNCTION_PATH, {
+      title: '⛽ Jamaica gas prices updated',
+      body,
+      url: 'https://yaadadz.com/gas-prices.html',
+      topic: 'gas_prices',
+    }, { 'x-webhook-secret': secret });
+    console.log('   🔔 Push notification sent to gas_prices subscribers');
+  } catch (err) {
+    console.warn('   ⚠️  Push notification failed (non-fatal):', err.message);
+  }
+}
+
 async function upsertSupabase(archiveRows) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_KEY;
@@ -269,10 +334,25 @@ async function main() {
   });
 
   const payload = buildPayload(archiveRows);
+
+  // Read the previous payload BEFORE we overwrite it, so we can tell if
+  // this week's data is actually new.
+  let previousPayload = null;
+  try {
+    if (fs.existsSync(OUT_FILE)) previousPayload = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8'));
+  } catch (e) { /* corrupt or missing — treat as first run */ }
+
   fs.writeFileSync(OUT_FILE, JSON.stringify(payload, null, 2), 'utf8');
   console.log('   ✅ Wrote', OUT_FILE);
 
   if (writeDb) await upsertSupabase(archiveRows);
+
+  if (havePricesChanged(previousPayload, payload)) {
+    console.log('   💰 New week detected (' + payload.week_of + ') — notifying subscribers…');
+    await notifyPriceChange(payload);
+  } else {
+    console.log('   ℹ️  Same week as last run — skipping push notification');
+  }
 }
 
 main().catch((err) => {
