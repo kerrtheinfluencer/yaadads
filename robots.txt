@@ -15,12 +15,40 @@ Disallow: /*?search=
 
 # Explicitly allow real static pages (takes precedence over wildcards)
 Allow: /ad/
+Allow: /parish/
+Allow: /category/
 Allow: /gas-prices
 Allow: /sitemap.html
 Allow: /sitemap.xml
 
 # Admin — never index
 Disallow: /dash-kxrr1.html
+
+# Explicit AI crawler allowances — covered by the wildcard above already,
+# named here for clarity so nothing about AI discoverability is ambiguous
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
 
 # Sitemap
 Sitemap: https://yaadadz.com/sitemap.xml

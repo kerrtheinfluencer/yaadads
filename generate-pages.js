@@ -120,47 +120,6 @@ function adSchema(ad, adUrl) {
     'seller': { '@type': 'Person', 'name': ad.seller || 'Yaad Adz Seller' },
   };
 
-  // aggregateRating: view count as engagement proxy, rating from quality signals
-  const viewCount = Math.max(ad.views || 1, 1);
-  const hasPhoto = (ad.photos && ad.photos.length > 0) || !!ad.image;
-  const hasDesc  = ad.desc && ad.desc.trim().length > 20;
-  const baseRating = 4.0
-    + (hasPhoto ? 0.5 : 0)
-    + (hasDesc  ? 0.3 : 0)
-    + (ad.neg   ? 0.1 : 0)
-    + (viewCount > 50 ? 0.1 : 0);
-  const ratingValue = Math.min(5.0, baseRating).toFixed(1);
-
-  const aggregateRating = {
-    '@type': 'AggregateRating',
-    'ratingValue': ratingValue,
-    'reviewCount': viewCount,
-    'bestRating': '5',
-    'worstRating': '1',
-  };
-
-  // review: seller description as the listing review
-  const reviewBody = ad.desc && ad.desc.trim().length > 30
-    ? ad.desc.trim().slice(0, 300)
-    : `${ad.title} available in ${ad.parish}, Jamaica. Listed on Yaad Adz.`;
-  const reviewDate = ad.date
-    ? new Date(ad.date).toISOString().split('T')[0]
-    : new Date().toISOString().split('T')[0];
-
-  const review = {
-    '@type': 'Review',
-    'reviewRating': {
-      '@type': 'Rating',
-      'ratingValue': ratingValue,
-      'bestRating': '5',
-      'worstRating': '1',
-    },
-    'author': { '@type': 'Person', 'name': ad.seller || 'Yaad Adz Seller' },
-    'reviewBody': reviewBody,
-    'datePublished': reviewDate,
-    'publisher': { '@type': 'Organization', 'name': 'Yaad Adz', 'url': BASE_URL },
-  };
-
   const base = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -169,8 +128,10 @@ function adSchema(ad, adUrl) {
     'description': ad.desc || (ad.title + ' available in ' + ad.parish + ', Jamaica'),
     'url': adUrl,
     'offers': offer,
-    'aggregateRating': aggregateRating,
-    'review': review,
+    // No aggregateRating/review here on purpose — Yaad Adz has no real review
+    // system, and Google explicitly penalizes fabricated/self-authored review
+    // schema (this can suppress rich results sitewide). Add it back only if
+    // you build a genuine buyer-review feature.
   };
 
   if (ad.image) base.image = {'@type':'ImageObject','url':ad.image,'description':ad.title};
@@ -1600,33 +1561,66 @@ ${catSections}
   fs.writeFileSync(path.join(__dirname, 'sitemap.html'), sitemapHtml, 'utf8');
   console.log(`   ✅ sitemap.html written — ${activeAds.length} listings linked`);
 
-  // ── Static links fragment for homepage (crawlable without JS) ─
-  // Saved as static-links.html, included via SSI or referenced in index.html
-  console.log('🔗 Generating static-links.html…');
-  const recentAds = activeAds.slice(0, 60);
-  const staticLinks = recentAds.map(ad => {
-    const slug = slugify(ad);
+  // ── Inject real listing data into index.html (crawlable without JS) ─
+  // Populates the empty <script id="ld-listings"> JSON-LD block and the
+  // <noscript> fallback with real current listings, so AI crawlers
+  // (GPTBot, ClaudeBot, PerplexityBot — none of which run JavaScript) and
+  // search engines' first-pass fetch see real data immediately.
+  console.log('🔗 Injecting listings into index.html for non-JS crawlers…');
+  const recentAds = activeAds.slice(0, 50);
+
+  const itemListLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'itemListElement': recentAds.map((ad, i) => ({
+      '@type': 'ListItem',
+      'position': i + 1,
+      'url': `${BASE_URL}/ad/${slugify(ad)}.html`,
+      'name': ad.title,
+    })),
+  };
+
+  const noscriptListings = recentAds.map(ad => {
     const catIcon = CAT_ICONS[ad.category] || '📦';
-    return `  <a href="/ad/${slug}.html" class="static-link-item">
-    <span class="sli-icon">${catIcon}</span>
-    <span class="sli-title">${esc(ad.title)}</span>
-    <span class="sli-price">${fmtPrice(ad.price)}</span>
-    <span class="sli-parish">📍 ${esc(ad.parish)}</span>
-  </a>`;
+    return `      <a href="/ad/${slugify(ad)}.html" style="display:block;padding:8px 0;border-bottom:1px solid #eee;color:#111;text-decoration:none">
+        ${catIcon} ${esc(ad.title)} — <strong>${fmtPrice(ad.price)}</strong> · 📍 ${esc(ad.parish)}
+      </a>`;
   }).join('\n');
 
-  const staticLinksHtml = `<!-- Yaad Adz static listing links — crawlable by Google without JavaScript -->
-<!-- Generated: ${new Date().toISOString()} -->
-<div id="static-listings" style="display:none" aria-hidden="true">
-<style>
-  #static-listings { display:none !important; }
-</style>
-${staticLinks}
-<p><a href="/sitemap.html">Browse all ${activeAds.length} listings →</a></p>
-</div>`;
+  const indexPath = path.join(__dirname, 'index.html');
+  let indexHtml = fs.readFileSync(indexPath, 'utf8');
 
-  fs.writeFileSync(path.join(__dirname, 'static-links.html'), staticLinksHtml, 'utf8');
-  console.log(`   ✅ static-links.html written — ${recentAds.length} latest listings`);
+  indexHtml = indexHtml.replace(
+    /<script id="ld-listings" type="application\/ld\+json">[\s\S]*?<\/script>/,
+    `<script id="ld-listings" type="application/ld+json">${JSON.stringify(itemListLd)}</script>`
+  );
+
+  indexHtml = indexHtml.replace(
+    /<noscript>[\s\S]*?<\/noscript>/,
+    `<noscript>
+        <div style="grid-column:1/-1;padding:32px;text-align:center;color:#333;font-family:sans-serif">
+          <h2 style="margin-bottom:8px;font-size:20px">Jamaica's Free Classifieds — Yaad Adz</h2>
+          <p style="margin-bottom:16px;color:#666">${recentAds.length} active listings across Jamaica. Enable JavaScript for the full interactive experience.</p>
+          <div style="text-align:left;max-width:600px;margin:0 auto">
+${noscriptListings}
+          </div>
+          <p style="margin-top:16px;font-size:13px;color:#888">
+            <a href="/sitemap.html" style="color:#005c35">Full listing index</a> ·
+            <a href="/gas-prices" style="color:#005c35">Jamaica Gas Prices</a>
+          </p>
+        </div>
+      </noscript>`
+  );
+
+  fs.writeFileSync(indexPath, indexHtml, 'utf8');
+  console.log(`   ✅ index.html updated — ${recentAds.length} listings embedded for non-JS crawlers`);
+
+  // Remove the old orphaned file if it still exists from a previous run
+  const staleStaticLinks = path.join(__dirname, 'static-links.html');
+  if (fs.existsSync(staleStaticLinks)) {
+    fs.unlinkSync(staleStaticLinks);
+    console.log('   🗑️  removed orphaned static-links.html (never was wired into index.html)');
+  }
 
   const robotsPath = path.join(__dirname, 'robots.txt');
   let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, 'utf8') : '';
@@ -1634,6 +1628,192 @@ ${staticLinks}
     robots += `\nSitemap: ${BASE_URL}/sitemap.xml\n`;
     fs.writeFileSync(robotsPath, robots, 'utf8');
     console.log('   ✅ robots.txt updated with Sitemap link');
+  }
+
+  // ── Static parish & category landing pages (real SEO/AI content) ─
+  // These replace the blocked ?parish=X / ?cat=X SPA states with genuine
+  // pre-rendered HTML — crawlable by Google's first pass AND by AI bots
+  // that don't execute JavaScript (GPTBot, ClaudeBot, PerplexityBot).
+  console.log('🗺️  Generating parish & category landing pages…');
+
+  const PARISH_LIST = [
+    'Kingston', 'St. Andrew', 'St. Thomas', 'Portland', 'St. Mary', 'St. Ann',
+    'Trelawny', 'St. James', 'Hanover', 'Westmoreland', 'St. Elizabeth',
+    'Manchester', 'Clarendon', 'St. Catherine',
+  ];
+  const parishSlug = (p) => p.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
+
+  function buildListingCards(ads) {
+    return ads.slice(0, 60).map(ad => {
+      const slug = slugify(ad);
+      const icon = CAT_ICONS[ad.category] || '📦';
+      const img = ad.image
+        ? `<img src="${esc(ad.image)}" alt="${esc(ad.title)}" loading="lazy" style="width:100%;height:150px;object-fit:cover;border-radius:12px 12px 0 0">`
+        : `<div style="width:100%;height:150px;background:#e6f4ec;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-size:38px">${icon}</div>`;
+      return `<a href="/ad/${slug}.html" style="display:block;background:#fff;border:1px solid #e2ddd4;border-radius:12px;overflow:hidden;text-decoration:none;color:inherit">
+${img}
+<div style="padding:12px">
+<div style="font-weight:700;font-size:14px;margin-bottom:4px;color:#111;line-height:1.35">${esc(ad.title)}</div>
+<div style="font-weight:800;color:#005c35;font-size:15px;margin-bottom:4px">${fmtPrice(ad.price)}</div>
+<div style="font-size:12px;color:#888">📍 ${esc(ad.parish)} · ${icon} ${esc(CAT_NAMES[ad.category] || ad.category)}</div>
+</div>
+</a>`;
+    }).join('\n');
+  }
+
+  function buildLandingPage({ url, title, metaDesc, heading, subheading, breadcrumbLabel, ads, itemListName }) {
+    const cardsHtml = ads.length
+      ? buildListingCards(ads)
+      : `<p style="grid-column:1/-1;text-align:center;color:#888;padding:40px 0">No active listings here right now — <a href="/" style="color:#005c35;font-weight:700">check the full marketplace</a>.</p>`;
+
+    const itemListLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': title,
+      'description': metaDesc,
+      'url': url,
+      'mainEntity': {
+        '@type': 'ItemList',
+        'name': itemListName,
+        'numberOfItems': ads.length,
+        'itemListElement': ads.slice(0, 60).map((ad, i) => ({
+          '@type': 'ListItem',
+          'position': i + 1,
+          'url': `${BASE_URL}/ad/${slugify(ad)}.html`,
+          'name': ad.title,
+        })),
+      },
+    };
+
+    const breadcrumbLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        { '@type': 'ListItem', 'position': 1, 'name': 'Yaad Adz', 'item': BASE_URL },
+        { '@type': 'ListItem', 'position': 2, 'name': breadcrumbLabel, 'item': url },
+      ],
+    };
+
+    return `<!DOCTYPE html>
+<html lang="en-JM">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(metaDesc)}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="${url}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(metaDesc)}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${BASE_URL}/og-image.jpg">
+<script type="application/ld+json">${JSON.stringify(itemListLd)}</script>
+<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
+<style>
+body{font-family:system-ui,sans-serif;background:#f6f4ef;color:#111;margin:0;padding:0}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+nav{background:#0c1e14;padding:16px 24px}
+nav a{color:#fff;text-decoration:none;font-weight:800;font-size:18px}
+h1{font-size:26px;margin:24px 0 6px}
+.sub{color:#666;margin-bottom:24px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+footer{text-align:center;padding:30px;color:#888;font-size:13px}
+footer a{color:#005c35}
+</style>
+</head>
+<body>
+<nav><a href="/">Yaad Adz</a></nav>
+<div class="wrap">
+<h1>${esc(heading)}</h1>
+<p class="sub">${esc(subheading)}</p>
+<div class="grid">
+${cardsHtml}
+</div>
+</div>
+<footer>
+<a href="/">← Back to all listings</a> · <a href="/sitemap.html">Full listing index</a>
+</footer>
+</body>
+</html>`;
+  }
+
+  const parishDir = path.join(__dirname, 'parish');
+  const categoryDir = path.join(__dirname, 'category');
+  fs.mkdirSync(parishDir, { recursive: true });
+  fs.mkdirSync(categoryDir, { recursive: true });
+
+  const landingUrls = [];
+
+  PARISH_LIST.forEach(parish => {
+    const ads = activeAds.filter(ad => ad.parish === parish);
+    if (!ads.length) return; // skip thin/empty pages
+    const slug = parishSlug(parish);
+    const url = `${BASE_URL}/parish/${slug}.html`;
+    const html = buildLandingPage({
+      url,
+      title: `${ads.length} Items for Sale in ${parish}, Jamaica | Yaad Adz`,
+      metaDesc: `Browse ${ads.length} free classifieds listings in ${parish} — cars, property, phones, furniture, jobs and more. 100% free to post and browse on Yaad Adz.`,
+      heading: `For Sale in ${parish}`,
+      subheading: `${ads.length} active listing${ads.length === 1 ? '' : 's'} in ${parish}, Jamaica`,
+      breadcrumbLabel: parish,
+      ads,
+      itemListName: `Listings in ${parish}`,
+    });
+    fs.writeFileSync(path.join(parishDir, `${slug}.html`), html, 'utf8');
+    landingUrls.push({ loc: url, lastmod: new Date().toISOString().split('T')[0] });
+  });
+  console.log(`   ✅ ${PARISH_LIST.filter(p => activeAds.some(ad => ad.parish === p)).length} parish pages written to ./parish/`);
+
+  Object.keys(CAT_NAMES).forEach(cat => {
+    const ads = activeAds.filter(ad => ad.category === cat);
+    if (!ads.length) return;
+    const url = `${BASE_URL}/category/${cat}.html`;
+    const catLabel = CAT_NAMES[cat];
+    const html = buildLandingPage({
+      url,
+      title: `${catLabel} for Sale in Jamaica — ${ads.length} Listings | Yaad Adz`,
+      metaDesc: `Browse ${ads.length} free ${catLabel.toLowerCase()} classifieds across all 14 Jamaican parishes. 100% free to post and browse on Yaad Adz.`,
+      heading: `${catLabel} for Sale in Jamaica`,
+      subheading: `${ads.length} active listing${ads.length === 1 ? '' : 's'} across all parishes`,
+      breadcrumbLabel: catLabel,
+      ads,
+      itemListName: `${catLabel} listings`,
+    });
+    fs.writeFileSync(path.join(categoryDir, `${cat}.html`), html, 'utf8');
+    landingUrls.push({ loc: url, lastmod: new Date().toISOString().split('T')[0] });
+  });
+  console.log(`   ✅ ${Object.keys(CAT_NAMES).filter(c => activeAds.some(ad => ad.category === c)).length} category pages written to ./category/`);
+
+  // Clean up stale pages for parishes/categories that no longer have any ads
+  [parishDir, categoryDir].forEach(dir => {
+    if (!fs.existsSync(dir)) return;
+    fs.readdirSync(dir).forEach(file => {
+      const url = `${BASE_URL}/${path.basename(dir)}/${file}`;
+      if (!landingUrls.some(u => u.loc === url)) {
+        fs.unlinkSync(path.join(dir, file));
+        console.log(`   🗑️  removed stale ${path.basename(dir)}/${file} (no active listings)`);
+      }
+    });
+  });
+
+  // Rebuild the parish/category block of sitemap.xml from scratch each run
+  // (not a simple append) so re-running this script repeatedly never piles
+  // up duplicate or stale <url> entries.
+  const sitemapPath = path.join(__dirname, 'sitemap.xml');
+  if (fs.existsSync(sitemapPath) && landingUrls.length) {
+    let sitemapXml = fs.readFileSync(sitemapPath, 'utf8');
+    // Strip any parish/category URLs from a previous run first
+    sitemapXml = sitemapXml.replace(
+      /  <url><loc>https:\/\/yaadadz\.com\/(parish|category)\/[^<]*<\/loc>.*?<\/url>\n?/g,
+      ''
+    );
+    const newEntries = landingUrls.map(u =>
+      `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>`
+    ).join('\n');
+    sitemapXml = sitemapXml.replace('</urlset>', `${newEntries}\n</urlset>`);
+    fs.writeFileSync(sitemapPath, sitemapXml, 'utf8');
+    console.log(`   ✅ sitemap.xml updated with ${landingUrls.length} parish/category URLs`);
   }
 
   console.log('');
