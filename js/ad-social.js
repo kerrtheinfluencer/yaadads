@@ -275,12 +275,18 @@ if (!document.getElementById('confettiStyles')) {
 
 /* ═══════════════════════════════════════════════════════════
    PUSH NOTIFICATIONS §PUSH
-   ─ requestPushPermission: ask user after login (polite timing)
-   ─ sendPushNotification: fire when new message arrives
-   Uses the Web Notifications API — works on Android PWA and
-   desktop. iOS 16.4+ supports it when installed as PWA.
+   ─ showPushBanner: friendly in-app prompt, shown after login
+   ─ enablePushNotifications: the banner's "Enable" button — this
+     calls the REAL subscribeToPush() (defined in core.js), which
+     registers a genuine Web Push subscription so notifications
+     (new listings, gas price alerts, messages) arrive even when
+     the app is fully closed — not just while a tab is open.
+   NOTE: requestPushPermission()/sendPushNotification() are now
+   owned by core.js — this file only supplies the banner UI, via
+   window.showPushBanner, which core.js's requestPushPermission()
+   calls if available.
 ═══════════════════════════════════════════════════════════ */
-function requestPushPermission() {
+function showPushBanner() {
   // Only ask if not already decided
   if (!('Notification' in window)) return;
   if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
@@ -303,8 +309,8 @@ function requestPushPermission() {
   banner.innerHTML =
     '<div style="font-size:28px">🔔</div>' +
     '<div style="flex:1">' +
-      '<div style="font-weight:700;font-size:14px;color:#e8ede9;margin-bottom:2px">Get message alerts</div>' +
-      '<div style="font-size:12px;color:#6b7a71">Know instantly when a seller replies</div>' +
+      '<div style="font-weight:700;font-size:14px;color:#e8ede9;margin-bottom:2px">Get alerts for new listings & gas prices</div>' +
+      '<div style="font-size:12px;color:#6b7a71">Know instantly when sellers reply or prices change</div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;flex-shrink:0">' +
       '<button onclick="dismissPushBanner()" style="background:rgba(255,255,255,0.08);border:none;color:#a0a8a4;padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer">Not now</button>' +
@@ -315,6 +321,7 @@ function requestPushPermission() {
   // Auto-dismiss after 8 seconds
   setTimeout(function() { dismissPushBanner(); }, 8000);
 }
+window.showPushBanner = showPushBanner;
 
 function dismissPushBanner() {
   const b = document.getElementById('pushBanner');
@@ -323,39 +330,11 @@ function dismissPushBanner() {
 
 function enablePushNotifications() {
   dismissPushBanner();
-  Notification.requestPermission().then(function(permission) {
-    if (permission === 'granted') {
-      showToast('Notifications enabled! 🔔', '🔔');
-      // Store preference
-      try { localStorage.setItem('ya_push', '1'); } catch(e) {}
-    }
-  });
-}
-
-function sendPushNotification(title, body, url) {
-  // Only fire if tab is hidden (user is away) and permission granted
-  if (!('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return;
-  if (!document.hidden) return; // Don't interrupt if user is actively on the page
-
-  try {
-    const n = new Notification(title, {
-      body: body,
-      icon: 'https://yaadadz.com/icon-192.png',
-      badge: 'https://yaadadz.com/icon-72.png',
-      tag: 'yaadadz-message', // Replace previous notification
-      renotify: true,
-      vibrate: [200, 100, 200],
-    });
-    n.onclick = function() {
-      window.focus();
-      if (url) { window.location.href = url; }
-      n.close();
-    };
-    // Auto-close after 6 seconds
-    setTimeout(function() { n.close(); }, 6000);
-  } catch(e) {
-    // Notification API may be restricted in some contexts — fail silently
+  if (typeof subscribeToPush === 'function') {
+    subscribeToPush(['listings', 'gas_prices', 'messages']);
+  } else {
+    // Fallback if core.js somehow hasn't loaded — local notifications only
+    Notification.requestPermission();
   }
 }
 
@@ -375,4 +354,5 @@ function sendPushNotification(title, body, url) {
    ACTIVITY TICKER (removed — stub for compatibility)
 ═══════════════════════════════════════════════════════════ */
 function updateTicker() {}
+
 

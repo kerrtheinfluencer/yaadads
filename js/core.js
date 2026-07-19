@@ -507,22 +507,105 @@ function avatarColor(name) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §PUSH — Push notification permission + send
-   NOTE: these were called from auth-account.js / ui-nav.js but
-   were never actually written, so notifications silently failed
-   with a console ReferenceError. This covers foreground/backgrounded
-   tab notifications. True notifications while the app is fully
-   closed require a server (e.g. a Supabase Edge Function using
-   web-push + VAPID keys) — this does not cover that case yet.
+   §PUSH — real background push notifications (Web Push API)
+   This is the actual implementation — it replaces the old
+   Notification-API-only version that only worked while a tab
+   was open/backgrounded. Real push (new listings, gas price
+   alerts) is sent server-side via a Supabase Edge Function and
+   arrives even when the app is fully closed.
+
+   IMPORTANT iOS CAVEAT: Safari on iPhone only supports push for
+   a site that has been added to the Home Screen (Share → Add to
+   Home Screen), and only on iOS 16.4+. A normal Safari tab (not
+   installed) cannot receive push on iOS — this is an Apple
+   platform restriction, not something fixable in code.
 ═══════════════════════════════════════════════════════════ */
+const VAPID_PUBLIC_KEY = 'BMhqRGx8pM6n-khF31HiqzNdIefEldWPXOmLCaWN_FhGsNr4W-ZiSsMMhJ_jO1g6PTL1hrWVNRY11QJ2arasyj8';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+function isIOSNonStandalone() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  return isIOS && !isStandalone;
+}
+
+async function subscribeToPush(topics) {
+  topics = topics || ['listings', 'gas_prices', 'messages'];
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      showToast("Push notifications aren't supported on this browser.", '⚠️');
+      return false;
+    }
+    if (isIOSNonStandalone()) {
+      showToast('On iPhone: tap Share → Add to Home Screen first, then enable notifications from the installed app.', '📲');
+      return false;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return false;
+
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const raw = sub.toJSON();
+    if (typeof _db !== 'undefined' && _db) {
+      const { error } = await _db.from('push_subscriptions').upsert({
+        endpoint: raw.endpoint,
+        p256dh: raw.keys.p256dh,
+        auth: raw.keys.auth,
+        topics: topics,
+      }, { onConflict: 'endpoint' });
+      if (error) throw error;
+    }
+    showToast('Notifications enabled! 🔔', '🔔');
+    return true;
+  } catch (e) {
+    console.error('subscribeToPush error:', e);
+    showToast('Could not enable notifications.', '⚠️');
+    return false;
+  }
+}
+
+async function unsubscribeFromPush() {
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    const endpoint = sub.endpoint;
+    await sub.unsubscribe();
+    if (typeof _db !== 'undefined' && _db) {
+      await _db.from('push_subscriptions').delete().eq('endpoint', endpoint);
+    }
+    showToast('Notifications turned off', '🔕');
+  } catch (e) { console.error('unsubscribeFromPush error:', e); }
+}
+
+// Kept for backward compatibility with existing call sites
+// (auth-account.js, search-ai.js call requestPushPermission();
+// ui-nav.js calls sendPushNotification() for in-app chat alerts).
+// The real banner/UI lives in ad-social.js — this just makes sure
+// calling these names never throws even if ad-social.js hasn't
+// loaded yet for some reason.
 function requestPushPermission() {
   try {
     if (!('Notification' in window)) return;
     if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
-    Notification.requestPermission().then(function(perm) {
-      if (perm === 'granted') showToast('Notifications enabled! 🔔', '🔔');
-    });
-  } catch(e) { console.error('requestPushPermission error:', e); }
+    if (typeof window.showPushBanner === 'function') { window.showPushBanner(); return; }
+    subscribeToPush();
+  } catch (e) { console.error('requestPushPermission error:', e); }
 }
 
 function sendPushNotification(title, body, url) {
