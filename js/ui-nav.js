@@ -73,6 +73,7 @@ async function init() {
   const seoIntro = document.getElementById('seoIntro');
   if (seoIntro) seoIntro.style.display = 'none';
   updateStats();
+  sbTrackVisit('home');
   updateMsgBadge();
   updateTicker();
   document.getElementById('setupBanner')?.classList.remove('show');

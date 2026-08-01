@@ -98,6 +98,45 @@ try { _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key); }
 catch (e) { console.error("[Yaad Adz] supabase.createClient FAILED:", e); }
 
 /* ═══════════════════════════════════════════════════════════
+   SITE VISITS — daily counter §VISITS
+   Run sql/site-visits.sql in Supabase once.
+   One increment per page per calendar day per device (localStorage dedup).
+   Caches the count locally so the number shows instantly on repeat visits.
+═══════════════════════════════════════════════════════════ */
+async function sbTrackVisit(page) {
+  page = page || 'home';
+  const today   = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const dedupKey = 'ya_visit_' + page + '_' + today;
+  const cacheKey  = 'ya_visit_count_' + page;
+
+  // Show cached count immediately, don't wait on the network
+  let cached = null;
+  try { cached = localStorage.getItem(cacheKey); } catch (e) {}
+  if (cached) paintVisitCount(cached);
+
+  // Already counted this device for this page today — just refresh display
+  let already = false;
+  try { already = !!localStorage.getItem(dedupKey); } catch (e) {}
+  if (already) return;
+
+  try {
+    if (typeof _db === 'undefined' || !_db) return;
+    const { data, error } = await _db.rpc('increment_site_visit', { p_page: page });
+    if (error) { console.warn('[sbTrackVisit] RPC failed:', error.message); return; }
+    try { localStorage.setItem(dedupKey, '1'); } catch (e) {}
+    try { localStorage.setItem(cacheKey, data); } catch (e) {}
+    paintVisitCount(data);
+  } catch (e) {
+    console.warn('[sbTrackVisit] threw:', e);
+  }
+}
+
+function paintVisitCount(count) {
+  const el = document.getElementById('vStat');
+  if (el) el.textContent = count;
+}
+
+/* ═══════════════════════════════════════════════════════════
    IN-MEMORY CACHE (populated on init, kept in sync)
 ═══════════════════════════════════════════════════════════ */
 let _ads  = [];        // live ads cache from Supabase
