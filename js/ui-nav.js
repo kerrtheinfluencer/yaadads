@@ -178,14 +178,14 @@ function updateStats() {
     if (uEl && cachedUsers) uEl.textContent = cachedUsers;
   } catch(e) {}
 
-  _db.from('users').select('id', { count: 'exact', head: true })
-    .then(({ count, error }) => {
-      if (error) { console.error('[updateStats] users count failed:', error.message); return; }
-      const val = count || 1;
+  _db.rpc('get_user_count')
+    .then(({ data, error }) => {
+      if (error) { console.error('[updateStats] user count failed:', error.message); return; }
+      const val = data || 1;
       if (uEl) uEl.textContent = val;
       try { localStorage.setItem('ya_last_users', val); } catch(e) {}
     })
-    .catch(e => console.error('[updateStats] users query threw:', e));
+    .catch(e => console.error('[updateStats] user count threw:', e));
 }
 
 // Apply cached count immediately on paint — before Supabase responds
