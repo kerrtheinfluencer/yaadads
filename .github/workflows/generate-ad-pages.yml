@@ -1,9 +1,14 @@
 name: Generate Ad Pages
 
 on:
-  # Run every 2 hours automatically
+  # Run every 2 hours automatically (safety net / catch-all)
   schedule:
     - cron: '0 */2 * * *'
+
+  # Fired instantly by the Supabase trigger when a new ad is inserted —
+  # see supabase-migration-3-instant-page-regen.sql
+  repository_dispatch:
+    types: [new-ad-posted]
 
   # Run manually from GitHub Actions tab whenever you want
   workflow_dispatch:
@@ -13,6 +18,12 @@ on:
     paths:
       - 'generate-pages.js'
       - 'index.html'
+
+# If ads get posted close together, queue the runs instead of letting
+# them race each other on the final git push.
+concurrency:
+  group: generate-ad-pages
+  cancel-in-progress: false
 
 jobs:
   generate:
