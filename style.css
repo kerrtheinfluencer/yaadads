@@ -3357,11 +3357,14 @@ button:disabled,
 .ob-welcome-open .ob-welcome { pointer-events: auto; }
 .ob-welcome-open.ob-root, #obRoot.ob-welcome-open { pointer-events: none; }
 
-/* Only the visible elements receive clicks */
+/* Only the visible interactive elements receive clicks.
+   NOTE: the spotlight stays click-through ON PURPOSE so a coach-mark can
+   never block the element it highlights; and .ob-overlay keeps auto only
+   while a dialog is truly open (watchdog + click-outside in onboarding.js
+   guarantee it ALWAYS closes). */
 #obRoot.ob-welcome-open .ob-welcome,
 #obRoot.ob-welcome-open .ob-overlay,
 #obRoot.ob-tour-open .ob-overlay,
-#obRoot.ob-tour-open .ob-spotlight,
 #obRoot.ob-tour-open .ob-tip { pointer-events: auto; }
 
 .ob-skip {

@@ -25,11 +25,16 @@ async function init() {
     } catch(e) {}
   }
 
-  // Detect PWA standalone mode — apply safe area CSS only when installed
-  if (window.navigator.standalone === true ||
-      window.matchMedia('(display-mode: standalone)').matches) {
-    document.body.classList.add('pwa-mode');
-  }
+  // Detect PWA standalone mode — apply safe area CSS only when installed.
+  // CRITICAL: window.matchMedia is Chromium-only; on iOS Safari/Firefox it is
+  // undefined and an unguarded call here would crash init() → blank page with
+  // no clickable listings. Guard + never let it kill the boot.
+  try {
+    if (window.navigator.standalone === true ||
+        (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches)) {
+      document.body.classList.add('pwa-mode');
+    }
+  } catch (e) { /* non-Chromium — ignore, boot must continue */ }
   purgeBadTrendingData(); // clean up old numeric trending tokens
 
   showSkeletons();

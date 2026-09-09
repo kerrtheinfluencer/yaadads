@@ -964,7 +964,7 @@ Fries Price is J$500 firm.</p>
 
     // Apply safe area only when running as installed PWA (not in browser)
     if (window.navigator.standalone === true ||
-        window.matchMedia('(display-mode: standalone)').matches) {
+        (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches)) {
       document.body.classList.add('pwa-mode');
     }
   });

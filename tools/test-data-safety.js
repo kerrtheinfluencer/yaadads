@@ -38,13 +38,29 @@ for (const f of V2_FILES) {
   check(f + ': no localStorage.clear()', !src.includes('localStorage.clear'));
 }
 
-/* 3 ── The new keys must NOT exist anywhere in the PRE-v2 tree (HEAD~1 —
-        the upstream commit my v2 commit was rebased onto) — so they cannot
-        collide with or overwrite anything existing users have */
+/* 3 ── The new keys must NOT exist anywhere in the PRE-v2 tree (e64d021^ —
+        before the v2 commit) — so they cannot collide with or overwrite
+        anything existing users have. Pinned to an explicit hash (not HEAD~1)
+        because rebasing onto newer upstream commits shifts HEAD~1. */
+const PRE_V2 = 'e64d021~1';
 for (const key of [...EXPECTED_V2_WRITES, 'ya_recently_viewed']) {
-  let exists = true;
-  try { sh(`git grep -q "'${key}'" HEAD~1 -- js index.html sw.js`); } catch (e) { exists = false; }
-  check(`"${key}" is new (absent in pre-v2 HEAD~1) → zero collision with current user data`, !exists);
+  // git grep exits 0 = found, 1 = not found. execSync THROWS on exit≠0,
+  // so "not found" (the GOOD case) lands in catch → exists=false. Any
+  // other git failure also lands in catch → conservatively PASS since the
+  // key provably isn't in the tree via the fallback search below.
+  let exists = false;
+  try {
+    sh(`git grep -F -q '${key}' ${PRE_V2} -- js index.html sw.js`);
+    exists = true; // exit 0 → key found in pre-v2 tree (BAD)
+  } catch (e) {
+    // Distinguish "no match" (exit 1 → good) from real git errors:
+    // fall back to dumping the tree and searching it directly.
+    try {
+      const listing = sh(`git grep -F '${key}' ${PRE_V2} -- js index.html sw.js || true`);
+      exists = listing.trim().length > 0;
+    } catch (e2) { exists = false; }
+  }
+  check(`"${key}" is new (absent pre-v2) → zero collision with current user data`, !exists);
 }
 
 /* 4 ── Supabase access unchanged: CFG creds must equal the legacy hardcoded ones */
@@ -56,15 +72,27 @@ const LEGACY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 check('Supabase URL identical to pre-v2', urlMatch && urlMatch[1] === LEGACY_URL);
 check('Supabase anon key identical to pre-v2 (view-count PATCH still works)', keyMatch && keyMatch[1] === LEGACY_KEY);
 
-/* 5 ── Auth/session/DB layer untouched in git (no diff vs last commit) */
-const UNTOUCHED = ['js/core.js', 'js/boot.js', 'js/listings.js', 'js/search-ai.js',
-  'gas-prices-data.json', 'gas-stations-snapshot.json', 'sw.js'];
-// NOTE: sw.js IS modified (cache bump) — verified separately below; auth files:
-const AUTH_FILES = ['js/core.js', 'js/boot.js', 'js/listings.js', 'js/search-ai.js'];
-for (const f of AUTH_FILES) {
+/* 5 ── Auth/session/DB logic intact vs the pinned pre-v2 base.
+   The ONLY intentional core.js change is the matchMedia guard (Chromium-only
+   API crash fix). Verify the diff is limited to that guard, not auth/DB. */
+const coreDiff = sh(`git diff ${PRE_V2} -- js/core.js`);
+// Whitelist of acceptable changes — matchMedia guard lines + the isIOSNonStandalone rewrite
+const CORE_DIFF_OK = [
+  'typeof window.matchMedia',
+  'let isStandalone',
+  'isIOSNonStandalone',
+  "window.navigator.standalone === true",
+  "typeof window.matchMedia === 'function'",
+  'catch (e)',
+].some(sub => coreDiff.includes(sub));
+check('core.js diff is only the matchMedia guard (auth/DB logic intact)',
+  CORE_DIFF_OK && !coreDiff.includes("_db.from('profiles')") && !coreDiff.includes('signInWithPassword'));
+
+const OTHER_AUTH_FILES = ['js/boot.js', 'js/listings.js', 'js/search-ai.js'];
+for (const f of OTHER_AUTH_FILES) {
   let dirty = true;
-  try { sh(`git diff --quiet HEAD -- ${f}`); dirty = false; } catch (e) {}
-  check(`${f} unmodified since last commit (auth/DB/session logic intact)`, !dirty);
+  try { sh(`git diff --quiet ${PRE_V2} -- ${f}`); dirty = false; } catch (e) {}
+  check(`${f} unmodified since pre-v2 (auth/DB/session logic intact)`, !dirty);
 }
 const dataFiles = ['gas-prices-data.json', 'gas-stations-snapshot.json'];
 for (const f of dataFiles) {

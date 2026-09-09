@@ -159,12 +159,18 @@ const OB = (function() {
     const next = document.getElementById('obNext');
     const back = document.getElementById('obBack');
     const skip = document.getElementById('obSkip');
+    const ov   = document.getElementById('obOverlay');
     next.addEventListener('click', function() {
       if (_slide < SLIDE_COUNT - 1) { setSlide(_slide + 1); }
       else { finishWelcome(); }
     });
     back.addEventListener('click', function() { if (_slide > 0) setSlide(_slide - 1); });
     skip.addEventListener('click', finishWelcome);
+    // Tap outside the dialog (on the dim layer) dismisses it — never trapped
+    if (ov) ov.addEventListener('click', function() {
+      if (_root && _root.classList.contains('ob-welcome-open')) finishWelcome();
+      else if (_tourActive) endTour(false);
+    });
     document.addEventListener('keydown', welcomeKeys);
   }
 
@@ -202,19 +208,33 @@ const OB = (function() {
 
   function showWelcome() {
     ensureRoot();
-    _lastFocus = document.activeElement;
-    _slide = 0;
-    setSlide(0);
-    _root.classList.add('ob-welcome-open');
-    document.body.classList.add('ob-locked');
-    setTimeout(function() { document.getElementById('obNext').focus(); }, 60);
+    try {
+      _lastFocus = document.activeElement;
+      _slide = 0;
+      setSlide(0);
+      _root.classList.add('ob-welcome-open');
+      document.body.classList.add('ob-locked');
+      var n = document.getElementById('obNext');
+      if (n) setTimeout(function() { n.focus(); }, 60);
+    } catch (e) {
+      // Never leave a blocking overlay behind if something goes wrong
+      if (_root) _root.classList.remove('ob-welcome-open');
+      document.body.classList.remove('ob-locked');
+      console.error('[onboarding] showWelcome failed:', e);
+    }
+    // Watchdog: auto-dismiss after 20s no matter what
+    clearTimeout(_welcomeWatchdog);
+    _welcomeWatchdog = setTimeout(function() {
+      if (_root && _root.classList.contains('ob-welcome-open')) finishWelcome();
+    }, 20000);
   }
 
   function finishWelcome() {
-    _root.classList.remove('ob-welcome-open');
+    if (_root) _root.classList.remove('ob-welcome-open');
     document.body.classList.remove('ob-locked');
+    clearTimeout(_welcomeWatchdog);
     flag(K.onboarded, true);
-    if (_lastFocus && typeof _lastFocus.focus === 'function') _lastFocus.focus();
+    try { if (_lastFocus && typeof _lastFocus.focus === 'function') _lastFocus.focus(); } catch (e) {}
     // Offer the interactive coach-mark tour right after the welcome
     if (!flag(K.tourDone)) {
       setTimeout(startTour, 350);
@@ -284,6 +304,7 @@ const OB = (function() {
   ];
 
   let _tourIdx = 0, _tourActive = false;
+  let _welcomeWatchdog = null, _tourWatchdog = null;
 
   function startTour() {
     _tourActive = true;
@@ -291,15 +312,21 @@ const OB = (function() {
     ensureRoot();
     _root.classList.add('ob-tour-open');
     document.body.classList.add('ob-locked');
-    showTourStep();
+    try { showTourStep(); } catch (e) { endTour(false); return; }
+    // Watchdog: a tour can never trap the page — auto-close after 45s
+    clearTimeout(_tourWatchdog);
+    _tourWatchdog = setTimeout(function() {
+      if (_tourActive) endTour(false);
+    }, 45000);
   }
 
   function endTour(completed) {
     _tourActive = false;
-    _root.classList.remove('ob-tour-open');
+    clearTimeout(_tourWatchdog);
+    if (_root) _root.classList.remove('ob-tour-open');
     document.body.classList.remove('ob-locked');
     flag(K.tourDone, true);
-    if (_lastFocus && typeof _lastFocus.focus === 'function') _lastFocus.focus();
+    try { if (_lastFocus && typeof _lastFocus.focus === 'function') _lastFocus.focus(); } catch (e) {}
     if (typeof showToast === 'function' && completed) {
       showToast("You're all set! Happy hunting 🇯🇲", '🎉');
     }
@@ -307,37 +334,49 @@ const OB = (function() {
 
   function showTourStep() {
     const steps = TOUR_STEPS;
-    // Find the next step with a visible target
-    while (_tourIdx < steps.length) {
-      const sel = steps[_tourIdx].sel();
-      const el = sel ? document.querySelector(sel) : null;
-      if (el && isVisible(el)) break;
-      _tourIdx++;
+    try {
+      // Find the next step with a visible target
+      while (_tourIdx < steps.length) {
+        const sel = steps[_tourIdx].sel();
+        const el = sel ? document.querySelector(sel) : null;
+        if (el && isVisible(el)) break;
+        _tourIdx++;
+      }
+      if (_tourIdx >= steps.length) { endTour(true); return; }
+
+      const step = steps[_tourIdx];
+      const target = document.querySelector(step.sel);
+
+      // Scroll target into view if needed
+      if (step.scroll && target) {
+        target.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+
+      requestAnimationFrame(function() {
+        try {
+          positionSpotlight(target, step.pos);
+          const tip = document.getElementById('obTip');
+          document.getElementById('obTipIcon').textContent = step.icon;
+          document.getElementById('obTipTitle').textContent = step.title;
+          document.getElementById('obTipText').textContent = step.text;
+          document.getElementById('obTipStep').textContent =
+            'Step ' + (_tourIdx + 1) + ' of ' + steps.length;
+          document.getElementById('obTipBack').style.visibility = _tourIdx === 0 ? 'hidden' : 'visible';
+          document.getElementById('obTipNext').textContent =
+            _tourIdx === steps.length - 1 ? 'Done ✓' : 'Next →';
+          tip.classList.add('show');
+          var nextBtn = document.getElementById('obTipNext');
+          if (nextBtn) nextBtn.focus();
+        } catch (e) {
+          // Any animation/positioning hiccup must not strand the user in a
+          // dimmed, unclickable state — release the tour.
+          console.error('[onboarding] showTourStep render failed:', e);
+          endTour(false);
+        }
+      });
+    } catch (e) {
+      endTour(false);
     }
-    if (_tourIdx >= steps.length) { endTour(true); return; }
-
-    const step = steps[_tourIdx];
-    const target = document.querySelector(step.sel);
-
-    // Scroll target into view if needed
-    if (step.scroll && target) {
-      target.scrollIntoView({ block: 'center', behavior: 'instant' });
-    }
-
-    requestAnimationFrame(function() {
-      positionSpotlight(target, step.pos);
-      const tip = document.getElementById('obTip');
-      document.getElementById('obTipIcon').textContent = step.icon;
-      document.getElementById('obTipTitle').textContent = step.title;
-      document.getElementById('obTipText').textContent = step.text;
-      document.getElementById('obTipStep').textContent =
-        'Step ' + (_tourIdx + 1) + ' of ' + steps.length;
-      document.getElementById('obTipBack').style.visibility = _tourIdx === 0 ? 'hidden' : 'visible';
-      document.getElementById('obTipNext').textContent =
-        _tourIdx === steps.length - 1 ? 'Done ✓' : 'Next →';
-      tip.classList.add('show');
-      document.getElementById('obTipNext').focus();
-    });
   }
 
   function isVisible(el) {

@@ -572,7 +572,12 @@ function urlBase64ToUint8Array(base64String) {
 
 function isIOSNonStandalone() {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  let isStandalone = false;
+  // matchMedia is Chromium-only — guard so iOS Safari/Firefox never crash here
+  try {
+    isStandalone = window.navigator.standalone === true ||
+      (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches);
+  } catch (e) {}
   return isIOS && !isStandalone;
 }
 

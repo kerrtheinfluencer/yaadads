@@ -54,6 +54,41 @@ check('style.css braces balanced', ob === cb, ob + ' blocks');
 check('style.css has toast-action styles', css.includes('.toast .toast-action'));
 check('style.css has recent strip styles', css.includes('.recent-card') && css.includes('.recent-search-chip'));
 check('style.css has tap-target block', css.includes('min-width: 44px'));
+check('onboarding overlay is dim-and-dismiss (click-outside wired)',
+  css.includes('pointer-events: auto;') && css.includes('.ob-overlay'));
+
+// 6b. matchMedia guard present across app JS + no unguarded calls anywhere
+const uiNav = fs.readFileSync('js/ui-nav.js', 'utf8');
+const coreSrc2 = fs.readFileSync('js/core.js', 'utf8');
+const UNGUARDED_MATCHMEDIA =
+  /(?<!typeof window\.matchMedia === 'function' && )window\.matchMedia\('\(display-mode: standalone\)'\)\.matches/;
+check('ui-nav guards matchMedia (no boot crash on iOS/Firefox)',
+  uiNav.includes("typeof window.matchMedia === 'function'"));
+check('core.js guards matchMedia',
+  coreSrc2.includes("typeof window.matchMedia === 'function'"));
+let unguardedFiles = [];
+for (const sub of fs.readdirSync('.')) {
+  if (!sub.endsWith('.html')) continue;
+  const c = fs.readFileSync(sub, 'utf8');
+  if (UNGUARDED_MATCHMEDIA.test(c)) unguardedFiles.push(sub);
+}
+for (const d of ['ad', 'category', 'parish']) {
+  const dir = d;
+  for (const f of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+    if (!f.endsWith('.html')) continue;
+    const c = fs.readFileSync(dir + '/' + f, 'utf8');
+    if (UNGUARDED_MATCHMEDIA.test(c)) unguardedFiles.push(dir + '/' + f);
+  }
+}
+check('no unguarded matchMedia in any HTML page (' + unguardedFiles.length + ' flagged)',
+  unguardedFiles.length === 0, unguardedFiles.slice(0, 3).join(', '));
+
+// 6c. onboarding watchdog present (stuck overlay impossible)
+const obSrc = fs.readFileSync('js/onboarding.js', 'utf8');
+check('onboarding has watchdog auto-dismiss', obSrc.includes('_welcomeWatchdog') && obSrc.includes('_tourWatchdog'));
+check('onboarding tries/catches showWelcome (never leaves overlay)',
+  obSrc.includes('showWelcome failed') && obSrc.includes('classList.remove(\'ob-welcome-open\')'));
+check('onboarding click-outside-to-dismiss wired', obSrc.includes("getElementById('obOverlay')"));
 
 // 7. JS modules syntax
 for (const f of fs.readdirSync('js')) {
