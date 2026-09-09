@@ -8,8 +8,9 @@ function openDetail(id) {
   ad.views = newViews;
 
   // Direct REST PATCH — most reliable, bypasses Supabase JS client quirks
-  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
-  fetch('https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1/ads?id=eq.' + id, {
+  // v2: read creds from the single source of truth (CFG in core.js)
+  const KEY = CFG.supabase.key;
+  fetch(CFG.supabase.url + '/rest/v1/ads?id=eq.' + id, {
     method: 'PATCH',
     keepalive: true,
     headers: {

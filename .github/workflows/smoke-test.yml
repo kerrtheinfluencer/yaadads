@@ -10,6 +10,11 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'js/**'
+      - 'style.css'
+      - 'manifest.json'
+      - 'logo.svg'
+      - 'gas-prices.html'
+      - '.github/workflows/smoke-test.yml'
   workflow_dispatch:
 
 jobs:
@@ -113,3 +118,24 @@ jobs:
             exit 1
           fi
           echo "Supabase is reachable and responding"
+
+      - name: Check v2 onboarding + recents are wired up
+        run: |
+          grep -q 'js/onboarding.js' index.html || { echo "::error::onboarding.js is not included in index.html"; exit 1; }
+          grep -q 'js/recent.js' index.html || { echo "::error::recent.js is not included in index.html"; exit 1; }
+          grep -q 'startOnboarding' index.html || { echo "::error::Replay Tour link missing from footer"; exit 1; }
+          echo "Onboarding tour + recently-viewed wired up"
+
+      - name: Check manifest.json is valid and has shortcuts
+        run: |
+          node -e "const m=require('./manifest.json'); if(!m.shortcuts||!m.shortcuts.length){console.error('manifest.json missing shortcuts');process.exit(1)}; if(!m.icons.some(i=>(i.purpose||'').includes('maskable'))){console.error('manifest.json missing maskable icon');process.exit(1)}; console.log('manifest.json valid - '+m.shortcuts.length+' shortcuts, maskable icons present')"
+
+      - name: Check style.css braces are balanced
+        run: |
+          node -e "const c=require('fs').readFileSync('style.css','utf8'); const o=(c.match(/{/g)||[]).length, cl=(c.match(/}/g)||[]).length; if(o!==cl){console.error('Unbalanced braces: '+o+' open vs '+cl+' close');process.exit(1)} console.log('style.css balanced ('+o+' rule blocks)')"
+
+      - name: Check logo.svg exists and index.html references it
+        run: |
+          test -s logo.svg || { echo "::error::logo.svg missing"; exit 1; }
+          grep -q 'src="/logo.svg"' index.html || { echo "::error::index.html does not reference logo.svg"; exit 1; }
+          echo "Shared logo.svg in place"

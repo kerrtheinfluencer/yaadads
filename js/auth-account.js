@@ -19,18 +19,53 @@ document.addEventListener('keydown', function(e) {
 });
 
 let _toastTimer;
-function showToast(msg, icon) {
+function showToast(msg, icon, action) {
   let t = document.getElementById('toast');
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast';
-    t.style.cssText = 'position:fixed;bottom:calc(var(--mob-nav-h,64px) + env(safe-area-inset-bottom, 0px) + 12px);left:16px;right:16px;text-align:center;background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:50px;font-size:14px;font-weight:600;z-index:9990;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    t.className = 'toast';
     document.body.appendChild(t);
   }
-  t.textContent = (icon ? icon + '  ' : '') + msg;
-  t.style.opacity = '1'; t.style.transform = 'translateY(0)';
+  // v2: optional action button — pass { label, fn } as the 3rd argument.
+  // Non-breaking: all existing showToast(msg, icon) calls keep working.
+  // Built with DOM APIs (not innerHTML) so dynamic text like user names can't inject HTML.
+  const hasAction = action && typeof action.fn === 'function';
+  t.textContent = '';
+  if (icon) {
+    const ic = document.createElement('span');
+    ic.className = 'toast-icon';
+    ic.textContent = icon;
+    t.appendChild(ic);
+  }
+  const msgEl = document.createElement('span');
+  msgEl.className = 'toast-msg';
+  msgEl.textContent = msg;
+  t.appendChild(msgEl);
+  if (hasAction) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.type = 'button';
+    btn.textContent = action.label;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      clearTimeout(_toastTimer);
+      t.classList.remove('show');
+      t.style.pointerEvents = '';
+      action.fn();
+    });
+    t.appendChild(btn);
+    t.style.pointerEvents = 'auto';
+  } else {
+    t.style.pointerEvents = '';
+  }
+  requestAnimationFrame(function() { t.classList.add('show'); });
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateY(20px)'; }, 2800);
+  // Action toasts linger longer so users have time to tap the button
+  _toastTimer = setTimeout(function() {
+    t.classList.remove('show');
+    t.style.pointerEvents = '';
+  }, hasAction ? 6500 : 2800);
 }
 
 function showSkeletons() {

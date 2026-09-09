@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Yaad Adz — seeding existing-user test data…</title></head>
+<body>
+<!-- DEV-ONLY: simulates a RETURNING user's localStorage before v2 existed,
+     then redirects to the homepage. Used by the headless smoke test.
+     It only ADDS typical pre-v2 keys — it never reads or modifies anything. -->
+<script>
+(function () {
+  localStorage.setItem('ya_favs', JSON.stringify(['seed-fav-id-1', 'seed-fav-id-2']));
+  localStorage.setItem('ya_searches', JSON.stringify(['cheap car', 'phone kingston', 'house for rent']));
+  localStorage.setItem('ya_brain_searches', JSON.stringify({ '2026-08-01': { car: 2, phone: 1 } }));
+  localStorage.setItem('ya_visits', '3');
+  localStorage.setItem('ya_pwa_dismissed', '1');
+  localStorage.setItem('ya_last_count', '50');
+  // Prove v2 never overwrites unknown/foreign keys:
+  localStorage.setItem('some_unrelated_key', 'keep-me');
+  location.replace('/?existing-user-test=1');
+})();
+</script>
+<p>Seeding existing-user data…</p>
+</body>
+</html>

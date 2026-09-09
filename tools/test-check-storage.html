@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>storage check</title></head>
+<body>
+<!-- DEV-ONLY: prints the localStorage keys the headless smoke test asserts on. -->
+<pre id="out">STORAGE_DUMP:pending</pre>
+<script>
+(function () {
+  var keys = ['ya_favs', 'ya_searches', 'ya_brain_searches', 'ya_visits',
+    'ya_pwa_dismissed', 'ya_last_count', 'some_unrelated_key',
+    'ya_onboarded_v2', 'ya_visit_count', 'ya_recently_viewed', 'ya_tip_gas', 'ya_tip_pwa'];
+  var out = {};
+  keys.forEach(function (k) { out[k] = localStorage.getItem(k); });
+  document.getElementById('out').textContent = 'STORAGE_DUMP:' + JSON.stringify(out);
+})();
+</script>
+</body>
+</html>

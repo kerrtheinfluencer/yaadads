@@ -2112,6 +2112,24 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   max-width: none;
 }
 .toast.show { transform: none; opacity: 1; }
+/* v2 — action toasts (e.g. onboarding tips with a button) */
+.toast .toast-action {
+  background: var(--gold);
+  color: #111;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 50px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform .15s, filter .15s;
+  touch-action: manipulation;
+}
+.toast .toast-action:hover { filter: brightness(1.08); transform: scale(1.04); }
+.toast .toast-action:active { transform: scale(.96); }
+.toast .toast-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SKELETON SHIMMER
@@ -3296,4 +3314,319 @@ button:disabled,
 }
 @media (max-width: 360px) {
   .sheet-btn-notify { min-width: 96px; padding: 12px 10px; font-size: 11.5px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONBOARDING v2 — welcome modal, coach marks, contextual tips
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Root container injected by js/onboarding.js */
+#obRoot { pointer-events: none; }
+
+/* Shared overlay — covers the screen when welcome or tour is open */
+.ob-overlay {
+  position: fixed; inset: 0;
+  background: rgba(4, 18, 12, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 9000;
+}
+
+/* ══ WELCOME MODAL ══ */
+.ob-welcome {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -46%) scale(0.94);
+  width: min(440px, calc(100vw - 32px));
+  background: var(--surface, #fff);
+  border-radius: var(--r-xl, 32px);
+  padding: 40px 32px 28px;
+  box-shadow: 0 32px 90px rgba(0, 20, 12, 0.45);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s var(--ease-premium, ease), transform 0.45s var(--ease-premium, ease);
+  z-index: 9100;
+  text-align: center;
+}
+.ob-welcome-open .ob-overlay { opacity: 1; pointer-events: auto; }
+.ob-welcome-open .ob-welcome {
+  opacity: 1; pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+.ob-welcome-open .ob-welcome { pointer-events: auto; }
+.ob-welcome-open.ob-root, #obRoot.ob-welcome-open { pointer-events: none; }
+
+/* Only the visible elements receive clicks */
+#obRoot.ob-welcome-open .ob-welcome,
+#obRoot.ob-welcome-open .ob-overlay,
+#obRoot.ob-tour-open .ob-overlay,
+#obRoot.ob-tour-open .ob-spotlight,
+#obRoot.ob-tour-open .ob-tip { pointer-events: auto; }
+
+.ob-skip {
+  position: absolute; top: 16px; right: 18px;
+  background: none; border: none;
+  color: var(--text-3, #999); font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: var(--font-b, sans-serif);
+  padding: 6px 10px; border-radius: 14px;
+  transition: color 0.2s, background 0.2s;
+}
+.ob-skip:hover { color: var(--text-1, #111); background: var(--surface-2, #f0ede5); }
+
+.ob-welcome-inner { position: relative; min-height: 230px; }
+.ob-slide {
+  position: absolute; inset: 0;
+  opacity: 0; transform: translateX(24px);
+  transition: opacity 0.35s ease, transform 0.4s var(--ease-premium, ease);
+  pointer-events: none;
+}
+.ob-slide.active { opacity: 1; transform: none; }
+.ob-slide-icon {
+  font-size: 52px; line-height: 1;
+  margin-bottom: 18px;
+  animation: obBounce 2.4s ease-in-out infinite;
+}
+@keyframes obBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.ob-slide-title {
+  font-family: var(--font-d, Georgia, serif);
+  font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+  margin-bottom: 12px; color: var(--text-1, #111);
+}
+.ob-slide-title em { font-style: italic; color: var(--green, #005c35); }
+.ob-slide-text {
+  font-size: 15px; line-height: 1.65;
+  color: var(--text-2, #555); max-width: 330px; margin: 0 auto;
+}
+
+.ob-dots { display: flex; gap: 8px; justify-content: center; margin: 20px 0 18px; }
+.ob-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border, #e2ddd4);
+  transition: all 0.3s var(--ease-premium, ease);
+}
+.ob-dot.active {
+  background: var(--green, #005c35);
+  width: 24px; border-radius: 6px;
+}
+
+.ob-welcome-nav { display: flex; gap: 12px; justify-content: center; }
+.ob-welcome-nav .btn { min-width: 130px; }
+
+/* ══ COACH-MARK SPOTLIGHT ══ */
+.ob-spotlight {
+  position: fixed;
+  border: 3px solid var(--gold, #f4c300);
+  box-shadow:
+    0 0 0 9999px rgba(4, 18, 12, 0.72),
+    0 0 30px rgba(244, 195, 0, 0.55),
+    inset 0 0 20px rgba(244, 195, 0, 0.12);
+  opacity: 0; pointer-events: none;
+  transition:
+    top 0.45s var(--ease-premium, ease),
+    left 0.45s var(--ease-premium, ease),
+    width 0.45s var(--ease-premium, ease),
+    height 0.45s var(--ease-premium, ease),
+    opacity 0.35s ease;
+  z-index: 9200;
+}
+.ob-spotlight.show { opacity: 1; }
+#obRoot.ob-tour-open .ob-spotlight { pointer-events: none; }
+
+/* ══ TOUR TOOLTIP ══ */
+.ob-tip {
+  position: fixed;
+  width: min(320px, calc(100vw - 24px));
+  background: var(--surface, #fff);
+  border-radius: var(--r-lg, 24px);
+  padding: 18px 20px 14px;
+  box-shadow: 0 20px 60px rgba(0, 20, 12, 0.4);
+  opacity: 0; pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.35s var(--ease-premium, ease);
+  z-index: 9300;
+  text-align: left;
+}
+.ob-tip.show { opacity: 1; pointer-events: auto; transform: none; }
+.ob-tip-step {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--gold-dark, #c9a000);
+  margin-bottom: 6px;
+}
+.ob-tip-icon { font-size: 26px; line-height: 1; margin-bottom: 6px; }
+.ob-tip-title {
+  font-family: var(--font-d, Georgia, serif);
+  font-size: 18px; font-weight: 800; margin-bottom: 6px;
+  color: var(--text-1, #111);
+}
+.ob-tip-text {
+  font-size: 13.5px; line-height: 1.55; color: var(--text-2, #555);
+  margin-bottom: 12px;
+}
+.ob-tip-nav { display: flex; align-items: center; gap: 8px; }
+.ob-tip-skip {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-3, #999); font-size: 12px; font-weight: 500;
+  font-family: var(--font-b, sans-serif); padding: 4px 6px;
+}
+.ob-tip-skip:hover { color: var(--text-1, #111); }
+.ob-tip-back, .ob-tip-next {
+  border: none; cursor: pointer; font-weight: 700;
+  font-size: 13px; padding: 8px 16px; border-radius: 20px;
+  font-family: var(--font-b, sans-serif);
+  transition: all 0.2s;
+}
+.ob-tip-back { background: var(--surface-2, #f0ede5); color: var(--text-2, #555); }
+.ob-tip-back:hover { background: var(--border, #e2ddd4); }
+.ob-tip-next { background: var(--green, #005c35); color: #fff; }
+.ob-tip-next:hover { background: var(--green-mid, #00703f); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   V2 — ACCESSIBILITY: minimum 44px tap targets on icon-only controls
+   (Apple HIG / WCAG 2.5.5). Scales the existing visual style, doesn't move it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.m-close,
+.lightbox-close,
+.ai-sheet-close,
+.ai-float-close {
+  min-width: 44px;
+  min-height: 44px;
+}
+.back-to-top { min-width: 44px; min-height: 44px; }
+.fav-btn { min-width: 44px; min-height: 44px; }
+.ob-skip { min-height: 44px; }
+.mob-nav-item { min-height: 44px; }
+@media (max-width: 640px) {
+  .fselect { min-height: 44px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   V2 — RECENTLY VIEWED STRIP + RECENT SEARCH ROW
+   ═══════════════════════════════════════════════════════════════════════════ */
+.recent-strip {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.recent-strip-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.recent-strip-hd .recent-clear {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.recent-strip-hd .recent-clear:hover { color: var(--red); background: var(--surface-2); }
+.recent-strip-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.recent-strip-row::-webkit-scrollbar { display: none; }
+.recent-card {
+  flex: 0 0 150px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s var(--ease-premium), box-shadow .2s;
+}
+.recent-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.recent-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.recent-card-body { padding: 8px 10px 10px; }
+.recent-card-price { font-size: 13px; font-weight: 800; color: var(--green); }
+.recent-card-title {
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.recent-search-row {
+  max-width: 960px;
+  margin: 14px auto 0;
+  padding: 0 24px;
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.recent-search-row.show { display: flex; }
+.recent-search-row .rsr-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.recent-search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-1);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  min-height: 32px;
+}
+.recent-search-chip:hover { border-color: var(--green); background: var(--green-light); }
+.recent-search-chip .rsr-x {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.recent-search-chip .rsr-x:hover { color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   V2 — DESKTOP NAV POST BUTTON (gold, matches Join Free)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nav-post-btn { white-space: nowrap; }
+
+/* Scroll lock while onboarding is open */
+body.ob-locked { overflow: hidden; }
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .ob-welcome { padding: 32px 22px 22px; border-radius: var(--r-lg, 24px); }
+  .ob-slide-title { font-size: 22px; }
+  .ob-slide-text { font-size: 14px; }
+  .ob-welcome-inner { min-height: 250px; }
+  .ob-tip { width: calc(100vw - 24px); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ob-slide-icon { animation: none; }
+  .ob-spotlight, .ob-welcome, .ob-tip, .ob-overlay { transition-duration: 0.01s; }
 }

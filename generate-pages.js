@@ -319,7 +319,7 @@ function buildPage(ad, allAds) {
     galleryHtml = `
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="${esc(photos[0])}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" onclick="openLightbox(0)" style="cursor:zoom-in">
+        <img src="${esc(photos[0])}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(0)" style="cursor:zoom-in">
         <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 ${photos.length > 1 ? photos.length + ' photos · tap to expand' : 'Tap to view fullscreen'}</div>
         ${ad.status === 'sold' ? '<div class="sold-ribbon">SOLD</div>' : ''}
       </div>
@@ -1732,7 +1732,7 @@ ${cardsHtml}
 </div>
 </div>
 <footer>
-<a href="/">← Back to all listings</a> · <a href="/sitemap.html">Full listing index</a>
+<a href="/">← Back to all listings</a> · <a href="/sitemap.html">Full listing index</a> · <a href="/gas-prices.html">⛽ Gas Prices</a>
 </footer>
 </body>
 </html>`;

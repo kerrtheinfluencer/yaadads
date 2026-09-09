@@ -291,6 +291,7 @@ function renderNav() {
     const clr = avatarColor(CU.name);
     const ini = initials(CU.name);
     el.innerHTML = navSearch + `
+      <button class="btn btn-gold btn-sm nav-hide-mobile nav-post-btn" id="navPostBtn" onclick="openPostAd()" title="Post a free ad">＋ Post Ad</button>
       <div class="badge-wrap nav-hide-mobile">
         <button class="btn btn-outline btn-sm" onclick="goPage('msgs')" style="display:flex;align-items:center;gap:5px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -307,6 +308,7 @@ function renderNav() {
       <button class="btn btn-outline btn-sm nav-hide-mobile" onclick="doLogout()">Log out</button>`;
   } else {
     el.innerHTML = navSearch + `
+      <button class="btn btn-gold btn-sm nav-hide-mobile nav-post-btn" id="navPostBtn" onclick="openPostAd()" title="Post a free ad">＋ Post Ad</button>
       <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
       <button class="btn btn-gold btn-sm" onclick="openAuth('register')">Join Free</button>`;
   }

@@ -110,6 +110,21 @@ transition: background .18s, color .18s;
 }
 .tank-btn.active, .price-tab.active, .chart-tab.active { background: var(--green); color: #fff; }
 .price-tabs { margin-bottom: 20px; }
+/* ═══ SHARE BUTTON (v2) ═══ */
+.hero-share-btn {
+  margin-top: 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+  font: inherit; font-size: 13px; font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+  min-height: 44px;
+}
+.hero-share-btn:hover { background: rgba(255,255,255,.22); transform: translateY(-1px); }
 /* ═══ TAKEAWAY BANNER ═══ */
 .takeaway-section { padding: 8px 0 40px; }
 .takeaway-card {
@@ -464,6 +479,7 @@ padding-top: 108px;
 <h1>Jamaica <em>Fuel</em> Prices</h1>
 <p class="hero-sub">Track ex-refinery and estimated pump prices for gasoline, diesel, kerosene & LPG. Updated weekly from Petrojam.</p>
 <div class="last-updated"><span class="dot" id="lastUpdatedDot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
+<button class="hero-share-btn" id="shareBtn" type="button" aria-label="Share gas prices">🔗 Share prices</button>
 <div id="staleWarning" style="display:none;margin-top:12px;color:var(--gold);font-size:13px;background:rgba(244,195,0,.12);border:1px solid rgba(244,195,0,.3);border-radius:20px;padding:8px 18px"></div>
 </div>
 </section>
@@ -1684,8 +1700,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   initChartToggle();
   try {
     const data = await loadPriceData();
-    document.getElementById('lastUpdated').textContent =
-      data.last_updated_display || data.price_date || 'Recently updated';
+    const lu = document.getElementById('lastUpdated');
+    const luText = data.last_updated_display || data.price_date || 'Recently updated';
+    const ageMs = Date.now() - new Date(data.price_date || data.last_updated || Date.now()).getTime();
+    const ageDays = Math.floor(ageMs / 86400000);
+    if (!isNaN(ageDays) && ageDays >= 0 && ageDays <= 60) {
+      lu.textContent = luText + ' · ' + (ageDays === 0 ? 'today' : ageDays === 1 ? 'yesterday' : ageDays + ' days ago');
+    } else {
+      lu.textContent = luText;
+    }
     checkDataFreshness(data);
     renderPriceCards();
     renderInsights();
@@ -1696,6 +1719,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   // Station locator is independent of price data — init it regardless
   initStationLocator();
+
+  // v2: share button — native share sheet on mobile, clipboard fallback
+  const shareBtn = document.getElementById('shareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async function() {
+      const shareText = '⛽ Live Jamaica gas prices (Petrojam weekly) — 87, 90, diesel & more. Check before you drive:';
+      const shareUrl = location.origin + '/gas-prices.html';
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: 'Jamaica Gas Prices — Yaad Adz', text: shareText, url: shareUrl });
+        } else {
+          await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
+          shareBtn.textContent = '✓ Link copied!';
+          setTimeout(function() { shareBtn.textContent = '🔗 Share prices'; }, 2200);
+        }
+      } catch (e) { /* user cancelled the share sheet */ }
+    });
+  }
 });
 </script>
 

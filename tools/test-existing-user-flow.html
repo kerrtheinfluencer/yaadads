@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Yaad Adz — existing-user flow test</title></head>
+<body>
+<!-- DEV-ONLY, deterministic single-run test:
+     1. Seeds typical PRE-v2 localStorage (favourites, searches, visits, dismissals)
+     2. Boots the real app inside a same-origin iframe
+     3. Reports one JSON verdict: app booted, welcome correctly skipped for a
+        returning user, contextual tips fired, and every seeded key preserved. -->
+<pre id="out">FLOW_RESULT:pending</pre>
+<iframe id="app" style="width:1200px;height:900px;border:0"></iframe>
+<script>
+(function () {
+  // ── 1. seed pre-v2 "existing user" state ──
+  localStorage.setItem('ya_favs', JSON.stringify(['seed-fav-id-1', 'seed-fav-id-2']));
+  localStorage.setItem('ya_searches', JSON.stringify(['cheap car', 'phone kingston', 'house for rent']));
+  localStorage.setItem('ya_brain_searches', JSON.stringify({ '2026-08-01': { car: 2, phone: 1 } }));
+  localStorage.setItem('ya_visits', '3');
+  localStorage.setItem('ya_pwa_dismissed', '1');
+  localStorage.setItem('ya_last_count', '50');
+  localStorage.setItem('some_unrelated_key', 'keep-me'); // foreign key — must survive untouched
+
+  // ── 2. boot the real app ──
+  var f = document.getElementById('app');
+  f.src = '/';
+
+  // ── 3. poll, then report ──
+  var steps = 0;
+  var timer = setInterval(function () {
+    steps++;
+    var d = null;
+    try { d = f.contentDocument; } catch (e) { /* same-origin, never throws */ }
+    var appBooted = false, welcomeOpen = false, bodyLocked = false;
+    if (d && d.body) {
+      appBooted = !!d.getElementById('navSearchPill');
+      var root = d.getElementById('obRoot');
+      welcomeOpen = !!(root && root.classList.contains('ob-welcome-open'));
+      bodyLocked = d.body.classList.contains('ob-locked');
+    }
+    // give the gas tip (14s virtual delay after boot) time to fire
+    if ((appBooted && steps > 34) || steps > 50) {
+      clearInterval(timer);
+      var g = function (k) { return localStorage.getItem(k); };
+      var res = {
+        appBooted: appBooted,
+        welcomeAutoOpened: welcomeOpen,   // MUST be false for a returning user
+        bodyLocked: bodyLocked,           // MUST be false
+        favsPreserved: (g('ya_favs') || '').indexOf('seed-fav-id-1') !== -1,
+        searchesPreserved: (g('ya_searches') || '').indexOf('phone kingston') !== -1,
+        brainSearchesPreserved: (g('ya_brain_searches') || '').indexOf('2026-08-01') !== -1,
+        unrelatedKeyPreserved: g('some_unrelated_key') === 'keep-me',
+        markedOnboarded: g('ya_onboarded_v2') === '1',
+        visitCountStarted: g('ya_v2_visit_count') === '1',
+        gasTipFired: g('ya_tip_gas') === '1',
+        pwaTipFired: g('ya_tip_pwa') === '1'
+      };
+      document.getElementById('out').textContent = 'FLOW_RESULT:' + JSON.stringify(res);
+    }
+  }, 500);
+})();
+</script>
+</body>
+</html>

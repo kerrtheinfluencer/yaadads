@@ -316,6 +316,16 @@ function checkUrlAdParam() {
   const id = params.get('ad');
   if (id) { setTimeout(() => openDetail(id), 600); return; }
 
+  // V2: PWA shortcut deep links — ?post=1 opens the post wizard,
+  // ?page=msgs / ?page=myads jumps straight to that SPA page.
+  const postParam = params.get('post');
+  const pageParam = params.get('page');
+  if (postParam === '1') {
+    setTimeout(function() { if (typeof openPostAd === 'function') openPostAd(); }, 800);
+  } else if (pageParam && typeof goPage === 'function' && document.getElementById('page-' + pageParam)) {
+    setTimeout(function() { goPage(pageParam); }, 800);
+  }
+
   // Restore search state from URL
   const q = params.get('q');
   const cat = params.get('cat');

@@ -18,6 +18,9 @@ const PAGES_CACHE    = CACHE_VERSION + '-pages';
 const PRECACHE_URLS = [
   '/style.css',
   '/offline.html',
+  '/logo.svg',
+  '/js/onboarding.js',
+  '/js/recent.js',
 ];
 
 // ── Install: precache static assets ──────────────────────────────
