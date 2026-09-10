@@ -225,12 +225,18 @@ function updateMsgBadge() {
   const count = typeof unreadCount === 'function' ? unreadCount() : 0;
   // Mobile bottom nav badge
   const badge = document.getElementById('mobMsgBadge');
-  if (badge) { badge.textContent = count || ''; badge.classList.toggle('show', count > 0); }
+  const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
+  if (badge) {
+    if (count > 0) { badge.textContent = count; badge.classList.add('show'); badge.classList.remove('is-update'); }
+    else if (updUnread) { badge.textContent = '!'; badge.classList.add('show', 'is-update'); }
+    else { badge.textContent = ''; badge.classList.remove('show', 'is-update'); }
+  }
   // Desktop nav badge
   const navBadge = document.getElementById('navMsgBadge');
   if (navBadge) {
-    if (count > 0) { navBadge.textContent = count > 9 ? '9+' : count; navBadge.style.display = ''; }
-    else { navBadge.style.display = 'none'; }
+    if (count > 0) { navBadge.textContent = count > 9 ? '9+' : count; navBadge.style.display = ''; navBadge.classList.remove('is-update'); }
+    else if (updUnread) { navBadge.textContent = '!'; navBadge.style.display = ''; navBadge.classList.add('is-update'); }
+    else { navBadge.style.display = 'none'; navBadge.classList.remove('is-update'); }
   }
 }
 
@@ -268,9 +274,24 @@ function renderInbox() {
   const el = document.getElementById('inboxList');
   if (!CU) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
   const myConvs = Object.entries(_msgs).filter(function(e){ return e[1].sellerId===CU.id || e[1].buyerId===CU.id; });
-  if (!myConvs.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>'; return; }
+  const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
+  if (!myConvs.length && !updUnread) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>'; return; }
   myConvs.sort(function(a,b){ return (b[1].messages.at(-1)?.ts||0)-(a[1].messages.at(-1)?.ts||0); });
-  el.innerHTML = myConvs.map(function(e){
+  var _updateRow = '';
+  if (updUnread) {
+    const _meta = (typeof siteUpdateMeta === 'function' && siteUpdateMeta()) || {};
+    const _body = _meta.body || '';
+    _updateRow = '<div class="inbox-item site-update-inbox unread" onclick="openSiteUpdate()">' +
+      '<div class="inbox-avatar su-avatar">' + (_meta.icon || '✨') + '</div>' +
+      '<div class="inbox-info">' +
+        '<div class="inbox-name">What’s new' + (_meta.version ? ' · ' + escHtml(_meta.version) : '') + '<span class="su-new-chip">New</span></div>' +
+        '<div class="inbox-preview">' + escHtml(_body.length > 90 ? _body.slice(0, 89) + '…' : _body) + '</div>' +
+        '<span class="inbox-ad">🗞️ Yaad Adz updates</span>' +
+      '</div>' +
+      '<div class="inbox-time">now</div>' +
+    '</div>';
+  }
+  el.innerHTML = _updateRow + myConvs.map(function(e){
     const key = e[0], conv = e[1];
     const isbuyer = CU.id === conv.buyerId;
     const otherName = isbuyer ? conv.sellerName : conv.buyerName;
@@ -381,10 +402,25 @@ function renderMyAds() {
       acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
     } else {
       const keys = Object.keys(_msgs);
-      if (!keys.length) {
+      const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
+      if (!keys.length && !updUnread) {
         acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p style="color:var(--text-3)">No messages yet.</p></div>';
       } else {
-        acctInbox.innerHTML = keys.map(function(key) {
+        var _updateRow = '';
+        if (updUnread) {
+          const _meta = (typeof siteUpdateMeta === 'function' && siteUpdateMeta()) || {};
+          const _body = _meta.body || '';
+          _updateRow = '<div class="inbox-item site-update-inbox unread" onclick="openSiteUpdate()">' +
+            '<div class="inbox-avatar su-avatar">' + (_meta.icon || '✨') + '</div>' +
+            '<div class="inbox-info">' +
+              '<div class="inbox-name">What\'s new' + (_meta.version ? ' · ' + escHtml(_meta.version) : '') + '<span class="su-new-chip">New</span></div>' +
+              '<div class="inbox-preview">' + escHtml(_body.length > 90 ? _body.slice(0, 89) + '…' : _body) + '</div>' +
+              '<span class="inbox-ad">🗞️ Yaad Adz updates</span>' +
+            '</div>' +
+            '<div class="inbox-time">now</div>' +
+          '</div>';
+        }
+        const _msgsHtml = keys.map(function(key) {
           const conv = _msgs[key];
           const msgs = conv.messages || [];
           const last = msgs[msgs.length - 1];
@@ -401,6 +437,7 @@ function renderMyAds() {
             (unread ? '<div class="inbox-badge">' + unread + '</div>' : '') +
             '</div>';
         }).join('');
+        acctInbox.innerHTML = _updateRow + _msgsHtml;
       }
     }
   }

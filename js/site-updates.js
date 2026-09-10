@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════════
    SITE UPDATES §UPDATES
-   ─ A "What's new" notice that tells members when the site has
-     been updated.
+   ─ A system "What's new" message in the Messages inbox that tells
+     members when the site has been updated. A gold notification dot
+     on the Messages pill stays until the member opens the notice, which
+     renders as a small glass read-modal.
    ─ To announce a new update:
-       1. Add an entry to SITE_UPDATES.items below.
+       1. Add an entry to SITE_UPDATES.items.
        2. Set SITE_UPDATES.current to that id.
-       3. Commit — returning visitors see it once (per-update
-          dismissal kept in localStorage 'ya_seen_update').
+       3. Commit — members see a new inbox message + pill dot once.
        4. Optional: blast push subscribers with
           node notify-site-update.js "Title" "Body" [url]
-   ─ Built with DOM APIs (never innerHTML) so nothing can inject
+   ─ Read-state kept once per update into localStorage ('ya_seen_update').
+     Built with DOM APIs (never innerHTML) so nothing can inject
      markup; wrapped defensively so it can never break boot.
    ═══════════════════════════════════════════════════════════ */
 
@@ -20,7 +22,7 @@ var SITE_UPDATES = {
       version: 'v2.1',
       icon: '✨',
       title: 'A fresh new look — Liquid Glass',
-      body: 'The whole site got a rich dark-glass finish — bolder cards, better contrast, and easier night browsing. New changes will land here, so this is the place to catch every update.',
+      body: 'The whole site got a rich dark-glass finish — bolder cards, better contrast,and easier night browsing. New changes will land here, so this is the place to catch every update.',
       url: '/',
     },
   },
@@ -30,12 +32,17 @@ function siteUpdateSeenId() {
   try { return localStorage.getItem('ya_seen_update') || ''; } catch (e) { return ''; }
 }
 
-function dismissSiteUpdate() {
+function siteUpdateMeta() {
+  return SITE_UPDATES.items[SITE_UPDATES.current] || null;
+}
+
+function siteUpdateUnread() {
+  const meta = siteUpdateMeta();
+  return !!meta && siteUpdateSeenId() !== SITE_UPDATES.current;
+}
+
+function markSiteUpdateRead() {
   try { localStorage.setItem('ya_seen_update', SITE_UPDATES.current); } catch (e) {}
-  const card = document.getElementById('siteUpdateCard');
-  if (!card) return;
-  card.classList.add('leaving');
-  setTimeout(function () { card.remove(); }, 220);
 }
 
 function enableSiteUpdatePush() {
@@ -45,34 +52,37 @@ function enableSiteUpdatePush() {
   } catch (e) { console.error('[site-updates] enableSiteUpdatePush error:', e); }
 }
 
-// Never show the card on top of another overlay/tour, and never leave a
-// dangling watchdog. If things stay busy we just skip quietly.
-function siteUpdateBusy() {
-  try {
-    if (document.body.classList.contains('ai-sheet-open')) return true;
-    if (document.querySelector('.overlay.open')) return true;
-    const root = document.getElementById('obRoot');
-    if (root && (root.classList.contains('ob-welcome-open') || root.classList.contains('ob-tour-open'))) return true;
-  } catch (e) {}
-  return false;
+function closeSiteUpdate() {
+  const ov = document.getElementById('suOverlay');
+  if (!ov) return;
+  ov.classList.add('leaving');
+  setTimeout(function () { ov.remove(); }, 220);
 }
 
-function maybeShowSiteUpdate() {
+function refreshInboxAndBadge() {
   try {
-    if (!document.body) return;
-    const meta = SITE_UPDATES.items[SITE_UPDATES.current];
-    if (!meta) return;
-    if (siteUpdateSeenId() === SITE_UPDATES.current) return;
-    if (document.getElementById('siteUpdateCard')) return;
-    if (siteUpdateBusy()) return;
-    const home = document.getElementById('page-home');
-    if (!home) return;
+    if (typeof renderInbox === 'function') renderInbox();
+    if (typeof updateMsgBadge === 'function') updateMsgBadge();
+  } catch (e) {}
+}
 
-    const card = document.createElement('div');
-    card.id = 'siteUpdateCard';
-    card.className = 'site-update-card';
-    card.setAttribute('role', 'region');
-    card.setAttribute('aria-label', 'Site update');
+function openSiteUpdate() {
+  try {
+    const meta = siteUpdateMeta();
+    if (!meta) return;
+    markSiteUpdateRead();
+    if (document.getElementById('suOverlay')) return;
+
+    const ov = document.createElement('div');
+    ov.id = 'suOverlay';
+    ov.className = 'su-overlay';
+    ov.addEventListener('click', function (e) { if (e.target === ov) closeSiteUpdate(); });
+
+    const modal = document.createElement('div');
+    modal.className = 'site-update-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'What\'s new');
 
     const row = document.createElement('div');
     row.className = 'site-update-row';
@@ -87,7 +97,7 @@ function maybeShowSiteUpdate() {
 
     const kicker = document.createElement('div');
     kicker.className = 'site-update-kicker';
-    kicker.textContent = 'What’s new' + (meta.version ? ' · ' + meta.version : '');
+    kicker.textContent = 'What\'s new' + (meta.version ? ' · ' + meta.version : '');
     copy.appendChild(kicker);
 
     const title = document.createElement('div');
@@ -101,7 +111,7 @@ function maybeShowSiteUpdate() {
     copy.appendChild(body);
 
     row.appendChild(copy);
-    card.appendChild(row);
+    modal.appendChild(row);
 
     const actions = document.createElement('div');
     actions.className = 'site-update-actions';
@@ -110,7 +120,7 @@ function maybeShowSiteUpdate() {
     gotIt.type = 'button';
     gotIt.className = 'site-update-btn site-update-btn-primary';
     gotIt.textContent = 'Got it';
-    gotIt.addEventListener('click', dismissSiteUpdate);
+    gotIt.addEventListener('click', function () { closeSiteUpdate(); refreshInboxAndBadge(); });
     actions.appendChild(gotIt);
 
     const hasNotif = ('Notification' in window);
@@ -123,27 +133,16 @@ function maybeShowSiteUpdate() {
       actions.appendChild(notif);
     }
 
-    card.appendChild(actions);
+    modal.appendChild(actions);
+    ov.appendChild(modal);
+    document.body.appendChild(ov);
 
-    // Top of the home page, right under the sticky nav.
-    home.insertBefore(card, home.firstChild);
+    const firstBtn = modal.querySelector('button');
+    if (firstBtn) { try { firstBtn.focus(); } catch (e) {} }
   } catch (e) {
-    console.error('[site-updates] maybeShowSiteUpdate error:', e);
+    console.error('[site-updates] openSiteUpdate error:', e);
   }
 }
 
-(function () {
-  // Wait for first paint, and give the onboarding welcome its moment.
-  setTimeout(function () {
-    if (!siteUpdateBusy()) { maybeShowSiteUpdate(); return; }
-    // If a modal/tour is up, retry quietly until it closes (watchdog).
-    let tries = 0;
-    const timer = setInterval(function () {
-      tries++;
-      if (!siteUpdateBusy() || tries > 12) {
-        clearInterval(timer);
-        maybeShowSiteUpdate();
-      }
-    }, 1500);
-  }, 3000);
-})();
+// Escape closes the modal (once, safe to re-register).
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSiteUpdate(); });
