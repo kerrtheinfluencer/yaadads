@@ -22,6 +22,8 @@ check('recentStrip container present', html.includes('id="recentStrip"'));
 check('recentSearchRow container present', html.includes('id="recentSearchRow"'));
 check('logo.svg referenced 3 times', (html.match(/src="\/logo\.svg"/g) || []).length === 3);
 check('manifest linked', html.includes('rel="manifest"'));
+check('member stat starts as a neutral placeholder, not zero',
+  /id="uStat"[^>]*>—<\/div>/.test(html));
 
 // 2. script tag balance in index.html
 const opens = (html.match(/<script\b/g) || []).length;
@@ -60,6 +62,9 @@ check('onboarding overlay is dim-and-dismiss (click-outside wired)',
 // 6b. matchMedia guard present across app JS + no unguarded calls anywhere
 const uiNav = fs.readFileSync('js/ui-nav.js', 'utf8');
 const coreSrc2 = fs.readFileSync('js/core.js', 'utf8');
+check('member count uses public profiles exact count, not a missing RPC',
+  !uiNav.includes("rpc('get_user_count')") &&
+  uiNav.includes("from('profiles').select('id', { count: 'exact', head: true })"));
 const UNGUARDED_MATCHMEDIA =
   /(?<!typeof window\.matchMedia === 'function' && )window\.matchMedia\('\(display-mode: standalone\)'\)\.matches/;
 check('ui-nav guards matchMedia (no boot crash on iOS/Firefox)',

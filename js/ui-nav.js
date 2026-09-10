@@ -183,14 +183,21 @@ function updateStats() {
     if (uEl && cachedUsers) uEl.textContent = cachedUsers;
   } catch(e) {}
 
-  _db.rpc('get_user_count')
-    .then(({ data, error }) => {
-      if (error) { console.error('[updateStats] user count failed:', error.message); return; }
-      const val = data || 1;
-      if (uEl) uEl.textContent = val;
-      try { localStorage.setItem('ya_last_users', val); } catch(e) {}
+  // Count the public profiles directly instead of depending on a custom RPC.
+  // The previous `get_user_count` RPC is not deployed in production, which
+  // left the hero permanently showing “0 members” for new visitors.
+  _db.from('profiles').select('id', { count: 'exact', head: true })
+    .then(({ count, error }) => {
+      if (error || typeof count !== 'number') {
+        // Keep the cached count, or the neutral loading placeholder, on a
+        // transient network/RLS error. Never replace it with a false zero.
+        console.warn('[updateStats] user count unavailable:', error?.message || 'no count returned');
+        return;
+      }
+      if (uEl) uEl.textContent = count;
+      try { localStorage.setItem('ya_last_users', count); } catch(e) {}
     })
-    .catch(e => console.error('[updateStats] user count threw:', e));
+    .catch(e => console.warn('[updateStats] user count request failed:', e));
 }
 
 // Apply cached count immediately on paint — before Supabase responds
