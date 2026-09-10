@@ -3633,3 +3633,332 @@ body.ob-locked { overflow: hidden; }
   .ob-slide-icon { animation: none; }
   .ob-spotlight, .ob-welcome, .ob-tip, .ob-overlay { transition-duration: 0.01s; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   LIQUID GLASS HOMEPAGE REFRESH
+   A quieter, deeper app canvas keeps the glass layers legible instead of
+   making the results area look washed out on wide desktop displays.
+═══════════════════════════════════════════════════════════ */
+body {
+  background-color: #071b13;
+  background-image:
+    radial-gradient(52rem 36rem at -8% 18%, rgba(0, 151, 91, .34), transparent 68%),
+    radial-gradient(42rem 32rem at 108% 43%, rgba(244, 195, 0, .16), transparent 68%),
+    radial-gradient(38rem 30rem at 50% 108%, rgba(21, 93, 181, .16), transparent 72%);
+  background-attachment: fixed;
+}
+#page-home { background: rgba(3, 20, 13, .36); }
+
+nav {
+  background: rgba(5, 28, 19, .62);
+  border-color: rgba(255, 255, 255, .2);
+  box-shadow: 0 18px 52px rgba(0, 9, 5, .28), inset 0 1px 0 rgba(255, 255, 255, .2);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+}
+.nav-search-pill {
+  background: rgba(255, 255, 255, .11);
+  border-color: rgba(255, 255, 255, .24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15);
+}
+
+.hero {
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+  background:
+    radial-gradient(circle at 15% 26%, rgba(244, 195, 0, .22), transparent 23rem),
+    radial-gradient(circle at 82% 12%, rgba(117, 225, 185, .18), transparent 22rem),
+    linear-gradient(135deg, rgba(5, 35, 22, .95), rgba(0, 92, 53, .72));
+}
+.hero::before { opacity: .72; }
+.hero-eyebrow {
+  background: rgba(244, 195, 0, .1);
+  border-color: rgba(255, 222, 93, .38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.hero-stats { gap: 12px; }
+.hero-stats > div {
+  min-width: 82px;
+  padding: 13px 12px 11px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .075);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.hero-stat-lbl { color: rgba(255, 255, 255, .56); }
+
+.results-area { padding-top: 10px; }
+.recent-search-row {
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .06);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+.recent-search-chip,
+.cat-pill-sm,
+.fselect {
+  background: rgba(255, 255, 255, .09);
+  border-color: rgba(255, 255, 255, .18);
+  color: rgba(255, 255, 255, .86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 8px 22px rgba(0, 12, 7, .1);
+}
+.cat-pill-sm:hover,
+.fselect:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+.cat-pill-sm.active {
+  background: rgba(0, 122, 72, .7);
+  border-color: rgba(227, 255, 242, .35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 10px 26px rgba(0, 45, 26, .28);
+}
+.results-header {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .055);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.results-count, .filter-toggle-label { color: rgba(255, 255, 255, .62); }
+.results-count strong { color: #fff; }
+.toggle-switch { background: rgba(255, 255, 255, .18); border-color: rgba(255, 255, 255, .16); }
+
+.ad-card {
+  background: rgba(8, 28, 19, .7);
+  border-color: rgba(255, 255, 255, .17);
+  box-shadow: 0 16px 38px rgba(0, 8, 4, .24), inset 0 1px 0 rgba(255, 255, 255, .15);
+}
+.ad-card:hover {
+  border-color: rgba(244, 195, 0, .42);
+  box-shadow: 0 22px 46px rgba(0, 8, 4, .34), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+
+@media (max-width: 640px) {
+  body { background-attachment: scroll; }
+  .hero-stats { gap: 8px; }
+  .hero-stats > div { min-width: 66px; padding: 10px 8px 8px; border-radius: 15px; }
+  .recent-search-row { border-radius: 14px; }
+  .results-header { border-radius: 15px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIQUID GLASS SYSTEM — APP-WIDE SURFACES
+   Every interactive surface belongs to one of three depth levels: floating
+   chrome, raised content, and quiet inset controls. This keeps the entire
+   product coherent without changing a single application interaction.
+═══════════════════════════════════════════════════════════ */
+:root {
+  --glass-float: rgba(8, 30, 20, .74);
+  --glass-raised: rgba(12, 39, 27, .66);
+  --glass-inset: rgba(255, 255, 255, .085);
+  --glass-line: rgba(255, 255, 255, .16);
+  --glass-highlight: rgba(255, 255, 255, .2);
+  --ink-on-glass: rgba(255, 255, 255, .92);
+  --muted-on-glass: rgba(255, 255, 255, .58);
+  --liquid-ease: cubic-bezier(.2, .8, .2, 1);
+}
+html { background: #071b13; }
+button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+/* Primary actions feel like tactile system controls, not flat web buttons. */
+.btn, .load-more-btn, .sheet-btn-primary, .sheet-view-all, .pwa-install-btn {
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .24), 0 8px 20px rgba(0, 12, 7, .18);
+  transition: transform .22s var(--liquid-ease), box-shadow .22s var(--liquid-ease), filter .22s var(--liquid-ease), background .22s var(--liquid-ease);
+}
+.btn:active, .load-more-btn:active, .sheet-btn-primary:active, .sheet-view-all:active, .pwa-install-btn:active { transform: scale(.97); }
+.btn-gold { background: linear-gradient(145deg, #ffd94a, #f4c300 55%, #d6a700); }
+.btn-green, .sheet-btn-primary { background: linear-gradient(145deg, #08794a, #005c35); }
+
+/* Dialogs, detail views, and forms use the raised material. */
+.overlay { background: rgba(1, 13, 8, .48); -webkit-backdrop-filter: blur(24px) saturate(125%); backdrop-filter: blur(24px) saturate(125%); }
+.modal, .modal-full, .ai-sheet {
+  background: var(--glass-float);
+  border-color: var(--glass-line);
+  box-shadow: 0 32px 96px rgba(0, 5, 2, .52), inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(32px) saturate(155%);
+  backdrop-filter: blur(32px) saturate(155%);
+}
+.modal { border-radius: 28px; }
+.modal .form-inp, .ai-sheet-input-bar, .chat-input {
+  background: var(--glass-inset);
+  border-color: var(--glass-line);
+  color: var(--ink-on-glass);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+.modal .form-inp:focus, .ai-sheet-input-bar:focus-within, .chat-input:focus {
+  border-color: rgba(244, 195, 0, .7);
+  box-shadow: 0 0 0 3px rgba(244, 195, 0, .14), inset 0 1px 0 rgba(255, 255, 255, .13);
+}
+
+/* Listing detail, account areas, and messages keep the same dark-material hierarchy. */
+.detail-body, .seller-box, .analytics-strip, .chat-input-row, .chat-messages, .prof-body, .page-wrap {
+  background: var(--glass-raised);
+  border-color: var(--glass-line);
+  color: var(--ink-on-glass);
+}
+.detail-body { border-top: 1px solid var(--glass-line); }
+.seller-box, .analytics-strip { box-shadow: inset 0 1px 0 var(--glass-highlight), 0 16px 34px rgba(0, 9, 5, .14); }
+.detail-title, .detail-desc, .dtag, .s-name, .s-since, .ana-lbl, .msg-time { color: var(--ink-on-glass); }
+.detail-price, .ana-num { color: #ffd94a; }
+.detail-tags, .detail-btns, .similar-section { border-color: var(--glass-line); }
+.msg-in .msg-bubble { background: var(--glass-inset); border-color: var(--glass-line); color: var(--ink-on-glass); }
+.msg-out .msg-bubble { background: linear-gradient(145deg, #08794a, #005c35); }
+
+/* Bottom surfaces stay calm and don’t compete with the content. */
+.mob-nav, .toast, .pwa-banner, #gasBanner {
+  background: var(--glass-float);
+  border-color: var(--glass-line);
+  box-shadow: 0 20px 52px rgba(0, 6, 3, .32), inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+}
+.pwa-banner { color: var(--ink-on-glass); }
+.pwa-banner-title, .pwa-banner-sub { color: var(--ink-on-glass); }
+.pwa-banner-sub { opacity: .66; }
+.pwa-dismiss-btn { background: rgba(255, 255, 255, .12); color: #fff; border-color: var(--glass-line); }
+
+/* Secondary areas preserve contrast on the darker app canvas. */
+.empty { color: var(--ink-on-glass); }
+.empty h3 { color: #fff; }
+.empty p, .results-search-query { color: var(--muted-on-glass); }
+.empty-icon { background: var(--glass-inset); border-color: var(--glass-line); box-shadow: inset 0 1px 0 var(--glass-highlight); }
+.recent-strip, .recent-search-row, .results-header, .ai-response-card {
+  border-color: var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 14px 32px rgba(0, 8, 4, .1);
+}
+.recent-strip-hd, .recent-strip-hd .recent-clear { color: var(--ink-on-glass); }
+.recent-card { background: var(--glass-inset); border-color: var(--glass-line); }
+
+/* Footer and page-level text no longer fall back to a light-document appearance. */
+footer, .footer { background: rgba(2, 17, 10, .68); border-top: 1px solid var(--glass-line); }
+footer, footer a, .footer, .footer a, .footer-copy { color: rgba(255, 255, 255, .66); }
+footer a:hover, .footer a:hover { color: #ffd94a; }
+
+/* Page text defaults to the glass ink. Any element that previously relied on
+   the old light-document #111 now reads clearly on the dark canvas. */
+body { color: var(--ink-on-glass); }
+
+/* Respect lower-power and reduced-motion settings. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  nav, .modal, .modal-full, .ai-sheet, .mob-nav, .toast, .pwa-banner, #gasBanner { background: #0b2a1b; }
+  .recent-search-row, .results-header, .recent-strip, .seller-box, .analytics-strip { background: #123b27; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIQUID GLASS — CONTRAST & CONTROL FINISH
+   Aligns the last light-theme remnants with the dark canvas:
+   section headers, load-more, filter chips, recents, My Ads /
+   inbox rows, the media uploader, onboarding cards, gas-banner
+   text, and native controls. Pure material changes — no
+   behavior is touched.
+   ═══════════════════════════════════════════════════════════ */
+:root { color-scheme: dark; }
+::selection { background: rgba(244, 195, 0, .9); color: #10281c; }
+html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
+
+/* Headings and links still inheriting the old document color. */
+.section-title { color: var(--ink-on-glass); }
+.section-link { color: #5fe0a8; }
+
+/* Load-more joins the quiet inset glass family. */
+.load-more-btn {
+  background: rgba(255, 255, 255, .085);
+  border-color: rgba(255, 255, 255, .18);
+  color: var(--ink-on-glass);
+}
+.load-more-btn:hover {
+  background: rgba(255, 255, 255, .15);
+  border-color: rgba(244, 195, 0, .55);
+  color: #ffd94a;
+}
+
+/* Filter chips speak the same language as category pills. */
+.fchip { color: rgba(255, 255, 255, .86); }
+.fchip:hover {
+  background: rgba(244, 195, 0, .1);
+  border-color: rgba(244, 195, 0, .55);
+  color: #ffd94a;
+}
+
+/* Recently-viewed chips: white text, gold price — the same
+   accent the detail view uses for money. */
+.recent-card-title { color: var(--muted-on-glass); }
+.recent-card-price { color: #ffd94a; }
+.recent-strip-hd .recent-clear:hover { background: rgba(255, 255, 255, .1); }
+
+/* My Ads + inbox rows become the raised glass their pages sit on. */
+.my-ad-row {
+  background: var(--glass-inset);
+  border: 1px solid var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 10px 26px rgba(0, 8, 4, .12);
+}
+.my-ad-title { color: var(--ink-on-glass); }
+.my-ad-price { color: #ffd94a; }
+.my-ad-meta { color: var(--muted-on-glass); }
+.s-active { color: #ffd94a; }
+.s-sold {
+  background: rgba(255, 255, 255, .08);
+  color: var(--muted-on-glass);
+  border-color: rgba(255, 255, 255, .14);
+}
+.inbox-item {
+  background: var(--glass-inset);
+  border-color: var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 10px 26px rgba(0, 8, 4, .12);
+}
+.inbox-item:hover { background: rgba(255, 255, 255, .14); }
+.inbox-name { color: var(--ink-on-glass); }
+.inbox-preview, .inbox-time, .inbox-ad { color: var(--muted-on-glass); }
+.inbox-ad { background: rgba(255, 255, 255, .07); }
+
+/* Gas-banner text was tuned for a light chip — flip to the
+   floating material's ink, with gold money like everywhere else. */
+.gas-banner-label, .gas-banner-sub { color: var(--muted-on-glass); }
+.gas-banner-price { color: #ffd94a; }
+
+/* The photo uploader lives inside dark modals now. */
+.modal .img-upload-area {
+  background: var(--glass-inset);
+  border-color: rgba(255, 255, 255, .22);
+}
+.modal .img-upload-area:hover {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(244, 195, 0, .5);
+}
+.modal .img-upload-area strong { color: #ffd94a; }
+.modal .img-upload-area p { color: var(--muted-on-glass); }
+.modal .photo-thumb-wrap { background: var(--glass-inset); border-color: rgba(255, 255, 255, .2); }
+
+/* AI response body text sits on its dark glass card. */
+.ai-response-card { color: var(--ink-on-glass); }
+
+/* Onboarding: the white welcome card and coach-mark tooltip join
+   the floating glass material, with matching inner colors. */
+.ob-welcome, .ob-tip {
+  background: var(--glass-float);
+  border: 1px solid var(--glass-line);
+  box-shadow: 0 32px 90px rgba(0, 20, 12, .55), inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+  color: var(--ink-on-glass);
+}
+.ob-slide-title, .ob-tip-title { color: var(--ink-on-glass); }
+.ob-slide-title em { color: #5fe0a8; }
+.ob-slide-text, .ob-tip-text { color: var(--muted-on-glass); }
+.ob-skip, .ob-tip-skip { color: var(--muted-on-glass); }
+.ob-skip:hover, .ob-tip-skip:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+.ob-dot { background: rgba(255, 255, 255, .25); }
+.ob-dot.active { background: var(--gold); }
+.ob-tip-step { color: var(--gold); }
+.ob-tip-back { background: rgba(255, 255, 255, .1); color: var(--ink-on-glass); }
+.ob-tip-back:hover { background: rgba(255, 255, 255, .18); }
+
+/* No-backdrop fallback extended to the newly glassed surfaces. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .ob-welcome, .ob-tip, .my-ad-row, .inbox-item { background: #0b2a1b; }
+}
