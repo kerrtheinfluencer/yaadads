@@ -45,6 +45,11 @@
 - `tools/test-existing-user-flow.html` — headless/browser test: seeds pre-v2 user data, boots the real app, asserts welcome-skip + data preservation + tips firing
 - `tools/test-existing-user.html`, `tools/test-check-storage.html` — simpler helpers for manual inspection
 
+### Site update notifications (new)
+- 🔔 **"What's new" notice** — one-time glass banner on the homepage telling members when the site is updated; dismissed once per update via `ya_seen_update`. Announce new versions by editing `SITE_UPDATES` in `js/site-updates.js`
+- 📨 **Push for site updates** — new `site_updates` topic added to default push subscriptions; owners announce via `node notify-site-update.js "Title" "Body" [url]` (reuses the existing `/functions/v1/send-push` webhook + `x-webhook-secret` convention)
+- SW cache bumped to `v19`; `/js/site-updates.js` pre-cached for installed PWAs
+
 ## 🔜 Backlog (v2.1+)
 - [ ] Dark mode (design tokens are ready; needs audit of ~3,300 lines for hardcoded colors)
 - [ ] Dedicated maskable icon artwork (current icons reused with padding assumption)

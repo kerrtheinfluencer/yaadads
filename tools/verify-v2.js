@@ -12,6 +12,7 @@ function check(name, ok, extra) {
 const html = fs.readFileSync('index.html', 'utf8');
 // defer-agnostic: matches <script src="js/onboarding.js"></script> or with defer
 check('onboarding.js included in index.html', /<script src="js\/onboarding\.js"( defer)?><\/script>/.test(html));
+  check('site-updates.js included in index.html', /<script src="js\/site-updates\.js"( defer)?><\/script>/.test(html));
 check('recent.js included in index.html', /<script src="js\/recent\.js"( defer)?><\/script>/.test(html));
 check('script order: onboarding before boot.js',
   html.indexOf('js/onboarding.js') < html.indexOf('js/boot.js') && html.indexOf('js/recent.js') < html.indexOf('js/boot.js'));
@@ -46,8 +47,8 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v18', sw.includes('yaadadz-v18'));
-check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/logo.svg'"));
+check('SW cache bumped to v19', sw.includes('yaadadz-v19'));
+check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'"));
 
 // 6. style.css balance + new styles
 const css = fs.readFileSync('style.css', 'utf8');

@@ -7,7 +7,8 @@
     "generate": "node generate-pages.js",
     "gas:scrape": "node scrape-petrojam-archive.js",
     "gas:scrape:db": "node scrape-petrojam-archive.js --db",
-    "stations:snapshot": "node scrape-gas-stations.js"
+    "stations:snapshot": "node scrape-gas-stations.js",
+    "notify:update": "node notify-site-update.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

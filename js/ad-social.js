@@ -332,7 +332,7 @@ function dismissPushBanner() {
 function enablePushNotifications() {
   dismissPushBanner();
   if (typeof subscribeToPush === 'function') {
-    subscribeToPush(['listings', 'gas_prices', 'messages']);
+    subscribeToPush(['listings', 'gas_prices', 'messages', 'site_updates']);
   } else {
     // Fallback if core.js somehow hasn't loaded — local notifications only
     Notification.requestPermission();

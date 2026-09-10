@@ -3962,3 +3962,74 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .ob-welcome, .ob-tip, .my-ad-row, .inbox-item { background: #0b2a1b; }
 }
+/* ═══════════════════════════════════════════════════════════
+   SITE UPDATE NOTICE — "What's new" banner
+   Rendered by js/site-updates.js the first time a visitor sees the
+   home page after a new update ships. Glass card pinned under the
+   sticky nav; dismissed once per update into localStorage.
+   ═══════════════════════════════════════════════════════════ */
+.site-update-card {
+  display: block;
+  margin: 0 auto 26px;
+  max-width: 640px;
+  background: var(--glass-raised);
+  border: 1px solid var(--glass-line);
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 14px 32px rgba(0, 8, 4, .18);
+  color: var(--ink-on-glass);
+  animation: siteUpdateIn .35s var(--liquid-ease);
+  contain: layout style;
+}
+.site-update-card.leaving {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity .2s var(--liquid-ease), transform .2s var(--liquid-ease);
+}
+@keyframes siteUpdateIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+.site-update-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px 12px; }
+.site-update-icon { font-size: 26px; line-height: 1; flex-shrink: 0; }
+.site-update-copy { flex: 1; min-width: 0; }
+.site-update-kicker {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 6px;
+}
+.site-update-title {
+  font-family: var(--font-d); font-size: 17px; font-weight: 800;
+  letter-spacing: -.2px; color: var(--ink-on-glass); margin-bottom: 6px;
+}
+.site-update-body { font-size: 13.5px; line-height: 1.55; color: var(--muted-on-glass); margin: 0; }
+.site-update-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 8px 18px 10px; }
+.site-update-btn {
+  font: inherit; font-size: 13.5px; font-weight: 700;
+  min-height: 44px; padding: 0 18px; border-radius: 14px; cursor: pointer;
+  transition: background .18s var(--liquid-ease), border-color .18s var(--liquid-ease),
+              color .18s var(--liquid-ease), transform .18s var(--liquid-ease);
+}
+.site-update-btn-primary {
+  background: rgba(244, 195, 0, .16);
+  border: 1px solid rgba(244, 195, 0, .5);
+  color: #ffd94a;
+}
+.site-update-btn-primary:hover { background: rgba(244, 195, 0, .24); }
+.site-update-btn-primary:active { transform: scale(.97); }
+.site-update-btn-ghost {
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .22);
+  color: var(--ink-on-glass);
+}
+.site-update-btn-ghost:hover { background: rgba(255, 255, 255, .17); }
+.site-update-btn-ghost:active { transform: scale(.97); }
+
+@media (max-width: 640px) {
+  .site-update-card { border-radius: 18px; margin-bottom: 16px; }
+  .site-update-row { padding: 14px 14px 10px; gap: 10px; }
+  .site-update-btn { min-height: 44px; padding: 0 14px; }
+}
+
+/* Solid fallback for browsers without backdrop-filter support. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .site-update-card { background: #0b2a1b; }
+}

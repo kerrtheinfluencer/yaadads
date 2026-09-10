@@ -582,7 +582,7 @@ function isIOSNonStandalone() {
 }
 
 async function subscribeToPush(topics) {
-  topics = topics || ['listings', 'gas_prices', 'messages'];
+  topics = topics || ['listings', 'gas_prices', 'messages', 'site_updates'];
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       showToast("Push notifications aren't supported on this browser.", '⚠️');
