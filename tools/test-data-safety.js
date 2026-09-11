@@ -43,7 +43,7 @@ for (const f of V2_FILES) {
         anything existing users have. Pinned to an explicit hash (not HEAD~1)
         because rebasing onto newer upstream commits shifts HEAD~1. */
 const PRE_V2 = 'e64d021~1';
-for (const key of [...EXPECTED_V2_WRITES, 'ya_recently_viewed']) {
+for (const key of [...EXPECTED_V2_WRITES, 'ya_recently_viewed', 'ya_msgs_cache']) {
   // git grep exits 0 = found, 1 = not found. execSync THROWS on exit≠0,
   // so "not found" (the GOOD case) lands in catch → exists=false. Any
   // other git failure also lands in catch → conservatively PASS since the
@@ -88,11 +88,32 @@ const CORE_DIFF_OK = [
 check('core.js diff is only the matchMedia guard (auth/DB logic intact)',
   CORE_DIFF_OK && !coreDiff.includes("_db.from('profiles')") && !coreDiff.includes('signInWithPassword'));
 
-const OTHER_AUTH_FILES = ['js/boot.js', 'js/listings.js', 'js/search-ai.js'];
-for (const f of OTHER_AUTH_FILES) {
-  let dirty = true;
-  try { sh(`git diff --quiet ${PRE_V2} -- ${f}`); dirty = false; } catch (e) {}
-  check(`${f} unmodified since pre-v2 (auth/DB/session logic intact)`, !dirty);
+/* 5b ── Files that post-v2 updates (v2.2 motion, v2.3 message history)
+   legitimately touch must STILL leave auth/DB/session logic untouched.
+   Instead of demanding byte-identity with pre-v2, assert that NO added
+   line references the database, auth, or localStorage. The message
+   history cache is deliberately the ONLY new storage write, and it
+   lives in core.js behind L.msgs (add-only, keyed by user id). */
+check('js/core.js: message cache is add-only (removeItem only in legacy corrupted-cache recovery, never clear())',
+  (coreSrc.match(/localStorage\.removeItem\('([^']+)'\)/g) || [])
+    .every(m => /'ya_(favs|searches)'/.test(m)) &&
+  !coreSrc.includes('localStorage.clear'));
+let bootDirty = true;
+try { sh(`git diff --quiet ${PRE_V2} -- js/boot.js`); bootDirty = false; } catch (e) {}
+check('js/boot.js unmodified since pre-v2 (boot sequence intact)', !bootDirty);
+const TOUCHABLE_FILES = ['js/listings.js', 'js/search-ai.js'];
+const FORBIDDEN_ADDED = [
+  /from\('profiles'\)/, /from\('messages'\)/, /from\('ads'\)/,
+  /signInWithPassword/, /signOut\(/,
+  /localStorage\./, /ya_sess/, /ya_favs/, /ya_msgs_cache/,
+  /supabase/i,
+];
+for (const f of TOUCHABLE_FILES) {
+  const diff = sh(`git diff ${PRE_V2} -- ${f}`);
+  const added = diff.split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++'));
+  const bad = added.filter(l => FORBIDDEN_ADDED.some(re => re.test(l)));
+  check(f + ': post-v2 edits add no auth/DB/storage logic (' + added.length + ' added lines)',
+    bad.length === 0, bad.length ? bad.slice(0, 2).join(' | ') : '');
 }
 const dataFiles = ['gas-prices-data.json', 'gas-stations-snapshot.json'];
 for (const f of dataFiles) {

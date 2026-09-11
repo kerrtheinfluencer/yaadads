@@ -16,8 +16,15 @@
    ═══════════════════════════════════════════════════════════ */
 
 var SITE_UPDATES = {
-  current: 'smooth-motion',
+  current: 'message-history',
   items: {
+    'message-history': {
+      version: 'v2.3',
+      icon: '💬',
+      title: 'Message history you can always re-read',
+      body: 'Yuh chats now keep their full history — day-by-day separators, a "Load earlier messages" button in long threads, and fresh messages waiting for you even if the app was closed. Past conversations also re-read offline. Never lose a deal again.',
+      url: '/',
+    },
     'smooth-motion': {
       version: 'v2.2',
       icon: '🎞️',

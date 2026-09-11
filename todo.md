@@ -1,5 +1,19 @@
 # Yaad Adz — v2 Roadmap
 
+## ✅ Shipped in v2.x (post-v2 updates)
+
+### Message history (v2.3)
+- 💬 Full conversation history stays re-readable: silent refresh when opening Messages or a chat (no reliance on the realtime channel), day separators (Today/Yesterday/date), and a "Load earlier messages" button that pages long threads in slices of 60 (anchored scroll, no jump)
+- 📴 Offline re-read: last 40 messages × 25 conversations persisted to `ya_msgs_cache` (add-only key, keyed by user id) and hydrated at boot
+- 🛠️ Same-millisecond message-id collision fixed in `sbSendMessage`
+
+### Motion system (v2.2)
+- 🎞️ "Liquid rise" card entrances (overshoot + settle, wave stagger, desktop-only scale, photo glide), all compositor-only — see commit 5de9ef9
+- Hover shadow pre-render + opacity crossfade, `hover:hover` gating, scoped `will-change`, compositor-only ambient glows, rAF-throttled scroll handlers everywhere
+
+### What's-new notice (v2.1 → ongoing)
+- 🔔 Site-update modal system (`SITE_UPDATES` in `js/site-updates.js`) — overlay + glass modal CSS added after the original CSS was missing (v2.2 fix, commit 5a7968c)
+
 ## ✅ Shipped in v2 (this update)
 
 ### Onboarding & tips (new)

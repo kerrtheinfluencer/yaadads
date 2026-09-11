@@ -154,6 +154,11 @@ const L = {
   set favs(v)    { localStorage.setItem('ya_favs', JSON.stringify(v)); },
   get searches() { try { return JSON.parse(localStorage.getItem('ya_searches') || '[]'); } catch(e) { console.warn('[L.searches] corrupted localStorage, resetting:', e); localStorage.removeItem('ya_searches'); return []; } },
   set searches(v){ localStorage.setItem('ya_searches', JSON.stringify(v.slice(0,8))); },
+  // Message history cache — lets members re-read past conversations even
+  // offline or before the network answers. Keyed by user id; add-only
+  // storage key ('ya_msgs_cache'), trimmed to keep localStorage small.
+  get msgs()     { try { return JSON.parse(localStorage.getItem('ya_msgs_cache') || 'null'); } catch(e) { return null; } },
+  set msgs(v)    { try { localStorage.setItem('ya_msgs_cache', JSON.stringify(v)); } catch(e) { /* quota — best effort */ } },
   // ads now use the _ads cache — L.ads stays for compatibility
   get ads()      { return _ads; },
 };
@@ -459,11 +464,62 @@ async function loadMessages() {
       ts: new Date(row.created_at).getTime(), read: row.read,
     });
   }
+  saveMsgCache();
+}
+
+/* ── Message history cache ──────────────────────────────────────────
+   Members can re-read past conversations even offline or while the
+   network is slow: the last stretch of each conversation is persisted
+   to localStorage (add-only key 'ya_msgs_cache', keyed by user id) and
+   hydrated into _msgs at boot so the inbox + chat render instantly.
+   History remains authoritative in Supabase; this is a reread cache. */
+
+// Seed _msgs from the local cache at boot (before/without the network).
+function hydrateMsgCache() {
+  if (!CU) return;
+  try {
+    const c = L.msgs;
+    if (!c || c.uid !== CU.id || !c.convs) return;
+    if (!_msgs || !Object.keys(_msgs).length) _msgs = c.convs;
+  } catch (e) {}
+}
+
+// Persist a trimmed snapshot of the current history (25 most recent
+// conversations, 40 messages each — keeps localStorage small).
+function saveMsgCache() {
+  if (!CU) return;
+  try {
+    const keys = Object.keys(_msgs)
+      .sort(function(a, b) {
+        var am = _msgs[a].messages, bm = _msgs[b].messages;
+        return (bm.length ? bm[bm.length-1].ts : 0) - (am.length ? am[am.length-1].ts : 0);
+      })
+      .slice(0, 25);
+    var convs = {};
+    keys.forEach(function(k) {
+      var c = _msgs[k];
+      convs[k] = {
+        adId: c.adId, adTitle: c.adTitle,
+        sellerId: c.sellerId, sellerName: c.sellerName, sellerInit: c.sellerInit,
+        buyerId: c.buyerId, buyerName: c.buyerName, buyerInit: c.buyerInit,
+        messages: c.messages.slice(-40),
+      };
+    });
+    L.msgs = { uid: CU.id, saved: Date.now(), convs: convs };
+  } catch (e) {}
+}
+
+// Silent history refresh — used when opening Messages or a chat, so the
+// past is always current even if the realtime channel dropped earlier.
+async function refreshMessages() {
+  if (!CU) return;
+  try { await loadMessages(); } catch (e) { console.warn('[refreshMessages]', e); }
+  if (typeof updateMsgBadge === 'function') updateMsgBadge();
 }
 
 async function sbSendMessage(convKey, meta, text) {
   const row = {
-    id: 'm' + Date.now(),
+    id: 'm' + Date.now() + Math.random().toString(36).slice(2, 7), // unique even for same-ms sends
     conversation_key: convKey,
     from_user_id: CU.id,
     text,
@@ -482,6 +538,7 @@ async function sbSendMessage(convKey, meta, text) {
   // Update local cache
   if (!_msgs[convKey]) _msgs[convKey] = { ...meta, messages: [] };
   _msgs[convKey].messages.push({ id: row.id, from: CU.id, text, ts: Date.now(), read: false });
+  saveMsgCache();
 }
 
 async function sbMarkRead(convKey) {

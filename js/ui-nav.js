@@ -12,6 +12,7 @@ async function init() {
   fillParishSelects();
   fillCatSelect();
   await restoreSession();
+  hydrateMsgCache(); // instant message history from the local cache (offline reread)
   renderNav();
 
   if (CU && (!CU.parish || !CU.phone)) {
@@ -153,6 +154,7 @@ function subscribeMessages() {
         id: row.id, from: row.from_user_id, text: row.text,
         ts: new Date(row.created_at).getTime(), read: false,
       });
+      if (typeof saveMsgCache === 'function') saveMsgCache();
       updateMsgBadge();
       if (currentConv === key) renderChat(key);
       showToast('New message received 💬', '💬');
@@ -408,7 +410,16 @@ function goPage(p) {
   if (map[p]) document.getElementById(map[p])?.classList.add('active');
   if (p==='browse')  renderBrowse();
   if (p==='myads')   renderMyAds();
-  if (p==='msgs')    renderInbox();
+  if (p==='msgs') {
+    renderInbox();
+    // Silent history refresh so past conversations are current on open —
+    // no reliance on the realtime channel having caught everything.
+    if (typeof refreshMessages === 'function') {
+      refreshMessages().then(function() {
+        if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+      });
+    }
+  }
 }
 
 function handleAccountTab() {

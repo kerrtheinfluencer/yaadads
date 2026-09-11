@@ -2040,6 +2040,29 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 }
 .msg-time { font-size: 11px; color: var(--text-3); margin-top: 4px; padding: 0 4px; }
 .msg-out .msg-time { text-align: right; }
+/* ── Chat history: day separators + "load earlier" ── */
+.chat-day-sep {
+  text-align: center; font-size: 11px; color: var(--text-3);
+  margin: 10px 0 2px; user-select: none;
+}
+.chat-day-sep span {
+  display: inline-block;
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(0,0,0,.06);
+  padding: 3px 12px; border-radius: 12px;
+  font-weight: 600; letter-spacing: .3px;
+}
+.chat-earlier { text-align: center; margin: 0 0 4px; }
+.chat-earlier-btn {
+  font: inherit; font-size: 12.5px; font-weight: 700;
+  background: rgba(255,255,255,.55);
+  border: 1.5px solid rgba(0,0,0,.08);
+  color: var(--green);
+  padding: 8px 16px; border-radius: 14px; cursor: pointer;
+  transition: background var(--dur-1) var(--ease-std), border-color var(--dur-1) var(--ease-std), color var(--dur-1) var(--ease-std);
+}
+.chat-earlier-btn:hover { background: #fff; border-color: rgba(244,195,0,.55); color: var(--gold-dark); }
+.chat-earlier-btn:active { transform: scale(.97); }
 .chat-input-row {
   display: flex; gap: 10px; padding: 16px 20px;
   background: rgba(255,255,255,.5);

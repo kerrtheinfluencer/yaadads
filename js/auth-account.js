@@ -240,34 +240,89 @@ function updateMsgBadge() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MESSAGING — renderChat, renderInbox, sendMsg, openChat §MESSAGING
-═══════════════════════════════════════════════════════════ */
+/* ── MESSAGING — renderChat, renderInbox, sendMsg, openChat §MESSAGING ── */
+
+/* Chat history window — long threads render the most recent slice with a
+   "Load earlier messages" button instead of mounting hundreds of bubbles
+   at once. Everything stays in memory (fetched from Supabase), so paging
+   back through history is instant and works offline from the cache. */
+var CHAT_WINDOW = 60;
+var _chatShown = {};   // conversation key -> how many messages are rendered
+var _chatKeepPos = false;
+var _prevChatH = 0;
+
+function dayLabel(d) {
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  var that  = new Date(d.getFullYear(),  d.getMonth(),  d.getDate()).getTime();
+  var days = Math.round((today - that) / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  return d.toLocaleDateString('en-JM', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function renderChat(key) {
   const conv = _msgs[key]; if (!conv) return;
   const isbuyer = CU.id === conv.buyerId;
   const otherName = isbuyer ? conv.sellerName : conv.buyerName;
   const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
   const clr = avatarColor(otherName);
+
+  var shown = _chatShown[key] || CHAT_WINDOW;
+  if (shown > conv.messages.length) shown = conv.messages.length;
+  var hiddenCount = conv.messages.length - shown;
+  var slice = conv.messages.slice(hiddenCount);
+
+  var msgsHtml = '';
+  if (!conv.messages.length) {
+    msgsHtml = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!</div>';
+  } else {
+    if (hiddenCount > 0) {
+      msgsHtml += '<div class="chat-earlier"><button class="chat-earlier-btn" onclick="loadEarlierMsgs(\'' + key + '\')">⬆ Load earlier messages (' + hiddenCount + ' more)</button></div>';
+    }
+    var lastDay = '';
+    slice.forEach(function(m) {
+      var d = new Date(m.ts);
+      var dayKey = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+      if (dayKey !== lastDay) {
+        lastDay = dayKey;
+        msgsHtml += '<div class="chat-day-sep"><span>' + escHtml(dayLabel(d)) + '</span></div>';
+      }
+      var out = m.from === CU.id;
+      msgsHtml += '<div class="msg ' + (out?'msg-out':'msg-in') + '">' +
+        '<div class="msg-bubble">' + escHtml(m.text||'') + '</div>' +
+        '<div class="msg-time">' + fmtTime(m.ts) + '</div></div>';
+    });
+  }
+
   document.getElementById('chatInner').innerHTML =
     '<div class="chat-header">' +
       '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + otherInit + '</div>' +
       '<div class="chat-info"><div class="chat-name">' + otherName + '</div><div class="chat-ad-ref">Re: ' + (conv.adTitle||'') + '</div></div>' +
     '</div>' +
-    '<div class="chat-messages" id="chatMsgs">' +
-      (!conv.messages.length ? '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!</div>' : '') +
-      conv.messages.map(function(m) {
-        const out = m.from === CU.id;
-        return '<div class="msg ' + (out?'msg-out':'msg-in') + '">' +
-          '<div class="msg-bubble">' + escHtml(m.text||'') + '</div>' +
-          '<div class="msg-time">' + fmtTime(m.ts) + '</div></div>';
-      }).join('') +
-    '</div>' +
+    '<div class="chat-messages" id="chatMsgs">' + msgsHtml + '</div>' +
     '<div class="chat-input-row">' +
       '<input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\')sendMsg()">' +
       '<button class="chat-send" onclick="sendMsg()">➤</button>' +
     '</div>';
-  setTimeout(function(){ const el = document.getElementById('chatMsgs'); if(el) el.scrollTop = el.scrollHeight; }, 50);
+  setTimeout(function(){
+    const el = document.getElementById('chatMsgs');
+    if (!el) return;
+    // After "Load earlier", stay anchored where the user was reading;
+    // otherwise land on the newest message as before.
+    el.scrollTop = _chatKeepPos ? (el.scrollHeight - _prevChatH) : el.scrollHeight;
+    _chatKeepPos = false;
+  }, 50);
+}
+
+// Pull the next slice of history into the chat (instant — from memory).
+function loadEarlierMsgs(key) {
+  var conv = _msgs[key]; if (!conv) return;
+  var msgsEl = document.getElementById('chatMsgs');
+  _prevChatH = msgsEl ? msgsEl.scrollHeight : 0;
+  _chatKeepPos = true;
+  _chatShown[key] = (_chatShown[key] || CHAT_WINDOW) + CHAT_WINDOW;
+  renderChat(key);
 }
 
 function renderInbox() {
@@ -332,19 +387,40 @@ function openChat(adId, sellerId, sellerName, sellerInit) {
       buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name), messages: [] };
   }
   currentConv = key;
+  _chatShown[key] = CHAT_WINDOW;
   renderChat(key);
   openOverlay('ovChat');
   updateMsgBadge();
+  // Silent background history refresh — re-opens show the full past even
+  // if the realtime channel dropped messages while the app was open.
+  if (typeof refreshMessages === 'function') {
+    var before = _msgs[key].messages.length;
+    refreshMessages().then(function(){
+      var c = _msgs[key];
+      if (c && c.messages.length > before && currentConv === key) renderChat(key);
+    });
+  }
 }
 
 async function openChatFromInbox(key) {
   const conv = _msgs[key]; if (!conv) return;
   await sbMarkRead(key);
   currentConv = key;
+  _chatShown[key] = CHAT_WINDOW;
   renderChat(key);
   openOverlay('ovChat');
   updateMsgBadge();
   if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+  // Silent background history refresh — the full past re-reads correctly
+  // even if the realtime channel dropped messages earlier in the session.
+  if (typeof refreshMessages === 'function') {
+    var before = (conv.messages && conv.messages.length) || 0;
+    refreshMessages().then(function(){
+      var c = _msgs[key];
+      if (c && c.messages.length > before && currentConv === key) renderChat(key);
+      if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+    });
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
