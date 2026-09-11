@@ -250,7 +250,7 @@ function cardHTML(ad, idx) {
        </div>`
     : '';
 
-  return `<div class="ad-card${ad.status==='sold'?' sold':''}" onclick="openDetail('${ad.id}')">
+  return `<div class="ad-card${ad.status==='sold'?' sold':''}" data-id="${ad.id}" onclick="openDetail('${ad.id}')">
     <div class="accent-stripe"></div>
     <div class="card-glow"></div>
     ${ad.status==='sold' ? '<div class="sold-watermark"></div>' : ''}
@@ -458,5 +458,96 @@ function catFilter(id) {
   renderCats();   // surgical update — fast
   renderHome();   // grid swap
   window.scrollTo({ top: 0, behavior: 'instant' }); // instant avoids animation conflict
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOTION — viewport-gated card reveals §MOTION
+   Cards animate only as they enter the viewport, via one shared
+   IntersectionObserver that unobserves each card after revealing it
+   (zero ongoing cost). Cards above the fold get a small capped stagger
+   on first paint; everything below waits until it is actually scrolled
+   to. Ads already revealed this session render instantly on re-renders
+   (sort/filter/load-more) instead of re-animating the whole grid.
+   With no IntersectionObserver, or under prefers-reduced-motion, cards
+   are simply visible — the reveal is pure progressive enhancement.
+   (CSS side: .ad-card.pre / .ad-card.in / .ad-card.in.seen in style.css.)
+═══════════════════════════════════════════════════════════ */
+var _cardIO = null;
+var _armedCards = [];
+var _revealedIds = {};
+
+function _motionReduced() {
+  try {
+    return typeof window.matchMedia === 'function' &&
+           window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (e) { return false; }
+}
+
+function _getCardIO() {
+  if (_cardIO || !('IntersectionObserver' in window)) return _cardIO;
+  _cardIO = new IntersectionObserver(function(entries) {
+    var i = 0;
+    entries.forEach(function(en) {
+      if (!en.isIntersecting) return;
+      var t = en.target;
+      // Cards arriving together while scrolling get a gentle wave
+      t.style.animationDelay = (Math.min(i, 5) * 60) + 'ms';
+      t.classList.remove('pre');
+      t.classList.add('in');
+      var rid = t.getAttribute('data-id');
+      if (rid) _revealedIds[rid] = true;
+      _cardIO.unobserve(t);
+      i++;
+    });
+    // Drop revealed cards from the armed list
+    _armedCards = _armedCards.filter(function(el) {
+      return el.classList.contains('pre');
+    });
+  }, { rootMargin: '0px 0px -7% 0px', threshold: 0.05 });
+  return _cardIO;
+}
+
+function armCardReveals(container, stagger) {
+  if (!container) return;
+  var cards = container.querySelectorAll('.ad-card:not([data-reveal])');
+  if (!cards.length) return;
+
+  if (_motionReduced() || !('IntersectionObserver' in window)) {
+    cards.forEach(function(c) { c.setAttribute('data-reveal', 'off'); });
+    return; // cards stay fully visible — no animation
+  }
+
+  var io = _getCardIO();
+  // Sweep armed cards that left the DOM (grids are wiped via innerHTML);
+  // otherwise detached nodes would be retained by the observer forever.
+  _armedCards = _armedCards.filter(function(el) {
+    if (el.isConnected) return true;
+    io.unobserve(el);
+    return false;
+  });
+
+  var vh = window.innerHeight || document.documentElement.clientHeight;
+  var batch = 0, CAP = 8;
+  cards.forEach(function(card) {
+    card.setAttribute('data-reveal', 'on');
+    var rid = card.getAttribute('data-id') || '';
+    if (rid && _revealedIds[rid]) {
+      card.classList.add('in', 'seen'); // instant, no replay
+      return;
+    }
+    // Synchronous measure in the same task as the innerHTML insert, so
+    // in-view cards animate on the very first paint (no flash), and
+    // off-screen cards hide before ever being painted.
+    var r = card.getBoundingClientRect();
+    if (r.top < vh && r.bottom > 0) {
+      card.style.animationDelay = (stagger && batch < CAP) ? (batch++ * 45) + 'ms' : '0ms';
+      card.classList.add('in');
+      if (rid) _revealedIds[rid] = true;
+    } else {
+      card.classList.add('pre');
+      _armedCards.push(card);
+      io.observe(card);
+    }
+  });
 }
 

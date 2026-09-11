@@ -528,6 +528,10 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
     pointer-events: none;
   }
   .float-contact.visible { transform: translateY(0); pointer-events: auto; }
+  /* Reserve space for the fixed bar via a class (the rAF scroll handler
+     adds/removes it) instead of writing body.style.paddingBottom from JS —
+     keeps layout mutations on the normal style pipeline. */
+  body.has-float-bar { padding-bottom: 80px; }
   .float-contact-info { flex: 1; min-width: 0; overflow: hidden; }
   .float-contact-price {
     font-family: var(--font-d); font-size: 17px; font-weight: 800;
@@ -1271,15 +1275,26 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
         var shouldShow = pastContact || beforeContact;
         if (shouldShow && !floatShown) {
           floatBar.classList.add('visible'); floatShown = true;
-          document.body.style.paddingBottom = '80px';
+          document.body.classList.add('has-float-bar');
         } else if (!shouldShow && floatShown) {
           floatBar.classList.remove('visible'); floatShown = false;
-          document.body.style.paddingBottom = '';
+          document.body.classList.remove('has-float-bar');
         }
       }
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true });
+    // rAF-throttled: at most one rect read + class write per frame, so the
+    // page keeps a steady 60fps scroll even on low-end phones (the old
+    // version ran this handler on every scroll event — several per frame).
+    var ticking = false;
+    function requestScrollTick() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(function() { onScroll(); ticking = false; });
+      }
+    }
+    window.addEventListener('scroll', requestScrollTick, { passive: true });
+    window.addEventListener('resize', requestScrollTick, { passive: true });
     onScroll(); // run once on load
   })();
 

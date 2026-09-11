@@ -84,6 +84,8 @@ function openProfile(sellerId) {
 
   closeOverlay('ovDetail');
   openOverlay('ovProfile');
+  // Profile grid cards join the viewport-gated reveal system (§MOTION)
+  if (typeof armCardReveals === 'function') armCardReveals(document.getElementById('profileInner'), true);
 
   // Fetch the real join date from the profiles table — not derivable from
   // cached ad data, so this loads in just after the rest of the profile.

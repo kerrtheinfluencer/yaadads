@@ -74,10 +74,14 @@ function toggleHideSold() {
 function loadMoreHome() {
   _homeShowCount += _homePageSize;
   renderHome();
-  // Scroll to where new cards start
+  // Scroll to where new cards start (honours reduced-motion)
   const cards = document.querySelectorAll('#homeGrid .ad-card');
   const target = cards[_homeShowCount - _homePageSize];
-  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  if (target) {
+    const rm = typeof window.matchMedia === 'function' &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => target.scrollIntoView({ behavior: rm ? 'auto' : 'smooth', block: 'start' }), 50);
+  }
 }
 
 function renderHome() {
@@ -134,13 +138,10 @@ function renderHome() {
   const prevCount = grid.querySelectorAll('.ad-card').length;
   grid.innerHTML = html;
 
-  // Animate only freshly rendered cards (first paint or count changed)
-  if (prevCount === 0) {
-    grid.querySelectorAll('.ad-card').forEach((c, i) => {
-      c.style.animationDelay = Math.min(i * 0.04, 0.28) + 's';
-      c.classList.add('animate');
-    });
-  }
+  // Viewport-gated entrance (ui-nav.js §MOTION): cards animate as they
+  // enter the screen — staggered only on the very first paint — instead
+  // of every card on the page animating at once, seen or not.
+  armCardReveals(grid, prevCount === 0);
 
   // Prefetch ad pages for instant navigation
   // Desktop: prefetch on mouseenter (user is about to click)
@@ -184,9 +185,11 @@ function renderBrowse() {
   const ads = getFiltered(searchQ, activeF, sort);
   const t = searchQ ? `"${searchQ}"` : activeF==='all' ? 'All Listings' : (CATS.find(c=>c.id===activeF)?.name||'Listings');
   document.getElementById('browseTitle').textContent = t;
-  document.getElementById('browseGrid').innerHTML = ads.length
+  const browseGrid = document.getElementById('browseGrid');
+  browseGrid.innerHTML = ads.length
     ? ads.map((a,i) => cardHTML(a,i)).join('')
     : emptyEl('Try different search terms.',`<button class="btn btn-green" onclick="activeF='all';searchQ='';renderBrowse()">Show All</button>`);
+  armCardReveals(browseGrid, true);
 }
 
 /* ═══════════════════════════════════════════════════════════

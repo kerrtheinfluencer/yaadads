@@ -226,6 +226,13 @@ function togFav(id, btn) {
   if (i > -1) { f.splice(i, 1); if(btn) btn.textContent = '🤍'; showToast('Removed from favourites', '🤍'); }
   else         { f.push(id);     if(btn) btn.textContent = '❤️'; showToast('Saved to favourites', '❤️'); }
   L.favs = f;
+  // Tactile heart pop — transform-only; skipped under reduced motion
+  if (btn && !(typeof window.matchMedia === 'function' &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    btn.classList.remove('fav-pop');
+    void btn.offsetWidth; // force reflow so the animation can replay
+    btn.classList.add('fav-pop');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════

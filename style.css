@@ -13,6 +13,15 @@
      below, so the hide/shrink motions feel like one cohesive system
      rather than several mismatched transitions. */
   --ease-premium: cubic-bezier(.16, 1, .3, 1);
+  --ease-spring:  cubic-bezier(.34, 1.56, .64, 1);
+  --ease-std:     cubic-bezier(.4, 0, .2, 1);
+
+  /* Motion durations — one rhythm for the whole site.
+     Every animation on the site picks from these three beats (micro,
+     standard, entrance) so the UI feels like a single living system. */
+  --dur-1: 150ms;  /* micro feedback: presses, chip hovers   */
+  --dur-2: 280ms;  /* standard UI: bars, glows, tooltips     */
+  --dur-3: 460ms;  /* entrances: cards, hero, sheets         */
 
   --green:       #005c35;
   --green-mid:   #00703f;
@@ -54,7 +63,10 @@
   --surface-hsl: 0, 0%, 100%;
   --nav-bg-hsl: 147, 43%, 9%;
   --bg-hsl: 45, 20%, 95%;
-  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* (Removed the old `--transition-smooth: all .3s` token — `transition:
+     all` is wasteful and silently overrode tuned component transitions;
+     components now transition explicit properties with the --dur/--ease
+     tokens above.) */
 
   --glass-bg: rgba(255, 255, 255, 0.24);
   --glass-bg-strong: rgba(255, 255, 255, 0.62);
@@ -316,11 +328,14 @@ nav.scrolled-transparent {
 }
 .nav-ai-icon {
   font-size: 16px; flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(244,195,0,.35));
   animation: navAiPulse 3s ease-in-out infinite;
 }
+/* Transform/opacity shimmer — brightness() + drop-shadow() in the old
+   keyframes repainted the button every frame, forever. */
 @keyframes navAiPulse {
-  0%,100% { filter: brightness(1); }
-  50%      { filter: brightness(1.6) drop-shadow(0 0 4px rgba(244,195,0,.6)); }
+  0%,100% { transform: scale(1);    opacity: .9; }
+  50%     { transform: scale(1.15); opacity: 1;  }
 }
 .nav-ai-placeholder { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-ai-kbd {
@@ -492,13 +507,32 @@ nav.scrolled-transparent {
   margin-left: auto; margin-right: auto;
 }
 
+/* ── HERO ENTRANCE — one-shot staggered rise ──
+   Pure CSS, no JS dependency: the very first thing a visitor sees lifts
+   in like one choreographed beat. `backwards` fill (not `both`) so the
+   fill never locks the .searched collapse transitions below, and the
+   canonical reduced-motion block flattens it to instant. */
+@keyframes heroUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+.hero-eyebrow { animation: heroUp .55s var(--ease-premium) .05s backwards; }
+.hero h1      { animation: heroUp .6s  var(--ease-premium) .12s backwards; }
+.hero-sub     { animation: heroUp .6s  var(--ease-premium) .2s  backwards; }
+.hero-stats   { animation: heroUp .6s  var(--ease-premium) .34s backwards; }
+/* (.ai-suggestions is NOT animated as a container — its chips already
+   stagger themselves via sugIn below.) */
+
 /* ── AI SEARCH BAR ── */
 .ai-search-wrap {
   max-width: 680px; margin: 0 auto 18px; position: relative;
-  animation: searchDrop .7s cubic-bezier(.34,1.56,.64,1) both;
+  /* Delayed to land after the headline in the hero entrance sequence.
+     Scale was dropped — a backdrop-filter element rescaling forces the
+     backdrop blur to be recomputed every frame on some engines. */
+  animation: searchDrop .7s var(--ease-spring) .26s backwards;
 }
 @keyframes searchDrop {
-  from { opacity: 0; transform: translateY(-16px) scale(.97); }
+  from { opacity: 0; transform: translateY(-16px); }
   to   { opacity: 1; transform: none; }
 }
 .ai-search-bar {
@@ -513,7 +547,7 @@ nav.scrolled-transparent {
     0 8px 40px rgba(0,0,0,.18),
     0 0 0 1px rgba(244,195,0,.18),
     inset 0 1px 0 rgba(255,255,255,.6);
-  transition: box-shadow .3s, border-color .3s, transform .2s;
+  transition: box-shadow var(--dur-2) var(--ease-std), border-color var(--dur-2) var(--ease-std), transform var(--dur-1) var(--ease-spring);
   position: relative;
 }
 .ai-search-bar:focus-within {
@@ -533,17 +567,18 @@ nav.scrolled-transparent {
   opacity: .42;
   pointer-events: none;
 }
-/* Animated gradient underline on focus */
+/* Animated gradient underline — runs ONLY while focused. It used to spin
+   forever at opacity:0 even when unfocused, repainting the strip every
+   frame on every single page. */
 .ai-search-bar::after {
   content: '';
   position: absolute; bottom: -1px; left: 10%; right: 10%; height: 2px;
   background: linear-gradient(90deg, transparent, var(--gold), var(--green), var(--gold), transparent);
   background-size: 300% 100%;
   border-radius: 2px;
-  opacity: 0; transition: opacity .3s;
-  animation: gradSlide 2.5s linear infinite;
+  opacity: 0; transition: opacity var(--dur-2);
 }
-.ai-search-bar:focus-within::after { opacity: 1; }
+.ai-search-bar:focus-within::after { opacity: 1; animation: gradSlide 2.5s linear infinite; }
 @keyframes gradSlide { 0%{background-position:100%} 100%{background-position:-200%} }
 
 .ai-icon {
@@ -551,11 +586,14 @@ nav.scrolled-transparent {
   filter: drop-shadow(0 0 6px rgba(244,195,0,.4));
   animation: aiOrbit 4s ease-in-out infinite;
 }
+/* Transform-only orbit — drop-shadow() inside the old keyframes repainted
+   the glow every frame; a static glow + moving icon reads identically
+   and never leaves the compositor. */
 @keyframes aiOrbit {
-  0%,100% { transform: rotate(-8deg) scale(1); filter: drop-shadow(0 0 4px rgba(244,195,0,.3)); }
-  25%      { transform: rotate(0deg)  scale(1.12); filter: drop-shadow(0 0 10px rgba(244,195,0,.7)); }
-  50%      { transform: rotate(8deg)  scale(1); filter: drop-shadow(0 0 4px rgba(244,195,0,.3)); }
-  75%      { transform: rotate(0deg)  scale(1.06); filter: drop-shadow(0 0 8px rgba(244,195,0,.5)); }
+  0%,100% { transform: rotate(-8deg) scale(1); }
+  25%     { transform: rotate(0deg)  scale(1.12); }
+  50%     { transform: rotate(8deg)  scale(1); }
+  75%     { transform: rotate(0deg)  scale(1.06); }
 }
 
 .ai-search-input {
@@ -615,7 +653,7 @@ nav.scrolled-transparent {
   cursor: pointer;
   font-family: var(--font-b);
   transition: background .2s, border-color .2s, color .2s, transform .2s, box-shadow .2s;
-  animation: sugIn 0.4s cubic-bezier(0.23, 1, 0, 32, 1) both;
+  animation: sugIn .45s var(--ease-premium) both;
 }
 .ai-sug:nth-child(1){animation-delay:.05s} .ai-sug:nth-child(2){animation-delay:.1s}
 .ai-sug:nth-child(3){animation-delay:.15s} .ai-sug:nth-child(4){animation-delay:.2s}
@@ -878,21 +916,31 @@ nav.scrolled-transparent {
   backdrop-filter: blur(24px) saturate(2.6);
   -webkit-backdrop-filter: blur(24px) saturate(2.6);
   border-radius: 28px;
-  overflow: hidden;
+  /* overflow: hidden intentionally omitted — it moved to .ad-card-img
+     (which clips the zooming photo) so the ::after hover shadow can paint
+     outside the card box. */
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
     0 10px 34px rgba(0, 0, 0, 0.45),
     0 0 0 0.5px rgba(255, 255, 255, 0.1) inset,
     0 1px 0 rgba(255, 255, 255, 0.12) inset;
   cursor: pointer;
+  /* Transform-only hover lift. The elevated shadow lives on ::after and
+     crossfades via opacity (see below), so hovering never repaints
+     shadows frame-by-frame. */
   transition:
-    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
-    border-color 0.4s ease;
+    transform var(--dur-3) var(--ease-spring),
+    border-color var(--dur-2) ease;
   position: relative;
   contain: layout style;
   -webkit-tap-highlight-color: transparent;
-  will-change: transform, box-shadow;
+  /* NOTE 1: `overflow: hidden` moved to .ad-card-img (which clips the
+     zooming photo) so ::after can paint the hover shadow OUTSIDE the
+     card box instead of being clipped away.
+     NOTE 2: permanent `will-change` removed — it used to pin a compositor
+     layer for every card on the page, box-shadow included (which never
+     composites anyway). It is now scoped to hover-capable devices only —
+     see the @media (hover:hover) block below. */
   /* NOTE: backface-visibility:hidden was removed here — combined with
      backdrop-filter + contain + an animated transform, it's a known
      WebKit/Safari bug that renders the element fully invisible while
@@ -917,10 +965,19 @@ nav.scrolled-transparent {
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.25), transparent 60%);
+  /* Pre-rendered "elevated" hover shadow. The shadow pixels are painted
+     once and revealed by crossfading this layer's opacity on the
+     compositor — instead of animating box-shadow values, which forces a
+     full repaint of the card every frame. */
+  box-shadow:
+    0 44px 130px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 -1px 0 rgba(255, 255, 255, 0.08) inset;
   pointer-events: none;
   z-index: 1;
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity var(--dur-3) var(--ease-std);
 }
 
 /* Cold accent stripe on left edge - premium touch */
@@ -939,32 +996,37 @@ nav.scrolled-transparent {
   pointer-events: none;
 }
 
-/* Hover state adds the extended shadow layer directly on .ad-card:hover below */
+/* Hover lift exists only on devices that can actually hover — this kills
+   sticky-hover states on touch screens/tablets and skips all hover cost
+   on mobile entirely (the old max-width:640px guard is superseded). */
+@media (hover: hover) and (pointer: fine) {
+  .ad-card {
+    will-change: transform; /* scoped: only where the lift actually happens */
+  }
+  .ad-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  /* Elevated shadow crossfades in via ::after's opacity — no per-frame
+     box-shadow repaints. */
+  .ad-card:hover::after {
+    opacity: 1;
+  }
+  .ad-card:hover .ad-card-img img {
+    transform: scale(1.10);
+  }
+  /* Reveal accent stripe on hover */
+  .ad-card:hover .accent-stripe {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  /* Subtle gold glow overlay on hover */
+  .ad-card:hover .card-glow {
+    opacity: 0.6;
+  }
+}
 
-.ad-card:hover {
-  transform: translateY(-12px) scale(1.02);
-  box-shadow:
-    0 44px 130px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
-    0 1px 0 rgba(255, 255, 255, 0.25) inset,
-    0 -1px 0 rgba(255, 255, 255, 0.08) inset;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-.ad-card:hover::after {
-  opacity: 1;
-}
-.ad-card:hover .ad-card-img img {
-  transform: scale(1.10);
-}
-/* Reveal accent stripe on hover */
-.ad-card:hover .accent-stripe {
-  opacity: 1;
-  transform: translateX(0);
-}
-/* Subtle gold glow overlay on hover */
-.ad-card:hover .card-glow {
-  opacity: 0.6;
-}
+/* Press feedback stays available on every device */
 .ad-card:active {
   transform: translateY(-4px) scale(1.01);
   transition: transform 0.12s ease;
@@ -1022,16 +1084,20 @@ nav.scrolled-transparent {
   backdrop-filter: blur(2px);
 }
 
-/* Staggered entrance — smoother */
-.ad-card { animation: cardIn .5s cubic-bezier(.22,1,.36,1) both; }
-.ad-card:nth-child(1){animation-delay:.02s} .ad-card:nth-child(2){animation-delay:.04s}
-.ad-card:nth-child(3){animation-delay:.06s} .ad-card:nth-child(4){animation-delay:.08s}
-.ad-card:nth-child(5){animation-delay:.10s} .ad-card:nth-child(6){animation-delay:.12s}
-.ad-card:nth-child(7){animation-delay:.14s} .ad-card:nth-child(8){animation-delay:.16s}
-.ad-card:nth-child(n+9){animation-delay:.18s}
+/* Staggered entrance — viewport-gated reveal.
+   ui-nav.js §MOTION adds .pre to off-screen cards and .in as they scroll
+   into view (IntersectionObserver, then unobserves — zero ongoing cost).
+   Cards were previously ALL animated at render time, including the ones
+   far below the fold nobody could see. Without JS, or under
+   prefers-reduced-motion, cards are simply visible — no dependency. */
+.ad-card.pre { opacity: 0; transform: translateY(14px); }
+.ad-card.in  { animation: cardIn var(--dur-3) var(--ease-premium) both; }
+/* Cards already revealed this session re-render instantly (sort, filter,
+   load-more) instead of replaying the entrance over the user's head. */
+.ad-card.in.seen { animation: none; }
 @keyframes cardIn {
-  from { opacity:0; transform:translateY(20px) scale(.97); }
-  to   { opacity:1; transform:none; }
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ── Image container — premier aspect ratio ── */
@@ -1039,7 +1105,11 @@ nav.scrolled-transparent {
   aspect-ratio: 4 / 3;
   display: flex; align-items: center; justify-content: center;
   font-size: 60px;
+  /* Clipping moved here from .ad-card so the hover shadow pseudo can
+     escape the card box; top radius follows the card's 28px outer
+     radius minus its 1px border. */
   overflow: hidden;
+  border-radius: 27px 27px 0 0;
   position: relative;
   contain: strict;
   background:
@@ -1080,20 +1150,8 @@ nav.scrolled-transparent {
   transform: scale(1);
 }
 
-/* Vignette overlay */
-.ad-card-img::vignette {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.3) 100%);
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-.ad-card:hover .ad-card-img::vignette {
-  opacity: 1;
-}
+/* (Removed a dead `.ad-card-img::vignette` block — ::vignette is not a
+   real pseudo-element, so those rules never rendered anything.) */
 
 /* Category-colored placeholder */
 .ad-card-img .img-placeholder {
@@ -1151,8 +1209,16 @@ nav.scrolled-transparent {
 }
 .fav-btn:hover { transform: scale(1.2); background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
 .fav-btn:active { transform: scale(.88); }
+/* Heart pop on favourite toggle — .fav-pop is added/replayed by togFav().
+   Transform-only, and never armed under prefers-reduced-motion. */
+.fav-btn.fav-pop { animation: favPop .45s var(--ease-spring); }
+@keyframes favPop {
+  0%   { transform: scale(.55); }
+  55%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
 
-/* ── Fresh badge — premium with glow pulse ── */
+/* ── Fresh badge — static shadow + compositor-only glow breath ── */
 .fresh-badge {
   position: absolute; top: 54px; right: 12px; z-index: 4;
   background: rgba(0, 92, 53, 0.88);
@@ -1164,14 +1230,19 @@ nav.scrolled-transparent {
   text-transform: uppercase; letter-spacing: .6px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 2px 12px rgba(0, 92, 53, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: freshGlow 2.5s ease-in-out infinite;
 }
-@keyframes freshGlow {
-  0%, 100% { box-shadow: 0 2px 12px rgba(0, 92, 53, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
-  50%      { box-shadow: 0 2px 20px rgba(0, 92, 53, 0.6), 0 0 30px rgba(0, 200, 100, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+/* The glow lives on a pseudo-element whose opacity/scale animate on the
+   compositor — the old keyframes animated box-shadow directly, forcing a
+   full repaint of the badge every frame, forever. */
+.fresh-badge::after {
+  content: ''; position: absolute; inset: -3px; border-radius: inherit;
+  box-shadow: 0 0 22px rgba(0, 200, 100, .5);
+  opacity: 0; pointer-events: none;
+  animation: glowBreathe 2.6s ease-in-out infinite;
 }
 
-/* ── Trending badge — premium with fire pulse ── */
+/* ── Trending badge — same compositor-only glow, desynced so multiple
+   badges on screen don't pulse in lockstep ── */
 .trending-badge {
   position: absolute; bottom: 10px; left: 12px; z-index: 4;
   background: rgba(230, 57, 70, 0.88);
@@ -1182,11 +1253,16 @@ nav.scrolled-transparent {
   text-transform: uppercase; letter-spacing: .6px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 2px 12px rgba(230, 57, 70, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: trendingPulse 1.8s ease-in-out infinite;
 }
-@keyframes trendingPulse {
-  0%, 100% { box-shadow: 0 2px 12px rgba(230, 57, 70, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
-  50%      { box-shadow: 0 2px 22px rgba(230, 57, 70, 0.6), 0 0 30px rgba(230, 57, 70, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.trending-badge::after {
+  content: ''; position: absolute; inset: -3px; border-radius: inherit;
+  box-shadow: 0 0 22px rgba(230, 57, 70, .5);
+  opacity: 0; pointer-events: none;
+  animation: glowBreathe 2.1s ease-in-out -.8s infinite;
+}
+@keyframes glowBreathe {
+  0%, 100% { opacity: 0; transform: scale(.9); }
+  50%      { opacity: 1; transform: scale(1.04); }
 }
 
 /* ── Photo count indicator ── */
@@ -2741,8 +2817,19 @@ footer {
 .lightbox-dot.active { background:#fff;transform:scale(1.3); }
 
 /* ── FLOATING AI CHAT (desktop) ── */
-.ai-fab { position:fixed;bottom:28px;right:28px;width:60px;height:60px;background:linear-gradient(135deg,var(--green),var(--green-mid));border:none;border-radius:50%;color:#fff;font-size:26px;cursor:pointer;z-index:290;display:none;align-items:center;justify-content:center;box-shadow:0 6px 28px rgba(0,92,53,.45);transition:transform .2s;animation:fabPulse 3s ease-in-out infinite; }
-@keyframes fabPulse { 0%,100%{box-shadow:0 6px 28px rgba(0,92,53,.45),0 0 0 0 rgba(0,112,63,.3)} 50%{box-shadow:0 6px 28px rgba(0,92,53,.45),0 0 0 10px rgba(0,112,63,0)} }
+.ai-fab { position:fixed;bottom:28px;right:28px;width:60px;height:60px;background:linear-gradient(135deg,var(--green),var(--green-mid));border:none;border-radius:50%;color:#fff;font-size:26px;cursor:pointer;z-index:290;display:none;align-items:center;justify-content:center;box-shadow:0 6px 28px rgba(0,92,53,.45);transition:transform .2s; }
+/* Compositor-only pulse: a static ring on ::after scales + fades.
+   The old keyframes animated box-shadow every frame — pure repaint. */
+.ai-fab::after {
+  content: ''; position: absolute; inset: -2px; border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 112, 63, .55);
+  opacity: 0; pointer-events: none;
+  animation: fabRipple 3s cubic-bezier(.25,.6,.3,1) infinite;
+}
+@keyframes fabRipple {
+  0%        { opacity: .5; transform: scale(1); }
+  70%, 100% { opacity: 0;  transform: scale(1.5); }
+}
 .ai-fab:hover { transform:scale(1.1); }
 .ai-fab:active { transform:scale(.95); }
 @media(min-width:641px){ .ai-fab{display:flex} }
@@ -3080,7 +3167,9 @@ body.pwa-mode { padding-bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bott
 /* ═══════════════════════════════════════════════════════════════════════════
    PREVENT LAYOUT FLASH
    ═══════════════════════════════════════════════════════════════════════════ */
-#homeGrid, #catRow { will-change: contents; }
+/* (Removed `will-change: contents` — `contents` is not a compositing hint,
+   so it allocated memory for zero benefit. Grid re-render costs are
+   already bounded by layout containment on .listings-grid.) */
 
 /* ── iOS zoom prevention ── */
 @media screen and (max-width: 768px) {
@@ -3095,21 +3184,39 @@ body.pwa-mode { padding-bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bott
   }
 }
 
-/* ── PERFORMANCE: Reduce animations on mobile ── */
+/* ── PERFORMANCE: lighter motion on mobile ──
+   Card hover/entrance caps are handled globally now: hover effects are
+   gated behind (hover:hover), and card entrances are viewport-gated by
+   IntersectionObserver (ui-nav.js §MOTION) — only the few cards actually
+   entering the screen ever animate, so per-device caps aren't needed. */
 @media (max-width: 640px) {
-  .ad-card:hover { transform: none; box-shadow: 0 4px 16px rgba(0,0,0,.1); }
-  .ad-card:nth-child(n+7) { animation: none; opacity: 1; transform: none; }
   .skeleton-card::after { animation: skelPulse 1.4s ease-in-out infinite; }
   @keyframes skelPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+  /* Blur-up image reveal is GPU-costly on low-end phones — a plain
+     opacity fade reads just as nicely and stays cheap. */
+  .ad-card-img img,
+  .ad-card-img img.loaded { filter: none; }
 }
 
-/* ── RESPECT system motion preference ── */
+/* ── RESPECT system motion preference — single canonical block ──
+   Every animation/transition on the site collapses to ~instant here. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
+    animation-delay: 0ms !important; /* don't leave staggered elements invisible during delays */
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+  html { scroll-behavior: auto !important; }
+  /* Ambient glows end on a visible keyframe, so switch them off entirely
+     instead of letting the .01ms run land on their lit state. */
+  .fresh-badge::after, .trending-badge::after, .ai-fab::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  /* Safety net: never leave cards invisible if JS armed reveals before
+     this setting applied (armCardReveals also checks matchMedia itself). */
+  .ad-card.pre { opacity: 1 !important; transform: none !important; }
 }
 
 /* ── Stablise ad slots — no layout shift ── */
@@ -3163,17 +3270,24 @@ body {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.38), 0 8px 26px rgba(0,32,22,.08);
 }
 
-/* ── Interactive Transitions ── */
-button, a, .cat-pill-sm, .fchip, .ai-sug, .ad-card, .ai-search-bar {
-  transition: var(--transition-smooth);
+/* ── Interactive Transitions ──
+   Explicit property lists instead of `transition: all` — `all` forces the
+   browser to watch every animatable property (layout ones included), and
+   being later in the file it silently OVERRODE the tuned transitions on
+   .ad-card and .ai-search-bar. Those two keep their own curated
+   transitions; everything else gets a tight, consistent set. */
+button, a, .cat-pill-sm, .fchip, .ai-sug {
+  transition:
+    color var(--dur-1) var(--ease-std),
+    background-color var(--dur-1) var(--ease-std),
+    border-color var(--dur-1) var(--ease-std),
+    box-shadow var(--dur-1) var(--ease-std),
+    transform var(--dur-1) var(--ease-spring);
 }
 
-/* ── Ad card entrance animation override (for JS-triggered .animate) ── */
-@keyframes cardInAnimate {
-  from { opacity:0; transform:translateY(8px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.ad-card.animate { animation: cardInAnimate 0.22s ease both; }
+/* (Removed the old `.ad-card.animate` JS-triggered entrance — superseded
+   by the viewport-gated .pre/.in reveal system defined with the card
+   styles above.) */
 
 /* ── AI search bar pulse focus ── */
 .ai-search-bar.pulse-focus {
@@ -3870,10 +3984,8 @@ footer a:hover, .footer a:hover { color: #ffd94a; }
    the old light-document #111 now reads clearly on the dark canvas. */
 body { color: var(--ink-on-glass); }
 
-/* Respect lower-power and reduced-motion settings. */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
-}
+/* (Reduced-motion is consolidated into the single canonical block above —
+   see "RESPECT system motion preference". No duplicate here.) */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   nav, .modal, .modal-full, .ai-sheet, .mob-nav, .toast, .pwa-banner, #gasBanner { background: #0b2a1b; }
   .recent-search-row, .results-header, .recent-strip, .seller-box, .analytics-strip { background: #123b27; }
