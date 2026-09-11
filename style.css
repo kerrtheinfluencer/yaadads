@@ -1084,20 +1084,49 @@ nav.scrolled-transparent {
   backdrop-filter: blur(2px);
 }
 
-/* Staggered entrance — viewport-gated reveal.
+/* Staggered entrance — viewport-gated reveal, "liquid rise" curve.
    ui-nav.js §MOTION adds .pre to off-screen cards and .in as they scroll
    into view (IntersectionObserver, then unobserves — zero ongoing cost).
-   Cards were previously ALL animated at render time, including the ones
-   far below the fold nobody could see. Without JS, or under
-   prefers-reduced-motion, cards are simply visible — no dependency. */
-.ad-card.pre { opacity: 0; transform: translateY(14px); }
-.ad-card.in  { animation: cardIn var(--dur-3) var(--ease-premium) both; }
+   The entrance is a soft rise with a gentle overshoot + settle, staggered
+   into a wave when cards arrive together. Transform/opacity only, so it
+   stays on the compositor even with backdrop-filter glass. Without JS,
+   or under prefers-reduced-motion, cards are simply visible. */
+.ad-card.pre { opacity: 0; transform: translateY(18px); }
+.ad-card.in  { animation: cardIn .62s cubic-bezier(.22, 1, .36, 1) both; }
 /* Cards already revealed this session re-render instantly (sort, filter,
    load-more) instead of replaying the entrance over the user's head. */
 .ad-card.in.seen { animation: none; }
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: none; }
+  0%   { opacity: 0; transform: translateY(30px); }
+  55%  { opacity: 1; transform: translateY(-4px); } /* soft overshoot…  */
+  82%  { transform: translateY(1px); }              /* …and liquid settle */
+  100% { opacity: 1; transform: none; }
+}
+
+/* Desktop adds a whisper of scale for extra depth. Scale forces the
+   backdrop blur to be recomputed per frame, so it is desktop-only —
+   touch devices get the pure-translate curve, which costs nothing. */
+@media (hover: hover) and (pointer: fine) {
+  .ad-card.in { animation-name: cardInLift; }
+}
+@keyframes cardInLift {
+  0%   { opacity: 0; transform: translateY(30px) scale(.96); }
+  55%  { opacity: 1; transform: translateY(-4px) scale(1.005); }
+  82%  { transform: translateY(1px) scale(1.001); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* The photo settles a beat after its card, gliding down from a slight
+   zoom — clipped inside .ad-card-img so it adds zero extra paint area.
+   (After the animation ends, the normal blur-up/hover transitions
+   retake control unchanged.) */
+.ad-card.in .ad-card-img img {
+  animation: imgSettle .8s cubic-bezier(.22, 1, .36, 1) .12s backwards;
+}
+.ad-card.in.seen .ad-card-img img { animation: none; }
+@keyframes imgSettle {
+  from { transform: scale(1.14); opacity: .6; }
+  to   { transform: none; opacity: 1; }
 }
 
 /* ── Image container — premier aspect ratio ── */

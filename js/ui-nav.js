@@ -491,7 +491,7 @@ function _getCardIO() {
       if (!en.isIntersecting) return;
       var t = en.target;
       // Cards arriving together while scrolling get a gentle wave
-      t.style.animationDelay = (Math.min(i, 5) * 60) + 'ms';
+      t.style.animationDelay = (Math.min(i, 6) * 65) + 'ms';
       t.classList.remove('pre');
       t.classList.add('in');
       var rid = t.getAttribute('data-id');
