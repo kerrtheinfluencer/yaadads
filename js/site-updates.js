@@ -77,7 +77,9 @@ function openSiteUpdate() {
   try {
     const meta = siteUpdateMeta();
     if (!meta) return;
-    markSiteUpdateRead();
+    // If the modal is already open, do nothing (in particular do NOT mark
+    // read — a stray second tap must not clear the row behind a hidden
+    // or half-rendered modal).
     if (document.getElementById('suOverlay')) return;
 
     const ov = document.createElement('div');
@@ -143,6 +145,12 @@ function openSiteUpdate() {
     modal.appendChild(actions);
     ov.appendChild(modal);
     document.body.appendChild(ov);
+
+    // Mark read only AFTER the modal is actually on screen. Previously the
+    // read-state was saved before the modal existed — so if anything above
+    // failed, the tap was consumed, nothing appeared, and the inbox row
+    // vanished on the next render ("unclickable + disappears").
+    markSiteUpdateRead();
 
     const firstBtn = modal.querySelector('button');
     if (firstBtn) { try { firstBtn.focus(); } catch (e) {} }

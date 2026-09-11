@@ -47,7 +47,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v21', sw.includes('yaadadz-v21'));
+check('SW cache bumped to v22', sw.includes('yaadadz-v22'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'"));
 
 // 6. style.css balance + new styles
@@ -59,6 +59,8 @@ check('style.css has recent strip styles', css.includes('.recent-card') && css.i
 check('style.css has tap-target block', css.includes('min-width: 44px'));
 check('onboarding overlay is dim-and-dismiss (click-outside wired)',
   css.includes('pointer-events: auto;') && css.includes('.ob-overlay'));
+check('site-update modal shell styled (su-overlay + modal CSS present)',
+  css.includes('.su-overlay') && css.includes('.site-update-modal'));
 
 // 6b. matchMedia guard present across app JS + no unguarded calls anywhere
 const uiNav = fs.readFileSync('js/ui-nav.js', 'utf8');

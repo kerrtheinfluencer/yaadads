@@ -1579,6 +1579,8 @@ nav.scrolled-transparent {
 }
 .inbox-item:hover { background: rgba(255,255,255,.7); transform: translateY(-1px); }
 .inbox-item.unread { border-left: 3px solid var(--gold); }
+/* Rows carry onclick handlers — make them read as tappable. */
+.inbox-item, .site-update-inbox { cursor: pointer; -webkit-user-select: none; user-select: none; }
 .inbox-avatar {
   width: 46px; height: 46px;
   border-radius: 50%; flex-shrink: 0;
@@ -4165,11 +4167,46 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .site-update-btn-ghost:hover { background: rgba(255, 255, 255, .17); }
 .site-update-btn-ghost:active { transform: scale(.97); }
 
+/* ── Overlay + modal shell ──
+   js/site-updates.js builds .su-overlay > .site-update-modal. These two
+   were MISSING from the stylesheet (only the old inline-banner styles
+   existed), so the "modal" rendered as unstyled text at the bottom of
+   the document — impossible to see or tap, while the inbox row was
+   already marked read and vanished on the next render. */
+.su-overlay {
+  position: fixed; inset: 0; z-index: 600; /* above .lightbox (500) */
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(2, 12, 8, .66);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: suFadeIn .22s ease both;
+}
+.su-overlay.leaving { opacity: 0; transition: opacity .2s ease; }
+@keyframes suFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.site-update-modal {
+  width: 100%; max-width: 460px;
+  background: var(--glass-raised);
+  border: 1px solid var(--glass-line);
+  border-radius: 22px;
+  box-shadow: 0 32px 90px rgba(0, 20, 12, .55), inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+  color: var(--ink-on-glass);
+  overflow: hidden;
+  animation: siteUpdateIn .35s var(--liquid-ease);
+}
+.su-overlay.leaving .site-update-modal {
+  transform: translateY(8px);
+  transition: transform .2s var(--liquid-ease);
+}
+
 @media (max-width: 640px) {
   .site-update-card { border-radius: 18px; margin-bottom: 16px; }
   .site-update-row { padding: 14px 14px 10px; gap: 10px; }
   .site-update-btn { min-height: 44px; padding: 0 14px; }
   .site-update-inbox { margin: 0 -8px; border-radius: 12px; }
+  .su-overlay { padding: 14px; }
 }
 
 /* Solid fallback for browsers without backdrop-filter support. */
