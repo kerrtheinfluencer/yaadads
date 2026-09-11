@@ -4237,7 +4237,9 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .su-overlay.leaving { opacity: 0; transition: opacity .2s ease; }
 @keyframes suFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .site-update-modal {
-  width: 100%; max-width: 460px;
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column;
+  max-height: min(78vh, 560px);
   background: var(--glass-raised);
   border: 1px solid var(--glass-line);
   border-radius: 22px;
@@ -4251,6 +4253,60 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .su-overlay.leaving .site-update-modal {
   transform: translateY(8px);
   transition: transform .2s var(--liquid-ease);
+}
+
+/* ── Updates HISTORY overlay (v2.4) — full list, newest first ── */
+.site-update-modal-hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px 12px;
+}
+.site-update-modal-hd-icon { font-size: 22px; line-height: 1; }
+.site-update-modal-hd-title {
+  font-family: var(--font-d); font-size: 16px; font-weight: 800;
+  color: var(--ink-on-glass); flex: 1; letter-spacing: -.2px;
+}
+.site-update-modal-hd-count {
+  font-size: 11.5px; font-weight: 700; color: var(--muted-on-glass);
+}
+.site-update-list {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 2px 16px;
+}
+.site-update-entry {
+  background: var(--glass-inset);
+  border: 1px solid var(--glass-line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin: 8px 0;
+}
+.site-update-entry.is-latest {
+  border-color: rgba(244,195,0,.45);
+  box-shadow: inset 0 0 0 1px rgba(244,195,0,.1), 0 6px 18px rgba(0, 8, 4, .14);
+}
+.site-update-entry-hd { display: flex; align-items: center; gap: 8px; }
+.site-update-entry-icon { font-size: 17px; line-height: 1; flex-shrink: 0; }
+.site-update-entry-title {
+  font-family: var(--font-d); font-size: 14.5px; font-weight: 700;
+  color: var(--ink-on-glass); flex: 1; min-width: 0;
+}
+.site-update-ver {
+  font-size: 10.5px; font-weight: 800; color: var(--gold); white-space: nowrap;
+  background: rgba(244,195,0,.12); border: 1px solid rgba(244,195,0,.4);
+  padding: 1px 7px; border-radius: 10px;
+}
+.site-update-date { font-size: 11px; color: var(--muted-on-glass); white-space: nowrap; }
+
+/* Read-state chip on the inbox thread row ("History" vs "New") */
+.su-open-chip {
+  display: inline-block; margin-left: 6px;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24);
+  color: var(--muted-on-glass);
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  padding: 2px 7px; border-radius: 10px;
+}
+.inbox-empty-hint {
+  padding: 14px 16px; text-align: center;
+  font-size: 12.5px; color: var(--muted-on-glass);
 }
 
 @media (max-width: 640px) {

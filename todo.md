@@ -2,6 +2,11 @@
 
 ## ✅ Shipped in v2.x (post-v2 updates)
 
+### Updates history thread (v2.4)
+- 🗞️ "What's new" is now a **persistent message** at the top of the Messages inbox — check it any time (New chip + pill dot while unread, History chip after)
+- 📜 Opens a full-history overlay listing every past update (newest first, version + date chips, latest highlighted gold); `siteUpdateList()` sorts by the new `date` field on each entry
+- Inbox no longer shows a dead-empty state — the updates thread + a hint fill an empty inbox
+
 ### Message history (v2.3)
 - 💬 Full conversation history stays re-readable: silent refresh when opening Messages or a chat (no reliance on the realtime channel), day separators (Today/Yesterday/date), and a "Load earlier messages" button that pages long threads in slices of 60 (anchored scroll, no jump)
 - 📴 Offline re-read: last 40 messages × 25 conversations persisted to `ya_msgs_cache` (add-only key, keyed by user id) and hydrated at boot

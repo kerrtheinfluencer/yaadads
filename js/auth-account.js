@@ -242,6 +242,30 @@ function updateMsgBadge() {
 
 /* ── MESSAGING — renderChat, renderInbox, sendMsg, openChat §MESSAGING ── */
 
+/* Persistent "Yaad Adz updates" thread row — always visible in inboxes so
+   members can re-check the full update history ANY time. Gold "New" chip
+   (+ pill dot) while the newest update is unread; History chip once read. */
+function siteUpdateRowHtml() {
+  const meta = (typeof siteUpdateMeta === 'function' && siteUpdateMeta()) || null;
+  if (!meta) return '';
+  const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
+  const body = meta.body || '';
+  const preview = body.length > 90 ? body.slice(0, 89) + '…' : body;
+  const name = 'What’s new' + (meta.version ? ' · ' + escHtml(meta.version) : '');
+  const chip = updUnread ? '<span class="su-new-chip">New</span>'
+                         : '<span class="su-open-chip">History</span>';
+  const time = updUnread ? 'now' : (meta.date ? escHtml(meta.date.split(',')[0]) : '');
+  return '<div class="inbox-item site-update-inbox' + (updUnread ? ' unread' : '') + '" onclick="openSiteUpdate()">' +
+    '<div class="inbox-avatar su-avatar">' + escHtml(meta.icon || '🗞️') + '</div>' +
+    '<div class="inbox-info">' +
+      '<div class="inbox-name">' + name + chip + '</div>' +
+      '<div class="inbox-preview">' + escHtml(preview) + '</div>' +
+      '<span class="inbox-ad">🗞️ Yaad Adz updates · tap for full history</span>' +
+    '</div>' +
+    '<div class="inbox-time">' + time + '</div>' +
+  '</div>';
+}
+
 /* Chat history window — long threads render the most recent slice with a
    "Load earlier messages" button instead of mounting hundreds of bubbles
    at once. Everything stays in memory (fetched from Supabase), so paging
@@ -329,22 +353,12 @@ function renderInbox() {
   const el = document.getElementById('inboxList');
   if (!CU) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
   const myConvs = Object.entries(_msgs).filter(function(e){ return e[1].sellerId===CU.id || e[1].buyerId===CU.id; });
-  const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
-  if (!myConvs.length && !updUnread) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>No messages yet</h3><p>When someone messages you about a listing, it will appear here.</p></div>'; return; }
   myConvs.sort(function(a,b){ return (b[1].messages.at(-1)?.ts||0)-(a[1].messages.at(-1)?.ts||0); });
-  var _updateRow = '';
-  if (updUnread) {
-    const _meta = (typeof siteUpdateMeta === 'function' && siteUpdateMeta()) || {};
-    const _body = _meta.body || '';
-    _updateRow = '<div class="inbox-item site-update-inbox unread" onclick="openSiteUpdate()">' +
-      '<div class="inbox-avatar su-avatar">' + (_meta.icon || '✨') + '</div>' +
-      '<div class="inbox-info">' +
-        '<div class="inbox-name">What’s new' + (_meta.version ? ' · ' + escHtml(_meta.version) : '') + '<span class="su-new-chip">New</span></div>' +
-        '<div class="inbox-preview">' + escHtml(_body.length > 90 ? _body.slice(0, 89) + '…' : _body) + '</div>' +
-        '<span class="inbox-ad">🗞️ Yaad Adz updates</span>' +
-      '</div>' +
-      '<div class="inbox-time">now</div>' +
-    '</div>';
+  const _updateRow = siteUpdateRowHtml();
+  if (!myConvs.length) {
+    // The updates thread is always available, so the inbox is never dead-empty.
+    el.innerHTML = _updateRow + '<div class="inbox-empty-hint">No conversations yet — open any listing and tap 💬 to message a seller.</div>';
+    return;
   }
   el.innerHTML = _updateRow + myConvs.map(function(e){
     const key = e[0], conv = e[1];
@@ -478,24 +492,11 @@ function renderMyAds() {
       acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
     } else {
       const keys = Object.keys(_msgs);
-      const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
-      if (!keys.length && !updUnread) {
-        acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p style="color:var(--text-3)">No messages yet.</p></div>';
+      const _updateRow = siteUpdateRowHtml();
+      if (!keys.length) {
+        // The updates thread is always available, so the inbox is never dead-empty.
+        acctInbox.innerHTML = _updateRow + '<div class="inbox-empty-hint">No conversations yet — open any listing and tap 💬 to message a seller.</div>';
       } else {
-        var _updateRow = '';
-        if (updUnread) {
-          const _meta = (typeof siteUpdateMeta === 'function' && siteUpdateMeta()) || {};
-          const _body = _meta.body || '';
-          _updateRow = '<div class="inbox-item site-update-inbox unread" onclick="openSiteUpdate()">' +
-            '<div class="inbox-avatar su-avatar">' + (_meta.icon || '✨') + '</div>' +
-            '<div class="inbox-info">' +
-              '<div class="inbox-name">What\'s new' + (_meta.version ? ' · ' + escHtml(_meta.version) : '') + '<span class="su-new-chip">New</span></div>' +
-              '<div class="inbox-preview">' + escHtml(_body.length > 90 ? _body.slice(0, 89) + '…' : _body) + '</div>' +
-              '<span class="inbox-ad">🗞️ Yaad Adz updates</span>' +
-            '</div>' +
-            '<div class="inbox-time">now</div>' +
-          '</div>';
-        }
         const _msgsHtml = keys.map(function(key) {
           const conv = _msgs[key];
           const msgs = conv.messages || [];

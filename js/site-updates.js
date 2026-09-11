@@ -1,28 +1,40 @@
-/* ═══════════════════════════════════════════════════════════
-   SITE UPDATES §UPDATES
-   ─ A system "What's new" message in the Messages inbox that tells
-     members when the site has been updated. A gold notification dot
-     on the Messages pill stays until the member opens the notice, which
-     renders as a small glass read-modal.
-   ─ To announce a new update:
-       1. Add an entry to SITE_UPDATES.items.
-       2. Set SITE_UPDATES.current to that id.
-       3. Commit — members see a new inbox message + pill dot once.
-       4. Optional: blast push subscribers with
-          node notify-site-update.js "Title" "Body" [url]
-   ─ Read-state kept once per update into localStorage ('ya_seen_update').
-     Built with DOM APIs (never innerHTML) so nothing can inject
-     markup; wrapped defensively so it can never break boot.
-   ═══════════════════════════════════════════════════════════ */
+/*******************************************************************************
+   SITE UPDATES - UPDATES
+   - A persistent "What's new" thread in the Messages inbox. Members can check
+     it ANY time - it stays at the top of the inbox and opens an overlay listing
+     the FULL history of past updates (newest first, with version + date), not
+     just the latest one. A gold dot on the Messages pill shows while the newest
+     update is unread.
+   - To announce a new update:
+        1. Add an entry to SITE_UPDATES.items (append at the END - history
+           renders newest-first). Every entry needs: version, icon, title,
+           body, date ('Mon D, YYYY').
+        2. Set SITE_UPDATES.current to that id.
+        3. Commit - members see the thread highlight + pill dot once.
+        4. Optional: blast push subscribers with `node notify-site-update.js`
+   - Read-state kept once per update into localStorage ('ya_seen_update').
+     Built with DOM APIs (never innerHTML) so nothing can inject markup;
+     wrapped defensively so it can never break boot.
+*******************************************************************************/
+
 
 var SITE_UPDATES = {
-  current: 'message-history',
+  current: 'update-history',
   items: {
+    'update-history': {
+      version: 'v2.4',
+      icon: '🗞️',
+      title: 'Updates keep their own history',
+      body: 'The "What\'s new" section is now a permanent message — check it any time to browse every past update, newest first, with versions and dates. The gold dot just means something new. Read old ones whenever yuh ready.',
+      date: 'Sep 11, 2026',
+      url: '/',
+    },
     'message-history': {
       version: 'v2.3',
       icon: '💬',
       title: 'Message history you can always re-read',
       body: 'Yuh chats now keep their full history — day-by-day separators, a "Load earlier messages" button in long threads, and fresh messages waiting for you even if the app was closed. Past conversations also re-read offline. Never lose a deal again.',
+      date: 'Sep 11, 2026',
       url: '/',
     },
     'smooth-motion': {
@@ -30,6 +42,7 @@ var SITE_UPDATES = {
       icon: '🎞️',
       title: 'Silky-smooth scrolling & animations',
       body: 'Listings now glide in as you scroll, cards lift with a softer hover, and the whole site moves lighter and faster — tuned to stay buttery even on budget phones. Also new: a little heart pop when yuh save a favourite. Same Yaad Adz, nicer motion.',
+      date: 'Sep 11, 2026',
       url: '/',
     },
     'liquid-glass': {
@@ -37,6 +50,7 @@ var SITE_UPDATES = {
       icon: '✨',
       title: 'A fresh new look — Liquid Glass',
       body: 'The whole site got a rich dark-glass finish — bolder cards, better contrast,and easier night browsing. New changes will land here, so this is the place to catch every update.',
+      date: 'Sep 10, 2026',
       url: '/',
     },
   },
@@ -48,6 +62,20 @@ function siteUpdateSeenId() {
 
 function siteUpdateMeta() {
   return SITE_UPDATES.items[SITE_UPDATES.current] || null;
+}
+
+// All past updates, newest first (dates are 'Mon D, YYYY').
+function _updateDateNum(s) {
+  var m = String(s || '').match(/^([A-Z][a-z]{2}) (\d{1,2}), (\d{4})$/);
+  if (!m) return 0;
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return (+m[3]) * 10000 + (MON.indexOf(m[1]) + 1) * 100 + (+m[2]);
+}
+function siteUpdateList() {
+  var items = SITE_UPDATES.items || {};
+  var out = Object.keys(items).map(function(k){ return { key: k, meta: items[k] }; });
+  out.sort(function(a, b) { return _updateDateNum(b.meta.date) - _updateDateNum(a.meta.date); });
+  return out;
 }
 
 function siteUpdateUnread() {
@@ -98,37 +126,78 @@ function openSiteUpdate() {
     modal.className = 'site-update-modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'What\'s new');
+    modal.setAttribute('aria-label', 'What\'s new — all updates');
 
-    const row = document.createElement('div');
-    row.className = 'site-update-row';
+    // ── Modal header: "What's new · N updates" ──
+    const all = siteUpdateList();
+    const hd = document.createElement('div');
+    hd.className = 'site-update-modal-hd';
+    const hdIcon = document.createElement('div');
+    hdIcon.className = 'site-update-modal-hd-icon';
+    hdIcon.textContent = '🗞️';
+    hd.appendChild(hdIcon);
+    const hdTitle = document.createElement('div');
+    hdTitle.className = 'site-update-modal-hd-title';
+    hdTitle.textContent = 'What\'s new';
+    hd.appendChild(hdTitle);
+    const hdCount = document.createElement('div');
+    hdCount.className = 'site-update-modal-hd-count';
+    hdCount.textContent = all.length + ' update' + (all.length === 1 ? '' : 's');
+    hd.appendChild(hdCount);
+    modal.appendChild(hd);
 
-    const icon = document.createElement('div');
-    icon.className = 'site-update-icon';
-    icon.textContent = meta.icon || '✨';
-    row.appendChild(icon);
+    // ── Full history list (newest first) ──
+    const list = document.createElement('div');
+    list.className = 'site-update-list';
 
-    const copy = document.createElement('div');
-    copy.className = 'site-update-copy';
+    all.forEach(function(it) {
+      const entry = document.createElement('div');
+      entry.className = 'site-update-entry' + (it.key === SITE_UPDATES.current ? ' is-latest' : '');
 
-    const kicker = document.createElement('div');
-    kicker.className = 'site-update-kicker';
-    kicker.textContent = 'What\'s new' + (meta.version ? ' · ' + meta.version : '');
-    copy.appendChild(kicker);
+      const hdr = document.createElement('div');
+      hdr.className = 'site-update-entry-hd';
 
-    const title = document.createElement('div');
-    title.className = 'site-update-title';
-    title.textContent = meta.title;
-    copy.appendChild(title);
+      const icon = document.createElement('div');
+      icon.className = 'site-update-entry-icon';
+      icon.textContent = it.meta.icon || '✨';
+      hdr.appendChild(icon);
 
-    const body = document.createElement('p');
-    body.className = 'site-update-body';
-    body.textContent = meta.body;
-    copy.appendChild(body);
+      const title = document.createElement('div');
+      title.className = 'site-update-entry-title';
+      title.textContent = it.meta.title || '';
+      hdr.appendChild(title);
 
-    row.appendChild(copy);
-    modal.appendChild(row);
+      if (it.key === SITE_UPDATES.current) {
+        const latest = document.createElement('span');
+        latest.className = 'su-new-chip';
+        latest.textContent = 'New';
+        hdr.appendChild(latest);
+      }
+      if (it.meta.version) {
+        const ver = document.createElement('span');
+        ver.className = 'site-update-ver';
+        ver.textContent = it.meta.version;
+        hdr.appendChild(ver);
+      }
+      const dateEl = document.createElement('span');
+      dateEl.className = 'site-update-date';
+      dateEl.textContent = it.meta.date || '';
+      hdr.appendChild(dateEl);
 
+      entry.appendChild(hdr);
+
+      if (it.meta.body) {
+        const body = document.createElement('p');
+        body.className = 'site-update-body';
+        body.textContent = it.meta.body;
+        entry.appendChild(body);
+      }
+      list.appendChild(entry);
+    });
+
+    modal.appendChild(list);
+
+    // ── Actions: Got it / Notify me ──
     const actions = document.createElement('div');
     actions.className = 'site-update-actions';
 

@@ -47,7 +47,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v24', sw.includes('yaadadz-v24'));
+check('SW cache bumped to v25', sw.includes('yaadadz-v25'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'"));
 
 // 6. style.css balance + new styles
@@ -97,6 +97,14 @@ check('onboarding has watchdog auto-dismiss', obSrc.includes('_welcomeWatchdog')
 check('onboarding tries/catches showWelcome (never leaves overlay)',
   obSrc.includes('showWelcome failed') && obSrc.includes('classList.remove(\'ob-welcome-open\')'));
 check('onboarding click-outside-to-dismiss wired', obSrc.includes("getElementById('obOverlay')"));
+
+// 6d. v2.4 updates-history: full history thread + every entry dated
+const suSrc = fs.readFileSync('js/site-updates.js', 'utf8');
+check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper)',
+  suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
+check('v2.4 update-history entry shipped', suSrc.includes("'update-history'") && suSrc.includes("current: 'update-history'"));
+check('every SITE_UPDATES entry has a date (history sorts newest-first)',
+  (suSrc.match(/date: '/g) || []).length >= 4);
 
 // 7. JS modules syntax
 for (const f of fs.readdirSync('js')) {
