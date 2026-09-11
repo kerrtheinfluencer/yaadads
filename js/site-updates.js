@@ -16,8 +16,15 @@
    ═══════════════════════════════════════════════════════════ */
 
 var SITE_UPDATES = {
-  current: 'liquid-glass',
+  current: 'smooth-motion',
   items: {
+    'smooth-motion': {
+      version: 'v2.2',
+      icon: '🎞️',
+      title: 'Silky-smooth scrolling & animations',
+      body: 'Listings now glide in as you scroll, cards lift with a softer hover, and the whole site moves lighter and faster — tuned to stay buttery even on budget phones. Also new: a little heart pop when yuh save a favourite. Same Yaad Adz, nicer motion.',
+      url: '/',
+    },
     'liquid-glass': {
       version: 'v2.1',
       icon: '✨',
