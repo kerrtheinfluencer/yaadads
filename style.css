@@ -4237,9 +4237,11 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .su-overlay.leaving { opacity: 0; transition: opacity .2s ease; }
 @keyframes suFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .site-update-modal {
-  width: 100%; max-width: 520px;
+  width: 100%; max-width: 560px;
   display: flex; flex-direction: column;
-  max-height: min(78vh, 560px);
+  /* Grows to fit any number of updates/notes and scrolls only when the
+     content outgrows the screen — nothing is capped at a fixed height. */
+  max-height: calc(100vh - 48px);
   background: var(--glass-raised);
   border: 1px solid var(--glass-line);
   border-radius: 22px;
@@ -4269,8 +4271,12 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   font-size: 11.5px; font-weight: 700; color: var(--muted-on-glass);
 }
 .site-update-list {
-  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  flex: 1 1 auto; min-height: 120px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   padding: 2px 16px;
+  scrollbar-width: thin;
 }
 .site-update-entry {
   background: var(--glass-inset);
@@ -4295,6 +4301,13 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   padding: 1px 7px; border-radius: 10px;
 }
 .site-update-date { font-size: 11px; color: var(--muted-on-glass); white-space: nowrap; }
+/* Changelog-style notes under each update body */
+.site-update-notes {
+  list-style: disc;
+  margin: 8px 0 0 20px; padding: 0;
+  font-size: 12.5px; line-height: 1.5; color: var(--muted-on-glass);
+}
+.site-update-notes li { margin: 3px 0; }
 
 /* Read-state chip on the inbox thread row ("History" vs "New") */
 .su-open-chip {
@@ -4315,6 +4328,7 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   .site-update-btn { min-height: 44px; padding: 0 14px; }
   .site-update-inbox { margin: 0 -8px; border-radius: 12px; }
   .su-overlay { padding: 14px; }
+  .site-update-modal { max-height: calc(100vh - 32px); }
 }
 
 /* Solid fallback for browsers without backdrop-filter support. */

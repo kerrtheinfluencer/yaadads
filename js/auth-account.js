@@ -294,6 +294,8 @@ function renderChat(key) {
 
   var shown = _chatShown[key] || CHAT_WINDOW;
   if (shown > conv.messages.length) shown = conv.messages.length;
+  // _chatShown[key] === 2 means "show everything" (set by loadEarlierMsgs).
+  if (_chatShown[key] === 2) shown = conv.messages.length;
   var hiddenCount = conv.messages.length - shown;
   var slice = conv.messages.slice(hiddenCount);
 
@@ -302,7 +304,7 @@ function renderChat(key) {
     msgsHtml = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!</div>';
   } else {
     if (hiddenCount > 0) {
-      msgsHtml += '<div class="chat-earlier"><button class="chat-earlier-btn" onclick="loadEarlierMsgs(\'' + key + '\')">⬆ Load earlier messages (' + hiddenCount + ' more)</button></div>';
+      msgsHtml += '<div class="chat-earlier"><button class="chat-earlier-btn" onclick="loadEarlierMsgs(\'' + key + '\')">⬆ Show full history (' + hiddenCount + ' more)</button></div>';
     }
     var lastDay = '';
     slice.forEach(function(m) {
@@ -339,13 +341,16 @@ function renderChat(key) {
   }, 50);
 }
 
-// Pull the next slice of history into the chat (instant — from memory).
+// Expand the chat to the FULL thread in one tap (scroll stays anchored).
+// The first open renders the latest CHAT_WINDOW only for performance, but
+// there is no hard cap — one tap unfurls the entire conversation, so
+// scrolling back through history is effectively unlimited.
 function loadEarlierMsgs(key) {
   var conv = _msgs[key]; if (!conv) return;
   var msgsEl = document.getElementById('chatMsgs');
   _prevChatH = msgsEl ? msgsEl.scrollHeight : 0;
   _chatKeepPos = true;
-  _chatShown[key] = (_chatShown[key] || CHAT_WINDOW) + CHAT_WINDOW;
+  _chatShown[key] = 2; // sentinel: renderChat shows the ENTIRE thread
   renderChat(key);
 }
 

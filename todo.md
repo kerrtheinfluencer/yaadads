@@ -5,6 +5,8 @@
 ### Updates history thread (v2.4)
 - 🗞️ "What's new" is now a **persistent message** at the top of the Messages inbox — check it any time (New chip + pill dot while unread, History chip after)
 - 📜 Opens a full-history overlay listing every past update (newest first, version + date chips, latest highlighted gold); `siteUpdateList()` sorts by the new `date` field on each entry
+- 📋 Every update carries **notes** (changelog bullets rendered under the body); the overlay has **unlimited scroll** (grows to fit any number of updates, only scrolls when content outgrows the screen)
+- 💬 Chat threads expand to **full history in one tap** ("Show full history") — no per-page limits
 - Inbox no longer shows a dead-empty state — the updates thread + a hint fill an empty inbox
 
 ### Message history (v2.3)

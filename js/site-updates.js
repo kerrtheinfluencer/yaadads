@@ -8,7 +8,8 @@
    - To announce a new update:
         1. Add an entry to SITE_UPDATES.items (append at the END - history
            renders newest-first). Every entry needs: version, icon, title,
-           body, date ('Mon D, YYYY').
+           body, date ('Mon D, YYYY'). Optional: notes: [] (bullet list
+           rendered under the body, like a quick changelog).
         2. Set SITE_UPDATES.current to that id.
         3. Commit - members see the thread highlight + pill dot once.
         4. Optional: blast push subscribers with `node notify-site-update.js`
@@ -27,6 +28,11 @@ var SITE_UPDATES = {
       title: 'Updates keep their own history',
       body: 'The "What\'s new" section is now a permanent message — check it any time to browse every past update, newest first, with versions and dates. The gold dot just means something new. Read old ones whenever yuh ready.',
       date: 'Sep 11, 2026',
+      notes: [
+        'The updates thread is now a permanent message in your inbox',
+        'Browse every past update, newest first, with version and date',
+        'The gold dot marks something new — the history never disappears',
+      ],
       url: '/',
     },
     'message-history': {
@@ -35,6 +41,11 @@ var SITE_UPDATES = {
       title: 'Message history you can always re-read',
       body: 'Yuh chats now keep their full history — day-by-day separators, a "Load earlier messages" button in long threads, and fresh messages waiting for you even if the app was closed. Past conversations also re-read offline. Never lose a deal again.',
       date: 'Sep 11, 2026',
+      notes: [
+        'Conversations keep their full past — re-read any time, even offline',
+        'Day separators (Today / Yesterday / date) keep long threads easy to follow',
+        'Background refresh on open so nothing is ever missing',
+      ],
       url: '/',
     },
     'smooth-motion': {
@@ -43,6 +54,11 @@ var SITE_UPDATES = {
       title: 'Silky-smooth scrolling & animations',
       body: 'Listings now glide in as you scroll, cards lift with a softer hover, and the whole site moves lighter and faster — tuned to stay buttery even on budget phones. Also new: a little heart pop when yuh save a favourite. Same Yaad Adz, nicer motion.',
       date: 'Sep 11, 2026',
+      notes: [
+        'Cards rise in with a soft overshoot as you scroll — a wave when a row arrives together',
+        'Softer hovers and a heart pop when you save a favourite',
+        'Tuned to stay smooth even on budget phones',
+      ],
       url: '/',
     },
     'liquid-glass': {
@@ -51,6 +67,11 @@ var SITE_UPDATES = {
       title: 'A fresh new look — Liquid Glass',
       body: 'The whole site got a rich dark-glass finish — bolder cards, better contrast,and easier night browsing. New changes will land here, so this is the place to catch every update.',
       date: 'Sep 10, 2026',
+      notes: [
+        'Rich dark-glass finish across the whole site',
+        'Bolder cards, clearer contrast',
+        'Easier night browsing',
+      ],
       url: '/',
     },
   },
@@ -191,6 +212,16 @@ function openSiteUpdate() {
         body.className = 'site-update-body';
         body.textContent = it.meta.body;
         entry.appendChild(body);
+      }
+      if (it.meta.notes && it.meta.notes.length) {
+        const ul = document.createElement('ul');
+        ul.className = 'site-update-notes';
+        it.meta.notes.forEach(function(n) {
+          const li = document.createElement('li');
+          li.textContent = n;
+          ul.appendChild(li);
+        });
+        entry.appendChild(ul);
       }
       list.appendChild(entry);
     });

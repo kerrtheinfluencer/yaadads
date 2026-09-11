@@ -47,7 +47,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v25', sw.includes('yaadadz-v25'));
+check('SW cache bumped to v26', sw.includes('yaadadz-v26'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'"));
 
 // 6. style.css balance + new styles
@@ -105,6 +105,8 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'") && suSrc.includes("current: 'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',
   (suSrc.match(/date: '/g) || []).length >= 4);
+check('every SITE_UPDATES entry ships notes + notes renderer exists',
+  (suSrc.match(/notes: \[/g) || []).length >= 4 && suSrc.includes('site-update-notes'));
 
 // 7. JS modules syntax
 for (const f of fs.readdirSync('js')) {
