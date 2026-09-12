@@ -125,12 +125,12 @@ function floatSubmit() {
           const resWrap = document.createElement('div');
           resWrap.className = 'sheet-results';
           result.results.slice(0,4).forEach(function(ad) {
-            const cat = CATS.find(function(c){ return c.id===ad.category; });
+            const cat = catById(ad.category);
             const card = document.createElement('div');
             card.className = 'sheet-result-card';
             const thumb = ad.image
               ? '<img class="src-thumb" src="'+ad.image+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-              : '<div class="src-icon">'+(cat?cat.icon:'📦')+'</div>';
+              : '<div class="src-icon">'+(cat.icon||'📦')+'</div>';
             card.innerHTML = thumb +
               '<div class="src-info">' +
                 '<div class="src-price">J$'+fmtN(ad.price)+'</div>' +
@@ -344,7 +344,7 @@ function checkUrlAdParam() {
       const inp = document.getElementById('aiInput');
       if (inp) inp.value = q;
     }
-    if (cat && CATS.find(c=>c.id===cat)) activeF = cat;
+    if (cat && CAT_MAP[cat]) activeF = cat;
     if (parish) window._aiFilters = { parish };
     setTimeout(() => { renderCats(); renderHome(); scrollToResults(); }, 700);
   }

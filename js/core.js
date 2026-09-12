@@ -77,6 +77,23 @@ const CATS = [
 
 const PARISHES = ['Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann','Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth','Manchester','Clarendon','St. Catherine'];
 
+/* ── Shared lookups + DOM helpers (single source of truth) ──
+   CAT_MAP/catById replace 20+ O(n) category scans in hot loops.
+   $el() shortens getElementById. Named $el (not $) so it can never clash
+   with jQuery or other libraries if one is ever added. escHtml lives
+   here so every file uses one correct implementation. */
+const CAT_MAP = Object.fromEntries(CATS.map(c => [c.id, c]));
+const CAT_FALLBACK = { id:'other', name:'Other', icon:'📦', color:'#f5f5f5' };
+function catById(id) { return CAT_MAP[id] || CAT_FALLBACK; }
+function $el(id) { return document.getElementById(id); }
+// $ is a legacy alias — new code should call $el().
+var $ = $el;
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 const DEMO = [
   {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
   {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
@@ -222,7 +239,8 @@ async function loadAds(_isRetry) {
     if (!_ads.length) _ads = DEMO;
     _yaadLastLoad = { ok: true, count: _ads.length, fromDb: false };
   } else {
-    _ads = data.map(dbToAd);
+    _ads = indexAds(data.map(dbToAd));
+    if (typeof rebuildAdIndex === 'function') { try { rebuildAdIndex(); } catch (e) {} }
     _yaadLastLoad = { ok: true, count: _ads.length, fromDb: true };
     console.info('[loadAds] Loaded ' + _ads.length + ' ads from Supabase');
   }
@@ -235,6 +253,18 @@ async function loadAds(_isRetry) {
 }
 
 // Map DB row → app ad object
+function buildHay(ad) {
+  // Lowercased search cache: built ONCE per ad so scoreAd/getFiltered
+  // don't re-lowercase 4 strings x N ads on every keystroke.
+  // Safe to call twice — just rebuilds the cache.
+  if (!ad || typeof ad !== 'object') return ad;
+  const title = (ad.title || '').toLowerCase();
+  const desc = (ad.desc || '').toLowerCase();
+  const par = (ad.parish || '').toLowerCase();
+  const cat = (catById(ad.category).name || '').toLowerCase();
+  ad._hay = { title, desc, par, cat, all: (title + ' ' + desc + ' ' + par + ' ' + cat) };
+  return ad;
+}
 function dbToAd(row) {
   // image_url can be: a single URL string, or a JSON array of URLs
   let image = '', photos = [];
@@ -269,6 +299,12 @@ function dbToAd(row) {
     views:      row.views || 0,
   };
 }
+function indexAds(list) { for (const a of list) buildHay(a); return list; }
+function refreshAdCaches() {
+  indexAds(_ads);
+  if (typeof rebuildAdIndex === 'function') { try { rebuildAdIndex(); } catch (e) {} }
+}
+indexAds(DEMO); // pre-build search cache for fallback listings too
 
 // Map app ad object → DB row
 function adToDb(ad) {

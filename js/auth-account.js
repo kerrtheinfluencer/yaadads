@@ -360,7 +360,12 @@ function loadEarlierMsgs(key) {
 
 function renderInbox() {
   const el = document.getElementById('inboxList');
-  if (!CU) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
+  if (!el) return;
+  // Guest-safe: the What's-new history thread is public — logged-out members
+  // (the common mobile case) still see it above the login prompt, exactly
+  // like the logged-in inbox. Tapping opens the full history overlay.
+  var _guestRow = (typeof siteUpdateRowHtml === 'function') ? siteUpdateRowHtml() : '';
+  if (!CU) { el.innerHTML = _guestRow + '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
   const myConvs = Object.entries(_msgs).filter(function(e){ return e[1].sellerId===CU.id || e[1].buyerId===CU.id; });
   myConvs.sort(function(a,b){ return (b[1].messages.at(-1)?.ts||0)-(a[1].messages.at(-1)?.ts||0); });
   const _updateRow = siteUpdateRowHtml();
@@ -497,8 +502,11 @@ function renderMyAds() {
   // Render messages into account page inbox
   const acctInbox = document.getElementById('acctInboxList');
   if (acctInbox) {
+    // Guest-safe: keep the What's-new history thread visible even logged out
+    // (mobile Account tab) — same parity as the Messages page inbox above.
+    var _acctGuestRow = (typeof siteUpdateRowHtml === 'function') ? siteUpdateRowHtml() : '';
     if (!CU) {
-      acctInbox.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
+      acctInbox.innerHTML = _acctGuestRow + '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
     } else {
       const keys = Object.keys(_msgs);
       const _updateRow = siteUpdateRowHtml();
@@ -538,8 +546,8 @@ function renderMyAds() {
     return;
   }
   el.innerHTML = ads.map(function(ad) {
-    const cat = CATS.find(function(c){ return c.id === ad.category; });
-    const thumb = ad.image ? '<img src="' + ad.image + '" onerror="this.style.display=\'none\'">' : (cat?.icon||'📦');
+    const cat = catById(ad.category);
+    const thumb = ad.image ? '<img src="' + ad.image + '" loading="lazy" onerror="this.style.display=\'none\'">' : (cat.icon||'📦');
     return '<div class="my-ad-row">' +
       '<div class="my-ad-thumb">' + thumb + '</div>' +
       '<div class="my-ad-info">' +

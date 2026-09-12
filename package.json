@@ -8,7 +8,12 @@
     "gas:scrape": "node scrape-petrojam-archive.js",
     "gas:scrape:db": "node scrape-petrojam-archive.js --db",
     "stations:snapshot": "node scrape-gas-stations.js",
-    "notify:update": "node notify-site-update.js"
+    "notify:update": "node notify-site-update.js",
+    "changelog": "node tools/build-changelog.js",
+    "verify": "node tools/verify-v2.js",
+    "test": "node tools/test-cleanup.js && node tools/verify-v2.js && node tools/test-data-safety.js",
+    "test:cleanup": "node tools/test-cleanup.js",
+    "test:safety": "node tools/test-data-safety.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

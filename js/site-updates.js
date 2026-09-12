@@ -16,12 +16,33 @@
    - Read-state kept once per update into localStorage ('ya_seen_update').
      Built with DOM APIs (never innerHTML) so nothing can inject markup;
      wrapped defensively so it can never break boot.
+   AI MAINTAINER NOTES (local dev) - read before editing js/*:
+   1. LOAD ORDER (index.html, all defer): core -> auth-account -> listings -> ui-nav -> search-ai -> ad-social -> widgets-pwa -> onboarding -> recent -> site-updates -> boot. boot.js calls init() LAST.
+   2. SINGLE SOURCES: CFG/CATS/CAT_MAP/catById//escHtml/fmtN/ago live in core.js. Never re-add category-find or escHtml elsewhere (test: node tools/test-cleanup.js).
+   3. SEARCH CACHE: loadAds sets ad._hay {title,desc,par,cat,all} + _adById via rebuildAdIndex(). scoreAd/getFiltered MUST read ad._hay - never toLowerCase in loops.
+   4. PHOTO GRIDS: post+edit share _photoThumbsHTML/_addFilesToPhotos in listings.js. Keep onclick names (removePhoto/removeEditAdPhoto) + ids (imgFile/eaImgFile).
+   5. SAFE EDITS: keep public names (init/loadAds/openDetail/cardHTML/renderHome/getFiltered/scoreAd/findAd/catById). Do not touch sw.js precache, CFG creds, manifest. escHtml() all DB strings before innerHTML.
+   6. BEFORE PUSH: npm test then npm run changelog.
 *******************************************************************************/
 
 
 var SITE_UPDATES = {
-  current: 'fast-new-ads',
+  current: 'code-cleanup',
   items: {
+    'code-cleanup': {
+      version: 'v2.6',
+      icon: '🧹',
+      title: 'Faster search, same Yaad Adz',
+      body: 'Cleaned up the code behind search and listings — same features, less work per tap. Search reuses a ready-made index, category lookups are instant, and listing photos share one renderer. Yuh should feel snappier results, especially on slower phones.',
+      date: 'Sep 12, 2026',
+      notes: [
+        'Search results identical — now served from a pre-built index instead of re-scanning every keystroke',
+        'Category badges, filters and AI suggestions resolve instantly (map lookup, no repeated scans)',
+        'Post-an-ad and edit-an-ad photo grids share one renderer — same 6-photo limit, same Cover tag',
+        'Listing titles now escaped before display (no markup injection from titles)',
+      ],
+      url: '/',
+    },
     'fast-new-ads': {
       version: 'v2.5',
       icon: '⚡',

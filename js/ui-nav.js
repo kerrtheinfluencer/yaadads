@@ -222,15 +222,15 @@ function updateStats() {
 })();
 
 function cardHTML(ad, idx) {
-  const cat   = CATS.find(c => c.id === ad.category);
-  const catColor = cat?.color || '#f5f5f5';
+  const cat   = catById(ad.category);
+  const catColor = cat.color || '#f5f5f5';
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat?.icon||'📦'}</span>'">`
-    : `<span class="img-placeholder">${cat?.icon||'📦'}</span>`;
+    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat.icon||'📦'}</span>'">`
+    : `<span class="img-placeholder">${cat.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'
     ? `<span class="sold-tag">Sold</span>`
-    : `<span class="ad-cat-tag">${cat?.name||'Other'}</span>`;
+    : `<span class="ad-cat-tag">${cat.name||'Other'}</span>`;
   const views = getViews(ad.id);
   const trending = views >= 80 && ad.status !== 'sold'
     ? `<span class="trending-badge">🔥 Trending</span>` : '';
@@ -260,18 +260,19 @@ function cardHTML(ad, idx) {
        </div>`
     : '';
 
+  // Note: ad.title/parish are DB-authored strings — escape before interpolating.
   return `<div class="ad-card${ad.status==='sold'?' sold':''}" data-id="${ad.id}" onclick="openDetail('${ad.id}')">
     <div class="accent-stripe"></div>
     <div class="card-glow"></div>
     ${ad.status==='sold' ? '<div class="sold-watermark"></div>' : ''}
     <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
-      <button class="fav-btn" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
+      <button class="fav-btn" aria-label="Save listing" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
       <div class="ad-price">J$${fmtN(ad.price)}${negPill}</div>
-      <div class="ad-title">${ad.title}</div>
+      <div class="ad-title">${escHtml(ad.title)}</div>
       <div class="ad-meta">
-        <span>${ad.parish}</span>
+        <span>${escHtml(ad.parish)}</span>
         <span>${ago(ad.date)}</span>
         <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
       </div>

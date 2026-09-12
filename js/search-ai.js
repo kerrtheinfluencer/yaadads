@@ -3,10 +3,13 @@
 ═══════════════════════════════════════════════════════════ */
 function scoreAd(ad, terms) {
   // Relevance scoring: title match > category name match > desc match
-  const title = (ad.title||'').toLowerCase();
-  const desc  = (ad.desc||'').toLowerCase();
-  const par   = (ad.parish||'').toLowerCase();
-  const cat   = (CATS.find(c=>c.id===ad.category)?.name||'').toLowerCase();
+  // Uses pre-lowered _hay cache when available (built in loadAds) so we
+  // don't re-lowercase every string on every keystroke.
+  const h = ad._hay || null;
+  const title = h ? h.title : (ad.title||'').toLowerCase();
+  const desc  = h ? h.desc  : (ad.desc||'').toLowerCase();
+  const par   = h ? h.par   : (ad.parish||'').toLowerCase();
+  const cat   = h ? h.cat   : (catById(ad.category).name||'').toLowerCase();
   let score = 0;
   for (const t of terms) {
     if (title.startsWith(t))       score += 10;
@@ -29,9 +32,11 @@ function getFiltered(q, cat, sort) {
 
   if (q && q.trim()) {
     const terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 1);
-    // Include ad if ANY term matches title, desc, parish, or category name
+    // Include ad if ANY term matches title, desc, parish, or category name.
+    // Reads the _hay cache (lowercased once in loadAds) instead of
+    // rebuilding + lowering strings per ad per keystroke.
     ads = ads.filter(a => {
-      const hay = [a.title, a.desc, a.parish, CATS.find(c=>c.id===a.category)?.name||'']
+      const hay = a._hay ? a._hay.all : [a.title, a.desc, a.parish, catById(a.category).name||'']
         .join(' ').toLowerCase();
       return terms.some(t => hay.includes(t));
     });
@@ -46,8 +51,13 @@ function getFiltered(q, cat, sort) {
   return ads.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
 }
 
+/* ── Ad lookup index — O(1) instead of _ads.find per render ── */
+let _adById = new Map();
+function rebuildAdIndex() { _adById = new Map(_ads.map(a => [a.id, a])); }
+function findAd(id) { return _adById.get(id) || _ads.find(a => a.id === id); }
+
 function getViews(id) {
-  const ad = _ads.find(a => a.id === id);
+  const ad = _adById.get(id) || _ads.find(a => a.id === id);
   return ad ? (ad.views || 0) : 0;
 }
 
@@ -84,8 +94,28 @@ function loadMoreHome() {
   }
 }
 
+/* Cached home-grid DOM refs — avoids 4x getElementById per render. */
+let _homeEls = null;
+function homeEls() {
+  if (!_homeEls) {
+    _homeEls = {
+      sort: $('homeSortSel'), hdr: $('resultsHeader'),
+      cnt: $('resultsCount'), grid: $('homeGrid'),
+    };
+  }
+  // Re-resolve if the DOM was replaced (null-safe, cheap)
+  if (_homeEls.grid && !_homeEls.grid.isConnected) _homeEls = null;
+  if (!_homeEls) {
+    _homeEls = {
+      sort: $('homeSortSel'), hdr: $('resultsHeader'),
+      cnt: $('resultsCount'), grid: $('homeGrid'),
+    };
+  }
+  return _homeEls;
+}
 function renderHome() {
-  const sort = document.getElementById('homeSortSel')?.value || 'newest';
+  const els = homeEls();
+  const sort = els.sort?.value || 'newest';
   const f = window._aiFilters;
 
   let ads = getFiltered(searchQ, activeF, sort);
@@ -102,10 +132,10 @@ function renderHome() {
   // Hide sold filter
   if (_hideSold) ads = ads.filter(a => a.status !== 'sold');
 
-  const hdr = document.getElementById('resultsHeader');
-  const cnt = document.getElementById('resultsCount');
-  hdr.style.display = 'flex';
-  cnt.innerHTML = `<strong>${ads.length}</strong> listing${ads.length !== 1 ? 's' : ''}${_hideSold ? ' (active only)' : ''}`;
+  const hdr = els.hdr;
+  const cnt = els.cnt;
+  if (hdr) hdr.style.display = 'flex';
+  if (cnt) cnt.innerHTML = `<strong>${ads.length}</strong> listing${ads.length !== 1 ? 's' : ''}${_hideSold ? ' (active only)' : ''}`;
 
   const visible = ads.slice(0, _homeShowCount);
   const remaining = ads.length - visible.length;
@@ -134,7 +164,8 @@ function renderHome() {
     </div>`;
   }
 
-  const grid = document.getElementById('homeGrid');
+  const grid = els.grid;
+  if (!grid) return ads.length;
   const prevCount = grid.querySelectorAll('.ad-card').length;
   grid.innerHTML = html;
 
@@ -153,7 +184,7 @@ function renderHome() {
         const match = onclick.match(/openDetail\('([^']+)'\)/);
         if (!match) return;
         const id = match[1];
-        const ad = _ads.find(function(a){ return a.id === id; });
+        const ad = (typeof findAd === 'function' ? findAd(id) : _ads.find(function(a){ return a.id === id; }));
         if (!ad) return;
         const slug = slugify(ad);
         const url = '/ad/' + slug + '.html';
@@ -183,7 +214,7 @@ function renderHome() {
 function renderBrowse() {
   const sort = document.getElementById('sortSel')?.value || 'newest';
   const ads = getFiltered(searchQ, activeF, sort);
-  const t = searchQ ? `"${searchQ}"` : activeF==='all' ? 'All Listings' : (CATS.find(c=>c.id===activeF)?.name||'Listings');
+  const t = searchQ ? `"${searchQ}"` : activeF==='all' ? 'All Listings' : (catById(activeF).name||'Listings');
   document.getElementById('browseTitle').textContent = t;
   const browseGrid = document.getElementById('browseGrid');
   browseGrid.innerHTML = ads.length
@@ -432,7 +463,7 @@ const SEO = (() => {
 
     const catSummary = Object.entries(cats).map(function(e){
       const id=e[0], list=e[1];
-      const catName = (CATS.find(function(c){return c.id===id;})||{}).name || id;
+      const catName = catById(id).name || id;
       const avgPrice = Math.round(list.reduce(function(s,a){return s+a.price;},0)/list.length);
       return '- ' + catName + ': ' + list.length + ' listings (avg J$' + Number(avgPrice).toLocaleString('en-JM') + ')';
     }).join('\n');
@@ -520,7 +551,7 @@ const SEO = (() => {
 
   /* ── Structured breadcrumb for listing pages ─────────────────── */
   function injectBreadcrumb(ad) {
-    var cat = (CATS.find(function(c){return c.id===ad.category;})||{}).name || 'Other';
+    var cat = catById(ad.category).name || 'Other';
     var adUrl = BASE_URL + '/ad/' + slugify(ad);
     var schema = {
       '@context':'https://schema.org',
@@ -835,7 +866,7 @@ const YaadBrain = (() => {
       const active=_ads.filter(a=>a.status!=='sold');
       const cats={};active.forEach(a=>{cats[a.category]=(cats[a.category]||0)+1;});
       const top=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
-      const topName=top?(CATS.find(c=>c.id===top[0])?.name||top[0]):'N/A';
+      const topName=top?(catById(top[0]).name||top[0]):'N/A';
       const val=active.reduce((s,a)=>s+a.price,0);
       return `📊 Yaad Adz right now:\n• ${active.length} active listings\n• ${_ads.filter(a=>a.status==='sold').length} sold\n• Top category: ${topName}\n• Total value: J$${fmtN(val)}\nGrowing every day! 🚀`;
     },
@@ -855,7 +886,7 @@ const YaadBrain = (() => {
     if(cats.length) pool=pool.filter(a=>cats.includes(a.category));
     if(parish) pool=pool.filter(a=>a.parish.toLowerCase()===parish.toLowerCase());
     if(!pool.length) return null;
-    const catNames=cats.filter(c=>c!=='other').map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean);
+    const catNames=cats.filter(c=>c!=='other').map(c=>catById(c).name).filter(Boolean);
     const catStr=catNames.length?catNames.join(' & '):'listings';
     const loc=parish?` in ${parish}`:'';
     if(intent==='compare_cheapest'){
@@ -906,7 +937,7 @@ const YaadBrain = (() => {
   }
 
   function getHaystack(ad){
-    const cat=CATS.find(c=>c.id===ad.category)?.name||'';
+    const cat=(ad._hay&&ad._hay.cat)||catById(ad.category).name||'';
     // Description + category + parish only — title scored separately at 3x
     return `${cat} ${cat} ${ad.parish} ${ad.desc||''}`;
   }
@@ -1006,7 +1037,7 @@ const YaadBrain = (() => {
     const catCounts={};active.forEach(a=>{catCounts[a.category]=(catCounts[a.category]||0)+1;});
     const topCats=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
     for(const catId of topCats){
-      const cat=CATS.find(c=>c.id===catId);
+      const cat=catById(catId);
       const prices=active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
       const median=prices[Math.floor(prices.length/2)]||0;
       if(cat&&median) sugs.push({label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/10000)*10000)}`,query:`${cat.name.toLowerCase()} under ${Math.ceil(median/10000)*10000}`});
@@ -1019,7 +1050,7 @@ const YaadBrain = (() => {
 
   function buildMessage(results,ctx,query){
     const n=results.length;
-    const catNames=ctx.cats.filter(c=>c!=='other').map(c=>CATS.find(x=>x.id===c)?.name).filter(Boolean).slice(0,2);
+    const catNames=ctx.cats.filter(c=>c!=='other').map(c=>catById(c).name).filter(Boolean).slice(0,2);
     const loc=ctx.parish?` in ${ctx.parish}`:'';
     const catStr=catNames.length?catNames.join(' & '):'listings';
     const price=ctx.target?` around J$${fmtN(ctx.target)}`:ctx.hi&&ctx.lo?` between J$${fmtN(ctx.lo)} – J$${fmtN(ctx.hi)}`:ctx.hi?` under J$${fmtN(ctx.hi)}`:ctx.lo?` from J$${fmtN(ctx.lo)}`:'';
@@ -1222,7 +1253,7 @@ function updateSheetSugs(){
     const topCats=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
     const liveChips=[];
     topCats.forEach(catId=>{
-      const cat=CATS.find(c=>c.id===catId);if(!cat) return;
+      const cat=catById(catId);
       const prices=active.filter(a=>a.category===catId).map(a=>a.price).sort((a,b)=>a-b);
       const median=prices[Math.floor(prices.length/2)]||0;
       if(median>0) liveChips.push({label:`${cat.icon} ${cat.name} under J$${fmtN(Math.ceil(median/100000)*100000)}`,query:`${cat.name.toLowerCase()} under ${Math.ceil(median/100000)*100000}`});
@@ -1396,7 +1427,7 @@ function updateSheetSugsAfterSearch(result){
   const parish=result.filters?.parish||'';
   const hi=result.filters?.maxPrice;
   const catId=cats[0];
-  const cat=catId?CATS.find(c=>c.id===catId):null;
+  const cat=catId?catById(catId):null;
   const catName=cat?cat.name.toLowerCase():'';
   const chips=[];
   if(catName){
@@ -1445,7 +1476,7 @@ function checkSavedSearchAlerts(newAds){
       if(result.type!=='search'||!result.results) continue;
       const newMatch=result.results.find(r=>newAds.some(n=>n.id===r.id));
       if(newMatch){
-        const cat=CATS.find(c=>c.id===newMatch.category);
+        const cat=catById(newMatch.category);
         new Notification('New listing on Yaad Adz! 🇯🇲',{body:newMatch.title+' — J$'+fmtN(newMatch.price)+' · '+newMatch.parish,icon:newMatch.image||'/og-image.jpg',tag:'yaadadz-alert-'+newMatch.id});
       }
     }catch(e){}
@@ -1482,13 +1513,13 @@ function addSheetMsg(role,text,results,filters,allResults,qTerms){
     if(results&&results.length>0){
       const resWrap=document.createElement('div');resWrap.className='sheet-results';
       results.forEach(function(ad){
-        const cat=CATS.find(function(c){return c.id===ad.category;});
+        const cat=catById(ad.category);
         const card=document.createElement('div');card.className='sheet-result-card';
         const isNew=((Date.now()-new Date(ad.date||0))/86400000)<3;
         const negBadge=ad.neg?'<span class="src-neg-badge">neg.</span>':'';
         const newBadge=isNew?'<span class="src-new-badge">New</span>':'';
-        const thumb=ad.image?'<img class="src-thumb" src="'+thumbUrl(ad.image,120)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<div class="src-icon">'+(cat?cat.icon:'📦')+'</div>';
-        card.innerHTML=thumb+'<div class="src-info"><div class="src-price">J$'+fmtN(ad.price)+' '+negBadge+newBadge+'</div><div class="src-title">'+escHtml(ad.title)+'</div><div class="src-meta">📍 '+ad.parish+' · '+(cat?cat.name:'Other')+'</div></div><div class="src-arrow">›</div>';
+        const thumb=ad.image?'<img class="src-thumb" src="'+thumbUrl(ad.image,120)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<div class="src-icon">'+(cat.icon||'📦')+'</div>';
+        card.innerHTML=thumb+'<div class="src-info"><div class="src-price">J$'+fmtN(ad.price)+' '+negBadge+newBadge+'</div><div class="src-title">'+escHtml(ad.title)+'</div><div class="src-meta">📍 '+ad.parish+' · '+(cat.name||'Other')+'</div></div><div class="src-arrow">›</div>';
         card.onclick=(function(adCopy){return function(){if(qTerms&&qTerms.length)YaadBrain.learn(adCopy.id,qTerms);closeAiSheet();setTimeout(function(){openDetail(adCopy.id);},200);};})(ad);
         resWrap.appendChild(card);
       });
@@ -1542,8 +1573,8 @@ function addSheetMsg(role,text,results,filters,allResults,qTerms){
         candidates.forEach(function(c){
           const btn=document.createElement('button');btn.className='sheet-result-card';
           btn.style.cssText='background:rgba(29,185,84,0.06);border-color:rgba(29,185,84,0.2);cursor:pointer;width:100%';
-          const cat=CATS.find(function(x){return x.id===c.ad.category;});
-          btn.innerHTML='<div style="font-size:20px;width:36px;text-align:center;flex-shrink:0">'+(cat?cat.icon:'📦')+'</div><div class="src-info"><div class="src-price">J$'+fmtN(c.ad.price)+'</div><div class="src-title">'+escHtml(c.ad.title)+'</div></div><div class="src-arrow" style="color:rgba(29,185,84,0.6)">›</div>';
+          const cat=catById(c.ad.category);
+          btn.innerHTML='<div style="font-size:20px;width:36px;text-align:center;flex-shrink:0">'+(cat.icon||'📦')+'</div><div class="src-info"><div class="src-price">J$'+fmtN(c.ad.price)+'</div><div class="src-title">'+escHtml(c.ad.title)+'</div></div><div class="src-arrow" style="color:rgba(29,185,84,0.6)">›</div>';
           btn.onclick=(function(adCopy){return function(){if(qTerms&&qTerms.length)YaadBrain.learn(adCopy.id,qTerms);closeAiSheet();setTimeout(function(){openDetail(adCopy.id);},200);};})(c.ad);
           dymWrap.appendChild(btn);
         });
@@ -1576,5 +1607,5 @@ function addTyping(){
   return row;
 }
 
-function escHtml(s){return(s||'').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');}
+/* escHtml() lives in core.js (single correct implementation) — removed broken duplicate here. */
 

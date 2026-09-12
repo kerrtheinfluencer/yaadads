@@ -40,35 +40,42 @@ function openEditAd(id) {
 // Edit ad photo management
 let _editAdPhotos = []; // Array of { url: existing URL or null, file: File or null, preview: dataURL or URL }
 
-function renderEditAdPhotoGrid() {
-  var grid = document.getElementById('eaPhotoGrid');
-  if (!grid) return;
-  var thumbs = _editAdPhotos.map(function(item, i) {
+/* ── Shared photo-grid renderer (post-ad + edit-ad use one path) ── */
+function _photoThumbsHTML(photos, rmFn, fileInputId, addLabel) {
+  var thumbs = photos.map(function(item, i) {
     return '<div class="photo-thumb-wrap">' +
-      '<img src="' + item.preview + '" class="photo-thumb">' +
-      '<button class="photo-rm" onclick="removeEditAdPhoto(' + i + ')">✕</button>' +
+      '<img src="' + item.preview + '" class="photo-thumb" loading="lazy">' +
+      '<button type="button" class="photo-rm" onclick="' + rmFn + '(' + i + ')">✕</button>' +
       (i===0 ? '<span class="photo-cover-tag">Cover</span>' : '') +
     '</div>';
   }).join('');
-  var addBtn = _editAdPhotos.length < 6
-    ? '<div class="photo-add-btn" onclick="document.getElementById(\'eaImgFile\').click()"><span>📸</span><span>Add</span></div>'
+  var addBtn = photos.length < 6
+    ? '<div class="photo-add-btn" onclick="document.getElementById(\'' + fileInputId + '\').click()"><span>📸</span><span>' + addLabel + '</span></div>'
     : '';
-  grid.innerHTML = thumbs + addBtn;
+  return thumbs + addBtn;
 }
-
-function handleEditAdImgs(input) {
-  var files = Array.from(input.files||[]);
-  var remaining = 6 - _editAdPhotos.length;
-  files.slice(0, remaining).forEach(function(file) {
+function _addFilesToPhotos(files, photos, onDone) {
+  var remaining = 6 - photos.length;
+  Array.from(files || []).slice(0, remaining).forEach(function(file) {
     if (file.size > 5000000) { showToast('Max 5MB per image','⚠️'); return; }
     if (!file.type.startsWith('image/')) { showToast('Only image files allowed','⚠️'); return; }
     var reader = new FileReader();
     reader.onload = function(e) {
-      _editAdPhotos.push({ url: null, file: file, preview: e.target.result });
-      renderEditAdPhotoGrid();
+      photos.push({ url: null, file: file, preview: e.target.result });
+      onDone();
     };
     reader.readAsDataURL(file);
   });
+}
+
+function renderEditAdPhotoGrid() {
+  var grid = $('eaPhotoGrid');
+  if (!grid) return;
+  grid.innerHTML = _photoThumbsHTML(_editAdPhotos, 'removeEditAdPhoto', 'eaImgFile', 'Add');
+}
+
+function handleEditAdImgs(input) {
+  _addFilesToPhotos(input.files, _editAdPhotos, renderEditAdPhotoGrid);
   input.value = '';
 }
 
@@ -195,16 +202,16 @@ function showPostErr(m) {
   const e = document.getElementById('postAlert'); e.textContent = m; e.className = 'alert-box alert-err show';
 }
 function buildPreview() {
-  const cat   = CATS.find(function(c){ return c.id === document.getElementById('aCat').value; });
+  const cat   = catById(document.getElementById('aCat').value);
   const title = document.getElementById('aTitle').value.trim();
   const price = document.getElementById('aPrice').value;
   const parish= document.getElementById('aParish').value;
   const img   = uploadUrl
     ? '<img src="' + uploadUrl + '" style="width:100%;height:150px;object-fit:cover">'
-    : '<div style="height:150px;background:' + (cat?.color||'#f5f5f5') + ';display:flex;align-items:center;justify-content:center;font-size:56px">' + (cat?.icon||'📦') + '</div>';
+    : '<div style="height:150px;background:' + (cat.color||'#f5f5f5') + ';display:flex;align-items:center;justify-content:center;font-size:56px">' + (cat.icon||'📦') + '</div>';
   document.getElementById('adPreviewCard').innerHTML =
     '<div class="ad-card" style="cursor:default;transform:none!important">' +
-      '<div class="ad-card-img" style="height:150px">' + img + '<span class="ad-cat-tag">' + (cat?.name||'Other') + '</span></div>' +
+      '<div class="ad-card-img" style="height:150px">' + img + '<span class="ad-cat-tag">' + (cat.name||'Other') + '</span></div>' +
       '<div class="ad-card-body">' +
         '<div class="ad-price">J$' + fmtN(parseFloat(price)||0) + '</div>' +
         '<div class="ad-title">' + escHtml(title) + '</div>' +
@@ -316,7 +323,7 @@ async function toggleSold(id) {
 }
 
 async function doPostAd() {
-  const cat   = CATS.find(function(c){ return c.id===document.getElementById('aCat').value; });
+  const cat   = catById(document.getElementById('aCat').value);
   const title = document.getElementById('aTitle').value.trim();
   const parish= document.getElementById('aParish').value;
   const price = parseFloat(document.getElementById('aPrice').value)||0;
@@ -454,18 +461,9 @@ async function uploadToSupabase(file) {
 let uploadPhotos = []; // Array of { file: File, preview: dataURL }
 
 function handleImgFiles(input) {
-  var files = Array.from(input.files||[]);
-  var remaining = 6 - uploadPhotos.length;
-  files.slice(0, remaining).forEach(function(file) {
-    if (file.size > 5000000) { showToast('Max 5MB per image','⚠️'); return; }
-    if (!file.type.startsWith('image/')) { showToast('Only image files allowed','⚠️'); return; }
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      uploadPhotos.push({ file: file, preview: e.target.result });
-      uploadUrl = uploadPhotos[0].preview;
-      renderPhotoGrid();
-    };
-    reader.readAsDataURL(file);
+  _addFilesToPhotos(input.files, uploadPhotos, function() {
+    uploadUrl = uploadPhotos.length ? uploadPhotos[0].preview : '';
+    renderPhotoGrid();
   });
   // Reset file input so the same file can be re-selected
   input.value = '';
@@ -486,22 +484,9 @@ function clearImg() {
   if (pb) pb.style.display = 'none';
 }
 function renderPhotoGrid() {
-  var grid = document.getElementById('photoGrid');
-  var ua   = document.getElementById('imgUploadArea');
+  var grid = $('photoGrid');
   if (!grid) return;
-  // Render thumbnails from local previews
-  var thumbs = uploadPhotos.map(function(item, i) {
-    return '<div class="photo-thumb-wrap">' +
-      '<img src="' + item.preview + '" class="photo-thumb">' +
-      '<button class="photo-rm" onclick="removePhoto(' + i + ')">✕</button>' +
-      (i===0 ? '<span class="photo-cover-tag">Cover</span>' : '') +
-    '</div>';
-  }).join('');
-  // Re-add the "Add Photo" button if under limit
-  var addBtn = uploadPhotos.length < 6
-    ? '<div class="photo-add-btn" onclick="document.getElementById(\'imgFile\').click()"><span>📸</span><span>Add Photo</span></div>'
-    : '';
-  grid.innerHTML = thumbs + addBtn;
+  grid.innerHTML = _photoThumbsHTML(uploadPhotos, 'removePhoto', 'imgFile', 'Add Photo');
 }
 
 

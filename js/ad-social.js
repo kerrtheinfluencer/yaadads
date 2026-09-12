@@ -2,7 +2,7 @@
    AD DETAIL — openDetail + openProfile §AD-DETAIL
 ═══════════════════════════════════════════════════════════ */
 function openDetail(id) {
-  const ad = _ads.find(function(a){ return a.id === id; }); if (!ad) return;
+  const ad = (typeof findAd === 'function' ? findAd(id) : _ads.find(function(a){ return a.id === id; })); if (!ad) return;
   const dest = '/ad/' + slugify(ad) + '.html';
   const newViews = (ad.views || 0) + 1;
   ad.views = newViews;
@@ -47,7 +47,7 @@ function openDetail(id) {
 // .detail-* / .gallery-* / .similar-* CSS so it looks like a native detail page.
 function showAdInline(ad) {
   if (!ad) return;
-  var cat = CATS.find(function (c) { return c.id === ad.category; }) || {};
+  var cat = catById(ad.category);
   var slug = slugify(ad);
   var adUrl = BASE_URL + '/ad/' + slug + '.html';
   var photos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
@@ -89,7 +89,7 @@ function showAdInline(ad) {
   var similarHtml = '';
   if (similar.length) {
     var cards = similar.map(function (a) {
-      var ac = CATS.find(function (c) { return c.id === a.category; }) || {};
+      var ac = catById(a.category);
       return '<a href="javascript:openDetail(\'' + a.id + '\')" class="sim-card" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden">'
         + (a.image ? '<div style="aspect-ratio:4/3;overflow:hidden"><img src="' + t(a.image) + '" alt="' + escHtml(a.title) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>'
           : '<div style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--surface-2)">' + (ac.icon || '📦') + '</div>')

@@ -47,7 +47,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v27', sw.includes('yaadadz-v27'));
+check('SW cache bumped to v28', sw.includes('yaadadz-v28'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'"));
 
 // 6. style.css balance + new styles
@@ -102,12 +102,38 @@ check('onboarding click-outside-to-dismiss wired', obSrc.includes("getElementByI
 const suSrc = fs.readFileSync('js/site-updates.js', 'utf8');
 check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper)',
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
-check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'") && suSrc.includes("current: 'fast-new-ads'"));
+check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
+check('v2.6 code-cleanup entry shipped + set as current', suSrc.includes("'code-cleanup'") && suSrc.includes("current: 'code-cleanup'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',
   (suSrc.match(/date: '/g) || []).length >= 4);
 check('every SITE_UPDATES entry ships notes + notes renderer exists',
   (suSrc.match(/notes: \[/g) || []).length >= 4 && suSrc.includes('site-update-notes'));
+
+// 6e. mobile parity: guests see the updates thread too (logged-out phones),
+//     and the history modal fits the mobile viewport (dvh, not vh).
+const acctSrc = fs.readFileSync('js/auth-account.js', 'utf8');
+check('guest inbox keeps updates thread (renderInbox !CU branch)',
+  /if\s*\(!CU\)\s*\{\s*el\.innerHTML\s*=\s*_guestRow/.test(acctSrc));
+check('guest account inbox keeps updates thread (acctInboxList !CU branch)',
+  acctSrc.includes('_acctGuestRow'));
+check('history modal uses dvh so it never clips on mobile Safari',
+  css.includes('100dvh') && css.includes('.site-update-modal'));
+
+// 6f. CHANGELOG.md generated from SITE_UPDATES (single source of truth).
+check('build-changelog tool exists', fs.existsSync('tools/build-changelog.js'));
+(function () {
+  try {
+    execSync('node tools/build-changelog.js', { stdio: 'pipe' });
+    const cl = fs.readFileSync('CHANGELOG.md', 'utf8');
+    const cur = (suSrc.match(/current:\s*'([^']+)'/) || [])[1] || '';
+    const curVer = (suSrc.match(new RegExp("'" + cur + "':\\s*\\{[\\s\\S]*?version:\\s*'([^']+)'")) || [])[1] || '';
+    const entryCount = (suSrc.match(/version: '/g) || []).length; // one per real entry (notes: [ also appears in the file header comment)
+    const clCount = (cl.match(/^## /gm) || []).length;
+    check('CHANGELOG.md regenerated + current version present (' + clCount + ' entries)',
+      cl.includes('Auto-generated from `js/site-updates.js`') && clCount >= entryCount && (curVer ? cl.includes(curVer) : true));
+  } catch (e) { check('CHANGELOG.md regenerated + current version present', false, 'build-changelog.js failed'); }
+})();
 
 // 7. JS modules syntax
 for (const f of fs.readdirSync('js')) {
