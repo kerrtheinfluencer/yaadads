@@ -314,7 +314,15 @@ function checkUrlAdParam() {
 
   // Legacy: ?ad=full-uuid support (backwards compat for old shared links)
   const id = params.get('ad');
-  if (id) { setTimeout(() => openDetail(id), 600); return; }
+  if (id) {
+    // Ads may not be loaded yet — defer until loadAds() resolves (ui-nav retries _pendingAdId).
+    if (_ads.find(function(a){ return a.id === id; })) {
+      setTimeout(() => openDetail(id), 600);
+    } else {
+      window._pendingAdId = id;
+    }
+    return;
+  }
 
   // V2: PWA shortcut deep links — ?post=1 opens the post wizard,
   // ?page=msgs / ?page=myads jumps straight to that SPA page.

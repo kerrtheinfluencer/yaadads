@@ -69,6 +69,17 @@ function esc(str) {
     .replace(/'/g,'&#39;');
 }
 
+// Supabase image-transformation URL. The plain object URL ignores width/quality
+// query params — only the /render/image/ endpoint actually resizes (verified
+// working for this project: a ~521KB original becomes ~21KB at w=120,q=30).
+function xf(url, width, quality) {
+  if (!url) return '';
+  const m = url.match(/^https:\/\/([^.]+)\.supabase\.co\/storage\/v1\/object\/public\/(.+)$/);
+  if (!m) return url;
+  return 'https://' + m[1] + '.supabase.co/storage/v1/render/image/public/' + m[2]
+    + '?width=' + Math.round(width || 828) + '&quality=' + Math.round(quality || 75);
+}
+
 // ── DB row → ad object ────────────────────────────────────────
 function dbToAd(row) {
   let image = '', photos = [];
@@ -134,8 +145,8 @@ function adSchema(ad, adUrl) {
     // you build a genuine buyer-review feature.
   };
 
-  if (ad.image) base.image = {'@type':'ImageObject','url':ad.image,'description':ad.title};
-  if (ad.photos && ad.photos.length > 1) base.image = ad.photos.map(p=>({'@type':'ImageObject','url':p}));
+  if (ad.image) base.image = {'@type':'ImageObject','url':xf(ad.image,1200,75),'description':ad.title};
+  if (ad.photos && ad.photos.length > 1) base.image = ad.photos.map(p=>({'@type':'ImageObject','url':xf(p,1200,75)}));
 
   const breadcrumb = {
     '@context': 'https://schema.org',
@@ -268,7 +279,7 @@ function buildSimilarHTML(ad, allAds) {
     const slug    = slugify(a);
     const catIcon = CAT_ICONS[a.category] || '📦';
     const imgHtml = a.image
-      ? `<img src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy">`
+      ? `<img src="${esc(xf(a.image,360,65))}" alt="${esc(a.title)}" loading="lazy">`
       : `<div class="sim-placeholder">${catIcon}</div>`;
     return `
       <a class="sim-card" href="${BASE_URL}/ad/${slug}.html">
@@ -319,13 +330,13 @@ function buildPage(ad, allAds) {
     galleryHtml = `
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="${esc(photos[0])}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(0)" style="cursor:zoom-in">
+        <img src="${esc(xf(photos[0],1280,72))}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(0)" style="cursor:zoom-in">
         <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 ${photos.length > 1 ? photos.length + ' photos · tap to expand' : 'Tap to view fullscreen'}</div>
         ${ad.status === 'sold' ? '<div class="sold-ribbon">SOLD</div>' : ''}
       </div>
       ${photos.length > 1 ? `
       <div class="gallery-thumbs">
-        ${photos.map((p,i) => `<img src="${esc(p)}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" onclick="setFeatured(this,'${esc(p)}',${i})" loading="lazy">`).join('')}
+        ${photos.map((p,i) => `<img src="${esc(xf(p,144,50))}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" onclick="setFeatured(this,'${esc(xf(p,1280,72))}',${i})" loading="lazy">`).join('')}
       </div>` : ''}
     </div>`;
   } else {
@@ -364,7 +375,7 @@ function buildPage(ad, allAds) {
 <meta property="og:description" content="${esc((ad.desc||ad.title).slice(0,200))} · ${esc(ad.parish)}, Jamaica">
 <meta property="og:url" content="${adUrl}">
 <meta property="og:locale" content="en_JM">
-${ad.image ? `<meta property="og:image" content="${esc(ad.image)}">
+${ad.image ? `<meta property="og:image" content="${esc(xf(ad.image,1200,75))}">
 <meta property="og:image:alt" content="${esc(ad.title)}">` : `<meta property="og:image" content="${BASE_URL}/og-image.jpg">`}
 <meta property="product:price:amount" content="${ad.price}">
 <meta property="product:price:currency" content="JMD">
@@ -373,7 +384,7 @@ ${ad.image ? `<meta property="og:image" content="${esc(ad.image)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(ad.title)} — ${price}">
 <meta name="twitter:description" content="${esc((ad.desc||ad.title).slice(0,200))}">
-${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
+${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">` : ''}
 
 <!-- Geo -->
 <meta name="geo.region" content="JM">
@@ -398,7 +409,8 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(ad.image)}">` : ''}
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1130,7 +1142,7 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
 
 <script>
   // ── Photos array ─────────────────────────────────────────────
-  var PHOTOS = ${JSON.stringify(photos)};
+  var PHOTOS = ${JSON.stringify(photos.map(function(p){return xf(p,1600,80);}))};
   var lbIndex = 0;
 
   // ── Thumbnail switcher ────────────────────────────────────────

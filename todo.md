@@ -2,6 +2,14 @@
 
 ## ✅ Shipped in v2.x (post-v2 updates)
 
+### ⚡ New ads load instantly + leaner ad pages (v2.5)
+- 🚀 **New ads render inline** — tapping a just-posted ad now shows the listing immediately. The old fallback bounced `/ad/<slug>.html` → `/?ad=<id>` in an infinite reload loop (re-checking the same missing page every hop) until the 2-hour generator ran. `openDetail()` now falls back to `showAdInline(ad)` — a full detail view rendered inside the app.
+- 🖼️ **Size-optimised images everywhere** — every ad image now goes through Supabase's image renderer (`/storage/v1/render/image/public/…`), verified working on this project. Featured 1280w, thumbs 144w, similar cards 360w, og/twitter/JSON-LD 1200w, lightbox 1600w. A 6-photo ad page drops from ~5.7MB → ~1MB of images.
+- 🖼️ `thumbUrl()` now uses the render endpoint — the old `?width=` query param on the object URL was being ignored by Supabase, so thumbnails were pulling full 500KB files all along.
+- ⚡ **Non-blocking fonts** — Google Fonts switched to `rel=preload` + `onload` swap on ad pages and the homepage, so text renders a paint sooner.
+- ⛓️ **Instant static pages (optional)** — added the missing `supabase-migration-3-instant-page-regen.sql` (the file the deploy workflow references). A DB trigger fires `repository_dispatch('new-ad-posted')` the moment an ad is inserted, so static pages appear in ~2 min instead of up to 2 hours. **Setup:** run the SQL in Supabase + store a `gh_pat` (GitHub PAT with `repo` scope) in `yaadadz_config`.
+- 🧹 SW cache bumped to `v27`; `tools/verify-v2.js` updated to match.
+
 ### Updates history thread (v2.4)
 - 🗞️ "What's new" is now a **persistent message** at the top of the Messages inbox — check it any time (New chip + pill dot while unread, History chip after)
 - 📜 Opens a full-history overlay listing every past update (newest first, version + date chips, latest highlighted gold); `siteUpdateList()` sorts by the new `date` field on each entry

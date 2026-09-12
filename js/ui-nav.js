@@ -96,6 +96,14 @@ async function init() {
     window._pendingSlug = null;
   }
 
+  // A ?ad= deep link arrived before ads finished loading — open it now
+  if (window._pendingAdId) {
+    const _pid = window._pendingAdId;
+    window._pendingAdId = null;
+    const ad = _ads.find(function(a){ return a.id === _pid; });
+    if (ad) setTimeout(function(){ openDetail(ad.id); }, 300);
+  }
+
   // SEO + AI Discovery — inject after ads loaded
   SEO.injectListingsSchema(_ads);
   SEO.injectFAQSchema();

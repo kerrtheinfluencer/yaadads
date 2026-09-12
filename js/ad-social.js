@@ -31,13 +31,137 @@ function openDetail(id) {
       if (xhr.status === 200) {
         setTimeout(function() { window.location.href = dest; }, 60);
       } else {
-        // Static page missing — update view count and redirect to SPA homepage with ad param
-        setTimeout(function() { window.location.href = '/?ad=' + id; }, 60);
+        // Static page not generated yet (brand-new ad) — render it inline
+        // instead of bouncing to /?ad=…, which looped until the generator ran.
+        setTimeout(function() { showAdInline(ad); }, 60);
       }
     }
   };
   xhr.send();
 }
+
+// ── SPA FALLBACK DETAIL — shown when /ad/<slug>.html hasn't been generated
+// yet (a brand-new ad waiting on the page generator). The old fallback bounced
+// to /?ad=… which re-checked the same missing page and reloaded forever; this
+// renders the listing immediately inside the app. Reuses the app's existing
+// .detail-* / .gallery-* / .similar-* CSS so it looks like a native detail page.
+function showAdInline(ad) {
+  if (!ad) return;
+  var cat = CATS.find(function (c) { return c.id === ad.category; }) || {};
+  var slug = slugify(ad);
+  var adUrl = BASE_URL + '/ad/' + slug + '.html';
+  var photos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
+  var t = function (u) { return (typeof thumbUrl === 'function' && u) ? thumbUrl(u, 480) : u; };
+  var catIcon = cat.icon || '📦';
+  var price = 'J$' + fmtN(ad.price);
+  var waNum = (ad.phone || '').replace(/\D/g, '');
+  var waPhone = '';
+  if (waNum.length >= 7) {
+    waPhone = waNum.length === 7 ? '1876' + waNum
+      : (waNum.length === 10 && waNum.startsWith('876')) ? '1' + waNum
+      : (waNum.length === 11 && waNum.startsWith('1')) ? waNum
+      : '1876' + waNum;
+  }
+  var waHref = waPhone ? 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title + ' - ' + adUrl) : '';
+
+  var gallery;
+  if (photos.length) {
+    var slides = photos.map(function (p, i) {
+      return '<div class="gallery-slide"><img src="' + t(p) + '" alt="' + escHtml(ad.title) + '" ' + (i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' decoding="async"></div>';
+    }).join('');
+    var dots = '';
+    if (photos.length > 1) {
+      dots = '<div class="gallery-dots">' + photos.map(function (_, i) {
+        return '<span class="gallery-dot' + (i === 0 ? ' active' : '') + '" data-i="' + i + '"></span>';
+      }).join('') + '</div>';
+    }
+    gallery = '<div class="gallery-wrap">'
+      + '<div class="gallery-track">' + slides + '</div>'
+      + dots
+      + (photos.length > 1 ? '<button class="gallery-nav gallery-prev">‹</button><button class="gallery-nav gallery-next">›</button>' : '')
+      + (photos.length > 1 ? '<div class="detail-photo-count" style="position:absolute;top:12px;right:12px">📷 ' + photos.length + '</div>' : '')
+      + '</div>';
+  } else {
+    gallery = '<div class="detail-img" style="font-size:80px">' + catIcon + '</div>';
+  }
+
+  var similar = _ads.filter(function (a) { return a.id !== ad.id && a.status !== 'sold' && (a.category === ad.category || a.parish === ad.parish); }).slice(0, 4);
+  var similarHtml = '';
+  if (similar.length) {
+    var cards = similar.map(function (a) {
+      var ac = CATS.find(function (c) { return c.id === a.category; }) || {};
+      return '<a href="javascript:openDetail(\'' + a.id + '\')" class="sim-card" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden">'
+        + (a.image ? '<div style="aspect-ratio:4/3;overflow:hidden"><img src="' + t(a.image) + '" alt="' + escHtml(a.title) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>'
+          : '<div style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--surface-2)">' + (ac.icon || '📦') + '</div>')
+        + '<div style="padding:10px"><div style="font-weight:800;color:var(--green);font-family:var(--font-d)">J$' + fmtN(a.price) + '</div><div style="font-size:13px;font-weight:600;margin-top:2px">' + escHtml(a.title) + '</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">📍 ' + escHtml(a.parish) + '</div></div>'
+        + '</a>';
+    }).join('');
+    similarHtml = '<div class="similar-section"><div class="similar-title">Similar listings</div><div class="similar-grid">' + cards + '</div></div>';
+  }
+  var html = '<div style="padding-bottom:60px">'
+    + '<button onclick="goHome()" style="display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--green);font-size:15px;font-weight:600;cursor:pointer;padding:12px 0">‹ Back</button>'
+    + gallery
+    + '<div class="detail-body">'
+    + '<div class="detail-price">' + price + (ad.neg ? ' <span style="font-size:13px;font-weight:400;color:var(--text-3)">(negotiable)</span>' : '') + '</div>'
+    + '<div class="detail-title">' + escHtml(ad.title) + '</div>'
+    + '<div class="detail-tags">'
+    + '<span class="dtag">📍 ' + escHtml(ad.parish) + '</span>'
+    + '<span class="dtag">' + catIcon + ' ' + (cat.name || 'Other') + '</span>'
+    + '<span class="dtag">🕐 ' + ago(ad.date) + '</span>'
+    + '<span class="dtag">👁 ' + (ad.views || 0) + ' views</span>'
+    + (ad.status === 'sold' ? '<span class="dtag" style="color:#e53935">● Sold</span>' : '')
+    + '</div>'
+    + '<p class="detail-desc">' + escHtml(ad.desc || 'No description provided.').replace(/\n/g, '<br>') + '</p>'
+    + '<div class="seller-box">'
+    + '<div class="s-avatar" style="background:' + avatarColor(ad.seller || '?').bg + ';color:' + avatarColor(ad.seller || '?').fg + '">' + escHtml(ad.sellerInit || (ad.seller || '?').charAt(0)) + '</div>'
+    + '<div class="s-info"><div style="font-weight:700">' + escHtml(ad.seller || 'Anonymous') + '</div><div style="font-size:13px;color:var(--text-2)">Yaad Adz Member · ' + escHtml(ad.parish) + '</div></div>'
+    + '</div>'
+    + (ad.status !== 'sold' ? '<div class="detail-btns">'
+      + (ad.phone ? '<a class="btn btn-green" href="tel:' + escHtml(ad.phone) + '" style="flex:1;text-align:center">📞 Call</a>' : '')
+      + (waHref ? '<a class="btn btn-gold" href="' + waHref + '" target="_blank" rel="noopener noreferrer" style="flex:1;text-align:center">💬 WhatsApp</a>' : '')
+      + '<button class="btn btn-outline" style="flex:1" onclick="shareAdInline(\'' + slug + '\')">🔗 Share</button>'
+      + '</div>' : '<div style="color:var(--text-2);font-size:14px">This item has been sold.</div>')
+    + '</div>'
+    + similarHtml
+    + '</div>';
+
+  var el = document.getElementById('detailPage');
+  el.innerHTML = html;
+  goPage('detail');
+  window.scrollTo(0, 0);
+
+  var track = el.querySelector('.gallery-track');
+  if (track && photos.length > 1) {
+    var gdots = el.querySelectorAll('.gallery-dot');
+    var gslides = el.querySelectorAll('.gallery-slide');
+    function goSlide(i) {
+      i = Math.max(0, Math.min(gslides.length - 1, i));
+      track.scrollTo({ left: gslides[i].offsetLeft, behavior: 'smooth' });
+      gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
+    }
+    el.querySelector('.gallery-prev').addEventListener('click', function () { goSlide(Math.round(track.scrollLeft / track.clientWidth) - 1); });
+    el.querySelector('.gallery-next').addEventListener('click', function () { goSlide(Math.round(track.scrollLeft / track.clientWidth) + 1); });
+    gdots.forEach(function (d) { d.addEventListener('click', function () { goSlide(+d.dataset.i); }); });
+    track.addEventListener('scroll', function () {
+      var i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+      gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
+    }, { passive: true });
+  }
+
+  try {
+    document.title = ad.title + ' — ' + price + ' | Yaad Adz Jamaica';
+    if (window.SEO && SEO.setCanonical) SEO.setCanonical('/ad/' + slug + '.html');
+  } catch (e) { /* non-Chromium or SEO not loaded */ }
+}
+
+function shareAdInline(slug) {
+  var url = BASE_URL + '/ad/' + slug + '.html';
+  if (navigator.share) { navigator.share({ title: document.title, url: url }).catch(function () {}); return; }
+  if (navigator.clipboard) { navigator.clipboard.writeText(url).catch(function () {}); }
+  showToast('Link copied 🔗', '🔗');
+}
+
+
 
 function openProfile(sellerId) {
   const ads = _ads.filter(function(a){ return a.sellerId === sellerId; });

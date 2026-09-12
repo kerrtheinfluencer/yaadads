@@ -20,8 +20,22 @@
 
 
 var SITE_UPDATES = {
-  current: 'update-history',
+  current: 'fast-new-ads',
   items: {
+    'fast-new-ads': {
+      version: 'v2.5',
+      icon: '⚡',
+      title: 'New ads load instantly',
+      body: 'When yuh post a new ad, tapping it now shows the listing right away — no more waiting on the page generator. Photos are also served in the right size (up to ~90% lighter pages), so every ad opens faster, especially on mobile data.',
+      date: 'Sep 12, 2026',
+      notes: [
+        'New ads render instantly in-app — the old reload loop (waiting up to 2 hours for the generator) is gone',
+        'Thumbnails, galleries and "similar listings" now use size-optimised photos',
+        'Fonts no longer block first paint — ad pages and the homepage open sooner',
+        'Optional: instant static pages after posting (supabase-migration-3-instant-page-regen.sql)',
+      ],
+      url: '/',
+    },
     'update-history': {
       version: 'v2.4',
       icon: '🗞️',

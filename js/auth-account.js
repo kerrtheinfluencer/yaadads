@@ -98,8 +98,12 @@ function gaEvent(name, params) {
 function thumbUrl(url, width) {
   if (!url) return '';
   const w = width || 120;
-  if (url.indexOf('supabase.co/storage') !== -1) {
-    return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'width=' + w + '&quality=78';
+  // The plain object URL ignores ?width= — only the /render/image/ endpoint
+  // actually resizes (verified working for this project).
+  const m = url.match(/^https:\/\/([^.]+)\.supabase\.co\/storage\/v1\/object\/public\/(.+)$/);
+  if (m) {
+    return 'https://' + m[1] + '.supabase.co/storage/v1/render/image/public/' + m[2]
+      + '?width=' + w + '&quality=75';
   }
   return url;
 }
