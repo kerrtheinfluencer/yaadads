@@ -4242,6 +4242,7 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   /* Grows to fit any number of updates/notes and scrolls only when the
      content outgrows the screen — nothing is capped at a fixed height. */
   max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px); /* dvh: iOS Safari toolbar excluded, so the history list never clips on mobile */
   background: var(--glass-raised);
   border: 1px solid var(--glass-line);
   border-radius: 22px;
@@ -4328,7 +4329,7 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   .site-update-btn { min-height: 44px; padding: 0 14px; }
   .site-update-inbox { margin: 0 -8px; border-radius: 12px; }
   .su-overlay { padding: 14px; }
-  .site-update-modal { max-height: calc(100vh - 32px); }
+  .site-update-modal { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); }
 }
 
 /* Solid fallback for browsers without backdrop-filter support. */

@@ -10,6 +10,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'js/**'
+      - 'tools/**'
+      - 'CHANGELOG.md'
       - 'style.css'
       - 'manifest.json'
       - 'logo.svg'
@@ -139,3 +141,9 @@ jobs:
           test -s logo.svg || { echo "::error::logo.svg missing"; exit 1; }
           grep -q 'src="/logo.svg"' index.html || { echo "::error::index.html does not reference logo.svg"; exit 1; }
           echo "Shared logo.svg in place"
+
+      - name: Check CHANGELOG.md is regenerated from SITE_UPDATES
+        run: |
+          node tools/build-changelog.js
+          git diff --exit-code -- CHANGELOG.md || { echo "::error::CHANGELOG.md is stale — run 'npm run changelog' after editing js/site-updates.js and commit the result."; exit 1; }
+          echo "CHANGELOG.md in sync with SITE_UPDATES"
