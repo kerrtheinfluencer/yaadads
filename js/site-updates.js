@@ -27,8 +27,23 @@
 
 
 var SITE_UPDATES = {
-  current: 'code-cleanup',
+  current: 'ig-import',
   items: {
+    'ig-import': {
+      version: 'v2.9',
+      icon: '📸',
+      title: 'Import your Instagram shop',
+      body: 'Got a whole shop living in your Instagram? Bring it here in minutes — drop in the photos yuh saved from IG, paste the captions, and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲',
+      date: 'Sep 14, 2026',
+      notes: [
+        'New: Import from Instagram wizard — find it in Post an Ad and in My Listings',
+        'Magic Parse reads each caption and auto-fills title, J$ price, parish, category, phone & negotiable',
+        'Drop up to 24 saved IG photos — photo 1 + caption 1 = listing 1, automatic',
+        'Bulk publish with live upload progress, then confetti 🎉',
+        'Level up from 🌱 Yaad Rookie to 🇯🇲 Yaad Legend — XP, badges, and +10 YP per listing on the leaderboard',
+      ],
+      url: '/',
+    },
     'code-cleanup': {
       version: 'v2.6',
       icon: '🧹',

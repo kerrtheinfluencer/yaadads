@@ -47,8 +47,8 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v28', sw.includes('yaadadz-v28'));
-check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'"));
+check('SW cache bumped to v29', sw.includes('yaadadz-v29'));
+check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/ig-import.js'"));
 
 // 6. style.css balance + new styles
 const css = fs.readFileSync('style.css', 'utf8');
@@ -103,7 +103,8 @@ const suSrc = fs.readFileSync('js/site-updates.js', 'utf8');
 check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper)',
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
-check('v2.6 code-cleanup entry shipped + set as current', suSrc.includes("'code-cleanup'") && suSrc.includes("current: 'code-cleanup'"));
+check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
+check('v2.9 ig-import entry shipped + set as current', suSrc.includes("'ig-import'") && suSrc.includes("current: 'ig-import'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',
   (suSrc.match(/date: '/g) || []).length >= 4);

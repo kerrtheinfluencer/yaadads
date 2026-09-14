@@ -4,7 +4,17 @@
 > entries members see in the in-app **What’s new** history overlay.
 > Do not edit by hand: run `npm run changelog` after adding an update.
 
-## 🧹 v2.6 — Faster search, same Yaad Adz (Sep 12, 2026) · latest
+## 📸 v2.9 — Import your Instagram shop (Sep 14, 2026) · latest
+
+Got a whole shop living in your Instagram? Bring it here in minutes — drop in the photos yuh saved from IG, paste the captions, and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲
+
+- New: Import from Instagram wizard — find it in Post an Ad and in My Listings
+- Magic Parse reads each caption and auto-fills title, J$ price, parish, category, phone & negotiable
+- Drop up to 24 saved IG photos — photo 1 + caption 1 = listing 1, automatic
+- Bulk publish with live upload progress, then confetti 🎉
+- Level up from 🌱 Yaad Rookie to 🇯🇲 Yaad Legend — XP, badges, and +10 YP per listing on the leaderboard
+
+## 🧹 v2.6 — Faster search, same Yaad Adz (Sep 12, 2026)
 
 Cleaned up the code behind search and listings — same features, less work per tap. Search reuses a ready-made index, category lookups are instant, and listing photos share one renderer. Yuh should feel snappier results, especially on slower phones.
 

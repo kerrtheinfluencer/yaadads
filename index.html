@@ -530,6 +530,9 @@ if ('serviceWorker' in navigator) {
       <div class="recent-strip-row" id="recentStripRow"></div>
     </div>
 
+    <!-- Referral spot (Invite friends + leaderboard preview) — rendered by js/search-ai.js renderReferralSpot() -->
+    <div id="homeReferralSpot"></div>
+
     <!-- Listings grid -->
     <div class="listings-grid" id="homeGrid">
       <noscript>
@@ -731,7 +734,7 @@ if ('serviceWorker' in navigator) {
     <div style="margin-top:32px">
       <div class="section-hd" style="margin-bottom:16px">
         <h2 class="section-title">My Listings</h2>
-        <button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button>
+        <span style="display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="openIgImport()">📸 Import from IG</button><button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button></span>
       </div>
       <div id="myAdsBox"></div>
     </div>
@@ -836,6 +839,11 @@ if ('serviceWorker' in navigator) {
     </div>
     <!-- Step 1 -->
     <div class="step-panel active" id="sp1">
+      <button type="button" class="igx-entry" onclick="openIgImport()" aria-label="Import products from Instagram">
+        <span class="igx-entry-ico" aria-hidden="true"></span>
+        <span class="igx-entry-txt"><strong>Already selling on Instagram?</strong><small>Import your products in minutes — auto-filled, gamified, ✨</small></span>
+        <span class="igx-entry-arrow" aria-hidden="true">→</span>
+      </button>
       <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
       <div class="form-row">
         <div class="form-grp"><label class="form-lbl">Category *</label><select class="form-inp" id="aCat"></select></div>
@@ -885,6 +893,32 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- INSTAGRAM IMPORT MODAL (gamified 4-step wizard) -->
+<div class="overlay" id="ovIgImport">
+  <div class="modal modal-wide igx-modal">
+    <button class="m-close" onclick="closeOverlay('ovIgImport')">✕</button>
+    <div class="igx-head">
+      <div class="igx-iglogo"></div>
+      <div>
+        <h2 class="igx-title">Import from Instagram</h2>
+        <p class="m-sub">Turn your IG posts into live listings — level up while yuh do it 🇯🇲</p>
+      </div>
+    </div>
+    <div id="igxAlert" class="alert-box alert-err"></div>
+    <div class="step-bar igx-steps">
+      <div class="step active" id="is1"><div class="step-num">1</div>Connect</div>
+      <div class="step" id="is2"><div class="step-num">2</div>Gather</div>
+      <div class="step" id="is3"><div class="step-num">3</div>Review</div>
+      <div class="step" id="is4"><div class="step-num">4</div>Publish</div>
+    </div>
+    <div class="igx-xpwrap" id="igxXpWrap">
+      <div class="igx-level-chip" id="igxLevelChip">🌱 Yaad Rookie</div>
+      <div class="igx-xpbar"><div class="igx-xpfill" id="igxXpFill" style="width:0%"></div></div>
+      <div class="igx-xp-meta"><span class="igx-xp-label" id="igxXpLabel">0 XP</span><span class="igx-xp-next" id="igxXpNext"></span></div>
+    </div>
+    <div id="igxBody"></div>
+  </div>
+</div>
 <!-- AD DETAIL MODAL -->
 <div class="overlay" id="ovDetail">
   <div class="modal modal-full modal-wide" style="max-width:700px">
@@ -1200,6 +1234,85 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     INVITE FRIENDS MODAL
+══════════════════════════════════════ -->
+<div class="overlay" id="ovInvite">
+  <div class="modal modal-wide invite-modal" style="max-width:520px">
+    <div class="modal-drag-handle"></div>
+    <button class="m-close" onclick="closeOverlay('ovInvite')">✕</button>
+    <div style="padding:6px 6px 14px;font-family:var(--font-d,serif);font-size:22px;font-weight:800;color:#fff">
+      📲 Invite Friends
+    </div>
+    <div style="padding:0 22px 18px;font-size:13px;color:rgba(255,255,255,.6);line-height:1.6">
+      Share your personal referral code and earn <strong>10 Yaad Points</strong> for every friend who signs up through it.
+      The person who invites the most friends each week gets the 🏆 weekly winner badge on the leaderboard.
+    </div>
+
+    <!-- Your code -->
+    <div class="invite-your-code">
+      <div class="invite-code-label">Your referral code</div>
+      <div class="invite-code-value" id="inviteCodeDisplay">—</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="inviteLinkInput" type="text" readonly
+          style="flex:1;background:#000;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;font-size:13px;color-scheme:dark">
+        <button class="btn btn-ghost btn-sm" onclick="copyRefLink()" style="align-self:center">📋 Copy</button>
+      </div>
+    </div>
+
+    <!-- Share options -->
+    <div class="invite-options">
+      <div class="invite-options-title">Share with…</div>
+      <div class="invite-options-list">
+        <button class="invite-option" onclick="shareInvite('whatsapp')">
+          <div class="invite-opt-icon">💬</div>
+          <div class="invite-opt-label">WhatsApp</div>
+        </button>
+        <button class="invite-option" onclick="shareInvite('sms')">
+          <div class="invite-opt-icon">📱</div>
+          <div class="invite-opt-label">SMS / Text</div>
+        </button>
+        <button class="invite-option" onclick="shareInvite('copy')">
+          <div class="invite-opt-icon">🔗</div>
+          <div class="invite-opt-label">Copy Link</div>
+        </button>
+        <button class="invite-option" onclick="shareInvite('email')">
+          <div class="invite-opt-icon">✉️</div>
+          <div class="invite-opt-label">Email</div>
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:0 22px 22px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="closeOverlay('ovInvite')">Cancel</button>
+      <button class="btn btn-green btn-sm" onclick="closeOverlay('ovInvite')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     LEADERBOARD MODAL
+══════════════════════════════════════ -->
+<div class="overlay" id="ovLeaderboard">
+  <div class="modal modal-wide leaderboard-modal" style="max-width:560px">
+    <div class="modal-drag-handle"></div>
+    <button class="m-close" onclick="closeOverlay('ovLeaderboard')">✕</button>
+    <div style="padding:6px 6px 14px;font-family:var(--font-d,serif);font-size:22px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px">
+      🏆 Referral Leaderboard
+      <span class="invite-leader-close" onclick="closeOverlay('ovLeaderboard')" style="margin-left:auto;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer">Close ✕</span>
+    </div>
+    <div style="padding:0 22px 8px;font-size:13px;color:rgba(255,255,255,.55);line-height:1.55">
+      Score = referrals × 10 + Yaad Points. The 🏆 badge marks the current weekly winner (most new referrals this week).
+    </div>
+    <div class="leaderboard-list-wrap">
+      <div id="leaderboardList"></div>
+    </div>
+    <div style="padding:14px 22px 22px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-green btn-sm" onclick="closeOverlay('ovLeaderboard')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- FULLSCREEN LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
@@ -1213,6 +1326,7 @@ if ('serviceWorker' in navigator) {
 <script src="js/core.js" defer></script>
 <script src="js/auth-account.js" defer></script>
 <script src="js/listings.js" defer></script>
+<script src="js/ig-import.js" defer></script>
 <script src="js/ui-nav.js" defer></script>
 <script src="js/search-ai.js" defer></script>
 <script src="js/ad-social.js" defer></script>
@@ -1221,6 +1335,16 @@ if ('serviceWorker' in navigator) {
 <script src="js/recent.js" defer></script>
 <script src="js/site-updates.js" defer></script>
 <script src="js/boot.js" defer></script>
+<!-- ── REFERRAL ENV BINDINGS ── -->
+<script>
+  // One place to configure the referral edge helpers.
+  // If you rotate keys, update this block and re-deploy.
+  window.YAAD_REFERRAL = {
+    senderE2EKey:            "{{ SENDER_E2E_KEY }}".trim(),
+    bumperEndpoint:          "{{ BUMPER_ENDPOINT }}".trim(),
+  };
+</script>
+
 <!-- ── FLOATING GAS PRICE BANNER ── -->
 <a href="/gas-prices.html" id="gasBanner" aria-label="Jamaica gas prices today">
   <div class="gas-banner-icon">⛽</div>
