@@ -6,9 +6,10 @@
 
 ## 📸 v2.9 — Import your Instagram shop (Sep 14, 2026) · latest
 
-Got a whole shop living in your Instagram? Bring it here in minutes — drop in the photos yuh saved from IG, paste the captions, and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲
+Got a whole shop living in your Instagram? Bring it here in minutes — paste your Instagram post links and we pull the photo and caption automatically (or drop in the photos yuh saved from IG with the captions), and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲
 
 - New: Import from Instagram wizard — find it in Post an Ad and in My Listings
+- Paste your IG post links and we auto-fetch the cover photo + caption for each one (public posts)
 - Magic Parse reads each caption and auto-fills title, J$ price, parish, category, phone & negotiable
 - Drop up to 24 saved IG photos — photo 1 + caption 1 = listing 1, automatic
 - Bulk publish with live upload progress, then confetti 🎉
