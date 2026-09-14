@@ -177,6 +177,7 @@ function openPostAd() {
   document.getElementById('postAlert').classList.remove('show');
   renderPhotoGrid(); setStep(1);
   openOverlay('ovPost');
+  if (typeof ppOnOpen === 'function') { try { ppOnOpen(); } catch (e) {} }
 }
 function setStep(n) {
   currentPostStep = n;
@@ -187,6 +188,7 @@ function setStep(n) {
     if (p) p.classList.toggle('active', i===n);
   });
   if (n === 3) buildPreview();
+  if (typeof ppOnStep === 'function') { try { ppOnStep(n); } catch (e) {} }
 }
 function nextStep(n) {
   document.getElementById('postAlert').classList.remove('show');
@@ -344,17 +346,20 @@ async function doPostAd() {
 
   const btn = document.querySelector('#sp3 .btn-gold');
   if (btn) { btn.textContent = '⏳ Uploading images…'; btn.disabled = true; }
+  if (typeof ppPublishBar === 'function') ppPublishBar('show', 'Uploading your photos…');
 
   try {
     // Upload all photos to Supabase Storage and get public URLs
     const imageUrls = [];
     for (let i = 0; i < uploadPhotos.length; i++) {
       if (btn) btn.textContent = `⏳ Uploading image ${i+1}/${uploadPhotos.length}…`;
+      if (typeof ppUploadTick === 'function') ppUploadTick(i + 1, uploadPhotos.length);
       const url = await uploadToSupabase(uploadPhotos[i].file);
       if (url) imageUrls.push(url);
     }
 
     if (btn) btn.textContent = '⏳ Publishing…';
+    if (typeof ppPublishDone === 'function') ppPublishDone();
 
     const ad = {
       id:         'a' + Date.now(),
@@ -377,11 +382,18 @@ async function doPostAd() {
     };
 
     await sbInsertAd(ad);
-    closeOverlay('ovPost');
     renderCats(); renderHome(); updateStats();
-    showToast('Your ad is live! 🎉', '🎉');
-    launchConfetti();
+    // Premium path: the pro success screen takes over (confetti, share, XP).
+    const proSuccess = (typeof ppPostSuccess === 'function') && ppPostSuccess(ad);
+    if (!proSuccess) {
+      if (typeof ppDraftClear === 'function') ppDraftClear();
+      if (typeof ppPublishBar === 'function') ppPublishBar('hide');
+      closeOverlay('ovPost');
+      showToast('Your ad is live! 🎉', '🎉');
+      launchConfetti();
+    }
   } catch(e) {
+    if (typeof ppPublishBar === 'function') ppPublishBar('hide');
     showPostErr('Failed to post: ' + (e.message||'please try again'));
   } finally {
     if (btn) { btn.textContent = '🚀 Publish Ad Free'; btn.disabled = false; }

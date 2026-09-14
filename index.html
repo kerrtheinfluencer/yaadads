@@ -476,7 +476,7 @@ if ('serviceWorker' in navigator) {
       <span class="igx-entry-ico" aria-hidden="true" style="width:46px;height:46px;border-radius:13px"></span>
       <span class="igx-entry-txt">
         <strong style="font-size:15.5px">Selling on Instagram? Bring your shop here 🇯🇲</strong>
-        <small style="font-size:12.5px">Paste your IG post links — we pull the photos + captions, then auto-fill titles, prices and parish. Takes minutes, always free.</small>
+        <small style="font-size:12.5px">Save your IG photos &amp; copy your captions — we auto-fill titles, prices and parish, then you publish the whole shop in one run. Takes minutes, always free.</small>
       </span>
       <span class="igx-entry-arrow" aria-hidden="true" style="font-size:20px">→</span>
     </button>
@@ -842,17 +842,20 @@ if ('serviceWorker' in navigator) {
     <h2 style="font-family:var(--font-d);font-weight:800;font-size:24px;margin-bottom:4px">Post a Free Ad</h2>
     <p class="m-sub">Reach thousands of buyers across Jamaica — always free</p>
     <div id="postAlert" class="alert-box alert-err"></div>
+    <div id="ppDraftHost"></div>
     <!-- Step bar -->
     <div class="step-bar">
       <div class="step active" id="s1"><div class="step-num">1</div>Details</div>
       <div class="step" id="s2"><div class="step-num">2</div>Photo & Contact</div>
       <div class="step" id="s3"><div class="step-num">3</div>Preview</div>
     </div>
+    <div class="pp-bar" id="ppBar"></div>
     <!-- Step 1 -->
     <div class="step-panel active" id="sp1">
+      <div id="ppSmartPanel"></div>
       <button type="button" class="igx-entry" onclick="openIgImport()" aria-label="Import products from Instagram">
         <span class="igx-entry-ico" aria-hidden="true"></span>
-        <span class="igx-entry-txt"><strong>Already selling on Instagram?</strong><small>Paste your IG post links to auto-pull photos &amp; captions, or add them manually — auto-filled, gamified, ✨</small></span>
+        <span class="igx-entry-txt"><strong>Already selling on Instagram?</strong><small>Save your IG photos &amp; copy your captions — we auto-fill the title, price, parish and category ✨</small></span>
         <span class="igx-entry-arrow" aria-hidden="true">→</span>
       </button>
       <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
@@ -896,12 +899,18 @@ if ('serviceWorker' in navigator) {
     <div class="step-panel" id="sp3">
       <div id="adPreviewCard" style="max-width:260px;margin:0 auto 24px"></div>
       <div id="previewDetails" style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px"></div>
+      <div class="pp-up" id="ppUpWrap">
+        <div class="pp-up-row"><span class="pp-up-label">Uploading…</span></div>
+        <div class="pp-up-track"><div class="pp-up-fill" style="width:0%"></div></div>
+      </div>
       <div class="step-nav">
         <button class="btn btn-ghost" onclick="nextStep(2)" style="min-width:90px">← Back</button>
         <button class="btn btn-gold btn-lg" style="flex:1" onclick="doPostAd()">🚀 Publish Ad Free</button>
       </div>
     </div>
   </div>
+  <!-- Pro success screen (js/post-pro.js) -->
+  <div class="pp-success" id="ppSuccess"></div>
 </div>
 
 <!-- INSTAGRAM IMPORT MODAL (gamified 4-step wizard) -->
@@ -1338,6 +1347,7 @@ if ('serviceWorker' in navigator) {
 <script src="js/auth-account.js" defer></script>
 <script src="js/listings.js" defer></script>
 <script src="js/ig-import.js" defer></script>
+<script src="js/post-pro.js" defer></script>
 <script src="js/ui-nav.js" defer></script>
 <script src="js/search-ai.js" defer></script>
 <script src="js/ad-social.js" defer></script>

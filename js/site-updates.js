@@ -27,19 +27,38 @@
 
 
 var SITE_UPDATES = {
-  current: 'ig-import',
+  current: 'post-pro',
   items: {
+    'post-pro': {
+      version: 'v2.10',
+      icon: '🚀',
+      title: 'Posting an ad just got smarter',
+      cta: 'Try now',
+      ctaFn: 'openPostAd',
+      body: 'The posting flow got a full glow-up. Paste any caption, message or note about your item and Smart fill writes the title, price, parish, category and phone for you. Drag & drop or paste photos straight from your clipboard, watch your progress ring fill as you type, and get a proper celebration when your ad goes live — with a one-tap WhatsApp share.',
+      date: 'Sep 14, 2026',
+      notes: [
+        'New: Smart fill — paste your caption or a WhatsApp message and we fill the whole form ✨',
+        'New: photo board takes drag & drop and clipboard paste (Ctrl/⌘+V), and you can tap any photo to make it the Cover',
+        'New: live progress ring — see how complete your ad is, field by field, as you type',
+        'New: guided tour on your first post, plus a ❔ How it works button to replay it any time',
+        'New: a clean thank-you screen when you publish — your ad link with one-tap copy, and WhatsApp share',
+        'New: your unfinished ad saves automatically — close the app and pick up right where you left off',
+        'New: inline field hints tell you exactly what is missing before you hit publish',
+        'Cleaned up: the Instagram link auto-fetch was removed — flaky third-party relays made it unreliable, so the Import wizard uses your saved IG photos plus your copied captions instead',
+      ],
+      url: '/',
+    },
     'ig-import': {
       version: 'v2.9',
       icon: '📸',
       title: 'Import your Instagram shop',
       cta: 'Try now',
       ctaFn: 'openIgImport',
-      body: 'Got a whole shop living in your Instagram? Bring it here in minutes — paste your Instagram post links and we pull the photo and caption automatically (or drop in the photos yuh saved from IG with the captions), and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲',
+      body: 'Got a whole shop living in your Instagram? Bring it here in minutes — drop in the photos yuh saved from IG along with your captions, and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲',
       date: 'Sep 14, 2026',
       notes: [
         'New: Import from Instagram wizard — find it in Post an Ad and in My Listings',
-        'Paste your IG post links and we auto-fetch the cover photo + caption for each one (public posts)',
         'Magic Parse reads each caption and auto-fills title, J$ price, parish, category, phone & negotiable',
         'Drop up to 24 saved IG photos — photo 1 + caption 1 = listing 1, automatic',
         'Bulk publish with live upload progress, then confetti 🎉',

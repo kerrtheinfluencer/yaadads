@@ -4807,3 +4807,256 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   .igx-review-head { flex-direction: column; align-items: stretch; }
   .igx-bulk-parish { max-width: none; flex: 1; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🚀 POST AD PRO — premium onboarding & uploader (§PP)
+   Every selector here is prefixed .pp- so nothing can clash with the rest of
+   the sheet. Animations ride the shared easings/durations and are covered by
+   the global prefers-reduced-motion block.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes ppFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ppTipIn  { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+@keyframes ppPop    { 0% { transform: scale(.96); } 60% { transform: scale(1.02); } 100% { transform: scale(1); } }
+@keyframes ppPulse  { 0% { box-shadow: 0 0 0 0 rgba(110, 231, 160, .4); } 100% { box-shadow: 0 0 0 10px rgba(110, 231, 160, 0); } }
+
+/* ── Progress chrome (ring + % + “How it works”) ── */
+.pp-bar { margin: 12px 0 6px; }
+.pp-bar-wrap {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 12px; border-radius: 14px;
+  background: var(--glass-inset); border: 1px solid var(--glass-line);
+  animation: ppFadeUp var(--dur-2) var(--ease-premium) both;
+}
+.pp-bar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pp-ring { width: 34px; height: 34px; flex: 0 0 auto; transform: rotate(-90deg); }
+.pp-ring circle { fill: none; stroke-width: 3.2; stroke-linecap: round; }
+.pp-ring-bg { stroke: var(--border); }
+.pp-ring-fill {
+  stroke: var(--green); stroke-dasharray: 94.2; stroke-dashoffset: 94.2;
+  transition: stroke-dashoffset var(--dur-2) var(--ease-premium), stroke .3s ease;
+}
+.pp-bar-wrap.pp-ready .pp-ring-fill { stroke: var(--gold); animation: ppRingGlow 1.8s var(--ease-premium) infinite; }
+@keyframes ppRingGlow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(244, 195, 0, 0)); } 50% { filter: drop-shadow(0 0 5px rgba(244, 195, 0, .65)); } }
+.pp-bar-label { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+.pp-bar-wrap.pp-ready .pp-bar-label { color: var(--gold-dark); }
+.pp-help {
+  font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  color: var(--text-2); background: var(--surface); border: 1px solid var(--border);
+  transition: transform var(--dur-1) var(--ease-spring), border-color .2s ease, color .2s ease;
+}
+.pp-help:hover { transform: translateY(-1px) scale(1.03); border-color: var(--green); color: var(--green); }
+.pp-help:active { transform: scale(.97); }
+
+/* ── Step tip ── */
+.pp-tip { font-size: 12.5px; line-height: 1.5; color: var(--muted-on-glass); margin: 2px 2px 10px; opacity: 0; }
+.pp-tip.pp-tip-in { animation: ppTipIn var(--dur-2) var(--ease-premium) both; }
+
+/* ──  Smart fill — paste a caption, the form fills itself ── */
+.pp-smart {
+  border-radius: 16px; overflow: hidden; margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(10, 138, 78, .28), rgba(244, 195, 0, .16));
+  border: 1px solid rgba(244, 195, 0, .3);
+}
+.pp-smart.pp-in { animation: ppFadeUp var(--dur-2) var(--ease-premium) both; }
+.pp-smart-head {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 11px 13px; cursor: pointer; border: 0; background: transparent;
+  font: inherit; text-align: left; color: var(--ink-on-glass); transition: background .2s ease;
+}
+.pp-smart-head:hover { background: var(--glass-highlight); }
+.pp-smart-ico { font-size: 16px; }
+.pp-smart-title { flex: 1; font-size: 13px; font-weight: 800; }
+.pp-smart-chev { font-size: 12px; color: var(--muted-on-glass); }
+.pp-smart-body {
+  max-height: 0; overflow: hidden; padding: 0 13px;
+  transition: max-height var(--dur-3) var(--ease-premium), padding var(--dur-2) var(--ease-premium);
+}
+.pp-smart-body.open { max-height: 360px; padding: 0 13px 13px; }
+.pp-smart-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 9px; }
+.pp-smart-note { font-size: 11px; color: var(--muted-on-glass); }
+
+/* ── Inline field feedback + “we filled this” pulse ── */
+.pp-field-msg {
+  font-size: 11.5px; font-weight: 600; color: #ff8a8a;
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height var(--dur-2) var(--ease-premium), opacity var(--dur-2) ease;
+}
+.pp-field-msg.show { max-height: 36px; opacity: 1; margin-top: 4px; }
+.form-inp.pp-bad { border-color: rgba(255, 138, 138, .8) !important; }
+.form-inp.pp-filled { animation: ppPulse .9s var(--ease-premium) 1; border-color: rgba(110, 231, 160, .65) !important; }
+.pp-price-hint { font-size: 11.5px; font-weight: 700; color: #6ee7a0; margin-top: 4px; }
+
+/* ── Upload progress (step 3) ── */
+.pp-up {
+  display: none; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px;
+  background: var(--glass-inset); border: 1px solid var(--glass-line);
+}
+.pp-up.show { display: block; animation: ppFadeUp var(--dur-2) var(--ease-premium) both; }
+.pp-up-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pp-up-label { font-size: 12.5px; font-weight: 700; color: var(--ink-on-glass); }
+.pp-up-track { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.pp-up-fill {
+  height: 100%; width: 0; border-radius: 999px;
+  background: linear-gradient(90deg, var(--green), var(--gold), var(--green));
+  background-size: 200% 100%;
+  transition: width var(--dur-2) var(--ease-premium);
+  animation: ppShimmer 1.5s linear infinite;
+}
+@keyframes ppShimmer { from { background-position: 0% 0; } to { background-position: 200% 0; } }
+
+/* ── Drag & drop state on the photo board ── */
+.pp-drag {
+  outline: 2px dashed rgba(110, 231, 160, .75); outline-offset: 5px;
+  border-radius: 14px; background: rgba(10, 138, 78, .18);
+}
+
+/* ── “Unfinished ad” draft banner ── */
+.pp-draft {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 11px 13px; border-radius: 14px; margin-bottom: 12px;
+  background: var(--gold-pale); border: 1px solid var(--gold);
+}
+.pp-draft.pp-in { animation: ppFadeUp var(--dur-2) var(--ease-premium) both; }
+.pp-draft-ico { font-size: 17px; }
+.pp-draft-txt { flex: 1; min-width: 120px; }
+.pp-draft-txt strong { display: block; font-size: 12.5px; color: #3d3200; }
+.pp-draft-txt small { font-size: 11px; color: rgba(61, 50, 0, .7); }
+.pp-draft-x {
+  border: 0; background: none; color: rgba(61, 50, 0, .55); font: inherit; font-size: 13px;
+  cursor: pointer; padding: 4px 6px; border-radius: 8px; transition: color .2s ease, background .2s ease;
+}
+.pp-draft-x:hover { color: #7a1f1f; background: rgba(61, 50, 0, .1); }
+
+/* ─ 🧭 First-run guided tour (spotlight coach marks) ── */
+.pp-tour { position: fixed; inset: 0; z-index: 9000; }
+.pp-tour-block {
+  position: absolute; inset: 0; cursor: pointer; background: transparent;
+}
+@keyframes ppTourScrim { from { opacity: 0; } to { opacity: 1; } }
+.pp-tour-spot {
+  position: absolute; border-radius: 14px; pointer-events: none; opacity: 0;
+  box-shadow: 0 0 0 9999px rgba(1, 13, 8, .42), 0 0 0 2px rgba(244, 195, 0, .9), 0 8px 26px rgba(0, 0, 0, .34);
+  transition: top var(--dur-2) var(--ease-premium), left var(--dur-2) var(--ease-premium),
+              width var(--dur-2) var(--ease-premium), height var(--dur-2) var(--ease-premium), opacity var(--dur-1) ease;
+}
+.pp-tour-tip {
+  position: absolute; max-width: calc(100vw - 28px); padding: 15px 16px 13px;
+  border-radius: 18px; opacity: 0; transform: translateY(8px) scale(.98);
+  background: var(--glass-raised); border: 1px solid var(--glass-line); color: var(--ink-on-glass);
+  box-shadow: 0 26px 60px rgba(0, 5, 2, .5), inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(26px) saturate(150%); backdrop-filter: blur(26px) saturate(150%);
+  transition: opacity var(--dur-2) var(--ease-premium), transform var(--dur-2) var(--ease-spring);
+}
+.pp-tour-tip.pp-tour-tip-show { opacity: 1; transform: none; }
+.pp-tour-tip::before {
+  content: ''; position: absolute; top: -6px; left: 32px; width: 12px; height: 12px;
+  background: var(--glass-raised);
+  border-left: 1px solid var(--glass-line); border-top: 1px solid var(--glass-line);
+  transform: rotate(45deg); border-radius: 2px;
+}
+.pp-tour-tip-above::before {
+  top: auto; bottom: -6px;
+  border-left: 0; border-top: 0;
+  border-right: 1px solid var(--glass-line); border-bottom: 1px solid var(--glass-line);
+}
+.pp-tour-k {
+  display: inline-block; margin-bottom: 7px; padding: 3px 9px; border-radius: 999px;
+  font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
+  color: #3d3200; background: var(--gold);
+}
+.pp-tour-h { font-family: var(--font-d); font-size: 17px; font-weight: 800; margin: 0 0 6px; color: var(--ink-on-glass); }
+.pp-tour-p { font-size: 13px; line-height: 1.55; color: var(--muted-on-glass); margin: 0 0 14px; }
+.pp-tour-p strong, .pp-tour-p em { color: var(--ink-on-glass); }
+.pp-tour-actions { display: flex; align-items: center; gap: 8px; }
+.pp-tour-gap { flex: 1; }
+.pp-tour-skip, .pp-tour-back {
+  border: 0; background: none; cursor: pointer; font: inherit;
+  font-size: 12.5px; font-weight: 700; color: var(--muted-on-glass); padding: 6px 8px; border-radius: 9px;
+  transition: color .2s ease, background .2s ease;
+}
+.pp-tour-skip:hover, .pp-tour-back:hover { color: var(--ink-on-glass); background: var(--glass-highlight); }
+/* ─ 🎉 Success screen — replaces the wizard body once the ad is live ── */
+.pp-success { display: none; }
+.pp-success.active { display: block; animation: ppFadeUp var(--dur-3) var(--ease-premium) both; }
+.modal.pp-success-mode { overflow: hidden; }
+.modal.pp-success-mode > h2,
+.modal.pp-success-mode > .m-sub,
+.modal.pp-success-mode > #postAlert,
+.modal.pp-success-mode > #ppDraftHost,
+.modal.pp-success-mode > .step-bar,
+.modal.pp-success-mode > .pp-bar { display: none; }
+.pp-win { position: relative; text-align: center; padding: 6px 0 2px; }
+.pp-win-burst {
+  position: absolute; top: -18px; left: 50%; width: 210px; height: 210px; margin-left: -105px;
+  pointer-events: none; opacity: .5; z-index: 0; border-radius: 50%; filter: blur(18px);
+  background: conic-gradient(from 0deg, rgba(244, 195, 0, .5), rgba(0, 92, 53, .28) 40deg,
+              rgba(244, 195, 0, 0) 120deg, rgba(244, 195, 0, .42) 220deg, rgba(255, 255, 255, 0) 320deg);
+  animation: ppWinSpin 6s linear infinite;
+}
+@keyframes ppWinSpin { to { transform: rotate(360deg); } }
+.pp-win-ring {
+  position: relative; z-index: 1; width: 76px; height: 76px; margin: 0 auto 14px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 36px; color: #1a1206;
+  background: linear-gradient(145deg, #ffd94a, #f4c300 55%, #d6a700);
+  box-shadow: 0 14px 34px rgba(244, 195, 0, .34), inset 0 2px 0 rgba(255, 255, 255, .5);
+  animation: ppPop var(--dur-3) var(--ease-spring) both;
+}
+.pp-win-ring::after {
+  content: ''; position: absolute; inset: -10px; border-radius: 50%;
+  border: 2px solid rgba(244, 195, 0, .45);
+  animation: ppWinPulse 2s var(--ease-premium) infinite;
+}
+@keyframes ppWinPulse {
+  0% { transform: scale(.92); opacity: .75; }
+  70%, 100% { transform: scale(1.14); opacity: 0; }
+}
+.pp-win-title {
+  position: relative; z-index: 1; font-family: var(--font-d); font-size: 24px; font-weight: 800;
+  color: var(--ink-on-glass); margin: 0 0 6px;
+}
+.pp-win-title em { font-style: normal; color: var(--gold); }
+.pp-win-sub { position: relative; z-index: 1; font-size: 13px; color: var(--muted-on-glass); margin: 0 0 18px; }
+.pp-win-link {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 8px;
+  padding: 7px 7px 7px 14px; border-radius: 999px; margin: 0 0 12px;
+  background: var(--glass-inset); border: 1px solid var(--glass-line);
+}
+.pp-win-link-url {
+  flex: 1; min-width: 0; text-align: left; font-size: 11.5px; font-weight: 600;
+  color: var(--muted-on-glass); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-win-copy {
+  flex: 0 0 auto; border: 0; cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 800;
+  padding: 7px 14px; border-radius: 999px; white-space: nowrap; color: #1a1206;
+  background: linear-gradient(145deg, #ffd94a, #f4c300 55%, #d6a700);
+  transition: transform var(--dur-1) var(--ease-spring), filter .2s ease;
+}
+.pp-win-copy:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.pp-win-copy:active { transform: scale(.97); }
+.pp-win-note {
+  position: relative; z-index: 1; font-size: 11.5px; line-height: 1.5;
+  color: var(--muted-on-glass); margin: 0 0 18px;
+}
+.pp-win-cta { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 9px; }
+.pp-win-share { width: 100%; animation: ppPop var(--dur-3) var(--ease-spring) 140ms both; }
+.pp-win-row { display: flex; gap: 9px; }
+.pp-win-row .btn { flex: 1; }
+.pp-win-close {
+  position: relative; z-index: 1; margin-top: 14px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--muted-on-glass);
+  padding: 7px 12px; border-radius: 10px; transition: color .2s ease, background .2s ease;
+}
+.pp-win-close:hover { color: var(--ink-on-glass); background: var(--glass-highlight); }
+
+/* ── Small screens ── */
+@media (max-width: 520px) {
+  .pp-bar-wrap { padding: 8px 10px; }
+  .pp-help { padding: 6px 10px; font-size: 11.5px; }
+  .pp-tour-tip { padding: 13px 14px 11px; border-radius: 16px; }
+  .pp-tour-tip::before { display: none; }
+  .pp-tour-h { font-size: 16px; }
+  .pp-tour-p { font-size: 12.5px; }
+}
