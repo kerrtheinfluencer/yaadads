@@ -33,6 +33,8 @@ var SITE_UPDATES = {
       version: 'v2.9',
       icon: '📸',
       title: 'Import your Instagram shop',
+      cta: 'Try now',
+      ctaFn: 'openIgImport',
       body: 'Got a whole shop living in your Instagram? Bring it here in minutes — drop in the photos yuh saved from IG, paste the captions, and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲',
       date: 'Sep 14, 2026',
       notes: [
@@ -272,6 +274,18 @@ function openSiteUpdate() {
           ul.appendChild(li);
         });
         entry.appendChild(ul);
+      }
+      if (it.meta.cta && it.meta.ctaFn && typeof window[it.meta.ctaFn] === 'function') {
+        const ctaBtn = document.createElement('button');
+        ctaBtn.type = 'button';
+        ctaBtn.className = 'site-update-btn site-update-btn-primary site-update-cta';
+        ctaBtn.style.marginTop = '12px';
+        ctaBtn.textContent = it.meta.cta;
+        ctaBtn.addEventListener('click', function () {
+          closeSiteUpdate();
+          try { window[it.meta.ctaFn](); } catch (e) {}
+        });
+        entry.appendChild(ctaBtn);
       }
       list.appendChild(entry);
     });
