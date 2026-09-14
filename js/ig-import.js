@@ -371,6 +371,7 @@ function igxResetSession() {
   igxHandleVal = igxStore.handle || '';
   igxPublishing = false;
   igxSession = { badgesNew: [], xpEarned: 0, published: 0, failed: 0, yp: 0 };
+  igxFetchedItems = [];
   igxPhotoTargetId = null;
 }
 function igxSetStep(n) {
@@ -472,6 +473,17 @@ function igxDemo() {
 }function igxStepBody2() {
   return '' +
     '<div class="igx-gather">' +
+    '<div class="igx-lane igx-in">' +
+      '<div class="igx-lane-head"><span class="igx-lane-ico">📥</span><div><strong>0 · Paste post links — auto-fetch</strong><small>On Instagram: open a post → ⋯ / Share → Copy link. One link per line (or @profile). Public posts only.</small></div></div>' +
+      '<textarea id="igxLinksIn" class="form-inp" rows="3" placeholder="https://www.instagram.com/p/CxxxxxxxxAB/&#10;https://www.instagram.com/p/CyyyyyyyyCD/" oninput="igxGatherMeta()"></textarea>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">' +
+        '<button class="btn btn-green" id="igxFetchBtn" onclick="igxFetchFromLinks()">📥 Fetch from Instagram</button>' +
+        '<span class="igx-gather-meta" style="margin:0" id="igxFetchMeta"></span>' +
+      '</div>' +
+      '<div class="igx-pub-list" id="igxFetchList" style="margin-top:10px"></div>' +
+      '<div class="igx-pair-hint" style="margin-top:10px">✨ Fetching pulls the cover photo + caption automatically. Carousels import the cover — add more photos in Review. If every route is blocked, use the lanes below.</div>' +
+    '</div>' +
+
       '<div class="igx-lane igx-in">' +
         '<div class="igx-lane-head"><span class="igx-lane-ico">\ud83d\uddbc\ufe0f</span><div><strong>1 \u00b7 Post photos</strong><small>On Instagram: long-press a post \u2192 Save. Then drop the images here.</small></div></div>' +
         '<div class="igx-drop" id="igxDrop" onclick="document.getElementById(\'igxFileIn\').click()" ondragover="igxDragOver(event)" ondragleave="igxDragLeave(event)" ondrop="igxDropFiles(event)">' +
@@ -557,18 +569,18 @@ function igxCaptionsInput(ta) { igxCaptionText = igxNorm(ta.value); igxGatherMet
 function igxGatherMeta() {
   var m = $el('igxGatherMeta');
   var caps = igxSplitCaptions(igxCaptionText);
-  if (m) m.textContent = igxPhotos.length + ' photo' + (igxPhotos.length === 1 ? '' : 's') + ' \u00b7 ' + caps.length + ' caption' + (caps.length === 1 ? '' : 's') + ' detected';
+  if (m) m.textContent = igxPhotos.length + ' photo' + (igxPhotos.length === 1 ? '' : 's') + ' \u00b7 ' + caps.length + ' caption' + (caps.length === 1 ? '' : 's') + ' detected' + (igxFetchedItems.length ? ' · ' + igxFetchedItems.length + ' fetched from IG' : '');
   var btn = $el('igxParseBtn');
   if (btn) btn.disabled = (igxPhotos.length === 0 && caps.length === 0);
 }
 function igxGoParse(silent) {
   var caps = igxSplitCaptions(igxCaptionText);
-  if (!igxPhotos.length && !caps.length) {
+  if (!igxPhotos.length && !caps.length && !igxFetchedItems.length) {
     if (!silent) igxAlert('Add at least one photo or one caption first \u2014 then hit Magic Parse \u2728');
     return;
   }
   var built = igxBuildItems(igxPhotos, caps);
-  igxItems = built.items;
+  igxItems = built.items.concat(igxFetchedItems);
   if (!igxItems.length) {
     if (!silent) igxAlert('Nothing to import \u2014 check your captions.');
     return;
@@ -941,4 +953,269 @@ async function igxBumpYaadPoints(n) {
     if (typeof console !== 'undefined' && console.warn) console.warn('[igx] yaad_points bump skipped:', e && e.message);
     return false;
   }
+}
+/* ═══════════════════════════════════════════════════════════
+   📥 LINKS FETCH — auto-gather photos + captions from IG §IGX-LINKS
+   ═══════════════════════════════════════════════════════════
+   Instagram blocks direct browser calls (CORS + login walls), so we
+   relay through public CORS proxies to Instagram's own
+   /embed/captioned/ endpoint — it serves the cover photo URL + the
+   caption for PUBLIC posts without login. Multi-route fallback: if
+   every proxy is rate-limited, the manual lanes (photos + captions)
+   still work as before. Carousels import the cover photo only.
+   Upgrade path: point igxProxyFetchText at a Supabase Edge Function
+   backed by the Instagram Graph API (needs a Meta app review) — the
+   parser below and the rest of the wizard stay untouched.
+   ═══════════════════════════════════════════════════════════ */
+var igxFetchedItems = [];
+var igxFetching = false;
+var IGX_MAX_LINKS = 15;
+var IGX_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://corsproxy.io/?url=',
+  'https://api.allorigins.win/get?url='
+];
+
+function igxParseLinks(text) {
+  var out = [];
+  var seen = {};
+  var lines = igxNorm(text).split(IGX_NL);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim().replace(/,+$/, '');
+    if (!line) continue;
+    var pm = line.match(/instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]{5,})/i);
+    if (pm) {
+      if (!seen['p' + pm[1]]) { seen['p' + pm[1]] = 1; out.push({ type: 'post', code: pm[1] }); }
+      continue;
+    }
+    var uname = '';
+    if (line.charAt(0) === '@') uname = line.slice(1).replace(/\/+$/, '');
+    else {
+      var um = line.match(/instagram\.com\/([A-Za-z0-9._]{1,30})\/?$/i);
+      if (um) uname = um[1];
+    }
+    if (uname && !/^(p|reel|reels|tv|explore|stories)$/i.test(uname)) {
+      var k = 'u' + uname.toLowerCase();
+      if (!seen[k]) { seen[k] = 1; out.push({ type: 'profile', username: uname }); }
+    }
+  }
+  return out;
+}
+
+function igxProxyFetchText(url) {
+  var i = 0;
+  function attempt() {
+    if (i >= IGX_PROXIES.length) return Promise.resolve(null);
+    var base = IGX_PROXIES[i++];
+    var isGetJson = base.indexOf('/get?url=') !== -1;
+    var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 15000) : null;
+    var opts = ctl ? { signal: ctl.signal } : {};
+    return fetch(base + encodeURIComponent(url), opts)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (txt) {
+        if (timer) clearTimeout(timer);
+        if (isGetJson) {
+          try { var j = JSON.parse(txt); txt = (j && j.contents) ? String(j.contents) : ''; } catch (e) { return attempt(); }
+        }
+        if (txt && txt.length > 500) return txt;
+        return attempt();
+      })
+      .catch(function () { if (timer) clearTimeout(timer); return attempt(); });
+  }
+  return attempt();
+}
+
+function igxDecodeEntities(s) {
+  return String(s)
+    .replace(/\\u0026/g, '&')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'");
+}
+function igxStripTags(s) {
+  return String(s)
+    .replace(/<br\s*\/?>/gi, IGX_NL)
+    .replace(/<\/(p|div)>/gi, IGX_NL)
+    .replace(/<[^>]*>/g, '')
+    .replace(/\u0009/g, ' ')
+    .replace(/ {2,}/g, ' ');
+}
+function igxExtractEmbedImage(html) {
+  var src = '';
+  var m = html.match(/<img[^>]*EmbeddedMediaImage[^>]*>/i);
+  if (m) { var sm = m[0].match(/src="([^"]+)"/); if (sm) src = sm[1]; }
+  if (!src) { var im = html.match(/<img[^>]*src="(https?:[^"\s]*scontent[^"\s]*)"/i); if (im) src = im[1]; }
+  if (!src) { var rm = html.match(/https:\/\/[^"'\s<>]*scontent[^"'\s<>]*/i); if (rm) src = rm[0]; }
+  if (!src) {
+    var em = html.match(/https:\\\/\\\/[^"'\s<>]*scontent[^"'\s<>]*/i);
+    if (em) src = em[0].replace(/\\\//g, '/').replace(/\\u0026/g, '&');
+  }
+  if (!src) { var om = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/i); if (om) src = om[1]; }
+  return src ? igxDecodeEntities(src) : '';
+}
+function igxExtractEmbedCaption(html) {
+  var m = html.match(/<div class="Caption">([\s\S]*?)<div class="CaptionComments"/i);
+  var inner = m ? m[1] : '';
+  if (!inner) {
+    var m2 = html.match(/<div class="Caption">([\s\S]*)<\/div>\s*<\/div>\s*<\/div>/i);
+    inner = m2 ? m2[1] : '';
+  }
+  if (!inner) return '';
+  inner = inner.replace(/<a[^>]*CaptionUsername[^>]*>[\s\S]*?<\/a>/i, '');
+  var txt = igxDecodeEntities(igxStripTags(inner));
+  var out = [];
+  txt.split(IGX_NL).forEach(function (l) {
+    var s = l.trim();
+    if (!s) return;
+    if (/^[\d,.]+ likes?$/i.test(s)) return;
+    if (/^view (all )?[\d,.]* comments?/i.test(s)) return;
+    if (/^add a comment/i.test(s)) return;
+    if (/^verified$/i.test(s)) return;
+    if (/^view (more )?on instagram/i.test(s)) return;
+    if (/^on instagram\.?$/i.test(s)) return;
+    if (/^\w{3,9} \d{1,2}, \d{4}$/.test(s)) return;
+    if (s.length > 400) s = s.slice(0, 400);
+    out.push(s);
+  });
+  return out.join(IGX_NL).trim();
+}
+function igxFetchImageFile(src) {
+  var i = 0;
+  function attempt() {
+    if (i >= IGX_PROXIES.length) return Promise.resolve(null);
+    var base = IGX_PROXIES[i++];
+    if (base.indexOf('/get?url=') !== -1) return attempt();
+    var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 25000) : null;
+    var opts = ctl ? { signal: ctl.signal } : {};
+    return fetch(base + encodeURIComponent(src), opts)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+      .then(function (blob) {
+        if (timer) clearTimeout(timer);
+        if (!blob || blob.size < 1000) return attempt();
+        var type = (blob.type && blob.type.indexOf('image/') === 0) ? blob.type : 'image/jpeg';
+        try { return new File([blob], 'ig_' + Date.now() + '.jpg', { type: type }); }
+        catch (e) { return null; }
+      })
+      .catch(function () { if (timer) clearTimeout(timer); return attempt(); });
+  }
+  return attempt();
+}
+function igxFetchRowHTML(row) {
+  var thumb = row.thumb
+    ? '<img src="' + row.thumb + '" alt="">'
+    : '<div class="igx-demo-ph" style="background:linear-gradient(135deg,#285aeb,#962fbf)">\ud83d\udce5</div>';
+  var st = '';
+  if (row.state === 'queued') st = '<span class="igx-st-mut">Queued</span>';
+  else if (row.state === 'fetching') st = '<span class="igx-st-work"><span class="igx-spinner igx-spinner-sm"></span> Fetching\u2026</span>';
+  else if (row.state === 'live') st = '<span class="igx-st-live">\u2713 Got it</span>';
+  else if (row.state === 'fail') st = '<span class="igx-st-fail">\u26a0 Blocked</span>';
+  return '<div class="igx-pub-row state-' + row.state + '" id="igxF_' + row.id + '">' +
+    '<div class="igx-pub-thumb">' + thumb + '</div>' +
+    '<div class="igx-pub-name">' + escHtml(row.label) + '<small>' + escHtml(row.note || '') + '</small></div>' +
+    '<div class="igx-pub-status">' + st + '</div>' +
+  '</div>';
+}
+function igxSetFetchRow(row) {
+  var el = $el('igxF_' + row.id);
+  if (el) el.outerHTML = igxFetchRowHTML(row);
+}
+function igxFetchFromLinks() {
+  if (igxFetching) return;
+  var ta = $el('igxLinksIn');
+  var links = igxParseLinks(ta ? ta.value : '');
+  if (!links.length) {
+    igxAlert('Paste Instagram post links first — open a post on IG, tap ⋯ / Share → Copy link.');
+    return;
+  }
+  igxFetching = true;
+  igxFetchedItems = [];
+  var btn = $el('igxFetchBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Connecting…'; }
+  var wrap = $el('igxFetchList');
+  if (wrap) wrap.innerHTML = '';
+  var meta = $el('igxFetchMeta');
+  if (meta) meta.textContent = '';
+  var okCount = 0, failCount = 0;
+  var posts = [], profiles = [];
+  links.forEach(function (l) { if (l.type === 'post') posts.push(l); else profiles.push(l); });
+  if (posts.length > IGX_MAX_LINKS) {
+    showToast('First ' + IGX_MAX_LINKS + ' links imported this run — paste the rest after', '📥');
+    posts = posts.slice(0, IGX_MAX_LINKS);
+  }
+  var job = Promise.resolve();
+  profiles.slice(0, 2).forEach(function (p, pi) {
+    job = job.then(function () {
+      var row = { id: 'pr' + pi, label: '@' + p.username, state: 'fetching', note: 'Scanning profile…' };
+      if (wrap) wrap.insertAdjacentHTML('beforeend', igxFetchRowHTML(row));
+      return igxProxyFetchText('https://www.instagram.com/' + encodeURIComponent(p.username) + '/')
+        .then(function (html) {
+          var codes = [];
+          if (html) {
+            var re = /"shortcode":"([A-Za-z0-9_-]{5,})"/g, mm;
+            while ((mm = re.exec(html)) && codes.length < 12) { if (codes.indexOf(mm[1]) === -1) codes.push(mm[1]); }
+          }
+          if (!codes.length) { row.state = 'fail'; row.note = 'Profile scan blocked — paste post links instead'; failCount++; }
+          else {
+            codes.forEach(function (c) { posts.push({ type: 'post', code: c }); });
+            row.state = 'live'; row.note = 'Found ' + codes.length + ' posts — fetching them next';
+          }
+          igxSetFetchRow(row);
+        });
+    }).then(function () { return new Promise(function (r) { setTimeout(r, 500); }); });
+  });
+  posts.forEach(function (l, i) {
+    job = job.then(function () {
+      var row = { id: 'p' + i, label: 'Post ' + l.code, state: 'fetching', note: 'Pulling photo & caption…' };
+      if (wrap) wrap.insertAdjacentHTML('beforeend', igxFetchRowHTML(row));
+      return igxProxyFetchText('https://www.instagram.com/p/' + encodeURIComponent(l.code) + '/embed/captioned/')
+        .then(function (html) {
+          if (!html) { row.state = 'fail'; row.note = 'All relay routes blocked — retry in a minute'; failCount++; igxSetFetchRow(row); return null; }
+          var src = igxExtractEmbedImage(html);
+          var caption = igxExtractEmbedCaption(html);
+          if (!src && !caption) { row.state = 'fail'; row.note = 'Post is private, removed, or not embeddable'; failCount++; igxSetFetchRow(row); return null; }
+          if (!src) {
+            igxFetchedItems.push(igxMakeItem(null, caption, i));
+            okCount++; row.state = 'live'; row.note = 'Caption imported — add a photo in Review';
+            igxSetFetchRow(row);
+            return null;
+          }
+          row.note = 'Got photo — saving…';
+          igxSetFetchRow(row);
+          return igxFetchImageFile(src).then(function (file) {
+            if (file) {
+              var photo = { file: file, preview: '', demo: null };
+              igxFetchedItems.push(igxMakeItem(photo, caption, i));
+              igxPhotoPreview(photo.file).then(function (u) { photo.preview = u; row.thumb = u; igxSetFetchRow(row); });
+              okCount++; row.state = 'live'; row.note = 'Imported — photo + caption';
+              igxAward(IGX_XP.photo, 'Pulled from Instagram');
+            } else {
+              igxFetchedItems.push(igxMakeItem(null, caption, i));
+              okCount++; row.state = 'live'; row.note = 'Photo blocked — caption saved, add photo in Review';
+            }
+            igxSetFetchRow(row);
+            return null;
+          });
+        });
+    }).then(function () { return new Promise(function (r) { setTimeout(r, 700); }); });
+  });
+  job = job.then(function () {
+    igxFetching = false;
+    if (btn) { btn.disabled = false; btn.textContent = '📥 Fetch again'; }
+    if (meta) meta.textContent = okCount + ' imported · ' + failCount + ' blocked';
+    if (okCount) {
+      var caps = igxSplitCaptions(igxCaptionText);
+      var built = igxBuildItems(igxPhotos, caps);
+      igxItems = built.items.concat(igxFetchedItems);
+      igxAward(IGX_XP.parse, 'Auto-gathered');
+      showToast(okCount + ' item(s) pulled from Instagram ✨', '📥');
+      igxSetStep(3);
+    } else {
+      igxAlert('Instagram blocked every route this time (public relays get rate-limited). Wait a minute and retry — or use the lanes below: photos + captions still work great.');
+    }
+  });
 }
