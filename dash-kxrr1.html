@@ -406,7 +406,6 @@ body { font-family:var(--font-s); background:var(--bg); color:var(--text-1); min
             <select id="utmSource" onchange="buildUtm()">
               <option value="whatsapp">WhatsApp</option>
               <option value="facebook">Facebook</option>
-              <option value="instagram">Instagram</option>
               <option value="twitter">Twitter/X</option>
               <option value="tiktok">TikTok</option>
               <option value="sms">SMS</option>
@@ -768,7 +767,7 @@ function renderUtmClickLog() {
   const sourceCounts = {};
   clicks.forEach(c => { sourceCounts[c.source||'unknown'] = (sourceCounts[c.source||'unknown']||0)+1; });
 
-  const sourceIcons = { whatsapp:'💬', facebook:'👍', instagram:'📸', twitter:'🐦', tiktok:'🎵', sms:'📱', email:'📧', friend:'🤝', google:'🔍', organic:'🌱' };
+  const sourceIcons = { whatsapp:'💬', facebook:'👍', twitter:'🐦', tiktok:'🎵', sms:'📱', email:'📧', friend:'🤝', google:'🔍', organic:'🌱' };
   const total = clicks.length;
 
   if (total > 0) {

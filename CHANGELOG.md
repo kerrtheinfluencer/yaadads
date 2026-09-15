@@ -15,17 +15,7 @@ The posting flow got a full glow-up. Paste any caption, message or note about yo
 - New: a clean thank-you screen when you publish — your ad link with one-tap copy, and WhatsApp share
 - New: your unfinished ad saves automatically — close the app and pick up right where you left off
 - New: inline field hints tell you exactly what is missing before you hit publish
-- Cleaned up: the Instagram link auto-fetch was removed — flaky third-party relays made it unreliable, so the Import wizard uses your saved IG photos plus your copied captions instead
-
-## 📸 v2.9 — Import your Instagram shop (Sep 14, 2026)
-
-Got a whole shop living in your Instagram? Bring it here in minutes — drop in the photos yuh saved from IG along with your captions, and Yaad Adz auto-fills the titles, prices, parish and category. Publish one or ten at once, and level up while yuh do it 🇯🇲
-
-- New: Import from Instagram wizard — find it in Post an Ad and in My Listings
-- Magic Parse reads each caption and auto-fills title, J$ price, parish, category, phone & negotiable
-- Drop up to 24 saved IG photos — photo 1 + caption 1 = listing 1, automatic
-- Bulk publish with live upload progress, then confetti 🎉
-- Level up from 🌱 Yaad Rookie to 🇯🇲 Yaad Legend — XP, badges, and +10 YP per listing on the leaderboard
+- Cleaned up: removed a flaky third-party link auto-fetch from the posting flow.
 
 ## 🧹 v2.6 — Faster search, same Yaad Adz (Sep 12, 2026)
 

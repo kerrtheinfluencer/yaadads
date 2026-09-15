@@ -121,8 +121,7 @@
       },
       "sameAs": [
         "https://twitter.com/yaadadz",
-        "https://www.facebook.com/yaadadz",
-        "https://www.instagram.com/yaadadz"
+        "https://www.facebook.com/yaadadz"
       ]
     },
     {
@@ -470,17 +469,6 @@ if ('serviceWorker' in navigator) {
   </div>
 
 
-    <!-- INSTAGRAM IMPORT CTA — visible to everyone on the main page -->
-  <div style="max-width:960px;margin:22px auto 0;padding:0 24px">
-    <button type="button" class="igx-entry" style="margin-bottom:0;padding:14px 18px" onclick="openIgImport()" aria-label="Import your Instagram shop to Yaad Adz">
-      <span class="igx-entry-ico" aria-hidden="true" style="width:46px;height:46px;border-radius:13px"></span>
-      <span class="igx-entry-txt">
-        <strong style="font-size:15.5px">Selling on Instagram? Bring your shop here 🇯🇲</strong>
-        <small style="font-size:12.5px">Save your IG photos &amp; copy your captions — we auto-fill titles, prices and parish, then you publish the whole shop in one run. Takes minutes, always free.</small>
-      </span>
-      <span class="igx-entry-arrow" aria-hidden="true" style="font-size:20px">→</span>
-    </button>
-  </div>
 <!-- RESULTS AREA (categories + AI response + listings, all unified) -->
   <div class="results-area">
 
@@ -745,7 +733,7 @@ if ('serviceWorker' in navigator) {
     <div style="margin-top:32px">
       <div class="section-hd" style="margin-bottom:16px">
         <h2 class="section-title">My Listings</h2>
-        <span style="display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="openIgImport()">📸 Import from IG</button><button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button></span>
+        <span style="display:flex;gap:8px"><button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button></span>
       </div>
       <div id="myAdsBox"></div>
     </div>
@@ -853,11 +841,6 @@ if ('serviceWorker' in navigator) {
     <!-- Step 1 -->
     <div class="step-panel active" id="sp1">
       <div id="ppSmartPanel"></div>
-      <button type="button" class="igx-entry" onclick="openIgImport()" aria-label="Import products from Instagram">
-        <span class="igx-entry-ico" aria-hidden="true"></span>
-        <span class="igx-entry-txt"><strong>Already selling on Instagram?</strong><small>Save your IG photos &amp; copy your captions — we auto-fill the title, price, parish and category ✨</small></span>
-        <span class="igx-entry-arrow" aria-hidden="true">→</span>
-      </button>
       <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
       <div class="form-row">
         <div class="form-grp"><label class="form-lbl">Category *</label><select class="form-inp" id="aCat"></select></div>
@@ -913,32 +896,6 @@ if ('serviceWorker' in navigator) {
   <div class="pp-success" id="ppSuccess"></div>
 </div>
 
-<!-- INSTAGRAM IMPORT MODAL (gamified 4-step wizard) -->
-<div class="overlay" id="ovIgImport">
-  <div class="modal modal-wide igx-modal">
-    <button class="m-close" onclick="closeOverlay('ovIgImport')">✕</button>
-    <div class="igx-head">
-      <div class="igx-iglogo"></div>
-      <div>
-        <h2 class="igx-title">Import from Instagram</h2>
-        <p class="m-sub">Turn your IG posts into live listings — level up while yuh do it 🇯🇲</p>
-      </div>
-    </div>
-    <div id="igxAlert" class="alert-box alert-err"></div>
-    <div class="step-bar igx-steps">
-      <div class="step active" id="is1"><div class="step-num">1</div>Connect</div>
-      <div class="step" id="is2"><div class="step-num">2</div>Gather</div>
-      <div class="step" id="is3"><div class="step-num">3</div>Review</div>
-      <div class="step" id="is4"><div class="step-num">4</div>Publish</div>
-    </div>
-    <div class="igx-xpwrap" id="igxXpWrap">
-      <div class="igx-level-chip" id="igxLevelChip">🌱 Yaad Rookie</div>
-      <div class="igx-xpbar"><div class="igx-xpfill" id="igxXpFill" style="width:0%"></div></div>
-      <div class="igx-xp-meta"><span class="igx-xp-label" id="igxXpLabel">0 XP</span><span class="igx-xp-next" id="igxXpNext"></span></div>
-    </div>
-    <div id="igxBody"></div>
-  </div>
-</div>
 <!-- AD DETAIL MODAL -->
 <div class="overlay" id="ovDetail">
   <div class="modal modal-full modal-wide" style="max-width:700px">
@@ -1346,7 +1303,7 @@ if ('serviceWorker' in navigator) {
 <script src="js/core.js" defer></script>
 <script src="js/auth-account.js" defer></script>
 <script src="js/listings.js" defer></script>
-<script src="js/ig-import.js" defer></script>
+<script src="js/caption-parse.js" defer></script>
 <script src="js/post-pro.js" defer></script>
 <script src="js/ui-nav.js" defer></script>
 <script src="js/search-ai.js" defer></script>

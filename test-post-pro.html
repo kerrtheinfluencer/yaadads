@@ -214,11 +214,6 @@ function sbCapture(ad) {
     <!-- Step 1 -->
     <div class="step-panel active" id="sp1">
       <div id="ppSmartPanel"></div>
-      <button type="button" class="igx-entry" onclick="openIgImport()" aria-label="Import products from Instagram">
-        <span class="igx-entry-ico" aria-hidden="true"></span>
-        <span class="igx-entry-txt"><strong>Already selling on Instagram?</strong><small>Save your IG photos &amp; copy your captions — we auto-fill the title, price, parish and category ✨</small></span>
-        <span class="igx-entry-arrow" aria-hidden="true">→</span>
-      </button>
       <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
       <div class="form-row">
         <div class="form-grp"><label class="form-lbl">Category *</label><select class="form-inp" id="aCat"></select></div>
@@ -274,7 +269,7 @@ function sbCapture(ad) {
   <div class="pp-success" id="ppSuccess"></div>
 </div>
 
-<script src="js/ig-import.js" defer></script>
+<script src="js/caption-parse.js" defer></script>
 <script src="js/listings.js" defer></script>
 <script src="js/post-pro.js" defer></script>
 <script>
@@ -312,11 +307,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   sbToast('Sandbox ready - open the wizard to start');
 
-  /* The real openIgImport lives in ig-import.js; swap it out now that it has
-     loaded, so the wizard step-1 banner points testers at the IG test page. */
-  window.openIgImport = function () {
-    sbToast('IG Import has its own page - open test-ig-import.html');
-  };
+
 });
 
 </script>

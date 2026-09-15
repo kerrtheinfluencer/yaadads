@@ -24,7 +24,7 @@
    Storage (localStorage): ya_pp_v1 (progress) · ya_pp_draft_v1
    Globals used: $el, CU, catById, PARISHES, CATS, showToast,
    openOverlay/closeOverlay, launchConfetti, _addFilesToPhotos,
-   renderPhotoGrid, uploadPhotos, igxParseCaption, igxAward
+   renderPhotoGrid, uploadPhotos, capParseCaption, capAward
    Every id/function is prefixed pp/PP — zero clashes.
    ═══════════════════════════════════════════════════════════ */
 
@@ -46,11 +46,11 @@ var ppStore = (function () {
 
 function ppSave() { try { localStorage.setItem(PP_STORE_KEY, JSON.stringify(ppStore)); } catch (e) {} }
 
-/* ── §PP-XP — one shared XP bar with the IG importer ── */
+/* ── §PP-XP — post-ad XP awards (capAward shim is a no-op) ── */
 var PP_XP = { fill: 8, publish: 60, photo: 2, cover: 1, draft: 3, share: 15, tour: 20 };
 function ppAward(xp, why) {
   if (!xp) return;
-  try { if (typeof igxAward === 'function') igxAward(xp, why); } catch (e) {}
+  try { if (typeof capAward === 'function') capAward(xp, why); } catch (e) {}
 }
 
 /* ── small helpers ── */
@@ -306,9 +306,8 @@ function ppWireFields() {
 }
 
 /* ── §PP-SMARTFILL — paste anything, form fills itself ──
-   Reuses the caption intelligence built for the IG importer
-   (igxParseCaption) so a seller can paste the same text they
-   already wrote on Instagram and skip the typing entirely. */
+   Reuses the caption parser (capParseCaption in js/caption-parse.js)
+   so a seller can paste text they already wrote and skip re-typing. */
 function ppPulse(id) {
   var el = ppQ(id);
   if (!el) return;
@@ -365,9 +364,9 @@ function ppSmartGo() {
   var ta = ppQ('ppSmartText');
   var text = ta ? String(ta.value || '').trim() : '';
   if (!text) { showToast('Paste some text first ✨', '⚠️'); return; }
-  if (typeof igxParseCaption !== 'function') { showToast('Smart fill is unavailable right now', '⚠️'); return; }
+  if (typeof capParseCaption !== 'function') { showToast('Smart fill is unavailable right now', '⚠️'); return; }
   var p = null;
-  try { p = igxParseCaption(text); } catch (e) { p = null; }
+  try { p = capParseCaption(text); } catch (e) { p = null; }
   if (!p) { showToast('Could not read that — try adding a price and parish', '⚠️'); return; }
 
   var filled = [];

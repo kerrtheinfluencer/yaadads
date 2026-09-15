@@ -235,7 +235,7 @@ const INFO_PAGES = {
 <p><strong>💬 In-app:</strong> Use the AI assistant — it can answer most questions about how the site works, posting ads, and safety.</p>
 <p><strong>🐛 Found a bug?</strong> Let us know at support@yaadadz.com with a screenshot and description of what happened.</p>
 <p><strong>📱 Social Media:</strong></p>
-<p>Instagram: @yaadadz<br>Twitter/X: @yaadadz<br>Facebook: Yaad Adz Jamaica</p>
+<p>Twitter/X: @yaadadz<br>Facebook: Yaad Adz Jamaica</p>
 <p style="margin-top:16px;padding:14px;background:var(--green-light);border-radius:10px;color:var(--green)"><strong>💡 Tip:</strong> For the fastest response, use the AI chat — it's available 24/7 and can help with most questions instantly.</p>`
   },
   terms: {
