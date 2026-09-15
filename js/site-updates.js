@@ -22,7 +22,9 @@
    3. SEARCH CACHE: loadAds sets ad._hay {title,desc,par,cat,all} + _adById via rebuildAdIndex(). scoreAd/getFiltered MUST read ad._hay - never toLowerCase in loops.
    4. PHOTO GRIDS: post+edit share _photoThumbsHTML/_addFilesToPhotos in listings.js. Keep onclick names (removePhoto/removeEditAdPhoto) + ids (imgFile/eaImgFile).
    5. SAFE EDITS: keep public names (init/loadAds/openDetail/cardHTML/renderHome/getFiltered/scoreAd/findAd/catById). Do not touch sw.js precache, CFG creds, manifest. escHtml() all DB strings before innerHTML.
-   6. BEFORE PUSH: npm test then npm run changelog.
+   6. BEFORE PUSH: npm test then npm run changelog — the changelog also updates
+      itself (pre-commit hook + a bot commit in CI), so npm run changelog is
+      only needed to see it before you push.
 *******************************************************************************/
 
 

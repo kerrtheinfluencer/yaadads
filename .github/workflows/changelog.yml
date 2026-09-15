@@ -1,0 +1,75 @@
+name: Changelog Auto-Update
+
+# Keeps CHANGELOG.md in sync with js/site-updates.js (SITE_UPDATES.items) with
+# zero manual steps: whenever update entries land on main, this regenerates the
+# changelog and pushes a bot commit if anything changed.
+#
+# Flow: edit js/site-updates.js → push → CHANGELOG.md is regenerated + committed
+# by the bot. Locally, .githooks/pre-commit does the same before you commit
+# (enable with `npm run hooks:install`).
+#
+# No loop: this workflow only triggers on js/site-updates.js, and the bot commit
+# only touches CHANGELOG.md — so its own push cannot re-trigger it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'js/site-updates.js'
+      - 'tools/build-changelog.js'
+      - '.github/workflows/changelog.yml'
+  workflow_dispatch:
+
+# Never let two runs race each other on the final git push.
+concurrency:
+  group: changelog-auto-update
+  cancel-in-progress: false
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    permissions:
+      contents: write   # needed to push the regenerated changelog back to repo
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm ci on purpose: build-changelog.js is dependency-free, and skipping
+      # it keeps npm's "prepare" hook installer out of this job entirely.
+      - name: Regenerate CHANGELOG.md from SITE_UPDATES
+        run: node tools/build-changelog.js
+
+      - name: Commit and push the changelog if it changed
+        run: |
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md is already in sync — nothing to commit."
+            exit 0
+          fi
+
+          git config user.name  "Yaad Adz Bot"
+          git config user.email "bot@yaadadz.com"
+          git add CHANGELOG.md
+
+          echo "--- changelog diff ---"
+          git diff --staged --stat
+
+          git commit -m "🤖 Auto-update CHANGELOG.md from SITE_UPDATES [$(date +'%Y-%m-%d %H:%M')]"
+
+          # A concurrent ad-page run may have pushed first — rebase then retry.
+          for i in 1 2 3; do
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "CHANGELOG.md pushed to main"
+              exit 0
+            fi
+            sleep $((i * 5))
+          done
+
+          echo "::error::Could not push the regenerated CHANGELOG.md after 3 attempts."
+          exit 1

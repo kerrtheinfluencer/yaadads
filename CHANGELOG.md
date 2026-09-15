@@ -2,7 +2,8 @@
 
 > Auto-generated from `js/site-updates.js` (`SITE_UPDATES.items`) — the same
 > entries members see in the in-app **What’s new** history overlay.
-> Do not edit by hand: run `npm run changelog` after adding an update.
+> Do not edit by hand — it regenerates itself on every commit and on
+> push to main (`npm run changelog` refreshes it manually).
 
 ## 🚀 v2.10 — Posting an ad just got smarter (Sep 14, 2026) · latest
 

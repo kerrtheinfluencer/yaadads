@@ -142,8 +142,11 @@ jobs:
           grep -q 'src="/logo.svg"' index.html || { echo "::error::index.html does not reference logo.svg"; exit 1; }
           echo "Shared logo.svg in place"
 
-      - name: Check CHANGELOG.md is regenerated from SITE_UPDATES
+      - name: Check CHANGELOG.md matches SITE_UPDATES (auto-updated, warn only)
         run: |
           node tools/build-changelog.js
-          git diff --exit-code -- CHANGELOG.md || { echo "::error::CHANGELOG.md is stale — run 'npm run changelog' after editing js/site-updates.js and commit the result."; exit 1; }
-          echo "CHANGELOG.md in sync with SITE_UPDATES"
+          if git diff --exit-code -- CHANGELOG.md; then
+            echo "CHANGELOG.md in sync with SITE_UPDATES"
+          else
+            echo "::warning::CHANGELOG.md was stale — the Changelog Auto-Update workflow is committing the regenerated file. Locally this happens for you via .githooks/pre-commit (npm run hooks:install)."
+          fi

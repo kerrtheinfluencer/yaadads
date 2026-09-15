@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+/* ── .githooks/pre-commit — keep CHANGELOG.md in sync automatically ──
+ * Regenerates CHANGELOG.md from js/site-updates.js (SITE_UPDATES.items) and
+ * stages it, so the changelog can never drift from what members see in the
+ * in-app What's-new history overlay.
+ *
+ * Enabled once per clone with `npm run hooks:install` (that also runs from
+ * `npm install` via the "prepare" script, so it is automatic for everyone).
+ *
+ * Rules: never blocks a commit, never fails a commit. If anything goes wrong
+ * (no node, no git, bad SITE_UPDATES entry) the commit continues untouched and
+ * .github/workflows/changelog.yml fixes it on push instead. */
+'use strict';
+const { execFileSync } = require('child_process');
+
+try {
+  const out = execFileSync(process.execPath, ['tools/build-changelog.js'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+  execFileSync('git', ['add', 'CHANGELOG.md'], { stdio: 'ignore' });
+  console.log('[pre-commit] ' + (out || 'CHANGELOG.md regenerated'));
+} catch (e) {
+  console.log('[pre-commit] changelog auto-update skipped (CI will fix it): ' +
+    String((e && (e.stderr || e.message)) || e).split('\n')[0]);
+}
+process.exit(0);

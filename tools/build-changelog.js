@@ -2,8 +2,14 @@
  * Single source of truth: js/site-updates.js (SITE_UPDATES.items).
  * Generates CHANGELOG.md newest-first so the repo changelog can never drift
  * from what members see in the in-app What's-new history overlay.
- * CI (smoke-test.yml) re-runs this and fails the push if CHANGELOG.md
- * wasn't regenerated — run `npm run changelog` before pushing. */
+ * CI (smoke-test.yml) re-runs this as a safety net — but you never have to
+ * remember it: the changelog updates itself.
+ *   - locally:  .githooks/pre-commit regenerates + stages it on every commit
+ *               (enable once with `npm run hooks:install`, or any `npm install`)
+ *   - on GitHub: .github/workflows/changelog.yml regenerates it and pushes a bot
+ *               commit whenever js/site-updates.js lands on main
+ * `npm run changelog` still works for a manual refresh, and `npm run
+ * changelog:check` fails if the file is stale. */
 const fs = require('fs');
 const path = require('path');
 
@@ -77,7 +83,8 @@ function renderMd(current, items) {
   lines.push('');
   lines.push('> Auto-generated from `js/site-updates.js` (`SITE_UPDATES.items`) — the same');
   lines.push('> entries members see in the in-app **What\u2019s new** history overlay.');
-  lines.push('> Do not edit by hand: run `npm run changelog` after adding an update.');
+  lines.push('> Do not edit by hand — it regenerates itself on every commit and on');
+  lines.push('> push to main (`npm run changelog` refreshes it manually).');
   lines.push('');
   for (const it of items) {
     const head = '## ' + (it.icon ? it.icon + ' ' : '') + (it.version ? it.version + ' — ' : '') + (it.title || it.id) + (it.date ? ' (' + it.date + ')' : '') + (it.current ? ' · latest' : '');
