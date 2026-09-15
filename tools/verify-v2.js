@@ -21,6 +21,10 @@ check('no maximum-scale in viewport', !html.includes('maximum-scale'));
 check('no stray closing script tag after boot.js', !/<script src="js\/boot\.js"><\/script>\s*<\/script>/.test(html));
 check('recentStrip container present', html.includes('id="recentStrip"'));
 check('recentSearchRow container present', html.includes('id="recentSearchRow"'));
+check('home view toggle ships (single + grid buttons wired to setHomeView)',
+  html.includes('id="homeViewBtn"') && html.includes("setHomeView('single'") && html.includes("setHomeView('grid'"));
+check('saved home view stamped before first paint (inline ya_home_view script)',
+  html.indexOf('ya_home_view') > -1 && html.indexOf('ya_home_view') < html.indexOf('<body'));
 check('logo.svg referenced 3 times', (html.match(/src="\/logo\.svg"/g) || []).length === 3);
 check('manifest linked', html.includes('rel="manifest"'));
 check('member stat starts as a neutral placeholder, not zero',
@@ -47,8 +51,17 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v34', sw.includes('yaadadz-v34'));
+check('SW cache bumped to v35', sw.includes('yaadadz-v35'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
+
+// 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
+const _saSrc = fs.readFileSync('js/search-ai.js', 'utf8');
+check('infinite scroll ships (sentinel + IntersectionObserver + re-arm on render)',
+  _saSrc.includes('id="homeMore"') && _saSrc.includes('IntersectionObserver') && _saSrc.includes('observeHomeSentinel'));
+check('home view persisted + applied (setHomeView / initHomeView / ya_home_view)',
+  _saSrc.includes('HOME_VIEW_KEY') && _saSrc.includes('function setHomeView') && _saSrc.includes('function initHomeView'));
+check('fallback Show-more button stays wired (loadMoreHome + observer chunk in step)',
+  _saSrc.includes('function loadMoreHome') && _saSrc.includes('_homePageSize * homeColumns()'));
 
 // 6. style.css balance + new styles
 const css = fs.readFileSync('style.css', 'utf8');
@@ -57,6 +70,10 @@ check('style.css braces balanced', ob === cb, ob + ' blocks');
 check('style.css has toast-action styles', css.includes('.toast .toast-action'));
 check('style.css has recent strip styles', css.includes('.recent-card') && css.includes('.recent-search-chip'));
 check('style.css has tap-target block', css.includes('min-width: 44px'));
+check('mobile single-view home layout CSS ships (html.home-single + .view-toggle)',
+  css.includes('html.home-single .listings-grid') && css.includes('.view-toggle'));
+check('grid choice survives the ≤340px single-column fallback (html.home-grid restore)',
+  css.includes('html.home-grid .listings-grid'));
 check('onboarding overlay is dim-and-dismiss (click-outside wired)',
   css.includes('pointer-events: auto;') && css.includes('.ob-overlay'));
 check('site-update modal shell styled (su-overlay + modal CSS present)',
@@ -104,7 +121,8 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
-check('v2.10 post-pro entry shipped + set as current', suSrc.includes("'post-pro'") && suSrc.includes("current: 'post-pro'"));
+check('v2.11 home-view entry shipped + set as current', suSrc.includes("'home-view'") && suSrc.includes("current: 'home-view'"));
+check('v2.10 post-pro entry shipped', suSrc.includes("'post-pro'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',
   (suSrc.match(/date: '/g) || []).length >= 4);

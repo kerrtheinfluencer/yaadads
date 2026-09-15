@@ -5,7 +5,16 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 🚀 v2.10 — Posting an ad just got smarter (Sep 14, 2026) · latest
+## 📱 v2.11 — One listing at a time on your phone (Sep 15, 2026) · latest
+
+The home feed on mobile now shows one big, beautiful listing per screen — full-width photos, easier reading, less squinting. Prefer the compact look? Tap the new layout switch beside the sort dropdown to flip to the classic two-column grid, and we remember your choice. Best part: listings keep loading as you scroll — no more Load More button, just keep scrolling.
+
+- New: mobile home feed defaults to a single full-width view with larger photos
+- New: layout switch (single ⇄ grid) beside the sort dropdown — your choice is remembered
+- New: unlimited scroll — the next listings load automatically as yuh reach the bottom
+- Desktop and tablet keep their familiar multi-column layout
+
+## 🚀 v2.10 — Posting an ad just got smarter (Sep 14, 2026)
 
 The posting flow got a full glow-up. Paste any caption, message or note about your item and Smart fill writes the title, price, parish, category and phone for you. Drag & drop or paste photos straight from your clipboard, watch your progress ring fill as you type, and get a proper celebration when your ad goes live — with a one-tap WhatsApp share.
 

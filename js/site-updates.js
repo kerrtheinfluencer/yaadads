@@ -30,8 +30,24 @@
 
 
 var SITE_UPDATES = {
-  current: 'post-pro',
+  current: 'home-view',
   items: {
+    'home-view': {
+      version: 'v2.11',
+      icon: '📱',
+      title: 'One listing at a time on your phone',
+      cta: 'Try now',
+      ctaFn: 'openPostAd',
+      body: 'The home feed on mobile now shows one big, beautiful listing per screen — full-width photos, easier reading, less squinting. Prefer the compact look? Tap the new layout switch beside the sort dropdown to flip to the classic two-column grid, and we remember your choice. Best part: listings keep loading as you scroll — no more Load More button, just keep scrolling.',
+      date: 'Sep 15, 2026',
+      notes: [
+        'New: mobile home feed defaults to a single full-width view with larger photos',
+        'New: layout switch (single ⇄ grid) beside the sort dropdown — your choice is remembered',
+        'New: unlimited scroll — the next listings load automatically as yuh reach the bottom',
+        'Desktop and tablet keep their familiar multi-column layout',
+      ],
+      url: '/',
+    },
     'post-pro': {
       version: 'v2.10',
       icon: '🚀',

@@ -2591,6 +2591,62 @@ footer {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   §HOME-VIEW — mobile single ⇄ grid toggle (js/search-ai.js §HOME-VIEW)
+   The toggle only exists on phones (≤640px); the saved layout is stamped on
+   <html> before first paint by the inline script in index.html, so a returning
+   visitor never flashes the wrong layout. Selectors use html.home-* (0,2,1
+   specificity) so they beat every plain .listings-grid breakpoint above.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.view-toggle {
+  display: none; /* desktop / tablet: hidden — desktop keeps its auto-fill grid */
+}
+.view-opt {
+  -webkit-appearance: none; appearance: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color .18s ease, background .18s ease, border-color .18s ease, transform .12s ease;
+}
+.view-opt svg { width: 16px; height: 16px; display: block; }
+.view-opt:first-child { border-radius: 10px 0 0 10px; }
+.view-opt:last-child  { border-radius: 0 10px 10px 0; }
+.view-opt + .view-opt { border-left: none; } /* shared border, no double line */
+.view-opt[aria-pressed="true"] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.view-opt:active { transform: scale(.93); }
+
+@media (max-width: 640px) {
+  .view-toggle { display: inline-flex; flex-shrink: 0; }
+
+  /* SINGLE (default): one full-width column, bigger imagery */
+  html.home-single .listings-grid { grid-template-columns: 1fr; gap: 14px; }
+  html.home-single .ad-card { border-radius: 20px; }
+  html.home-single .ad-card-img { height: 208px; }
+  html.home-single .ad-price { font-size: 19px; }
+  html.home-single .ad-title { font-size: 13.5px; }
+  html.home-single .ad-meta { font-size: 11.5px; }
+
+  /* GRID: keeps the classic 2-up cards — the existing ≤640 rules apply as-is */
+}
+
+@media (max-width: 390px) {
+  html.home-single .listings-grid { grid-template-columns: 1fr; }
+  html.home-single .ad-card-img { height: 184px; }
+}
+
+/* ≤340px collapses everything to one column by default — restore the 2-up
+   grid when the visitor explicitly chose Grid. */
+@media (max-width: 340px) {
+  html.home-grid .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    AI SEARCH SHEET
    ═══════════════════════════════════════════════════════════════════════════ */
 .ai-sheet-overlay {
@@ -2952,6 +3008,26 @@ footer {
    QoL: LOAD MORE
    ═══════════════════════════════════════════════════════════════════════════ */
 .load-more-wrap { grid-column: 1 / -1; text-align: center; padding: 12px 0 8px; }
+/* §INFINITE-SCROLL sentinel lives inside .listings-grid — must span every
+   column so the note + fallback button stay centered in both view modes. */
+.home-more {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 18px 0 8px;
+}
+.home-more-note {
+  font-size: 12.5px; font-weight: 500; color: var(--text-3);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.home-more-note::before {
+  content: ''; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--green);
+  animation: homeMoreSpin .9s linear infinite;
+}
+@keyframes homeMoreSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .home-more-note::before { animation: none; }
+}
 .load-more-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 14px 36px; background: var(--surface); border: 2px solid var(--border);

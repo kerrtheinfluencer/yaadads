@@ -74,6 +74,9 @@ async function init() {
   }
 
   renderCats();
+  // §HOME-VIEW — resolve the saved single/grid layout before the first render,
+  // so homeColumns() measures the real column count and chunk sizes match.
+  if (typeof initHomeView === 'function') initHomeView();
   renderHome();
   // Hide static SEO intro now that live listings have rendered
   const seoIntro = document.getElementById('seoIntro');

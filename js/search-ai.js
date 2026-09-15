@@ -73,6 +73,106 @@ let _hideSold = false;
 let _homePageSize = 24;
 let _homeShowCount = 24;
 
+/* ── §HOME-VIEW — mobile layout: 'single' (1 column) or 'grid' (2 columns).
+   Desktop always uses its own multi-column grid — this preference only
+   applies at ≤640px, where the default is a full-width single-column view.
+   Persisted in localStorage 'ya_home_view' so it sticks between visits. ── */
+var HOME_VIEW_KEY = 'ya_home_view';
+let _homeView = null;
+
+/* Number of columns the CSS is currently rendering — read from the real grid
+   so JS and stylesheet can never disagree (no duplicated breakpoints here). */
+function homeColumns() {
+  const g = homeEls().grid;
+  if (!g || !g.isConnected) return 2;
+  const tpl = (window.getComputedStyle(g).gridTemplateColumns || '').trim();
+  if (!tpl || tpl === 'none') return 1;
+  return tpl.split(/\s+/).filter(Boolean).length || 1;
+}
+
+/* Apply the single/grid class + sync the toggle button state.
+   The class goes on <html> (documentElement) because the tiny inline script at
+   the top of index.html stamps the saved choice there before the first paint —
+   that is what stops a flash of the wrong layout for returning visitors. */
+function applyHomeView() {
+  const v = _homeView === 'grid' ? 'grid' : 'single';
+  const root = document.documentElement;
+  if (root) {
+    root.classList.toggle('home-single', v === 'single');
+    root.classList.toggle('home-grid', v === 'grid');
+  }
+  const wrap = document.getElementById('homeViewBtn');
+  if (wrap) {
+    wrap.querySelectorAll('.view-opt').forEach(function(b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-view') === v ? 'true' : 'false');
+    });
+  }
+}
+
+/* Public — called by the toggle buttons in index.html. */
+function setHomeView(v) {
+  _homeView = (v === 'grid') ? 'grid' : 'single';
+  try { localStorage.setItem(HOME_VIEW_KEY, _homeView); } catch (e) {}
+  applyHomeView();
+  // Re-size the first chunk to the new column count without resetting scroll.
+  _homeShowCount = Math.max(_homeShowCount, _homePageSize * homeColumns());
+  renderHome();
+  window.dispatchEvent(new Event('resize'));
+}
+
+/* Read the saved preference (default: single on mobile). Runs before first
+   paint so there is no flash of the old two-column layout. */
+function initHomeView() {
+  if (_homeView === null) {
+    let saved = null;
+    try { saved = localStorage.getItem(HOME_VIEW_KEY); } catch (e) {}
+    _homeView = (saved === 'grid') ? 'grid' : 'single';
+  }
+  applyHomeView();
+}
+
+/* ── §INFINITE-SCROLL — append the next page as the sentinel enters view.
+   The "Show more listings" button stays inside the sentinel as a no-JS /
+   no-IntersectionObserver fallback, so the list is never stuck. ── */
+let _homeIO = null;
+let _homeTotal = 0;
+function homeSentinel() { return document.getElementById('homeMore'); }
+
+function renderHomeSentinel(remaining) {
+  const sent = homeSentinel();
+  if (!sent) return;
+  if (remaining > 0) {
+    sent.style.display = '';
+    sent.setAttribute('aria-hidden', 'false');
+    sent.setAttribute('aria-label', remaining + ' more listings — loading as you scroll');
+  } else {
+    sent.style.display = 'none';
+    sent.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function initInfiniteScroll() {
+  if (_homeIO || typeof IntersectionObserver !== 'function') return;
+  _homeIO = new IntersectionObserver(function(entries) {
+    entries.forEach(function(en) {
+      if (!en.isIntersecting) return;
+      if (_homeShowCount >= _homeTotal) { renderHomeSentinel(0); return; }
+      _homeShowCount = Math.min(_homeShowCount + _homePageSize * homeColumns(), _homeTotal);
+      renderHome();
+    });
+  }, { rootMargin: '600px 0px' }); // start loading ~1 screen early
+}
+
+/* The sentinel element is re-created by every renderHome() innerHTML swap, so
+   re-attach after each render (idempotent and cheap). */
+function observeHomeSentinel() {
+  initInfiniteScroll();
+  const sent = homeSentinel();
+  if (!_homeIO || !sent) return;
+  _homeIO.unobserve(sent);
+  if (sent.style.display !== 'none') _homeIO.observe(sent);
+}
+
 function toggleHideSold() {
   _hideSold = !_hideSold;
   const tog = document.getElementById('hideSoldToggle');
@@ -82,11 +182,16 @@ function toggleHideSold() {
 }
 
 function loadMoreHome() {
-  _homeShowCount += _homePageSize;
+  // Same chunk size the infinite-scroll observer uses (see §HOME-VIEW), so the
+  // fallback button and auto-loading stay in step.
+  _homeShowCount = Math.min(
+    _homeShowCount + _homePageSize * homeColumns(),
+    _homeTotal || Infinity
+  );
   renderHome();
   // Scroll to where new cards start (honours reduced-motion)
   const cards = document.querySelectorAll('#homeGrid .ad-card');
-  const target = cards[_homeShowCount - _homePageSize];
+  const target = cards[_homeShowCount - _homePageSize * homeColumns()];
   if (target) {
     const rm = typeof window.matchMedia === 'function' &&
                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -139,6 +244,7 @@ function renderHome() {
 
   const visible = ads.slice(0, _homeShowCount);
   const remaining = ads.length - visible.length;
+  _homeTotal = ads.length;
 
   let html = '';
   if (visible.length) {
@@ -155,10 +261,13 @@ function renderHome() {
         `<button class="btn btn-green" onclick="resetHeroSearch()">Show All Listings</button>`);
   }
 
-  // Load More button
+  // Infinite-scroll sentinel (§INFINITE-SCROLL in the header of this file).
+  // The inner button is a fallback for no-JS / no-IntersectionObserver, and the
+  // note shows while the next page loads as yuh scroll.
   if (remaining > 0) {
-    html += `<div class="load-more-wrap">
-      <button class="load-more-btn" onclick="loadMoreHome()">
+    html += `<div class="home-more" id="homeMore" aria-hidden="false">
+      <span class="home-more-note">Loading more listings…</span>
+      <button class="load-more-btn" type="button" onclick="loadMoreHome()">
         Show more listings <span class="load-more-count">${remaining} more</span>
       </button>
     </div>`;
@@ -207,6 +316,11 @@ function renderHome() {
 
   // Persist search state in URL
   if (typeof pushSearchState === 'function') pushSearchState();
+
+  // §INFINITE-SCROLL — the sentinel was just re-created by the innerHTML swap,
+  // so re-arm the observer (and hide it once every listing is loaded).
+  renderHomeSentinel(remaining);
+  observeHomeSentinel();
 
   return ads.length;
 }
@@ -1608,4 +1722,103 @@ function addTyping(){
 }
 
 /* escHtml() lives in core.js (single correct implementation) — removed broken duplicate here. */
+
+/* ═══════════════════════════════════════════════════════════
+   REFERRAL LEADERBOARD §LEADERBOARD
+   score = referral_count * 10 + yaad_points
+   ── yaad_points never resets (lifetime consistency reward)
+   ── referrals_this_week resets weekly → drives the 🏆 badge
+   ═══════════════════════════════════════════════════════════ */
+function refScore(p) {
+  return ((p.total_referrals || 0) * 10) + ((p.yaad_points || 0) * 1);
+}
+function loadLeaderboard() {
+  if (typeof _db === 'undefined' || !_db) return Promise.resolve([]);
+  return _db.from('profiles')
+    .select('id, name, yaad_points, total_referrals, referrals_this_week, last_week_winner')
+    .order('yaad_points', { ascending: false })
+    .limit(50)
+    .then(function(res) {
+      if (res.error) { console.warn('[leaderboard] load failed:', res.error.message); return []; }
+      return res.data || [];
+    });
+}
+function renderReferrers(containerId) {
+  const el = document.getElementById(containerId || 'leaderboardList');
+  if (!el) return;
+  el.innerHTML = '<div class="lb-loading">🔄 Loading leaderboard…</div>';
+  loadLeaderboard().then(function(rows) {
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div><p>No referrals yet — be the first to invite a friend!</p></div>';
+      return;
+    }
+    // who's the current weekly winner (most referrals_this_week)
+    let wkTop = null;
+    for (const r of rows) {
+      if (!wkTop || (r.referrals_this_week || 0) > (wkTop.referrals_this_week || 0)) wkTop = r;
+    }
+    const mine = (typeof CU !== 'undefined' && CU && CU.id) ? CU.id : null;
+    el.innerHTML = rows.map(function(p) {
+      const s = refScore(p);
+      const ini = typeof initials === 'function' ? initials(p.name) : (p.name||'?').slice(0,2).toUpperCase();
+      const crown = p.last_week_winner ? ' title="King/Queen of last week 🏆"' : '';
+      const isWk = wkTop && p.id === wkTop.id;
+      return '<div class="lb-row' + (isWk ? ' lb-winner' : '') + '">' +
+        '<div class="lb-rank">' + (isWk ? '👑' : '') + (p.last_week_winner ? '🏆' : '') + '</div>' +
+        '<div class="lb-avatar" style="background:' + (typeof avatarColor === 'function' ? avatarColor(p.name).bg : '#333') + '">' + escHtml(ini) + '</div>' +
+        '<div class="lb-name" style="' + (p.id === mine ? 'color:var(--gold);' : '') + '">' + escHtml(p.name) + crown + '</div>' +
+        '<div class="lb-score">' + s + '</div>' +
+        '<div class="lb-mut">' + (p.total_referrals||0) + ' refs · ' + (p.yaad_points||0) + ' YP</div>' +
+      '</div>';
+    }).join('');
+  });
+}
+
+// ── REFERRAL SECTION (home) ────────────────────────────────
+// renderReferralSpot() is called from renderHome() when the caller wants
+// the "Invite & leaderboard" panel on the home page.
+function renderReferralSpot() {
+  const container = document.getElementById('homeReferralSpot');
+  if (!container) return;
+  const loggedOut = !CU;
+  if (loggedOut) {
+    container.innerHTML =
+      '<div class="referral-spot logged-out">' +
+        '<div class="referral-spot-title">🤝 Invite friends & earn rewards</div>' +
+        '<div class="referral-spot-body">' +
+          '<p>Share your referral link with friends. When they sign up through your link you both earn <strong>Yaad Points</strong> and a spot on the 🏆 leaderboard.</p>' +
+          '<button class="btn btn-green btn-block" onclick="goHomeLogin()">Get Started — It\'s Free</button>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+  container.innerHTML =
+    '<div class="referral-spot">' +
+      '<div class="referral-spot-title">🤝 Invite friends & earn rewards</div>' +
+      '<div class="referral-spot-body">' +
+        '<p style="margin-bottom:14px">' +
+          'Share your referral link. When someone signs up through it, you earn <strong>10 Yaad Points</strong> and a leaderboard spot. ' +
+          'The 🏆 weekly winner (most new referrals) gets an extra spotlight on the home page.' +
+        '</p>' +
+        '<div class="referral-code-row">' +
+          '<div class="referral-code-label">Your code</div>' +
+          '<div class="referral-code-value" id="homeRefCode">' + (typeof CU !== 'undefined' && CU.referrer_code ? escHtml(CU.referrer_code) : '—') + '</div>' +
+          '<button class="btn btn-ghost btn-sm" onclick="copyRefLink()">📋 Copy</button>' +
+        '</div>' +
+        '<div class="referral-link-row">' +
+          '<div class="referral-link-label">Shareable link</div>' +
+          '<input id="homeRefLink" type="text" readonly style="width:100%;background:#000;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;font-size:13px;color-scheme:dark" value="' + escHtml(window.location.origin + '/invite/' + (typeof CU !== 'undefined' && CU.referrer_code ? CU.referrer_code : '')) + '">' +
+          '<button class="btn btn-ghost btn-sm" onclick="copyRefLink()">📋 Copy</button>' +
+        '</div>' +
+        '<div class="referral-cta-row">' +
+          '<button class="btn btn-outline btn-sm" onclick="openInviteModal()">📲 Invite Friends</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="openLeaderboard()">🏆 Leaderboard</button>' +
+        '</div>' +
+        '<div class="referral-points-row">' +
+          '<span>You: <strong>' + (typeof CU !== 'undefined' && CU.total_referrals ? CU.total_referrals : 0) + '</strong> referrals · <strong>' + (typeof CU !== 'undefined' && CU.yaad_points ? CU.yaad_points : 0) + '</strong> YP</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
 

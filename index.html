@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
+<!-- §HOME-VIEW: stamp the saved listing layout on <html> before the first paint,
+     so a returning visitor who chose Grid never sees a flash of Single.
+     Kept inline + tiny; js/search-ai.js §HOME-VIEW owns the logic after boot. -->
+<script>
+try {
+  var _hv = localStorage.getItem('ya_home_view');
+  document.documentElement.classList.add(_hv === 'grid' ? 'home-grid' : 'home-single');
+} catch (e) {
+  document.documentElement.classList.add('home-single');
+}
+</script>
+
 <!-- ═══════════════════════════════════════════
      ERROR MONITORING (Sentry, free tier)
      Replace YOUR_DSN_HERE with your real DSN from sentry.io — see the
@@ -518,6 +530,24 @@ if ('serviceWorker' in navigator) {
         <option value="price-lo">Price: Low → High</option>
         <option value="price-hi">Price: High → Low</option>
       </select>
+      <!-- §HOME-VIEW: mobile-only single ⇄ grid switch (js/search-ai.js setHomeView) -->
+      <div class="view-toggle" id="homeViewBtn" role="group" aria-label="Listing layout">
+        <button type="button" class="view-opt" data-view="single" onclick="setHomeView('single')"
+                aria-pressed="true" title="Single view" aria-label="Single view">
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <rect x="2.5" y="3.75" width="15" height="12.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+        </button>
+        <button type="button" class="view-opt" data-view="grid" onclick="setHomeView('grid')"
+                aria-pressed="false" title="Grid view" aria-label="Grid view">
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <rect x="2.5" y="2.5" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <rect x="10.9" y="2.5" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <rect x="2.5" y="10.9" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <rect x="10.9" y="10.9" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- V2: Recently viewed strip (populated by js/recent.js) -->
