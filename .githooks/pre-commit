@@ -14,13 +14,13 @@
 const { execFileSync } = require('child_process');
 
 try {
-  const out = execFileSync(process.execPath, ['tools/build-changelog.js'], {
+  execFileSync(process.execPath, ['tools/build-changelog.js'], {
     cwd: process.cwd(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
+  });
   execFileSync('git', ['add', 'CHANGELOG.md'], { stdio: 'ignore' });
-  console.log('[pre-commit] ' + (out || 'CHANGELOG.md regenerated'));
+  console.log('[pre-commit] CHANGELOG.md regenerated + staged (auto-update)');
 } catch (e) {
   console.log('[pre-commit] changelog auto-update skipped (CI will fix it): ' +
     String((e && (e.stderr || e.message)) || e).split('\n')[0]);
