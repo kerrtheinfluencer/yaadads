@@ -163,5 +163,19 @@ check('supabase.d.ts removed', !fs.existsSync('supabase.d.ts'));
 check('todo.md roadmap written', fs.statSync('todo.md').size > 500);
 check('logo.svg exists', fs.existsSync('logo.svg') && fs.statSync('logo.svg').size > 5000);
 
+// 12. changelog auto-update wiring — the changelog syncs itself, never by hand
+const pkgRaw = fs.readFileSync('package.json', 'utf8');
+const hookSrc = fs.existsSync('.githooks/pre-commit') ? fs.readFileSync('.githooks/pre-commit', 'utf8') : '';
+let hookMode = '';
+try { hookMode = execSync('git ls-files -s .githooks/pre-commit', { encoding: 'utf8' }).trim().split(/\s+/)[0]; } catch (e) {}
+check('changelog pre-commit hook ships (node shebang + exec bit for macOS/Linux)',
+  hookSrc.startsWith('#!/usr/bin/env node') && (hookMode === '' || hookMode === '100755'), hookMode || 'mode unknown');
+check('hook installer exists + wired to npm prepare (auto-run on npm install)',
+  fs.existsSync('tools/install-hooks.js') && pkgRaw.includes('"prepare": "node tools/install-hooks.js"'));
+const clWf = fs.existsSync('.github/workflows/changelog.yml') ? fs.readFileSync('.github/workflows/changelog.yml', 'utf8') : '';
+check('CI changelog auto-update workflow ships with push permission',
+  clWf.includes('contents: write') && clWf.includes("'js/site-updates.js'") && clWf.includes('git push'));
+check('npm run changelog:check available (stale-changelog guard)', pkgRaw.includes('"changelog:check"'));
+
 console.log('\n' + (failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED'));
 process.exit(failures === 0 ? 0 : 1);
