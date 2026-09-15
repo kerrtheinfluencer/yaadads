@@ -501,8 +501,9 @@ nav.scrolled-transparent {
 }
 .hero-content { position: relative; max-width: 780px; margin: 0 auto; }
 /* ── §FIB-HERO — hero type follows the Fibonacci excerpt (13 · 21 · 34 · 55):
-   display sizes step 34→55, sub at 13px base rhythm, generous φ measure.
-   Fraunces italic for the em accent keeps the display voice premium. ── */
+   display sizes step 34→55, generous φ measure, spaced so every headline
+   breathes before the search bar and stats. Fraunces italic for the em
+   accent keeps the display voice premium. ── */
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: var(--fib-4);
   background: rgba(244,195,0,.12); border: 1px solid rgba(244,195,0,.3);
@@ -515,14 +516,14 @@ nav.scrolled-transparent {
   font-size: clamp(var(--fib-7), 5.5vw, var(--fib-8));
   font-weight: 800;
   color: #fff;
-  line-height: var(--phi);
-  margin-bottom: var(--fib-5);
-  letter-spacing: -.04em;
+  line-height: 1.18;
+  margin-bottom: var(--fib-6);
+  letter-spacing: -.015em;
   text-wrap: balance;
 }
 .hero h1 em { font-style: italic; color: var(--gold); }
 .hero-sub {
-  color: rgba(255,255,255,.52);
+  color: rgba(255,255,255,.7);
   font-size: 16px;
   line-height: var(--phi);
   margin-bottom: var(--fib-8);
@@ -722,12 +723,13 @@ nav.scrolled-transparent {
   box-shadow: 0 var(--fib-3) var(--fib-5) rgba(244,195,0,.25);
 }
 
-/* ── HERO STATS — the stat numbers sit on the φ ladder (26px ≈ 21·φ/1.3):
-   tight 34px gutters, 13px uppercase labels with generous tracking. ── */
+/* ── HERO STATS — glass tiles on the Fibonacci excerpt (13 · 21 · 34):
+   34px gutters, 13px namespaced counters, and 13px caption commands with
+   high-contrast glass ink so MEMBERS / DAILY VISITS scan instantly. ── */
 .hero-stats { display: flex; gap: var(--fib-7); margin-top: 0; flex-wrap: wrap; justify-content: center; }
-.hero-stat-num { font-family: var(--font-d); font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
+.hero-stat-num { font-family: var(--font-d); font-size: var(--fib-6); font-weight: 700; color: #fff; line-height: 1; }
 .hero-stat-num span { color: var(--gold); }
-.hero-stat-lbl { font-size: var(--fib-2); color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: var(--fib-3); margin-top: var(--fib-2); }
+.hero-stat-lbl { font-size: var(--fib-5); color: rgba(255,255,255,.75); text-transform: uppercase; letter-spacing: var(--fib-1); margin-top: var(--fib-2); }
 
 /* ── HERO COMPACT (after search) ── */
 .hero-eyebrow, .hero-sub, .hero-stats {
@@ -4075,9 +4077,7 @@ nav {
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
-.hero-stat-lbl { color: rgba(255, 255, 255, .56); }
-
-.results-area { padding-top: 10px; }
+.hero-stat-lbl { color: rgba(255, 255, 255, .78); }
 .recent-search-row {
   padding: 11px 14px;
   border: 1px solid rgba(255, 255, 255, .12);
