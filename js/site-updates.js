@@ -12,6 +12,7 @@
            rendered under the body, like a quick changelog).
         2. Set SITE_UPDATES.current to that id.
         3. Commit - members see the thread highlight + pill dot once.
+           CHANGELOG.md rebuilds itself from this file (see note 6 below).
         4. Optional: blast push subscribers with `node notify-site-update.js`
    - Read-state kept once per update into localStorage ('ya_seen_update').
      Built with DOM APIs (never innerHTML) so nothing can inject markup;
