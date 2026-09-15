@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v35', sw.includes('yaadadz-v35'));
+check('SW cache bumped to v36', sw.includes('yaadadz-v36'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
@@ -74,6 +74,10 @@ check('mobile single-view home layout CSS ships (html.home-single + .view-toggle
   css.includes('html.home-single .listings-grid') && css.includes('.view-toggle'));
 check('grid choice survives the ≤340px single-column fallback (html.home-grid restore)',
   css.includes('html.home-grid .listings-grid'));
+check('§GOLDEN-SCALE tokens ship (φ ramp + golden easing + φ durations)',
+  css.includes('--phi: 1.618') && css.includes('--ease-gold') && css.includes('--dur-gold-1'));
+check('single-view imagery is a true golden rectangle (aspect-ratio: var(--phi))',
+  css.includes('aspect-ratio: var(--phi)'));
 check('onboarding overlay is dim-and-dismiss (click-outside wired)',
   css.includes('pointer-events: auto;') && css.includes('.ob-overlay'));
 check('site-update modal shell styled (su-overlay + modal CSS present)',

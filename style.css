@@ -23,6 +23,20 @@
   --dur-2: 280ms;  /* standard UI: bars, glows, tooltips     */
   --dur-3: 460ms;  /* entrances: cards, hero, sheets         */
 
+  /* §GOLDEN-SCALE — Fibonacci/φ design ramp (2·3·5·8·13·21·34·55·89·144).
+     Consecutive Fibonacci numbers sit ≈1.618× apart (the golden ratio), so
+     stepping along this ramp gives naturally harmonious spacing, sizing and
+     type jumps. --ease-gold is the "golden easing" — a symmetric S-curve
+     built on 1/φ (.618) and 1/φ² (.382); the φ durations (161·261·423ms)
+     carry the same rhythm in time that the Fibonacci ramp carries in space. */
+  --phi: 1.618;
+  --fib-1: 2px;  --fib-2: 3px;  --fib-3: 5px;  --fib-4: 8px;
+  --fib-5: 13px; --fib-6: 21px; --fib-7: 34px; --fib-8: 55px;
+  --fib-9: 89px; --fib-10: 144px;
+  --r-f3: 13px;  --r-f4: 21px;  --r-f5: 34px;
+  --ease-gold: cubic-bezier(.618, 0, .382, 1);
+  --dur-gold-1: 161ms;  --dur-gold-2: 261ms;  --dur-gold-3: 423ms;
+
   --green:       #005c35;
   --green-mid:   #00703f;
   --green-light: #e6f4ec;
@@ -1524,8 +1538,8 @@ nav.scrolled-transparent {
 }
 .fselect {
   margin-left: auto;
-  padding: 7px 14px;
-  border-radius: 22px;
+  padding: var(--fib-4) var(--fib-5);
+  border-radius: var(--r-f4);
   background: rgba(255,255,255,.08);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1535,7 +1549,10 @@ nav.scrolled-transparent {
   cursor: pointer;
   outline: none;
   color: var(--text-2);
-  transition: all .15s;
+  transition:
+    background var(--dur-gold-1) var(--ease-gold),
+    border-color var(--dur-gold-1) var(--ease-gold),
+    color var(--dur-gold-1) var(--ease-gold);
   box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
 .fselect:hover {
@@ -2454,11 +2471,11 @@ footer {
   .cat-pill-sm { padding: 6px 12px; font-size: 11px; }
 
   /* Grid */
-  .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .ad-card { border-radius: 18px; }
-  .ad-card-img { aspect-ratio: auto; height: 140px; }
+  .listings-grid { grid-template-columns: repeat(2, 1fr); gap: var(--fib-4); }
+  .ad-card { border-radius: var(--r-f4); }
+  .ad-card-img { aspect-ratio: auto; height: var(--fib-10); } /* 144px */
   .ad-card-img::after { height: 40px; }
-  .ad-card-body { padding: 10px 12px 13px; }
+  .ad-card-body { padding: var(--fib-5); }
   .ad-price { font-size: 17px; font-weight: 800; background: none; -webkit-text-fill-color: var(--gold); color: var(--gold); }
   .ad-title { font-size: 12px; -webkit-line-clamp: 2; margin-bottom: 6px; }
   .ad-meta { font-size: 10.5px; gap: 6px; padding-bottom: 6px; margin-bottom: 6px; }
@@ -2573,7 +2590,7 @@ footer {
 /* ── SMALL PHONES (≤390px) ── */
 @media (max-width: 390px) {
   .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .ad-card { border-radius: 10px; }
+  .ad-card { border-radius: var(--r-f3); }
   .ad-card-img { height: 130px; }
   .ad-card-body { padding: 8px 10px 10px; }
   .ad-price { font-size: 14px; }
@@ -2596,54 +2613,79 @@ footer {
    <html> before first paint by the inline script in index.html, so a returning
    visitor never flashes the wrong layout. Selectors use html.home-* (0,2,1
    specificity) so they beat every plain .listings-grid breakpoint above.
+   Everything here is drawn from the §GOLDEN-SCALE ramp: 34px controls,
+   21px card radii, 13px type, 8px gaps — each step one Fibonacci apart.
    ═══════════════════════════════════════════════════════════════════════════ */
 .view-toggle {
   display: none; /* desktop / tablet: hidden — desktop keeps its auto-fill grid */
+  align-self: center; /* stays optically centred against the 44px sort select */
 }
 .view-opt {
   -webkit-appearance: none; appearance: none;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; padding: 0;
+  width: var(--fib-7); height: var(--fib-7); padding: 0;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-3);
   cursor: pointer;
-  transition: color .18s ease, background .18s ease, border-color .18s ease, transform .12s ease;
+  transition:
+    color var(--dur-gold-1) var(--ease-gold),
+    background var(--dur-gold-1) var(--ease-gold),
+    border-color var(--dur-gold-1) var(--ease-gold),
+    box-shadow var(--dur-gold-1) var(--ease-gold),
+    transform 80ms var(--ease-gold);
 }
-.view-opt svg { width: 16px; height: 16px; display: block; }
-.view-opt:first-child { border-radius: 10px 0 0 10px; }
-.view-opt:last-child  { border-radius: 0 10px 10px 0; }
+.view-opt svg { width: var(--fib-5); height: var(--fib-5); display: block; }
+.view-opt:first-child { border-radius: var(--r-f3) 0 0 var(--r-f3); }
+.view-opt:last-child  { border-radius: 0 var(--r-f3) var(--r-f3) 0; }
 .view-opt + .view-opt { border-left: none; } /* shared border, no double line */
 .view-opt[aria-pressed="true"] {
   background: var(--green);
   border-color: var(--green);
   color: #fff;
+  box-shadow:
+    0 var(--fib-2) var(--fib-4) rgba(0, 92, 53, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .25);
 }
-.view-opt:active { transform: scale(.93); }
+.view-opt:active { transform: scale(.94); }
+.view-opt:focus-visible { box-shadow: var(--focus-ring); outline: none; }
 
 @media (max-width: 640px) {
   .view-toggle { display: inline-flex; flex-shrink: 0; }
 
-  /* SINGLE (default): one full-width column, bigger imagery */
-  html.home-single .listings-grid { grid-template-columns: 1fr; gap: 14px; }
-  html.home-single .ad-card { border-radius: 20px; }
-  html.home-single .ad-card-img { height: 208px; }
-  html.home-single .ad-price { font-size: 19px; }
-  html.home-single .ad-title { font-size: 13.5px; }
-  html.home-single .ad-meta { font-size: 11.5px; }
+  /* SINGLE (default): one golden-rectangle card per screen.
+     aspect-ratio: 1.618 makes every photo a true golden rectangle at any
+     width — ≈217px tall on a 351px card, ≈198px on a 320px phone. */
+  html.home-single .listings-grid { grid-template-columns: 1fr; gap: var(--fib-5); }
+  html.home-single .ad-card { border-radius: var(--r-f4); }
+  html.home-single .ad-card-img {
+    aspect-ratio: var(--phi);
+    height: auto; min-height: 0; /* φ wins over the fixed-height defaults */
+    border-radius: calc(var(--r-f4) - 1px) calc(var(--r-f4) - 1px) 0 0;
+  }
+  html.home-single .ad-card-body { padding: var(--fib-5) var(--fib-6); }
+  html.home-single .ad-price { font-size: var(--fib-6); }            /* 21px */
+  html.home-single .ad-title { font-size: var(--fib-5); letter-spacing: -.1px; } /* 13px */
+  html.home-single .ad-meta {
+    font-size: 11px;
+    gap: var(--fib-3); padding-bottom: var(--fib-3); margin-bottom: var(--fib-3);
+  }
+  html.home-single .ad-seller-row { min-height: var(--fib-7); }
+  html.home-single .ad-seller-avatar {
+    width: var(--fib-7); height: var(--fib-7); font-size: 12px;
+  }
+  html.home-single .ad-seller-name { font-size: var(--fib-5); }
+  html.home-single .ad-seller-sub  { font-size: 11px; }
 
-  /* GRID: keeps the classic 2-up cards — the existing ≤640 rules apply as-is */
-}
-
-@media (max-width: 390px) {
-  html.home-single .listings-grid { grid-template-columns: 1fr; }
-  html.home-single .ad-card-img { height: 184px; }
+  /* GRID: keeps the classic 2-up cards — the ≤640 defaults above apply */
 }
 
 /* ≤340px collapses everything to one column by default — restore the 2-up
    grid when the visitor explicitly chose Grid. */
 @media (max-width: 340px) {
-  html.home-grid .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  html.home-grid .listings-grid {
+    grid-template-columns: repeat(2, 1fr); gap: var(--fib-4);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3007,21 +3049,21 @@ footer {
 /* ═══════════════════════════════════════════════════════════════════════════
    QoL: LOAD MORE
    ═══════════════════════════════════════════════════════════════════════════ */
-.load-more-wrap { grid-column: 1 / -1; text-align: center; padding: 12px 0 8px; }
+.load-more-wrap { grid-column: 1 / -1; text-align: center; padding: var(--fib-5) 0 var(--fib-4); }
 /* §INFINITE-SCROLL sentinel lives inside .listings-grid — must span every
    column so the note + fallback button stay centered in both view modes. */
 .home-more {
   grid-column: 1 / -1;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 18px 0 8px;
+  display: flex; flex-direction: column; align-items: center; gap: var(--fib-4);
+  padding: var(--fib-6) 0 var(--fib-4);
 }
 .home-more-note {
-  font-size: 12.5px; font-weight: 500; color: var(--text-3);
-  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--fib-5); font-weight: 500; color: var(--text-3);
+  display: inline-flex; align-items: center; gap: var(--fib-4);
 }
 .home-more-note::before {
-  content: ''; width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid var(--border); border-top-color: var(--green);
+  content: ''; width: var(--fib-5); height: var(--fib-5); border-radius: 50%;
+  border: var(--fib-1) solid var(--border); border-top-color: var(--green);
   animation: homeMoreSpin .9s linear infinite;
 }
 @keyframes homeMoreSpin { to { transform: rotate(360deg); } }
@@ -3029,10 +3071,16 @@ footer {
   .home-more-note::before { animation: none; }
 }
 .load-more-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 36px; background: var(--surface); border: 2px solid var(--border);
-  border-radius: var(--r-xl); font-family: var(--font-b); font-size: 14px; font-weight: 600;
-  color: var(--text-1); cursor: pointer; transition: all .22s; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  display: inline-flex; align-items: center; gap: var(--fib-4);
+  padding: var(--fib-5) var(--fib-7); background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--r-xl); font-family: var(--font-b); font-size: var(--fib-5); font-weight: 600;
+  color: var(--text-1); cursor: pointer;
+  transition:
+    color var(--dur-gold-1) var(--ease-gold),
+    border-color var(--dur-gold-1) var(--ease-gold),
+    background var(--dur-gold-1) var(--ease-gold),
+    transform var(--dur-gold-1) var(--ease-gold);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
   position: relative; overflow: hidden;
 }
 .load-more-btn::before {
@@ -3044,22 +3092,24 @@ footer {
   opacity: .42;
   pointer-events: none;
 }
-.load-more-btn:hover { border-color: var(--green); color: var(--green); transform: translateY(-2px); }
-.load-more-count { font-size: 12px; font-weight: 500; color: var(--text-3); background: var(--surface-2); border-radius: 12px; padding: 2px 8px; }
+.load-more-btn:hover { border-color: var(--green); color: var(--green); transform: translateY(calc(var(--fib-1) * -1)); }
+.load-more-count { font-size: var(--fib-5); font-weight: 500; color: var(--text-3); background: var(--surface-2); border-radius: var(--fib-4); padding: var(--fib-1) var(--fib-4); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    HIDE SOLD TOGGLE
    ═══════════════════════════════════════════════════════════════════════════ */
-.filter-toggle-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
-.filter-toggle-label { font-size: 12px; color: var(--text-3); font-weight: 500; cursor: pointer; user-select: none; white-space: nowrap; }
+/* Hide-sold switch — a 34×21 Fibonacci pill with a 13px knob (13px travel).
+   The knob glides on the golden easing, so the flip feels weighty but quick. */
+.filter-toggle-wrap { display: flex; align-items: center; gap: var(--fib-4); margin-left: auto; flex-shrink: 0; }
+.filter-toggle-label { font-size: var(--fib-5); color: var(--text-3); font-weight: 500; cursor: pointer; user-select: none; white-space: nowrap; }
 .toggle-switch {
-  position: relative; width: 38px; height: 22px;
-  background: rgba(0,0,0,.12); border-radius: 11px; cursor: pointer;
-  transition: background .2s; flex-shrink: 0;
+  position: relative; width: var(--fib-7); height: var(--fib-6);
+  background: rgba(0,0,0,.12); border-radius: calc(var(--fib-6) / 2); cursor: pointer;
+  transition: background var(--dur-gold-2) var(--ease-gold); flex-shrink: 0;
   border: 1px solid rgba(0,0,0,.06);
 }
 .toggle-switch.on { background: var(--gold); border-color: rgba(244,195,0,.6); }
-.toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s cubic-bezier(.34,1.2,.64,1); }
+.toggle-switch::after { content: ''; position: absolute; top: var(--fib-2); left: var(--fib-2); width: var(--fib-5); height: var(--fib-5); background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform var(--dur-gold-2) var(--ease-gold); }
 .toggle-switch.on::after { transform: translateX(16px); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -4013,7 +4063,8 @@ nav {
   .hero-stats { gap: 8px; }
   .hero-stats > div { min-width: 66px; padding: 10px 8px 8px; border-radius: 15px; }
   .recent-search-row { border-radius: 14px; }
-  .results-header { border-radius: 15px; }
+  .results-header { border-radius: 15px; padding: var(--fib-5); }
+  .results-count { font-size: var(--fib-5); }
 }
 
 /* ═══════════════════════════════════════════════════════════
