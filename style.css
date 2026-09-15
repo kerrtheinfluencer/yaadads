@@ -2585,6 +2585,15 @@ footer {
   /* Kill expensive continuous animations on mobile */
   .ai-icon { animation: none; }
   .nav-ai-icon { animation: none; }
+
+  /* §PERF — soften the per-card backdrop blur on phones. blur(24px) +
+     saturate(2.6) on every card is the single most expensive effect on mobile
+     GPUs (each card is its own composited layer). 12px/1.5 over the dark
+     backdrop is visually near-identical at roughly half the cost. */
+  .ad-card {
+    backdrop-filter: blur(12px) saturate(1.5);
+    -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  }
 }
 
 /* ── SMALL PHONES (≤390px) ── */

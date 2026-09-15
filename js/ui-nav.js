@@ -227,8 +227,13 @@ function updateStats() {
 function cardHTML(ad, idx) {
   const cat   = catById(ad.category);
   const catColor = cat.color || '#f5f5f5';
+  // §PERF-LCP: the first two cards sit above the fold in both home layouts —
+  // they load eagerly (idx 0 with fetchpriority=high) instead of lazily, or
+  // the LCP image queues behind the lazy loader and paints late. Everything
+  // deeper stays lazy. alt/src are DB-authored — escape before interpolating.
+  const eager = typeof idx === 'number' && idx < 2;
   const img   = ad.image
-    ? `<img src="${ad.image}" alt="${ad.title}" loading="lazy" decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat.icon||'📦'}</span>'">`
+    ? `<img src="${escHtml(ad.image)}" alt="${escHtml(ad.title)}" loading="${eager ? 'eager' : 'lazy'}"${idx === 0 ? ' fetchpriority="high"' : ''} decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat.icon||'📦'}</span>`;
   const fav   = isFav(ad.id) ? '❤️' : '🤍';
   const tag   = ad.status === 'sold'

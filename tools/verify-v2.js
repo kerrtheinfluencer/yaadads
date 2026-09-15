@@ -51,22 +51,37 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v36', sw.includes('yaadadz-v36'));
+check('SW cache bumped to v37', sw.includes('yaadadz-v37'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
 const _saSrc = fs.readFileSync('js/search-ai.js', 'utf8');
 check('infinite scroll ships (sentinel + IntersectionObserver + re-arm on render)',
   _saSrc.includes('id="homeMore"') && _saSrc.includes('IntersectionObserver') && _saSrc.includes('observeHomeSentinel'));
+check('scroll fallback keeps the feed loading when the observer never fires (in-app browsers)',
+  _saSrc.includes('scheduleHomeFill') && _saSrc.includes('homeNearEnd') && _saSrc.includes('function growHome'));
 check('home view persisted + applied (setHomeView / initHomeView / ya_home_view)',
   _saSrc.includes('HOME_VIEW_KEY') && _saSrc.includes('function setHomeView') && _saSrc.includes('function initHomeView'));
 check('fallback Show-more button stays wired (loadMoreHome + observer chunk in step)',
-  _saSrc.includes('function loadMoreHome') && _saSrc.includes('_homePageSize * homeColumns()'));
+  _saSrc.includes('function loadMoreHome') && _saSrc.includes('function growHome'));
+check('§PERF-APPEND: infinite scroll appends the tail instead of rebuilding the grid',
+  _saSrc.includes('_homeAppend') && _saSrc.includes('attachCardPrefetch'));
+check('§PERF-LCP: first card image loads eagerly with fetchpriority=high',
+  fs.readFileSync('js/ui-nav.js', 'utf8').includes('fetchpriority="high"'));
+check('cardHTML escapes img alt/src attributes (DB-authored strings)',
+  fs.readFileSync('js/ui-nav.js', 'utf8').includes('escHtml(ad.image)') &&
+  fs.readFileSync('js/ui-nav.js', 'utf8').includes('escHtml(ad.title)}"'));
+check('sw.js carries no dead cache strategies (staleWhileRevalidate removed)',
+  !sw.includes('staleWhileRevalidate'));
 
 // 6. style.css balance + new styles
 const css = fs.readFileSync('style.css', 'utf8');
 const ob = (css.match(/{/g) || []).length, cb = (css.match(/}/g) || []).length;
 check('style.css braces balanced', ob === cb, ob + ' blocks');
+check('mobile softens per-card backdrop blur (12px not 24px)',
+  css.includes('backdrop-filter: blur(12px) saturate(1.5)'));
+check('sw.js carries no dead cache strategies (staleWhileRevalidate removed)',
+  !sw.includes('staleWhileRevalidate'));
 check('style.css has toast-action styles', css.includes('.toast .toast-action'));
 check('style.css has recent strip styles', css.includes('.recent-card') && css.includes('.recent-search-chip'));
 check('style.css has tap-target block', css.includes('min-width: 44px'));

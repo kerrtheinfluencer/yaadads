@@ -136,6 +136,12 @@ function initHomeView() {
    no-IntersectionObserver fallback, so the list is never stuck. ── */
 let _homeIO = null;
 let _homeTotal = 0;
+/* §PERF-APPEND — set by the §INFINITE-SCROLL paths right before renderHome().
+   When the cards already on screen are still the same ads in the same order,
+   renderHome takes the append-only fast path (renders just the new tail)
+   instead of rebuilding every shown card. Cleared inside renderHome. */
+let _homeAppend = false;
+let _homeFillPending = false; // coalesces the scroll-fallback to one rAF flight
 function homeSentinel() { return document.getElementById('homeMore'); }
 
 function renderHomeSentinel(remaining) {
@@ -151,16 +157,57 @@ function renderHomeSentinel(remaining) {
   }
 }
 
+/* §INFINITE-SCROLL — one shared growth step used by every trigger (observer,
+   scroll fallback, Show-more button). Appends one page worth of listings. */
+function homeMoreGrowth() { return _homePageSize * homeColumns(); }
+
+function growHome() {
+  if (!_homeTotal || _homeShowCount >= _homeTotal) { renderHomeSentinel(0); return false; }
+  _homeShowCount = Math.min(_homeShowCount + homeMoreGrowth(), _homeTotal);
+  _homeAppend = true; // let renderHome() try the append-only fast path
+  renderHome();
+  return true;
+}
+
 function initInfiniteScroll() {
   if (_homeIO || typeof IntersectionObserver !== 'function') return;
   _homeIO = new IntersectionObserver(function(entries) {
     entries.forEach(function(en) {
       if (!en.isIntersecting) return;
-      if (_homeShowCount >= _homeTotal) { renderHomeSentinel(0); return; }
-      _homeShowCount = Math.min(_homeShowCount + _homePageSize * homeColumns(), _homeTotal);
-      renderHome();
+      growHome();
     });
-  }, { rootMargin: '600px 0px' }); // start loading ~1 screen early
+  }, { rootMargin: '900px 0px', threshold: 0 }); // start loading ~1.5 screens early
+}
+
+/* Scroll fallback — some mobile environments starve or skip
+   IntersectionObserver entirely (older iOS builds, Facebook/Instagram
+   in-app browsers, data-saver modes), which left the feed dead at the
+   "Show more listings" button. This does the same job as the observer with a
+   plain rect check per scroll frame (rAF-coalesced, passive listeners —
+   no work at all while the list is settled or fully loaded). */
+function homeNearEnd() {
+  const sent = homeSentinel();
+  if (!sent || sent.style.display === 'none') return false;
+  const r = sent.getBoundingClientRect();
+  const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+  return r.top < vh * 1.5 && r.bottom > 0;
+}
+
+function scheduleHomeFill() {
+  if (_homeFillPending) return;
+  _homeFillPending = true;
+  requestAnimationFrame(function() {
+    _homeFillPending = false;
+    if (!homeNearEnd() || !growHome()) return;
+    // Keep filling while the end stays near, so a deep flick never stalls
+    // mid-load — the chain stops as soon as the sentinel is pushed beyond
+    // the reach check (or every listing is loaded).
+    scheduleHomeFill();
+  });
+}
+if (typeof window.addEventListener === 'function') {
+  window.addEventListener('scroll', scheduleHomeFill, { passive: true });
+  window.addEventListener('resize', scheduleHomeFill, { passive: true });
 }
 
 /* The sentinel element is re-created by every renderHome() innerHTML swap, so
@@ -182,16 +229,12 @@ function toggleHideSold() {
 }
 
 function loadMoreHome() {
-  // Same chunk size the infinite-scroll observer uses (see §HOME-VIEW), so the
-  // fallback button and auto-loading stay in step.
-  _homeShowCount = Math.min(
-    _homeShowCount + _homePageSize * homeColumns(),
-    _homeTotal || Infinity
-  );
-  renderHome();
+  // Same chunk size the infinite-scroll observer uses (see §INFINITE-SCROLL),
+  // so the fallback button and auto-loading stay in step.
+  growHome();
   // Scroll to where new cards start (honours reduced-motion)
   const cards = document.querySelectorAll('#homeGrid .ad-card');
-  const target = cards[_homeShowCount - _homePageSize * homeColumns()];
+  const target = cards[_homeShowCount - homeMoreGrowth()];
   if (target) {
     const rm = typeof window.matchMedia === 'function' &&
                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -246,6 +289,50 @@ function renderHome() {
   const remaining = ads.length - visible.length;
   _homeTotal = ads.length;
 
+  const grid = els.grid;
+  if (!grid) return ads.length;
+
+  // §PERF-APPEND — the §INFINITE-SCROLL paths (IO sentinel / Show-more button)
+  // grew the chunk. When the cards already on screen are still the same ads in
+  // the same order, append only the new tail instead of rebuilding every shown
+  // card: O(new) work instead of O(shown), no image re-decode, no layout
+  // thrash for cards currently in view. Anything else falls through to the
+  // full rebuild below (filters, sort, view switch, shrink, first paint).
+  const prevCards = grid.querySelectorAll('.ad-card');
+  if (_homeAppend && prevCards.length > 0 && prevCards.length < visible.length) {
+    let same = true;
+    for (let pi = 0; pi < prevCards.length; pi++) {
+      if (prevCards[pi].getAttribute('data-id') !== visible[pi].id) { same = false; break; }
+    }
+    if (same) {
+      let tail = '';
+      for (let ni = prevCards.length; ni < visible.length; ni++) {
+        try {
+          tail += cardHTML(visible[ni], ni);
+        } catch(e) {
+          console.error('[renderHome] Failed to render ad, skipping:', visible[ni] && visible[ni].id, e);
+        }
+      }
+      const sent = homeSentinel();
+      if (sent) sent.insertAdjacentHTML('beforebegin', tail);
+      else grid.insertAdjacentHTML('beforeend', tail);
+      // New cards animate in without a wave; seen cards stay instant.
+      armCardReveals(grid, false);
+      attachCardPrefetch(grid, prevCards.length);
+      clearTimeout(window._adPushTimer);
+      window._adPushTimer = setTimeout(pushAds, 600);
+      if (typeof pushSearchState === 'function') pushSearchState();
+      // The sentinel node persists in the append path — refresh its state.
+      renderHomeSentinel(remaining);
+      const moreCount = sent && sent.querySelector('.load-more-count');
+      if (moreCount) moreCount.textContent = remaining + ' more';
+      observeHomeSentinel();
+      _homeAppend = false;
+      return ads.length;
+    }
+  }
+  _homeAppend = false;
+
   let html = '';
   if (visible.length) {
     visible.forEach(function(a, i) {
@@ -273,9 +360,7 @@ function renderHome() {
     </div>`;
   }
 
-  const grid = els.grid;
-  if (!grid) return ads.length;
-  const prevCount = grid.querySelectorAll('.ad-card').length;
+  const prevCount = prevCards.length;
   grid.innerHTML = html;
 
   // Viewport-gated entrance (ui-nav.js §MOTION): cards animate as they
@@ -283,32 +368,7 @@ function renderHome() {
   // of every card on the page animating at once, seen or not.
   armCardReveals(grid, prevCount === 0);
 
-  // Prefetch ad pages for instant navigation
-  // Desktop: prefetch on mouseenter (user is about to click)
-  // Mobile: prefetch on touchstart (fires before click, ~80ms head start)
-  if (window._prefetchEnabled !== false) {
-    grid.querySelectorAll('.ad-card').forEach(function(card) {
-      const onIntent = function() {
-        const onclick = card.getAttribute('onclick') || '';
-        const match = onclick.match(/openDetail\('([^']+)'\)/);
-        if (!match) return;
-        const id = match[1];
-        const ad = (typeof findAd === 'function' ? findAd(id) : _ads.find(function(a){ return a.id === id; }));
-        if (!ad) return;
-        const slug = slugify(ad);
-        const url = '/ad/' + slug + '.html';
-        // Only prefetch once per URL
-        if (document.querySelector('link[rel="prefetch"][href="' + url + '"]')) return;
-        const link = document.createElement('link');
-        link.rel = 'prefetch';
-        link.href = url;
-        link.as = 'document';
-        document.head.appendChild(link);
-      };
-      card.addEventListener('mouseenter', onIntent, { passive: true, once: true });
-      card.addEventListener('touchstart', onIntent, { passive: true, once: true });
-    });
-  }
+  attachCardPrefetch(grid, 0);
 
   // Debounced ad push — don't thrash layout on every filter change
   clearTimeout(window._adPushTimer);
@@ -323,6 +383,37 @@ function renderHome() {
   observeHomeSentinel();
 
   return ads.length;
+}
+
+/* §PERF — prefetch an ad page the moment intent is shown, so navigation feels
+   instant. Desktop: mouseenter. Mobile: touchstart (fires ~80ms before click).
+   `from` lets the §PERF-APPEND path attach to just the new cards instead of
+   re-walking the whole grid on every render. */
+function attachCardPrefetch(grid, from) {
+  if (window._prefetchEnabled === false) return;
+  const cards = grid.querySelectorAll('.ad-card');
+  for (let i = (from || 0); i < cards.length; i++) {
+    const card = cards[i];
+    const onIntent = function() {
+      const onclick = card.getAttribute('onclick') || '';
+      const match = onclick.match(/openDetail\('([^']+)'\)/);
+      if (!match) return;
+      const id = match[1];
+      const ad = (typeof findAd === 'function' ? findAd(id) : _ads.find(function(a){ return a.id === id; }));
+      if (!ad) return;
+      const slug = slugify(ad);
+      const url = '/ad/' + slug + '.html';
+      // Only prefetch once per URL
+      if (document.querySelector('link[rel="prefetch"][href="' + url + '"]')) return;
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = url;
+      link.as = 'document';
+      document.head.appendChild(link);
+    };
+    card.addEventListener('mouseenter', onIntent, { passive: true, once: true });
+    card.addEventListener('touchstart', onIntent, { passive: true, once: true });
+  }
 }
 
 function renderBrowse() {
