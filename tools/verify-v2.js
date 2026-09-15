@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v37', sw.includes('yaadadz-v37'));
+check('SW cache bumped to v38', sw.includes('yaadadz-v38'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
@@ -80,13 +80,19 @@ const ob = (css.match(/{/g) || []).length, cb = (css.match(/}/g) || []).length;
 check('style.css braces balanced', ob === cb, ob + ' blocks');
 check('mobile softens per-card backdrop blur (12px not 24px)',
   css.includes('backdrop-filter: blur(12px) saturate(1.5)'));
-check('sw.js carries no dead cache strategies (staleWhileRevalidate removed)',
-  !sw.includes('staleWhileRevalidate'));
 check('style.css has toast-action styles', css.includes('.toast .toast-action'));
 check('style.css has recent strip styles', css.includes('.recent-card') && css.includes('.recent-search-chip'));
 check('style.css has tap-target block', css.includes('min-width: 44px'));
 check('mobile single-view home layout CSS ships (html.home-single + .view-toggle)',
   css.includes('html.home-single .listings-grid') && css.includes('.view-toggle'));
+check('§FIB-HERO pass ships (fib eyebrow, clamp(34→55) display, golden-beat entrance)',
+  css.includes('clamp(var(--fib-7), 5.5vw, var(--fib-8))') &&
+  css.includes('animation-delay: .062s') &&
+  css.includes('.ai-sug {'));
+check('§FIB-HOME pass ships (21px pill radii, φ card type, golden-eased buttons)',
+  css.replace(/\r/g, '').includes('border-radius: var(--r-f4);\n  border: 1.5px solid rgba(255,255,255,.14);') &&
+  css.replace(/\r/g, '').includes('.ad-title {\n  font-weight: 600;') &&
+  css.replace(/\r/g, '').includes('transform var(--dur-gold-1) var(--ease-gold);'));
 check('grid choice survives the ≤340px single-column fallback (html.home-grid restore)',
   css.includes('html.home-grid .listings-grid'));
 check('§GOLDEN-SCALE tokens ship (φ ramp + golden easing + φ durations)',

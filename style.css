@@ -382,20 +382,25 @@ nav.scrolled-transparent {
    BUTTONS
    ═══════════════════════════════════════════════════════════════════════════ */
 .btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 20px;
+  display: inline-flex; align-items: center; gap: var(--fib-3);
+  padding: var(--fib-4) var(--fib-6);
   border-radius: var(--r-xl);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   border: none;
-  transition: all .2s;
+  transition:
+    background var(--dur-gold-1) var(--ease-gold),
+    color var(--dur-gold-1) var(--ease-gold),
+    border-color var(--dur-gold-1) var(--ease-gold),
+    box-shadow var(--dur-gold-1) var(--ease-gold),
+    transform var(--dur-gold-1) var(--ease-gold);
   white-space: nowrap;
 }
 .btn-gold    { background: var(--gold); color: #000; }
-.btn-gold:hover    { background: var(--gold-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(244,195,0,.4); }
+.btn-gold:hover    { background: var(--gold-dark); transform: translateY(calc(var(--fib-1) * -1)); box-shadow: 0 var(--fib-3) var(--fib-5) rgba(244,195,0,.4); }
 .btn-green   { background: var(--green); color: #fff; }
-.btn-green:hover   { background: var(--green-mid); transform: translateY(-1px); }
+.btn-green:hover   { background: var(--green-mid); transform: translateY(calc(var(--fib-1) * -1)); }
 .btn-outline {
   background: rgba(255,255,255,.08);
   backdrop-filter: blur(10px);
@@ -420,10 +425,10 @@ nav.scrolled-transparent {
 }
 .btn-red     { background: var(--red); color: #fff; }
 .btn-red:hover     { background: #c0392b; }
-.btn-sm  { padding: 6px 14px; font-size: 13px; }
-.btn-lg  { padding: 15px 32px; font-size: 15px; }
-.btn-ico { padding: 9px 12px; border-radius: 50%; }
-.btn-block { width: 100%; justify-content: center; margin-top: 4px; }
+.btn-sm  { padding: var(--fib-3) var(--fib-5); font-size: var(--fib-5); }
+.btn-lg  { padding: var(--fib-5) var(--fib-7); font-size: 15px; }
+.btn-ico { padding: var(--fib-4) var(--fib-5); border-radius: 50%; }
+.btn-block { width: 100%; justify-content: center; margin-top: var(--fib-2); }
 
 /* User pill */
 .user-pill {
@@ -495,30 +500,35 @@ nav.scrolled-transparent {
   z-index: -1;
 }
 .hero-content { position: relative; max-width: 780px; margin: 0 auto; }
+/* ── §FIB-HERO — hero type follows the Fibonacci excerpt (13 · 21 · 34 · 55):
+   display sizes step 34→55, sub at 13px base rhythm, generous φ measure.
+   Fraunces italic for the em accent keeps the display voice premium. ── */
 .hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
+  display: inline-flex; align-items: center; gap: var(--fib-4);
   background: rgba(244,195,0,.12); border: 1px solid rgba(244,195,0,.3);
-  color: var(--gold); padding: 7px 16px; border-radius: var(--r-xl);
-  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px;
-  margin-bottom: 22px;
+  color: var(--gold); padding: var(--fib-4) var(--fib-6); border-radius: var(--r-xl);
+  font-size: var(--fib-2); font-weight: 600; text-transform: uppercase; letter-spacing: var(--fib-1);
+  margin-bottom: var(--fib-6);
 }
 .hero h1 {
   font-family: var(--font-d);
-  font-size: clamp(36px, 5.5vw, 62px);
+  font-size: clamp(var(--fib-7), 5.5vw, var(--fib-8));
   font-weight: 800;
   color: #fff;
-  line-height: 1.05;
-  margin-bottom: 14px;
-  letter-spacing: -1px;
+  line-height: var(--phi);
+  margin-bottom: var(--fib-5);
+  letter-spacing: -.04em;
+  text-wrap: balance;
 }
 .hero h1 em { font-style: italic; color: var(--gold); }
 .hero-sub {
   color: rgba(255,255,255,.52);
   font-size: 16px;
-  line-height: 1.6;
-  margin-bottom: 36px;
+  line-height: var(--phi);
+  margin-bottom: var(--fib-8);
   max-width: 500px;
   margin-left: auto; margin-right: auto;
+  text-wrap: balance;
 }
 
 /* ── HERO ENTRANCE — one-shot staggered rise ──
@@ -527,13 +537,40 @@ nav.scrolled-transparent {
    fill never locks the .searched collapse transitions below, and the
    canonical reduced-motion block flattens it to instant. */
 @keyframes heroUp {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(var(--fib-5)); }
   to   { opacity: 1; transform: none; }
 }
-.hero-eyebrow { animation: heroUp .55s var(--ease-premium) .05s backwards; }
-.hero h1      { animation: heroUp .6s  var(--ease-premium) .12s backwards; }
-.hero-sub     { animation: heroUp .6s  var(--ease-premium) .2s  backwards; }
-.hero-stats   { animation: heroUp .6s  var(--ease-premium) .34s backwards; }
+.ai-search-bar {
+  display: flex; align-items: center; gap: 0;
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 2px solid rgba(255,255,255,.24);
+  border-radius: 22px;
+  padding: 6px 6px 6px 20px;
+  box-shadow:
+    0 8px 40px rgba(0,0,0,.18),
+    0 0 0 1px rgba(244,195,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.6);
+  transition: box-shadow var(--dur-2) var(--ease-std), border-color var(--dur-2) var(--ease-std), transform var(--dur-1) var(--ease-spring);
+  position: relative;
+}
+.ai-search-bar:focus-within {
+  box-shadow:
+    0 12px 52px rgba(0,0,0,.32),
+    0 0 0 3px rgba(244,195,0,.48),
+    inset 0 1px 0 rgba(255,255,255,.85);
+  border-color: rgba(244,195,0,.75);
+  transform: translateY(-1px);
+}
+/* ── HERO ENTRANCE — Fibonacci-timed rise: delays step 0 · 61.8ms · 123.6ms ·
+   185.4ms · 247.2ms (φ⁻¹ ladder), so sibling elements stagger at exactly the
+   golden beat instead of arbitrary 50ms hops. Pure CSS, no JS dependency. ── */
+.hero-eyebrow, .hero h1, .hero-sub, .hero-stats { animation: heroUp var(--dur-gold-3) var(--ease-gold) backwards; }
+.hero-eyebrow { animation-delay: 0s; }
+.hero h1      { animation-delay: .062s; }
+.hero-sub     { animation-delay: .124s; }
+.hero-stats   { animation-delay: .186s; }
 /* (.ai-suggestions is NOT animated as a container — its chips already
    stagger themselves via sugIn below.) */
 
@@ -648,47 +685,49 @@ nav.scrolled-transparent {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── SUGGESTION CHIPS ── */
+/* ── SUGGESTION CHIPS — φ stagger: the nth chip waits (n−1)·61.8ms, the
+   golden beat, instead of the old .05s hops. ── */
 .ai-suggestions {
-  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-  margin-bottom: 38px;
+  display: flex; gap: var(--fib-4); flex-wrap: wrap; justify-content: center;
+  margin-bottom: var(--fib-8);
 }
 .ai-sug {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: var(--fib-3);
   background: rgba(255,255,255,.07);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1.5px solid rgba(255,255,255,.18);
   color: rgba(255,255,255,.78);
-  padding: 7px 15px;
-  border-radius: 22px;
+  padding: var(--fib-4) var(--fib-5);
+  border-radius: var(--r-f4);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   font-family: var(--font-b);
-  transition: background .2s, border-color .2s, color .2s, transform .2s, box-shadow .2s;
-  animation: sugIn .45s var(--ease-premium) both;
+  transition: background var(--dur-gold-1) var(--ease-gold), border-color var(--dur-gold-1) var(--ease-gold), color var(--dur-gold-1) var(--ease-gold), transform var(--dur-gold-1) var(--ease-gold), box-shadow var(--dur-gold-1) var(--ease-gold);
+  animation: sugIn var(--dur-gold-3) var(--ease-gold) both;
 }
-.ai-sug:nth-child(1){animation-delay:.05s} .ai-sug:nth-child(2){animation-delay:.1s}
-.ai-sug:nth-child(3){animation-delay:.15s} .ai-sug:nth-child(4){animation-delay:.2s}
-.ai-sug:nth-child(5){animation-delay:.25s} .ai-sug:nth-child(6){animation-delay:.3s}
+.ai-sug:nth-child(1){animation-delay:0s} .ai-sug:nth-child(2){animation-delay:.062s}
+.ai-sug:nth-child(3){animation-delay:.124s} .ai-sug:nth-child(4){animation-delay:.186s}
+.ai-sug:nth-child(5){animation-delay:.248s} .ai-sug:nth-child(6){animation-delay:.309s}
 @keyframes sugIn {
-  0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+  0% { opacity: 0; transform: translateY(var(--fib-5)) scale(0.96); }
   100% { opacity: 1; transform: none; }
 }
 .ai-sug:hover {
   background: rgba(244,195,0,.12);
   border-color: rgba(244,195,0,.55);
   color: var(--gold);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(244,195,0,.25);
+  transform: translateY(calc(var(--fib-1) * -1));
+  box-shadow: 0 var(--fib-3) var(--fib-5) rgba(244,195,0,.25);
 }
 
-/* ── HERO STATS ── */
-.hero-stats { display: flex; gap: 36px; margin-top: 0; flex-wrap: wrap; justify-content: center; }
+/* ── HERO STATS — the stat numbers sit on the φ ladder (26px ≈ 21·φ/1.3):
+   tight 34px gutters, 13px uppercase labels with generous tracking. ── */
+.hero-stats { display: flex; gap: var(--fib-7); margin-top: 0; flex-wrap: wrap; justify-content: center; }
 .hero-stat-num { font-family: var(--font-d); font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
 .hero-stat-num span { color: var(--gold); }
-.hero-stat-lbl { font-size: 11px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+.hero-stat-lbl { font-size: var(--fib-2); color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: var(--fib-3); margin-top: var(--fib-2); }
 
 /* ── HERO COMPACT (after search) ── */
 .hero-eyebrow, .hero-sub, .hero-stats {
@@ -725,30 +764,32 @@ nav.scrolled-transparent {
   scrollbar-width: none; align-items: center;
 }
 .cat-row::-webkit-scrollbar { display: none; }
+/* §FIB-HERO — category pills join the golden set: 21px pill radius,
+   8·13 padding, 161ms golden-eased hover lift with 13px gold glow. */
 .cat-pill-sm {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fib-3);
   flex-shrink: 0;
-  padding: 7px 14px;
+  padding: var(--fib-4) var(--fib-5);
   background: rgba(255,255,255,.08);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-radius: 22px;
+  border-radius: var(--r-f4);
   border: 1.5px solid rgba(255,255,255,.14);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   color: var(--text-2);
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
-  transition: background .18s, border-color .18s, color .18s, transform .22s cubic-bezier(.175,.885,.32,1.275), box-shadow .22s;
+  transition: background var(--dur-gold-1) var(--ease-gold), border-color var(--dur-gold-1) var(--ease-gold), color var(--dur-gold-1) var(--ease-gold), transform var(--dur-gold-2) cubic-bezier(.175,.885,.32,1.275), box-shadow var(--dur-gold-2) var(--ease-gold);
 }
 .cat-pill-sm:hover {
   background: rgba(0, 92, 53, 0.06);
   border-color: rgba(0, 92, 53, 0.3);
   color: #005c35;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(244,195,0,.2);
+  transform: translateY(calc(var(--fib-1) * -1));
+  box-shadow: 0 var(--fib-3) var(--fib-5) rgba(244,195,0,.2);
 }
 .cat-pill-sm.active {
   background: rgba(0,92,53,0.74);
@@ -756,12 +797,12 @@ nav.scrolled-transparent {
   -webkit-backdrop-filter: blur(12px);
   border-color: rgba(255,255,255,.32);
   color: #fff;
-  box-shadow: 0 3px 14px rgba(0,92,53,0.35);
+  box-shadow: 0 var(--fib-2) var(--fib-5) rgba(0,92,53,0.35);
 }
 .cat-pill-sm.active:hover {
   background: rgba(0,92,53,0.72);
-  box-shadow: 0 6px 24px rgba(0,92,53,0.2);
-  transform: translateY(-1px);
+  box-shadow: 0 var(--fib-3) calc(var(--fib-10) / 6) rgba(0,92,53,0.2);
+  transform: translateY(calc(var(--fib-1) * -1));
 }
 .cat-pill-sm .cp-icon { font-size: 15px; }
 
@@ -1323,22 +1364,25 @@ nav.scrolled-transparent {
 
 /* ── Card body ── */
 .ad-card-body {
-  padding: 16px 18px 18px;
+  padding: 16px var(--fib-6) var(--fib-6);
   background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.14));
   position: relative;
   z-index: 2;
 }
+/* §FIB-HOME — home card details sit on the golden ramp: 24px price
+   (≈13·φ) paired with the 21px single-view step, 8px meta rhythm,
+   5px section cadence, and φ-scaled seller avatars (26 → mobile 34). */
 .ad-price {
   font-family: var(--font-d); font-size: 24px; font-weight: 800;
   background: linear-gradient(135deg, var(--gold), #ffe066);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 3px; line-height: 1.15;
+  margin-bottom: var(--fib-2); line-height: 1.15;
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fib-4);
   flex-wrap: wrap;
 }
 .ad-price.negotiable::after {
@@ -1347,51 +1391,56 @@ nav.scrolled-transparent {
 }
 .ad-price-row { display:flex; align-items:center; gap:6px; }
 
-/* Negotiable pill — premium gold */
+/* §FIB-HOME — the negotiable pill: 3·8 padding, 8px glyph rhythm, 13px
+   fully-rounded radius so the lozenge reads as one golden capsule. */
 .neg-pill {
   background: linear-gradient(135deg, rgba(244, 195, 0, 0.18), rgba(244, 195, 0, 0.08));
   color: #b8860b;
   border: 1px solid rgba(244, 195, 0, 0.45);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
   font-size: 10px; font-weight: 700;
-  padding: 3px 9px; border-radius: 20px; white-space:nowrap; flex-shrink:0;
+  padding: var(--fib-2) var(--fib-4); border-radius: var(--r-f3); white-space:nowrap; flex-shrink:0;
   letter-spacing: .3px;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: var(--fib-2);
 }
 .neg-pill::before {
   content: '↕';
   font-size: 9px;
 }
 
-/* Share button on card */
+/* §FIB-HOME — share button: 34px target, golden-eased hover grow, 8px shadow. */
 .share-card-btn {
   position:absolute; bottom:8px; left:8px;
   background:rgba(255,255,255,0.55); backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.7); border-radius:50%;
-  width:30px; height:30px;
+  width:var(--fib-7); height:var(--fib-7);
   display:flex; align-items:center; justify-content:center;
-  cursor:pointer; color:#1a2e22; transition:all 0.18s; padding:0;
-  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  cursor:pointer; color:#1a2e22;
+  transition:background var(--dur-gold-1) var(--ease-gold), transform var(--dur-gold-1) var(--ease-gold);
+  padding:0;
+  box-shadow:0 var(--fib-1) var(--fib-4) rgba(0,0,0,0.08);
 }
 .share-card-btn:hover { background:rgba(255,255,255,0.85); transform:scale(1.08); }
 
+/* §FIB-HOME — card title + meta rhythm: 8px title-to-meta cadence,
+   φ line-height with an exact 2-line clamp so every card holds height. */
 .ad-title {
   font-weight: 600; font-size: 14px; color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: var(--fib-4);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.35;
-  min-height: 2.7em;
+  line-height: var(--phi);
+  min-height: calc(2 * var(--phi) * 1em);
 }
 .ad-meta {
-  display: flex; gap: 10px; font-size: 11.5px; color: rgba(255,255,255,.58);
+  display: flex; gap: var(--fib-4); font-size: 11.5px; color: rgba(255,255,255,.58);
   align-items: center; flex-wrap: wrap;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
+  padding-bottom: var(--fib-4);
+  margin-bottom: var(--fib-4);
   border-bottom: 1px solid rgba(255,255,255,0.12);
 }
 .ad-meta span:first-child {
@@ -1567,15 +1616,17 @@ nav.scrolled-transparent {
 /* ═══════════════════════════════════════════════════════════════════════════
    EMPTY STATE
    ═══════════════════════════════════════════════════════════════════════════ */
+/* §FIB-HOME — empty state: the witness circle grows a true golden 89px,
+   ringed by a 21px halo so the moment feels composed, not stranded. */
 .empty { text-align: center; padding: 72px 24px; grid-column: 1/-1; }
 .empty-icon {
-  font-size: 44px; margin: 0 auto 18px; width: 96px; height: 96px;
+  font-size: 44px; margin: 0 auto 21px; width: var(--fib-9); height: var(--fib-9);
   display: flex; align-items: center; justify-content: center; border-radius: 50%;
   background: rgba(255,255,255,.5);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255,255,255,.55);
-  box-shadow: 0 8px 26px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  box-shadow: 0 8px 26px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 var(--fib-6) rgba(255,255,255,.22);
 }
 .empty h3 { font-family: var(--font-d); font-size: 22px; margin-bottom: 8px; }
 .empty p { color: var(--text-3); max-width: 300px; margin: 0 auto 22px; font-size: 14px; line-height: 1.6; }
@@ -2214,37 +2265,39 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   -webkit-backdrop-filter: saturate(170%) blur(36px);
   backdrop-filter: saturate(170%) blur(36px);
 }
+/* §FIB-HOME — mobile nav: φ-scaled icon and 34px Post button so the whole
+   bottom bar steps on the Fibonacci ladder (21 icon · 34 button · 68 bar). */
 .mob-nav-item {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
+  align-items: center; justify-content: center; gap: var(--fib-2);
   cursor: pointer; font-size: 10px;
   font-weight: 600; border: none; background: none;
   font-family: var(--font-b);
-  padding: 8px 4px;
+  padding: var(--fib-4) var(--fib-2);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: color .15s;
+  transition: color var(--dur-gold-1) var(--ease-gold);
   min-width: 0;
   color: rgba(255,255,255,.6);
 }
 .mob-nav-item.active { color: var(--gold); }
 .mob-nav-item.active .mob-nav-icon { transform: scale(1.12); }
 .mob-nav-icon {
-  font-size: 20px; line-height: 1;
+  font-size: var(--fib-6); line-height: 1;
   display: block;
-  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+  transition: transform var(--dur-gold-1) cubic-bezier(.34,1.56,.64,1);
 }
 .mob-nav-item:active .mob-nav-icon { transform: scale(.82); }
 /* Post button */
 .mob-nav-post {
-  width: 48px; height: 48px;
+  width: var(--fib-7); height: var(--fib-7);
   background: linear-gradient(145deg, rgba(244,195,0,.95), rgba(255,235,128,.86) 45%, rgba(0,112,63,.92));
   border-radius: 50%; display: flex; align-items: center; justify-content: center;
   color: #06160f;
   font-size: 26px;
-  box-shadow: 0 14px 36px rgba(0,92,53,.22), inset 0 1px 0 rgba(255,255,255,.55);
+  box-shadow: 0 var(--fib-5) calc(var(--fib-10) / 4) rgba(0,92,53,.22), inset 0 1px 0 rgba(255,255,255,.55);
   border: 1px solid rgba(255,255,255,.48);
-  transition: transform .2s, background .15s;
+  transition: transform var(--dur-gold-1) var(--ease-gold), background var(--dur-gold-1) var(--ease-gold);
   flex-shrink: 0;
 }
 .mob-nav-item:has(.mob-nav-post) { padding: 0; }
@@ -2264,26 +2317,28 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 /* ═══════════════════════════════════════════════════════════════════════════
    TOAST
    ═══════════════════════════════════════════════════════════════════════════ */
+/* §FIB-HOME — toast: 34px reach, 8·21 padding, 13px caption rhythm,
+   161ms golden settle instead of the generic .3s. */
 .toast {
   position: fixed;
-  bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom) + 12px);
+  bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom) + var(--fib-5));
   left: 16px; right: 16px;
   text-align: center;
   background: rgba(26,26,26,0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #fff;
-  padding: 10px 18px;
+  padding: var(--fib-4) var(--fib-6);
   border-radius: 50px;
   font-size: 14px;
   font-weight: 600;
   z-index: 500;
-  display: flex; align-items: center; justify-content: center; gap: 9px;
+  display: flex; align-items: center; justify-content: center; gap: var(--fib-4);
   box-shadow: 0 4px 20px rgba(0,0,0,.4);
   border: 1px solid rgba(255,255,255,0.12);
-  transform: translateY(16px);
+  transform: translateY(var(--fib-6));
   opacity: 0;
-  transition: all .3s;
+  transition: opacity var(--dur-gold-2) var(--ease-gold), transform var(--dur-gold-2) var(--ease-gold);
   pointer-events: none;
   width: auto;
   max-width: none;
@@ -2297,11 +2352,11 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-  padding: 6px 14px;
+  padding: var(--fib-3) var(--fib-5);
   border-radius: 50px;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform .15s, filter .15s;
+  transition: transform var(--dur-gold-1) var(--ease-gold), filter var(--dur-gold-1) var(--ease-gold);
   touch-action: manipulation;
 }
 .toast .toast-action:hover { filter: brightness(1.08); transform: scale(1.04); }
@@ -3124,7 +3179,8 @@ footer {
 /* ═══════════════════════════════════════════════════════════════════════════
    MODAL DRAG HANDLE + PHOTO COUNT BADGE
    ═══════════════════════════════════════════════════════════════════════════ */
-.modal-drag-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 12px; flex-shrink: 0; display: none; }
+/* §FIB-HOME — modal drag handle: 34px grip on a 3px rail, 13px air below. */
+.modal-drag-handle { width: var(--fib-7); height: var(--fib-2); background: var(--border); border-radius: var(--fib-1); margin: 0 auto var(--fib-5); flex-shrink: 0; display: none; }
 @media (max-width: 640px) { .modal-drag-handle { display: block; } }
 
 /* ═══════════════════════════════════════════════════════════════════════════
