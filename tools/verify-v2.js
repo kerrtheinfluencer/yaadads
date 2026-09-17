@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v38', sw.includes('yaadadz-v38'));
+check('SW cache bumped to v39', sw.includes('yaadadz-v39'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
@@ -135,7 +135,7 @@ check('no unguarded matchMedia in any HTML page (' + unguardedFiles.length + ' f
 
 // 6c. onboarding watchdog present (stuck overlay impossible)
 const obSrc = fs.readFileSync('js/onboarding.js', 'utf8');
-check('onboarding has watchdog auto-dismiss', obSrc.includes('_welcomeWatchdog') && obSrc.includes('_tourWatchdog'));
+check('onboarding has health watchdogs (no reading deadline)', obSrc.includes('_welcomeWatchdog') && obSrc.includes('_tourWatchdog') && obSrc.includes('!_root.isConnected'));
 check('onboarding tries/catches showWelcome (never leaves overlay)',
   obSrc.includes('showWelcome failed') && obSrc.includes('classList.remove(\'ob-welcome-open\')'));
 check('onboarding click-outside-to-dismiss wired', obSrc.includes("getElementById('obOverlay')"));
