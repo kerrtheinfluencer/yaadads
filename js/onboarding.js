@@ -31,11 +31,14 @@ const OB = (function() {
     visits:    'ya_v2_visit_count',
   };
 
+  const memoryFlags = {};
   function flag(key, val) {
+    if (val !== undefined) memoryFlags[key] = !!val;
+    if (val === undefined && key in memoryFlags) return memoryFlags[key];
     try {
       if (val === undefined) return localStorage.getItem(key) === '1';
       localStorage.setItem(key, val ? '1' : '0');
-    } catch (e) { return false; }
+    } catch (e) { return memoryFlags[key] || false; }
   }
 
   const isMobile = () => window.innerWidth <= 640;
@@ -68,6 +71,10 @@ const OB = (function() {
       this._busy = true;
       const tip = this._q.shift();
       const show = () => {
+        if (document.body.classList.contains('ob-locked') || document.querySelector('.overlay.open') || document.body.classList.contains('ai-sheet-open')) {
+          setTimeout(show, 2500);
+          return;
+        }
         if (typeof showToast !== 'function') { this._busy = false; this._drainNext(); return; }
         showToast(tip.msg, tip.icon, tip.action || null);
         this._busy = false;
@@ -89,39 +96,55 @@ const OB = (function() {
     _root.id = 'obRoot';
     _root.innerHTML = `
       <div class="ob-overlay" id="obOverlay"></div>
-      <div class="ob-welcome" id="obWelcome" role="dialog" aria-modal="true" aria-label="Welcome to Yaad Adz" tabindex="-1">
-        <button class="ob-skip" id="obSkip" aria-label="Skip tour">Skip ✕</button>
+      <div class="ob-welcome" id="obWelcome" role="dialog" aria-modal="true" aria-label="Welcome to Yaad Adz" tabindex="-1" hidden>
+        <div class="ob-brand"><img src="/logo.svg" width="30" height="30" alt=""><span>YOUR QUICK START</span></div>
+        <button class="ob-skip" id="obSkip" aria-label="Skip onboarding">Skip ✕</button>
+        <div class="ob-dots" id="obDots" aria-label="Quick start steps"></div>
         <div class="ob-welcome-inner">
-          <div class="ob-slide" data-slide="0">
-            <div class="ob-slide-icon">🇯🇲</div>
-            <h2 class="ob-slide-title">Welcome to <em>Yaad Adz</em></h2>
-            <p class="ob-slide-text">Jamaica's free marketplace — browse cars, property, phones, jobs and more across all <strong>14 parishes</strong>. No fees, ever.</p>
-          </div>
-          <div class="ob-slide" data-slide="1">
-            <div class="ob-slide-icon">🤖</div>
-            <h2 class="ob-slide-title">Ask the <em>Yaad Brain</em></h2>
-            <p class="ob-slide-text">Search like you talk — <strong>"cheap car under 2M"</strong> or <strong>"mi waan a phone fi likkle money"</strong>. Our AI understands Patois and plain English.</p>
-          </div>
-          <div class="ob-slide" data-slide="2">
-            <div class="ob-slide-icon">🚀</div>
-            <h2 class="ob-slide-title">Post your ad <em>free</em></h2>
-            <p class="ob-slide-text">Sell anything in under 2 minutes — add photos, set your price, done. Reach buyers in Kingston, Portmore, Mobay and beyond.</p>
-          </div>
-          <div class="ob-slide" data-slide="3">
-            <div class="ob-slide-icon">⛽</div>
-            <h2 class="ob-slide-title">Live <em>gas prices</em></h2>
-            <p class="ob-slide-text">Petrojam prices updated weekly, real driver reports at the pump, and a fill-up calculator. Tap the ⛽ banner anytime.</p>
-          </div>
+          <section class="ob-slide" data-slide="0">
+            <div class="ob-visual ob-market" aria-hidden="true">
+              <span class="ob-visual-label">LOCAL FINDS. NEW POSSIBILITIES.</span>
+              <div class="ob-mini-cards"><span>🚗<small>Vehicles</small></span><span>📱<small>Phones</small></span><span>🏡<small>Property</small></span></div>
+              <span class="ob-visual-caption">One marketplace. All 14 parishes.</span>
+            </div>
+            <h2 class="ob-slide-title">A little closer to your <em>next great find.</em></h2>
+            <p class="ob-slide-text">Welcome to Yaad Adz, Jamaica's free marketplace. Find something you need or give something you own a new home.</p>
+            <div class="ob-benefits"><span>✓ Browse without an account</span><span>✓ Free to post</span></div>
+          </section>
+          <section class="ob-slide" data-slide="1" hidden>
+            <div class="ob-visual ob-search-demo" aria-hidden="true">
+              <span class="ob-visual-label">SEARCH THE WAY YOU TALK</span>
+              <div class="ob-demo-input">🔍 <span>phone under 30,000 in Kingston</span></div>
+              <div class="ob-demo-tags"><span>Phones</span><span>Under J$30,000</span><span>Kingston</span></div>
+              <span class="ob-visual-caption">An example search — not a live listing</span>
+            </div>
+            <h2 class="ob-slide-title">Find it. Save it. <em>Ask about it.</em></h2>
+            <p class="ob-slide-text">Use search or choose a category. Open a listing for photos, price and location. Tap the heart to save it on this device.</p>
+            <div class="ob-note"><span aria-hidden="true">💬</span><span>Ready to ask a question? Sign in to message the seller, or use the contact options on their listing.</span></div>
+          </section>
+          <section class="ob-slide" data-slide="2" hidden>
+            <div class="ob-visual ob-sell-demo" aria-hidden="true">
+              <span class="ob-visual-label">YOUR FIRST AD, MADE SIMPLE</span>
+              <div class="ob-sell-steps"><span>📷<small>Add photos</small></span><b>→</b><span>🏷️<small>Set a price</small></span><b>→</b><span>✓<small>Publish</small></span></div>
+              <span class="ob-visual-caption">The posting guide helps you along the way.</span>
+            </div>
+            <h2 class="ob-slide-title" id="obReadyTitle">Your next move? <em>It's up to you.</em></h2>
+            <p class="ob-slide-text">Browse now, take a tour of the buttons, or post your first ad. You'll need a free account to post.</p>
+            <div class="ob-note"><span aria-hidden="true">🛡️</span><span><strong>Trade with care.</strong> Check the item before paying, meet in a public place and never share verification codes.</span></div>
+            <div class="ob-start-actions"><button class="btn btn-gold" id="obBrowse">Start browsing →</button><button class="btn btn-outline" id="obPost">Post my first ad</button></div>
+          </section>
         </div>
-        <div class="ob-dots" id="obDots"></div>
         <div class="ob-welcome-nav">
-          <button class="btn btn-ghost" id="obBack" style="visibility:hidden">← Back</button>
-          <button class="btn btn-green btn-lg" id="obNext">Next →</button>
+          <button class="btn btn-ghost" id="obBack" hidden>← Back</button>
+          <span class="ob-step-label" id="obStepLabel" aria-live="polite"></span>
+          <button class="btn btn-gold" id="obNext">Next →</button>
         </div>
+        <p class="ob-replay-note">Go at your own pace. Replay anytime from the footer.</p>
       </div>
       <div class="ob-spotlight" id="obSpotlight"></div>
-      <div class="ob-tip" id="obTip" role="dialog" aria-live="polite">
-        <div class="ob-tip-step" id="obTipStep"></div>
+      <div class="ob-tip" id="obTip" role="dialog" aria-modal="true" aria-labelledby="obTipTitle" aria-describedby="obTipText" tabindex="-1" hidden>
+        <div class="ob-tip-step" id="obTipStep" aria-live="polite"></div>
+        <div class="ob-tour-progress" aria-hidden="true"><span id="obTourProgress"></span></div>
         <div class="ob-tip-icon" id="obTipIcon"></div>
         <div class="ob-tip-title" id="obTipTitle"></div>
         <div class="ob-tip-text" id="obTipText"></div>
@@ -143,102 +166,121 @@ const OB = (function() {
      WELCOME MODAL — 4 slides
   ═══════════════════════════════════════════════════════════ */
   let _slide = 0;
-  const SLIDE_COUNT = 4;
+  const SLIDE_COUNT = 3;
 
   function buildDots() {
     const dots = document.getElementById('obDots');
-    if (!dots) return;
-    dots.innerHTML = Array.from({ length: SLIDE_COUNT },
-      (_, i) => '<span class="ob-dot' + (i === 0 ? ' active' : '') + '" data-i="' + i + '"></span>').join('');
+    const labels = ['Welcome', 'Find & connect', 'Get started'];
+    dots.innerHTML = labels.map((label, i) =>
+      '<button type="button" class="ob-dot" data-i="' + i + '" aria-label="Step ' + (i + 1) + ': ' + label + '"><span>' + (i + 1) + '</span>' + label + '</button>').join('');
     dots.querySelectorAll('.ob-dot').forEach(d =>
       d.addEventListener('click', () => setSlide(Number(d.dataset.i))));
   }
 
   function wireWelcome() {
     buildDots();
-    const next = document.getElementById('obNext');
-    const back = document.getElementById('obBack');
-    const skip = document.getElementById('obSkip');
-    const ov   = document.getElementById('obOverlay');
-    next.addEventListener('click', function() {
-      if (_slide < SLIDE_COUNT - 1) { setSlide(_slide + 1); }
-      else { finishWelcome(); }
+    document.getElementById('obNext').addEventListener('click', function() {
+      if (_slide < SLIDE_COUNT - 1) setSlide(_slide + 1);
+      else { finishWelcome(false); startTour(); }
     });
-    back.addEventListener('click', function() { if (_slide > 0) setSlide(_slide - 1); });
-    skip.addEventListener('click', finishWelcome);
-    // Tap outside the dialog (on the dim layer) dismisses it — never trapped
-    if (ov) ov.addEventListener('click', function() {
-      if (_root && _root.classList.contains('ob-welcome-open')) finishWelcome();
-      else if (_tourActive) endTour(false);
+    document.getElementById('obBack').addEventListener('click', function() { setSlide(_slide - 1); });
+    document.getElementById('obSkip').addEventListener('click', () => finishWelcome());
+    document.getElementById('obBrowse').addEventListener('click', function() {
+      finishWelcome();
+      if (typeof goPage === 'function') goPage('home');
+    });
+    document.getElementById('obPost').addEventListener('click', function() {
+      finishWelcome();
+      if (typeof openPostAd === 'function') openPostAd();
+    });
+    document.getElementById('obOverlay').addEventListener('click', function() {
+      if (_tourActive) endTour(false);
+      else finishWelcome();
     });
     document.addEventListener('keydown', welcomeKeys);
   }
 
+  function trapFocus(e, dialog) {
+    if (e.key !== 'Tab') return;
+    const buttons = Array.from(dialog.querySelectorAll('button, [tabindex="0"]'))
+      .filter(el => !el.disabled && !el.closest('[hidden]') && isVisible(el));
+    const first = buttons[0], last = buttons[buttons.length - 1];
+    if (!first) { e.preventDefault(); dialog.focus(); return; }
+    if (e.shiftKey && (document.activeElement === first || !buttons.includes(document.activeElement))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !buttons.includes(document.activeElement))) {
+      e.preventDefault(); first.focus();
+    }
+  }
+
   function welcomeKeys(e) {
     if (!_root || !_root.classList.contains('ob-welcome-open')) return;
-    if (e.key === 'Escape') { finishWelcome(); return; }
-    if (e.key === 'ArrowRight' && _slide < SLIDE_COUNT - 1) { setSlide(_slide + 1); return; }
-    if (e.key === 'ArrowLeft' && _slide > 0) { setSlide(_slide - 1); return; }
-    if (e.key === 'Tab') {
-      // Focus trap — cycle inside the welcome dialog only
-      const focusables = _root.querySelectorAll('#obWelcome button, #obWelcome [tabindex]:not([tabindex="-1"])');
-      if (!focusables.length) return;
-      const first = focusables[0], last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finishWelcome(); return; }
+    trapFocus(e, document.getElementById('obWelcome'));
   }
 
   function setSlide(n) {
-    _slide = n;
-    _root.querySelectorAll('.ob-slide').forEach(s =>
-      s.classList.toggle('active', Number(s.dataset.slide) === n));
-    _root.querySelectorAll('.ob-dot').forEach((d, i) =>
-      d.classList.toggle('active', i === n));
-    document.getElementById('obBack').style.visibility = n === 0 ? 'hidden' : 'visible';
-    const next = document.getElementById('obNext');
-    if (n === SLIDE_COUNT - 1) {
-      next.textContent = 'Show me around ✨';
-      next.className = 'btn btn-gold btn-lg';
-    } else {
-      next.textContent = 'Next →';
-      next.className = 'btn btn-green btn-lg';
-    }
+    _slide = Math.max(0, Math.min(n, SLIDE_COUNT - 1));
+    _root.querySelectorAll('.ob-slide').forEach(s => {
+      s.hidden = Number(s.dataset.slide) !== _slide;
+      s.classList.toggle('active', !s.hidden);
+    });
+    _root.querySelectorAll('.ob-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === _slide);
+      d.setAttribute('aria-current', i === _slide ? 'step' : 'false');
+    });
+    document.getElementById('obBack').hidden = _slide === 0;
+    document.getElementById('obStepLabel').textContent = (_slide + 1) + ' of ' + SLIDE_COUNT;
+    document.getElementById('obNext').textContent = _slide === SLIDE_COUNT - 1 ? 'Show me around' : 'Next →';
+    document.getElementById('obWelcome').scrollTop = 0;
+    armWatchdog();
+  }
+
+  // A health watchdog releases broken UI, but never puts a timer on reading.
+  function armWatchdog() {
+    clearTimeout(_welcomeWatchdog);
+    clearTimeout(_tourWatchdog);
+    const check = function() {
+      const dialog = document.getElementById(_tourActive ? 'obTip' : 'obWelcome');
+      if (!_root || !document.body.classList.contains('ob-locked')) return;
+      if (!_root.isConnected || !dialog || !isVisible(dialog)) {
+        if (_tourActive) endTour(false); else finishWelcome();
+        return;
+      }
+      armWatchdog();
+    };
+    if (_tourActive) _tourWatchdog = setTimeout(check, 5000);
+    else _welcomeWatchdog = setTimeout(check, 5000);
   }
 
   function showWelcome() {
-    ensureRoot();
     try {
-      _lastFocus = document.activeElement;
-      _slide = 0;
+      ensureRoot();
+      if (!_root || !_root.contains(document.activeElement)) _lastFocus = document.activeElement;
+      document.getElementById('obWelcome').hidden = false;
       setSlide(0);
       _root.classList.add('ob-welcome-open');
       document.body.classList.add('ob-locked');
-      var n = document.getElementById('obNext');
-      if (n) setTimeout(function() { n.focus(); }, 60);
+      document.getElementById('obNext').focus({ preventScroll: true });
     } catch (e) {
-      // Never leave a blocking overlay behind if something goes wrong
       if (_root) _root.classList.remove('ob-welcome-open');
-      document.body.classList.remove('ob-locked');
+      finishWelcome();
       console.error('[onboarding] showWelcome failed:', e);
     }
-    // Watchdog: auto-dismiss after 20s no matter what
-    clearTimeout(_welcomeWatchdog);
-    _welcomeWatchdog = setTimeout(function() {
-      if (_root && _root.classList.contains('ob-welcome-open')) finishWelcome();
-    }, 20000);
   }
 
-  function finishWelcome() {
+  function finishWelcome(restoreFocus = true) {
     if (_root) _root.classList.remove('ob-welcome-open');
+    const dialog = document.getElementById('obWelcome');
+    if (dialog) dialog.hidden = true;
     document.body.classList.remove('ob-locked');
     clearTimeout(_welcomeWatchdog);
     flag(K.onboarded, true);
-    try { if (_lastFocus && typeof _lastFocus.focus === 'function') _lastFocus.focus(); } catch (e) {}
-    // Offer the interactive coach-mark tour right after the welcome
-    if (!flag(K.tourDone)) {
-      setTimeout(startTour, 350);
-    }
+    if (restoreFocus) restoreLastFocus();
+  }
+
+  function restoreLastFocus() {
+    try { if (_lastFocus && _lastFocus.isConnected) _lastFocus.focus({ preventScroll: true }); } catch (e) {}
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -274,8 +316,8 @@ const OB = (function() {
     {
       sel: () => isMobile() ? '.mob-nav-post' : '#navPostBtn',
       icon: '🚀',
-      title: 'Post an ad in 2 minutes',
-      text: 'Selling something? Tap here — photos, price, done. Posting is always free.',
+      title: 'Post your first ad',
+      text: 'Sign in or create a free account, then add details, photos and a price. The posting guide walks you through each step.',
       pos: 'top',
     },
     {
@@ -288,8 +330,8 @@ const OB = (function() {
     {
       sel: () => isMobile() ? '#mnMsgs' : null,
       icon: '💬',
-      title: 'Message sellers safely',
-      text: 'Chat in-app with buyers and sellers — no phone number needed, everything stays in one place.',
+      title: 'Keep your conversations together',
+      text: 'Sign in to read and reply to messages here. Check items before paying and never share verification codes.',
       pos: 'top',
     },
     {
@@ -303,78 +345,70 @@ const OB = (function() {
     },
   ];
 
-  let _tourIdx = 0, _tourActive = false;
+  let _tourIdx = 0, _tourActive = false, _steps = [];
   let _welcomeWatchdog = null, _tourWatchdog = null;
 
   function startTour() {
+    ensureRoot();
+    _steps = TOUR_STEPS.filter(step => {
+      const sel = step.sel();
+      return sel && isVisible(document.querySelector(sel));
+    });
     _tourActive = true;
     _tourIdx = 0;
-    ensureRoot();
     _root.classList.add('ob-tour-open');
+    document.getElementById('obTip').hidden = false;
     document.body.classList.add('ob-locked');
-    try { showTourStep(); } catch (e) { endTour(false); return; }
-    // Watchdog: a tour can never trap the page — auto-close after 45s
-    clearTimeout(_tourWatchdog);
-    _tourWatchdog = setTimeout(function() {
-      if (_tourActive) endTour(false);
-    }, 45000);
+    showTourStep();
+    armWatchdog();
   }
 
   function endTour(completed) {
     _tourActive = false;
     clearTimeout(_tourWatchdog);
-    if (_root) _root.classList.remove('ob-tour-open');
-    document.body.classList.remove('ob-locked');
-    flag(K.tourDone, true);
-    try { if (_lastFocus && typeof _lastFocus.focus === 'function') _lastFocus.focus(); } catch (e) {}
-    if (typeof showToast === 'function' && completed) {
-      showToast("You're all set! Happy hunting 🇯🇲", '🎉');
+    if (_root) {
+      _root.classList.remove('ob-tour-open');
+      document.getElementById('obSpotlight').classList.remove('show');
+      const tip = document.getElementById('obTip');
+      tip.classList.remove('show');
+      tip.hidden = true;
     }
+    document.body.classList.remove('ob-locked');
+    if (completed) {
+      flag(K.tourDone, true);
+      // Finish with useful actions, not a toast that disappears before it is read.
+      showWelcome();
+      setSlide(SLIDE_COUNT - 1);
+      document.getElementById('obBrowse').focus({ preventScroll: true });
+    } else restoreLastFocus();
   }
 
   function showTourStep() {
-    const steps = TOUR_STEPS;
+    if (!_tourActive) return;
     try {
-      // Find the next step with a visible target
-      while (_tourIdx < steps.length) {
-        const sel = steps[_tourIdx].sel();
-        const el = sel ? document.querySelector(sel) : null;
-        if (el && isVisible(el)) break;
-        _tourIdx++;
+      if (_tourIdx >= _steps.length) { endTour(true); return; }
+      const step = _steps[_tourIdx];
+      const target = document.querySelector(step.sel());
+      if (!isVisible(target)) {
+        _steps.splice(_tourIdx, 1);
+        showTourStep();
+        return;
       }
-      if (_tourIdx >= steps.length) { endTour(true); return; }
-
-      const step = steps[_tourIdx];
-      const target = document.querySelector(step.sel);
-
-      // Scroll target into view if needed
-      if (step.scroll && target) {
-        target.scrollIntoView({ block: 'center', behavior: 'instant' });
-      }
-
-      requestAnimationFrame(function() {
-        try {
-          positionSpotlight(target, step.pos);
-          const tip = document.getElementById('obTip');
-          document.getElementById('obTipIcon').textContent = step.icon;
-          document.getElementById('obTipTitle').textContent = step.title;
-          document.getElementById('obTipText').textContent = step.text;
-          document.getElementById('obTipStep').textContent =
-            'Step ' + (_tourIdx + 1) + ' of ' + steps.length;
-          document.getElementById('obTipBack').style.visibility = _tourIdx === 0 ? 'hidden' : 'visible';
-          document.getElementById('obTipNext').textContent =
-            _tourIdx === steps.length - 1 ? 'Done ✓' : 'Next →';
-          tip.classList.add('show');
-          var nextBtn = document.getElementById('obTipNext');
-          if (nextBtn) nextBtn.focus();
-        } catch (e) {
-          // Any animation/positioning hiccup must not strand the user in a
-          // dimmed, unclickable state — release the tour.
-          console.error('[onboarding] showTourStep render failed:', e);
-          endTour(false);
-        }
-      });
+      const tip = document.getElementById('obTip');
+      document.getElementById('obTipIcon').textContent = step.icon;
+      document.getElementById('obTipTitle').textContent = step.title;
+      document.getElementById('obTipText').textContent = step.text;
+      document.getElementById('obTipStep').textContent = 'Step ' + (_tourIdx + 1) + ' of ' + _steps.length;
+      document.getElementById('obTourProgress').style.width = ((_tourIdx + 1) / _steps.length * 100) + '%';
+      document.getElementById('obTipBack').hidden = _tourIdx === 0;
+      document.getElementById('obTipNext').textContent = _tourIdx === _steps.length - 1 ? 'Finish ✓' : 'Next →';
+      target.scrollIntoView({ block: 'center', behavior: 'instant' });
+      tip.classList.add('show');
+      positionSpotlight(target, step.pos);
+      document.getElementById('obTipNext').focus({ preventScroll: true });
+      armWatchdog();
     } catch (e) {
+      console.error('[onboarding] showTourStep render failed:', e);
       endTour(false);
     }
   }
@@ -401,24 +435,14 @@ const OB = (function() {
 
     // Position the tooltip — above or below the target, whichever fits
     tip.classList.remove('above', 'below');
+    const viewH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     const tipH = tip.offsetHeight || 150;
-    const spaceBelow = window.innerHeight - r.bottom;
-    const spaceAbove = r.top;
-    const fitsBelow = spaceBelow > tipH + 24;
-    const fitsAbove = spaceAbove > tipH + 24;
-
-    let below;
-    if (pos === 'top')         below = false;
-    else if (pos === 'bottom') below = true;
-    else                       below = fitsBelow || !fitsAbove; // 'auto'
-
-    if (below) {
-      tip.classList.add('below');
-      tip.style.top = (r.bottom + 14) + 'px';
-    } else {
-      tip.classList.add('above');
-      tip.style.top = (r.top - tipH - 14) + 'px';
-    }
+    const fitsBelow = r.bottom + tipH + 24 <= viewH;
+    const fitsAbove = r.top - tipH - 24 >= 0;
+    const below = pos === 'top' ? !fitsAbove && fitsBelow : fitsBelow || !fitsAbove;
+    tip.classList.add(below ? 'below' : 'above');
+    const top = below ? r.bottom + 14 : r.top - tipH - 14;
+    tip.style.top = Math.max(12, Math.min(top, viewH - tipH - 12)) + 'px';
 
     // Horizontal clamp
     const tipW = Math.min(tip.offsetWidth || 300, window.innerWidth - 24);
@@ -431,7 +455,6 @@ const OB = (function() {
   function wireTour() {
     document.getElementById('obTipNext').addEventListener('click', function() {
       _tourIdx++;
-      if (_tourIdx >= TOUR_STEPS.length) { endTour(true); return; }
       showTourStep();
     });
     document.getElementById('obTipBack').addEventListener('click', function() {
@@ -440,12 +463,19 @@ const OB = (function() {
     document.getElementById('obTipSkip').addEventListener('click', function() { endTour(false); });
     document.addEventListener('keydown', function(e) {
       if (!_tourActive) return;
-      if (e.key === 'Escape') endTour(false);
-      if (e.key === 'ArrowRight' && e.target.id === 'obTipNext') { _tourIdx++; showTourStep(); }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); endTour(false); return; }
+      trapFocus(e, document.getElementById('obTip'));
     });
-    window.addEventListener('resize', function() {
-      if (_tourActive) showTourStep(); // reposition
-    });
+    const reposition = function() {
+      if (!_tourActive) return;
+      const step = _steps[_tourIdx];
+      const target = step && document.querySelector(step.sel());
+      if (!isVisible(target)) { showTourStep(); return; }
+      positionSpotlight(target, step.pos);
+    };
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, { passive: true, capture: true });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', reposition);
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -564,9 +594,10 @@ const OB = (function() {
     return false;
   }
 
+  let _booted = false;
   function maybeWelcome() {
-    // Never run on tiny embeds/iframes or before body exists
-    if (!document.body) return;
+    if (!document.body || _booted) return;
+    _booted = true;
     // Mark returning users as onboarded BEFORE arming tips so their tips work
     if (!flag(K.onboarded) && isReturningUser()) flag(K.onboarded, true);
     trackDetailViews();
@@ -575,16 +606,22 @@ const OB = (function() {
     maybePwaTip();
     if (flag(K.onboarded)) return; // already seen (or returning user)
     // Wait for first content paint so the page doesn't feel broken
-    setTimeout(function() {
-      if (document.querySelector('.overlay.open') || document.body.classList.contains('ai-sheet-open')) return; // don't fight other modals
+    let attempts = 0;
+    function offerWelcome() {
+      if (flag(K.onboarded) || _tourActive || (_root && _root.classList.contains('ob-welcome-open'))) return;
+      if (document.querySelector('.overlay.open, .su-overlay.open') || document.body.classList.contains('ai-sheet-open') || document.hidden) {
+        if (++attempts < 30) setTimeout(offerWelcome, 2000);
+        return;
+      }
       showWelcome();
-    }, 1400);
+    }
+    setTimeout(offerWelcome, 1400);
   }
 
   // Public: replay the tour from the footer link
   function startOnboarding() {
-    if (_root && _root.classList.contains('ob-welcome-open')) return;
-    flag(K.onboarded, false);
+    if (_tourActive || (_root && _root.classList.contains('ob-welcome-open'))) return;
+    if (document.querySelector('.overlay.open, .su-overlay.open') || document.body.classList.contains('ai-sheet-open')) return;
     showWelcome();
   }
 

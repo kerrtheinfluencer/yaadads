@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Onboarding regression tests</title><link rel="stylesheet" href="/style.css">
+<style>body{padding:24px}#navSearchPill,#catRow{height:60px;margin:20px}#navPostBtn{position:fixed;bottom:20px;right:20px}.mobile-target{display:none}@media(max-width:640px){#navSearchPill,#navPostBtn{display:none}.mobile-target{display:block;position:fixed;bottom:20px}#mnSearch{left:20px}.mob-nav-post{right:20px}}</style></head>
+<body><button id="replay" onclick="startOnboarding()">Replay</button><div id="navSearchPill">Search</div><div id="catRow">Categories</div><button id="navPostBtn">Post</button><button id="mnSearch" class="mobile-target">Search</button><button class="mobile-target mob-nav-post">Post</button><pre id="out">ONBOARDING: pending</pre>
+<script>
+// Isolated storage: never clears or changes the real site's saved data.
+const testStore = new Map();
+const mode = new URLSearchParams(location.search).get('mode');
+if (mode === 'returning') testStore.set('ya_favs', '["saved-item"]');
+Object.defineProperty(window, 'localStorage', { value: {
+  getItem(k) { if (mode === 'blocked') throw Error('Storage blocked'); return testStore.get(k) || null; },
+  setItem(k,v) { if (mode === 'blocked') throw Error('Storage blocked'); testStore.set(k, String(v)); }
+}});
+let posted = 0, browsed = 0;
+function openPostAd() { posted++; }
+function goPage(page) { if (page === 'home') browsed++; }
+</script><script src="/js/onboarding.js"></script><script>
+const results = [];
+function check(name, ok) { results.push({name, ok: !!ok}); }
+const q = id => document.getElementById(id);
+const click = id => q(id).click();
+const welcome = () => q('obRoot') && q('obRoot').classList.contains('ob-welcome-open');
+const tour = () => q('obRoot').classList.contains('ob-tour-open');
+function start() { q('replay').focus(); click('replay'); }
+function startTourTest() { start(); click('obNext'); click('obNext'); click('obNext'); }
+function closed() { return !welcome() && !tour() && !document.body.classList.contains('ob-locked') && q('obTip').hidden; }
+function fits(el) { const r = el.getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1; }
+if (mode !== 'preview') setTimeout(function() {
+ try {
+  if (mode === 'returning') {
+    check('returning visitor is not interrupted', !welcome());
+    check('favourites preserved', testStore.get('ya_favs') === '["saved-item"]');
+    start();
+  } else check('first visit opens automatically', welcome());
+  check('welcome fits viewport', fits(q('obWelcome')));
+  check('only one slide exposed', q('obRoot').querySelectorAll('.ob-slide:not([hidden])').length === 1);
+  click('obSkip'); check('Skip closes without starting tour', closed());
+  start(); click('obOverlay'); check('outside click dismisses', closed());
+  check('focus returns to replay', document.activeElement === q('replay'));
+  start(); click('obNext'); check('Next advances', q('obStepLabel').textContent === '2 of 3');
+  click('obBack'); check('Back returns', q('obStepLabel').textContent === '1 of 3');
+  document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape'})); check('Escape dismisses', closed());
+  startTourTest(); check('tour starts with resolved selector', tour() && q('obTipTitle').textContent === 'Search anything');
+  check('tooltip fits viewport', fits(q('obTip')));
+  check('visible steps counted', q('obTipStep').textContent === 'Step 1 of 3');
+  click('obTipNext'); click('obTipBack'); check('tour Back works', q('obTipStep').textContent === 'Step 1 of 3');
+  click('obTipSkip'); check('tour Skip clears spotlight and lock', closed() && !q('obSpotlight').classList.contains('show'));
+  check('Skip not marked completed', !testStore.has('ya_tour_done_v2'));
+  startTourTest();
+  let guard = 10;
+  while (tour() && guard--) { check('each tooltip fits', fits(q('obTip'))); click('obTipNext'); }
+  check('completion offers useful actions', welcome() && !q('obBrowse').closest('[hidden]'));
+  if (mode !== 'blocked') check('completion saved', testStore.get('ya_tour_done_v2') === '1');
+  click('obBrowse'); check('browse action closes and navigates', closed() && browsed === 1);
+  startTourTest(); check('completed tour can replay', tour());
+  click('obTipSkip'); start(); click('obNext'); click('obNext'); click('obPost');
+  check('post action hands off after closing', closed() && posted === 1);
+  start(); q('obNext').focus();
+  const tab = new KeyboardEvent('keydown', {key:'Tab', bubbles:true, cancelable:true});
+  document.dispatchEvent(tab); check('Tab stays inside dialog', tab.defaultPrevented && document.activeElement === q('obSkip'));
+  click('obSkip');
+ } catch(e) { check('no runtime errors: ' + e.stack, false); }
+ q('out').textContent = 'ONBOARDING: ' + (results.every(r=>r.ok) ? 'PASS' : 'FAIL') + '\n' + JSON.stringify(results, null, 2);
+}, 3000);
+</script></body></html>
