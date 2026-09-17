@@ -114,6 +114,55 @@ let _db = null;
 try { _db = supabase.createClient(CFG.supabase.url, CFG.supabase.key); }
 catch (e) { console.error("[Yaad Adz] supabase.createClient FAILED:", e); }
 
+/* ═══════════════════════════════════════════════════════════\n
+   REFERRAL CAPTURE §REF
+   Grab the ?ref=<code> parameter (and the /invite/<code> deep link)
+   at boot and stash it in localStorage so it survives a full
+   sign-up redirect flow. Consumed by sbSignUp() in auth-account.js.
+   ═══════════════════════════════════════════════════════════ */
+var _REFERRAL_CODE = null;
+(function captureReferralCode() {
+  try {
+    // 1) /invite/<code> deep link takes priority
+    var m = window.location.pathname.match(/^\/invite\/(.+)/);
+    if (m && m[1]) { _REFERRAL_CODE = m[1]; }
+
+    // 2) otherwise fall back to ?ref=<code>
+    if (!_REFERRAL_CODE) {
+      var q = new URLSearchParams(window.location.search);
+      _REFERRAL_CODE = q.get('ref');
+    }
+
+    // 3) /invite/<code> deep links arrive via GitHub Pages' 404.html slug
+    //    router — the original path is stashed in sessionStorage by 404.html.
+    if (!_REFERRAL_CODE) {
+      var storedPath = sessionStorage.getItem('yaad_redirect_path') || '';
+      var m2 = storedPath.match(/^\/invite\/([^/?#]+)/);
+      if (m2 && m2[1]) { _REFERRAL_CODE = m2[1]; }
+    }
+
+    if (_REFERRAL_CODE) { _REFERRAL_CODE = String(_REFERRAL_CODE).trim(); }
+
+    if (_REFERRAL_CODE) {
+      // keep it across sign-up, but cap to a single code
+      localStorage.setItem('ya_ref', String(_REFERRAL_CODE));
+    }
+  } catch (e) { /* localStorage blocked / ssr — ignore */ }
+})();
+
+// Retrieve (and optionally clear) the stashed referral code.
+// call() with no args just reads; pass true to consume (clear) it.
+function getReferralCode(clear) {
+  var c = _REFERRAL_CODE;
+  try { c = c || localStorage.getItem('ya_ref'); } catch (e) {}
+  if (clear) {
+    _REFERRAL_CODE = null;
+    try { localStorage.removeItem('ya_ref'); } catch (e) {}
+  }
+  return c || null;
+}
+
+
 /* ═══════════════════════════════════════════════════════════
    SITE VISITS — daily counter §VISITS
    Run sql/site-visits.sql in Supabase once.
@@ -409,6 +458,22 @@ async function signInWithGoogle() {
   }
 }
 
+// Build only the public account fields; never copy auth tokens or arbitrary profile data.
+function cuFromProfile(profile, fallback = {}) {
+  const p = profile || {};
+  return {
+    id: fallback.id || p.id,
+    name: p.name || fallback.name || '',
+    email: p.email || fallback.email || '',
+    phone: p.phone || fallback.phone || '',
+    parish: p.parish || fallback.parish || '',
+    referral_code: p.referral_code || fallback.referral_code || '',
+    total_referrals: Number(p.total_referrals || 0),
+    yaad_points: Number(p.yaad_points || 0),
+    referrals_this_week: Number(p.referrals_this_week || 0),
+  };
+}
+
 async function sbRegister(name, email, phone, parish, password) {
   // Use Supabase Auth for proper password hashing
   const { data, error } = await _db.auth.signUp({
@@ -431,8 +496,10 @@ async function sbRegister(name, email, phone, parish, password) {
   // Profile is auto-created by the trigger; fetch it
   const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
   const p = profile || {};
-  return { id: data.user.id, name: p.name || name, email: p.email || email, phone: p.phone || phone || '', parish: p.parish || parish || '' };
+    return cuFromProfile(p, { id: data.user.id, name: p.name || name, email: p.email || email, phone: p.phone || phone || '', parish: p.parish || parish || '' });
 }
+
+// (Referral helpers live in the §REFERRALS section below — single source.)
 
 async function sbResetPassword(email) {
   const { error } = await _db.auth.resetPasswordForEmail(email, {
@@ -471,7 +538,7 @@ async function sbLogin(email, password) {
   // Fetch profile data
   const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
   const p = profile || {};
-  return { id: data.user.id, name: p.name || data.user.email, email: p.email || email, phone: p.phone || '', parish: p.parish || '' };
+  return cuFromProfile(p, { id: data.user.id, name: p.name || data.user.email, email: p.email || email, phone: p.phone || '', parish: p.parish || '' });
 }
 
 // ── MESSAGES ──────────────────────────────────────────
@@ -745,25 +812,158 @@ function requestPushPermission() {
   } catch (e) { console.error('requestPushPermission error:', e); }
 }
 
-function sendPushNotification(title, body, url) {
+async function sendPushNotification(title, body, url) {
   try {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    if (!document.hidden) return; // tab is focused — the in-app toast already covers this case
+    if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden) return;
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(function(reg) {
-        reg.showNotification(title, {
-          body: body,
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
-          data: { url: url || '/' },
-          tag: 'yaadadz-msg',
-        });
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body, icon: '/icon-192.png', badge: '/icon-192.png',
+        data: { url: url || '/' }, tag: 'yaadadz-msg',
       });
     } else {
-      const n = new Notification(title, { body: body, icon: '/icon-192.png' });
-      n.onclick = function() { window.focus(); if (url) location.href = url; n.close(); };
+      const notification = new Notification(title, { body, icon: '/icon-192.png' });
+      notification.onclick = function() {
+        window.focus();
+        if (url) location.href = url;
+        notification.close();
+      };
     }
-  } catch(e) { console.error('sendPushNotification error:', e); }
+  } catch (e) { console.error('sendPushNotification error:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// REFERRAL PROGRAM — client-side helpers §REFERRALS
+//   - claimReferral(newUserId)  : credit a referrer when a new user signs up
+//     (called from doRegister; also picks up ?ref= / /invite/<code>)
+//   - myRefCode()               : own referral code (from profiles.referrer_code)
+//   - copyRefLink()             : copy the referral URL to clipboard (account page)
+//   - openInviteModal()         : open the invite modal so users can share their code
+// ═══════════════════════════════════════════════════════════
+
+// Claim a referral if the visitor arrived via ?ref=... / /invite/<code>
+// and is signing up now (called from doRegister), or from the invite page.
+async function claimReferral(newUserId) {
+  const code = getReferralCode();
+  if (!code || !newUserId) return;
+  try {
+    // The database derives the invitee from auth.uid(), never from client input.
+    const { data, error } = await _db.rpc('send_referral', { p_code: code });
+    if (error) throw error;
+    const body = data || {};
+    if (body.ok || body.status === 'already_referred' || body.status === 'already_claimed') {
+      getReferralCode(true);
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('ref');
+        if (/^\/invite\/[^/]+\/?$/.test(url.pathname)) url.pathname = '/';
+        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+      } catch (e) {}
+    }
+    if (body.ok) showToast(body.message || 'Friend referral credited! 🎉', '🎉');
+  } catch (e) {
+    console.warn('[claimReferral] could not credit referral:', e && e.message);
+    // Preserve attribution for retry; never block signup on a failed RPC.
+  }
+}
+
+// Return the current user's own referral code (reads from cached CU,
+// falls back to the server so we always have one even before cache sync).
+async function myRefCode() {
+  if (!CU) return Promise.resolve(null);
+  if (CU.referrer_code) return Promise.resolve(CU.referrer_code);
+
+  try {
+    const { data, error } = await _db.from('profiles')
+      .select('referrer_code')
+      .eq('id', CU.id)
+      .single();
+    if (error) throw error;
+    const code = data && data.referrer_code;
+    if (code) CU.referrer_code = code;
+    return code;
+  } catch (e) {
+    console.warn('[myRefCode] could not load:', e && e.message);
+    return null;
+  }
+}
+
+// Copy the referral link to the clipboard (used on account page + invite modal).
+async function copyRefLink() {
+  let url = null;
+  try {
+    // editable readonly input on the account page
+    const i = document.getElementById('myRefLink');
+    if (i && i.value) { url = i.value; }
+  } catch (e) {}
+
+  if (!url) {
+    try {
+      url = window.location.origin + '/invite/' + (await myRefCode());
+    } catch (e) {
+      url = null;
+    }
+  }
+
+  if (!url) {
+    showToast('Could not load your referral link. Try again in a moment.', '⚠️');
+    return;
+  }
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    showToast('Referral link copied!', '🔗');
+  } catch (e) {
+    showToast('Could not copy — please copy manually.', '⚠️');
+  }
+}
+
+// Open the invite modal so the user can share their own referral code.
+async function openInviteModal() {
+  const overlay = document.getElementById('ovInvite');
+  if (!overlay) return;
+  const codeDisp = document.getElementById('inviteCodeDisplay');
+  const linkDisp = document.getElementById('inviteLinkDisplay');
+  const alertEl = document.getElementById('inviteAlert');
+  if (codeDisp) codeDisp.textContent = '';
+  if (linkDisp) linkDisp.value = '';
+  if (alertEl) alertEl.className = 'alert-box';
+
+  try {
+    const code = await myRefCode();
+    if (!code) {
+      if (alertEl) {
+        alertEl.textContent = 'Your referral code isn\'t set up yet. Please try again in a moment.';
+        alertEl.className = 'alert-box alert-err show';
+      }
+      return;
+    }
+    const link = window.location.origin + '/invite/' + code;
+    if (codeDisp) codeDisp.textContent = code;
+    if (linkDisp) linkDisp.value = link;
+    if (linkDisp) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+        }
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.warn('[openInviteModal] could not load code:', e && e.message);
+  }
+
+  openOverlay('ovInvite');
 }
 
 
