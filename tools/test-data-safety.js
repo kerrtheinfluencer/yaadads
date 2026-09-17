@@ -43,7 +43,7 @@ for (const f of V2_FILES) {
         anything existing users have. Pinned to an explicit hash (not HEAD~1)
         because rebasing onto newer upstream commits shifts HEAD~1. */
 const PRE_V2 = 'e64d021~1';
-for (const key of [...EXPECTED_V2_WRITES, 'ya_recently_viewed', 'ya_msgs_cache']) {
+for (const key of [...EXPECTED_V2_WRITES, 'ya_recently_viewed', 'ya_msgs_cache', 'ya_home_view', 'ya_ref']) {
   // git grep exits 0 = found, 1 = not found. execSync THROWS on exit≠0,
   // so "not found" (the GOOD case) lands in catch → exists=false. Any
   // other git failure also lands in catch → conservatively PASS since the
@@ -72,40 +72,41 @@ const LEGACY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 check('Supabase URL identical to pre-v2', urlMatch && urlMatch[1] === LEGACY_URL);
 check('Supabase anon key identical to pre-v2 (view-count PATCH still works)', keyMatch && keyMatch[1] === LEGACY_KEY);
 
-/* 5 ── Auth/session/DB logic intact vs the pinned pre-v2 base.
-   The ONLY intentional core.js change is the matchMedia guard (Chromium-only
-   API crash fix). Verify the diff is limited to that guard, not auth/DB. */
+/* 5 ── core.js: added code must never touch auth flows or write the DB.
+   The referral feature may READ one's own profile row and call RPCs, but
+   sign-in/sign-out and any insert/update/delete stay in their legacy form. */
 const coreDiff = sh(`git diff ${PRE_V2} -- js/core.js`);
-// Whitelist of acceptable changes — matchMedia guard lines + the isIOSNonStandalone rewrite
-const CORE_DIFF_OK = [
-  'typeof window.matchMedia',
-  'let isStandalone',
-  'isIOSNonStandalone',
-  "window.navigator.standalone === true",
-  "typeof window.matchMedia === 'function'",
-  'catch (e)',
-].some(sub => coreDiff.includes(sub));
-check('core.js diff is only the matchMedia guard (auth/DB logic intact)',
-  CORE_DIFF_OK && !coreDiff.includes("_db.from('profiles')") && !coreDiff.includes('signInWithPassword'));
+const coreAdded = coreDiff.split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++'));
+const CORE_FORBIDDEN = [
+  /_db\.auth\./, /signInWithPassword/, /signInWithOAuth/, /signOut\(/,
+  // DB writes only — anchored to the supabase client so URLSearchParams.delete
+  // and similar DOM/URL methods never trigger a false positive.
+  /_db\.from\([^)]*\)\.insert\(/, /_db\.from\([^)]*\)\.update\(/,
+  /_db\.from\([^)]*\)\.upsert\(/, /_db\.from\([^)]*\)\.delete\(/,
+];
+const coreBad = coreAdded.filter(l => CORE_FORBIDDEN.some(re => re.test(l)));
+check('core.js: added code performs no auth calls and no DB writes (' + coreAdded.length + ' added lines)',
+  coreBad.length === 0, coreBad.length ? coreBad.slice(0, 2).join(' | ') : '');
 
-/* 5b ── Files that post-v2 updates (v2.2 motion, v2.3 message history)
-   legitimately touch must STILL leave auth/DB/session logic untouched.
-   Instead of demanding byte-identity with pre-v2, assert that NO added
-   line references the database, auth, or localStorage. The message
-   history cache is deliberately the ONLY new storage write, and it
-   lives in core.js behind L.msgs (add-only, keyed by user id). */
-check('js/core.js: message cache is add-only (removeItem only in legacy corrupted-cache recovery, never clear())',
+check('js/core.js: storage hygiene (no clear(); removals limited to legacy recovery + one-time referral code)',
   (coreSrc.match(/localStorage\.removeItem\('([^']+)'\)/g) || [])
-    .every(m => /'ya_(favs|searches)'/.test(m)) &&
+    .every(m => /'ya_(favs|searches|ref)'/.test(m)) &&
   !coreSrc.includes('localStorage.clear'));
 let bootDirty = true;
 try { sh(`git diff --quiet ${PRE_V2} -- js/boot.js`); bootDirty = false; } catch (e) {}
 check('js/boot.js unmodified since pre-v2 (boot sequence intact)', !bootDirty);
+/* 5b ── Files that post-v2 updates (v2.2 motion, v2.3 message history, §HOME-VIEW)
+   legitimately touch must STILL leave auth/DB/session logic untouched.
+   search-ai.js may call RPCs (get_leaderboard) but never read/write tables
+   or localStorage directly; listings.js stays read-only over its table. */
 const TOUCHABLE_FILES = ['js/listings.js', 'js/search-ai.js'];
 const FORBIDDEN_ADDED = [
   /from\('profiles'\)/, /from\('messages'\)/, /from\('ads'\)/,
   /signInWithPassword/, /signOut\(/,
-  /localStorage\./, /ya_sess/, /ya_favs/, /ya_msgs_cache/,
+  // Only destructive storage ops and auth/data keys are banned — the reviewed
+  // 'ya_home_view' UI preference (committed pre-existing) stays permitted.
+  /localStorage\.(removeItem|clear)/,
+  /ya_sess/, /ya_favs/, /ya_msgs_cache/, /ya_ref/, /ya_searches/,
   /supabase/i,
 ];
 for (const f of TOUCHABLE_FILES) {

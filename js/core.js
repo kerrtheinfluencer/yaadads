@@ -836,7 +836,7 @@ async function sendPushNotification(title, body, url) {
 // REFERRAL PROGRAM — client-side helpers §REFERRALS
 //   - claimReferral(newUserId)  : credit a referrer when a new user signs up
 //     (called from doRegister; also picks up ?ref= / /invite/<code>)
-//   - myRefCode()               : own referral code (from profiles.referrer_code)
+//   - myRefCode()               : own referral code (from profiles.referral_code)
 //   - copyRefLink()             : copy the referral URL to clipboard (account page)
 //   - openInviteModal()         : open the invite modal so users can share their code
 // ═══════════════════════════════════════════════════════════
@@ -871,16 +871,16 @@ async function claimReferral(newUserId) {
 // falls back to the server so we always have one even before cache sync).
 async function myRefCode() {
   if (!CU) return Promise.resolve(null);
-  if (CU.referrer_code) return Promise.resolve(CU.referrer_code);
+  if (CU.referral_code) return Promise.resolve(CU.referral_code);
 
   try {
     const { data, error } = await _db.from('profiles')
-      .select('referrer_code')
+      .select('referral_code')
       .eq('id', CU.id)
       .single();
     if (error) throw error;
-    const code = data && data.referrer_code;
-    if (code) CU.referrer_code = code;
+    const code = data && data.referral_code;
+    if (code) CU.referral_code = code;
     return code;
   } catch (e) {
     console.warn('[myRefCode] could not load:', e && e.message);
@@ -927,6 +927,21 @@ async function copyRefLink() {
   } catch (e) {
     showToast('Could not copy — please copy manually.', '⚠️');
   }
+}
+
+// Copy just the referral code (used by the home referral spot's code row).
+async function copyRefCode() {
+  const code = await myRefCode();
+  if (!code) { showToast('Could not load your referral code. Try again in a moment.', '⚠️'); return; }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(code);
+    else {
+      const ta = document.createElement('textarea');
+      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    showToast('Referral code copied!', '🔗');
+  } catch (e) { showToast('Could not copy — please copy manually.', '⚠️'); }
 }
 
 // Open the invite modal so the user can share their own referral code.

@@ -174,7 +174,9 @@ function initInfiniteScroll() {
   _homeIO = new IntersectionObserver(function(entries) {
     entries.forEach(function(en) {
       if (!en.isIntersecting) return;
-      growHome();
+      // The observer and the scroll fallback can fire on the same frame —
+      // the chain guard inside homeFillStep serializes them safely.
+      homeFillStep(0);
     });
   }, { rootMargin: '900px 0px', threshold: 0 }); // start loading ~1.5 screens early
 }
@@ -188,22 +190,49 @@ function initInfiniteScroll() {
 function homeNearEnd() {
   const sent = homeSentinel();
   if (!sent || sent.style.display === 'none') return false;
-  const r = sent.getBoundingClientRect();
-  const vh = window.innerHeight || document.documentElement.clientHeight || 800;
-  return r.top < vh * 1.5 && r.bottom > 0;
+  try {
+    const r = sent.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+    return r.top < vh * 1.5 && r.bottom > 0;
+  } catch (e) { return false; }
 }
+
+/* Chain guard — the fill chain must never overlap itself. A fast flick fires
+   scroll frames, observer ticks and the Show-more button all at once; without
+   this, growHome→renderHome re-enters mid-render, innerHTML swaps pile up on
+   live-node lists, and low-end phones white-screen ("the page crashed").
+   Exactly one growth pass is ever in flight; extra triggers just queue the
+   next single pass. MAX_PAGES_PER_TICK caps how many chunks one gesture may
+   chain (each pass re-checks the reach before continuing). */
+let _homeGrowing = false;
+let _homeChainQueued = false;
+const MAX_HOME_PAGES_PER_TICK = 6;
 
 function scheduleHomeFill() {
   if (_homeFillPending) return;
   _homeFillPending = true;
   requestAnimationFrame(function() {
     _homeFillPending = false;
-    if (!homeNearEnd() || !growHome()) return;
-    // Keep filling while the end stays near, so a deep flick never stalls
-    // mid-load — the chain stops as soon as the sentinel is pushed beyond
-    // the reach check (or every listing is loaded).
-    scheduleHomeFill();
+    homeFillStep(0);
   });
+}
+
+function homeFillStep(pages) {
+  if (!homeNearEnd()) return;
+  if (_homeGrowing) { _homeChainQueued = true; return; }
+  _homeGrowing = true;
+  try {
+    if (!growHome()) return;
+  } finally {
+    _homeGrowing = false;
+  }
+  // Keep filling while the end stays near, so a deep flick never stalls
+  // mid-load — the chain stops as soon as the sentinel is pushed beyond
+  // the reach check (or every listing is loaded).
+  if (_homeChainQueued || pages + 1 < MAX_HOME_PAGES_PER_TICK) {
+    _homeChainQueued = false;
+    requestAnimationFrame(function() { homeFillStep(pages + 1); });
+  }
 }
 if (typeof window.addEventListener === 'function') {
   window.addEventListener('scroll', scheduleHomeFill, { passive: true });
@@ -229,9 +258,14 @@ function toggleHideSold() {
 }
 
 function loadMoreHome() {
-  // Same chunk size the infinite-scroll observer uses (see §INFINITE-SCROLL),
-  // so the fallback button and auto-loading stay in step.
-  growHome();
+  // Same chunk size the infinite-scroll paths use (see §INFINITE-SCROLL),
+  // so the fallback button and auto-loading stay in step. Runs through the
+  // chain guard so rapid double-taps can't overlap two growth passes.
+  if (_homeGrowing) { _homeChainQueued = true; }
+  else {
+    _homeGrowing = true;
+    try { growHome(); } finally { _homeGrowing = false; }
+  }
   // Scroll to where new cards start (honours reduced-motion)
   const cards = document.querySelectorAll('#homeGrid .ad-card');
   const target = cards[_homeShowCount - homeMoreGrowth()];
@@ -1825,10 +1859,8 @@ function refScore(p) {
 }
 function loadLeaderboard() {
   if (typeof _db === 'undefined' || !_db) return Promise.resolve([]);
-  return _db.from('profiles')
-    .select('id, name, yaad_points, total_referrals, referrals_this_week, last_week_winner')
-    .order('yaad_points', { ascending: false })
-    .limit(50)
+  // Migration RPC (security definer) — clients never read profiles directly.
+  return _db.rpc('get_leaderboard', { p_limit: 50 })
     .then(function(res) {
       if (res.error) { console.warn('[leaderboard] load failed:', res.error.message); return []; }
       return res.data || [];
@@ -1888,17 +1920,17 @@ function renderReferralSpot() {
       '<div class="referral-spot-title">🤝 Invite friends & earn rewards</div>' +
       '<div class="referral-spot-body">' +
         '<p style="margin-bottom:14px">' +
-          'Share your referral link. When someone signs up through it, you earn <strong>10 Yaad Points</strong> and a leaderboard spot. ' +
+          'Share your referral link. When someone signs up through it, you earn <strong>50 Yaad Points</strong> and a leaderboard spot. ' +
           'The 🏆 weekly winner (most new referrals) gets an extra spotlight on the home page.' +
         '</p>' +
         '<div class="referral-code-row">' +
           '<div class="referral-code-label">Your code</div>' +
-          '<div class="referral-code-value" id="homeRefCode">' + (typeof CU !== 'undefined' && CU.referrer_code ? escHtml(CU.referrer_code) : '—') + '</div>' +
-          '<button class="btn btn-ghost btn-sm" onclick="copyRefLink()">📋 Copy</button>' +
+          '<div class="referral-code-value" id="homeRefCode">' + (typeof CU !== 'undefined' && CU.referral_code ? escHtml(CU.referral_code) : '—') + '</div>' +
+          '<button class="btn btn-ghost btn-sm" onclick="copyRefCode()">📋 Copy</button>' +
         '</div>' +
         '<div class="referral-link-row">' +
           '<div class="referral-link-label">Shareable link</div>' +
-          '<input id="homeRefLink" type="text" readonly style="width:100%;background:#000;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;font-size:13px;color-scheme:dark" value="' + escHtml(window.location.origin + '/invite/' + (typeof CU !== 'undefined' && CU.referrer_code ? CU.referrer_code : '')) + '">' +
+          '<input id="homeRefLink" type="text" readonly style="width:100%;background:#000;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;font-size:13px;color-scheme:dark" value="' + escHtml(window.location.origin + '/invite/' + (typeof CU !== 'undefined' && CU.referral_code ? encodeURIComponent(CU.referral_code) : '')) + '">' +
           '<button class="btn btn-ghost btn-sm" onclick="copyRefLink()">📋 Copy</button>' +
         '</div>' +
         '<div class="referral-cta-row">' +
