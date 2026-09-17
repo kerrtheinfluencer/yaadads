@@ -14,7 +14,8 @@
     "changelog": "node tools/build-changelog.js",
     "changelog:check": "node tools/build-changelog.js && git diff --exit-code -- CHANGELOG.md",
     "verify": "node tools/verify-v2.js",
-    "test": "node tools/test-cleanup.js && node tools/verify-v2.js && node tools/test-data-safety.js",
+    "test": "node tools/test-cleanup.js && node tools/verify-v2.js && node tools/test-onboarding.js && node tools/test-data-safety.js",
+    "test:onboarding": "node tools/test-onboarding.js",
     "test:cleanup": "node tools/test-cleanup.js",
     "test:safety": "node tools/test-data-safety.js"
   },

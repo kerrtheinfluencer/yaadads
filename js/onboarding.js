@@ -191,13 +191,38 @@ const OB = (function() {
     });
     document.getElementById('obPost').addEventListener('click', function() {
       finishWelcome();
-      if (typeof openPostAd === 'function') openPostAd();
+      postFromWelcome();
     });
     document.getElementById('obOverlay').addEventListener('click', function() {
       if (_tourActive) endTour(false);
       else finishWelcome();
     });
     document.addEventListener('keydown', welcomeKeys);
+  }
+
+  // Resume this CTA only after its auth dialog closes with a signed-in user.
+  // Closing while logged out cancels the intent; nothing persists across visits.
+  let _postAuthObserver = null;
+  function postFromWelcome() {
+    if (typeof openPostAd !== 'function') return;
+    if (_postAuthObserver) { _postAuthObserver.disconnect(); _postAuthObserver = null; }
+    const auth = document.getElementById('ovAuth');
+    if (!isLoggedIn() && auth) {
+      _postAuthObserver = new MutationObserver(function() {
+        if (auth.classList.contains('open')) return;
+        _postAuthObserver.disconnect();
+        _postAuthObserver = null;
+        if (isLoggedIn()) openPostAd();
+      });
+      _postAuthObserver.observe(auth, { attributes: true, attributeFilter: ['class'] });
+    }
+    try { openPostAd(); }
+    finally {
+      if (_postAuthObserver && !auth.classList.contains('open')) {
+        _postAuthObserver.disconnect();
+        _postAuthObserver = null;
+      }
+    }
   }
 
   function trapFocus(e, dialog) {
