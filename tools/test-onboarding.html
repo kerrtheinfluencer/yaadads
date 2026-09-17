@@ -59,6 +59,19 @@ if (mode !== 'preview') setTimeout(function() {
   const tab = new KeyboardEvent('keydown', {key:'Tab', bubbles:true, cancelable:true});
   document.dispatchEvent(tab); check('Tab stays inside dialog', tab.defaultPrevented && document.activeElement === q('obSkip'));
   click('obSkip');
+  // Regression: the "What's new" modal never carries an .open class, so the
+  // guard must treat the bare #suOverlay element as "modal present".
+  const su = document.createElement('div'); su.id = 'suOverlay'; su.className = 'su-overlay'; document.body.appendChild(su);
+  start(); check('replay blocked while "What\'s new" modal exists', !welcome());
+  su.remove(); start(); click('obSkip');
+  // Regression: watchdog must release the scroll lock if the tour root is removed.
+  startTourTest();
+  q('obRoot').remove();
+  setTimeout(function() {
+    try { check('watchdog releases scroll lock if tour root is removed', !document.body.classList.contains('ob-locked')); }
+    catch (e2) { check('watchdog unlock check errored: ' + e2, false); }
+    q('out').textContent = 'ONBOARDING: ' + (results.every(r=>r.ok) ? 'PASS' : 'FAIL') + '\n' + JSON.stringify(results, null, 2);
+  }, 6500);
  } catch(e) { check('no runtime errors: ' + e.stack, false); }
  q('out').textContent = 'ONBOARDING: ' + (results.every(r=>r.ok) ? 'PASS' : 'FAIL') + '\n' + JSON.stringify(results, null, 2);
 }, 3000);

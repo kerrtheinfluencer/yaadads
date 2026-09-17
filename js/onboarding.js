@@ -368,10 +368,10 @@ const OB = (function() {
     clearTimeout(_tourWatchdog);
     if (_root) {
       _root.classList.remove('ob-tour-open');
-      document.getElementById('obSpotlight').classList.remove('show');
+      const spot = document.getElementById('obSpotlight');
+      if (spot) spot.classList.remove('show');
       const tip = document.getElementById('obTip');
-      tip.classList.remove('show');
-      tip.hidden = true;
+      if (tip) { tip.classList.remove('show'); tip.hidden = true; }
     }
     document.body.classList.remove('ob-locked');
     if (completed) {
@@ -609,7 +609,7 @@ const OB = (function() {
     let attempts = 0;
     function offerWelcome() {
       if (flag(K.onboarded) || _tourActive || (_root && _root.classList.contains('ob-welcome-open'))) return;
-      if (document.querySelector('.overlay.open, .su-overlay.open') || document.body.classList.contains('ai-sheet-open') || document.hidden) {
+      if (document.querySelector('.overlay.open, #suOverlay') || document.body.classList.contains('ai-sheet-open') || document.hidden) {
         if (++attempts < 30) setTimeout(offerWelcome, 2000);
         return;
       }
@@ -621,7 +621,8 @@ const OB = (function() {
   // Public: replay the tour from the footer link
   function startOnboarding() {
     if (_tourActive || (_root && _root.classList.contains('ob-welcome-open'))) return;
-    if (document.querySelector('.overlay.open, .su-overlay.open') || document.body.classList.contains('ai-sheet-open')) return;
+    // The site-update modal never carries an .open class — check for the element itself
+    if (document.querySelector('.overlay.open, #suOverlay') || document.body.classList.contains('ai-sheet-open')) return;
     showWelcome();
   }
 
