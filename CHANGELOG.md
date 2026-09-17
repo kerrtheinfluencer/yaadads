@@ -5,7 +5,16 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 💬 v2.12 — Buyer reviews & comments on listings (Sep 17, 2026) · latest
+## ✨ v2.13 — More marketplace, less empty space (Sep 17, 2026) · latest
+
+A more compact homepage with the same green-and-gold glass finish. Shorter text, golden-ratio spacing and slimmer stats bring listings closer to the top.
+
+- Responsive headline and shorter introduction across phone, tablet and desktop
+- 13/21/34px spacing rhythm with preserved glass materials and gold accents
+- Single scrollable suggestion row with comfortable 44px touch targets
+- Slimmer stat chips without removing live counters
+
+## 💬 v2.12 — Buyer reviews & comments on listings (Sep 17, 2026)
 
 Each listing now has a place for buyer questions and reviews, with free buyer signup or your existing account. Posting becomes available once database setup is complete; until then the section clearly shows a setup notice.
 

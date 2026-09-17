@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v42', sw.includes('yaadadz-v42'));
+check('SW cache bumped to v43', sw.includes('yaadadz-v43'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
@@ -146,7 +146,7 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
-check('v2.11 home-view history preserved + buyer feedback set as current', suSrc.includes("'home-view'") && suSrc.includes("current: 'ad-feedback'") && suSrc.includes("version: 'v2.12'"));
+check('home-view and feedback history preserved + compact glass home current', suSrc.includes("'home-view'") && suSrc.includes("'ad-feedback'") && suSrc.includes("version: 'v2.12'") && suSrc.includes("current: 'compact-glass-home'") && suSrc.includes("version: 'v2.13'"));
 check('v2.10 post-pro entry shipped', suSrc.includes("'post-pro'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',

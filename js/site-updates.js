@@ -30,8 +30,22 @@
 
 
 var SITE_UPDATES = {
-  current: 'ad-feedback',
+  current: 'compact-glass-home',
   items: {
+    'compact-glass-home': {
+      version: 'v2.13',
+      icon: '✨',
+      title: 'More marketplace, less empty space',
+      body: 'A more compact homepage with the same green-and-gold glass finish. Shorter text, golden-ratio spacing and slimmer stats bring listings closer to the top.',
+      date: 'Sep 17, 2026',
+      notes: [
+        'Responsive headline and shorter introduction across phone, tablet and desktop',
+        '13/21/34px spacing rhythm with preserved glass materials and gold accents',
+        'Single scrollable suggestion row with comfortable 44px touch targets',
+        'Slimmer stat chips without removing live counters',
+      ],
+      url: '/',
+    },
     'ad-feedback': {
       version: 'v2.12',
       icon: '💬',
