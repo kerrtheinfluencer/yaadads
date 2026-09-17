@@ -30,8 +30,25 @@
 
 
 var SITE_UPDATES = {
-  current: 'home-view',
+  current: 'ad-feedback',
   items: {
+    'ad-feedback': {
+      version: 'v2.12',
+      icon: '💬',
+      title: 'Buyer reviews & comments on listings',
+      body: 'Each listing now has a place for buyer questions and reviews, with free buyer signup or your existing account. Posting becomes available once database setup is complete; until then the section clearly shows a setup notice.',
+      date: 'Sep 17, 2026',
+      notes: [
+        'Reviews and comments sections on listing pages, including brand-new ads',
+        'Google or email buyer signup directly on the listing — no ad or phone number required',
+        'Posting requires a real signed-in session; email confirmation is respected',
+        'One 1–5 star review per member per ad, with own-post deletion and abuse reporting after database activation',
+        'Reviews are member opinions, not verified purchases; existing browser-only seller ratings are not imported',
+        'Deployment note: database migration must be applied before public posting is available',
+        'Desktop homepage hero has less empty space; mobile and tablet spacing is unchanged',
+      ],
+      url: '/',
+    },
     'home-view': {
       version: 'v2.11',
       icon: '📱',

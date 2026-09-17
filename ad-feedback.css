@@ -1,0 +1,16 @@
+.ad-feedback { margin: 24px 0; padding: 24px; border: 1px solid var(--border, #355343); border-radius: 20px; background: var(--surface, #10291e); color: var(--text, #edf5ef); font: 16px/1.6 'DM Sans', system-ui, sans-serif; overflow-wrap: anywhere; }
+.ad-feedback h2, .ad-feedback h3 { margin: 0 0 12px; color: inherit; }
+.ad-feedback p { margin: 12px 0; white-space: pre-wrap; }
+.ad-feedback [hidden] { display: none !important; }
+.ad-feedback label { display: block; margin: 12px 0; }
+.ad-feedback input, .ad-feedback select, .ad-feedback textarea { display: block; box-sizing: border-box; width: 100%; margin-top: 6px; padding: 12px; border: 1px solid #648675; border-radius: 10px; background: #10291e; color: #fff; font: inherit; }
+.ad-feedback textarea { resize: vertical; }
+.ad-feedback button { min-height: 44px; padding: 10px 16px; border: 1px solid #648675; border-radius: 12px; background: #174d35; color: #fff; font: inherit; cursor: pointer; }
+.ad-feedback button[aria-pressed="true"], .ad-feedback button[type="submit"] { background: #f4c300; color: #10291e; font-weight: 700; }
+.ad-feedback button:disabled { opacity: .55; cursor: wait; }
+.ad-feedback :focus-visible { outline: 3px solid #f4c300; outline-offset: 3px; }
+.feedback-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.ad-feedback article, .feedback-account { padding: 18px 0; border-top: 1px solid #355343; }
+.ad-feedback time { display: block; font-size: 13px; color: #b1c9bb; }
+.ad-feedback article label { display: inline-block; margin-right: 10px; font-size: 13px; }
+@media (max-width: 600px) { .ad-feedback { padding: 16px; border-radius: 16px; } }

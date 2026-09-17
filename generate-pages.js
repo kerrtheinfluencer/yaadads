@@ -1035,6 +1035,8 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
         </div>
       </div>
 
+      ${require('./tools/ad-feedback-markup')(ad)}
+
       <!-- AdSense in-content — only shown on listings with real content -->
       ${(ad.desc && ad.desc.trim().length > 30 && photos.length > 0) ? `
       <div class="ad-slot-wrap">

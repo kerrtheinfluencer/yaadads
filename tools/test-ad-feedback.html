@@ -1,0 +1,71 @@
+<!doctype html><meta charset="utf-8"><title>Feedback browser tests</title>
+<link rel="stylesheet" href="../ad-feedback.css">
+<div id="fixture"></div><pre id="results">RUNNING</pre>
+<script src="../js/ad-feedback.js"></script>
+<script>
+(async function () {
+  const output = document.getElementById('results');
+  const checks = [];
+  function check(name, ok) { checks.push((ok ? 'PASS ' : 'FAIL ') + name); if (!ok) throw new Error(name); }
+  const settle = () => new Promise(resolve => setTimeout(resolve, 40));
+  let user = null, callback, missing = false, writes = [], rows = [], session = null, signupOptions;
+  const db = {
+    auth: {
+      getUser: async () => ({ data: { user }, error: user ? null : { message: 'Sign in' } }),
+      getSession: async () => ({ data: { session } }),
+      onAuthStateChange: fn => { callback = fn; return { data: { subscription: { unsubscribe() {} } } }; },
+      signUp: async options => { signupOptions = options; return { data: { session: null } }; },
+      signInWithPassword: async () => ({ data: { session: { user: { id: 'buyer', user_metadata: { name: 'Buyer' } } } } }),
+      signInWithOAuth: async () => ({ error: null })
+    },
+    from(table) {
+      let operation = 'read', payload;
+      const q = {
+        select() { return q; }, eq() { return q; }, order() { return q; }, range() { return q; },
+        insert(value) { operation = 'insert'; payload = value; return q; },
+        delete() { operation = 'delete'; return q; },
+        then(resolve) {
+          if (operation !== 'read') writes.push({ table, operation, payload });
+          return Promise.resolve(missing ? { error: { code: 'PGRST205' } } : { data: rows, count: rows.length }).then(resolve);
+        }
+      };
+      return q;
+    }
+  };
+  const fixture = document.getElementById('fixture');
+  const root = document.createElement('section'); root.dataset.adId = 'ad1'; root.dataset.sellerId = 'seller'; fixture.append(root);
+  const findButton = text => [...root.querySelectorAll('button')].find(b => b.textContent === text);
+  const postingForm = () => root.querySelector('textarea').closest('form');
+  const send = form => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  try {
+    window.AdFeedback.mount(root, db); await settle();
+    check('Guests see buyer signup and cannot see posting form', root.textContent.includes('Join free as a buyer') && postingForm().hidden);
+    const auth = root.querySelector('.feedback-account form');
+    auth.querySelector('input[type=text]').value = 'New buyer';
+    auth.querySelector('input[type=email]').value = 'buyer@example.com';
+    auth.querySelector('input[type=password]').value = 'test-password';
+    send(auth); await settle();
+    check('Signup uses Supabase and buyer metadata', signupOptions.options.data.account_type === 'buyer');
+    check('Email confirmation does not authenticate prematurely', postingForm().hidden && root.textContent.includes('Check your email'));
+    user = { id: 'buyer', user_metadata: { name: 'Buyer' } }; callback('SIGNED_IN', { user }); await settle();
+    check('Signed-in buyer sees composer', !postingForm().hidden);
+    root.querySelector('textarea').value = 'Is this available?'; send(postingForm()); await settle();
+    check('Comment uses verified author and current ad', writes.length === 1 && writes[0].payload.author_id === 'buyer' && writes[0].payload.ad_id === 'ad1' && writes[0].payload.rating === null);
+    findButton('Reviews').click(); await settle();
+    root.querySelector('textarea').value = 'Helpful seller'; send(postingForm()); await settle();
+    check('Review includes rating', writes[1].payload.kind === 'review' && writes[1].payload.rating === 5);
+    user = { id: 'seller' }; callback('SIGNED_IN', { user }); await settle();
+    root.querySelector('textarea').value = 'Own listing'; send(postingForm()); await settle();
+    check('Seller self-review blocked', writes.length === 2 && root.textContent.includes('cannot review your own'));
+    user = null; callback('SIGNED_OUT', null); await settle();
+    send(postingForm()); await settle();
+    check('Expired session cannot post', writes.length === 2);
+    rows = [{ id: 'post1', author_id: 'buyer', author_name: '<b>Buyer</b>', body: '<img src=x onerror=alert(1)>', rating: 5, created_at: new Date().toISOString() }];
+    findButton('Refresh').click(); await settle();
+    check('Feedback rendered as text, not HTML', !root.querySelector('article img') && root.querySelector('article').textContent.includes('<img'));
+    missing = true; findButton('Refresh').click(); await settle();
+    check('Missing database shows setup notice and disables posting', root.textContent.includes('being set up') && postingForm().querySelector('button').disabled);
+    output.textContent = checks.join('\n') + '\nALL PASSED';
+  } catch (error) { output.textContent = checks.join('\n') + '\nFAILED: ' + error.message; }
+})();
+</script>

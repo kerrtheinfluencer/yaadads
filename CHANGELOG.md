@@ -5,7 +5,19 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 📱 v2.11 — One listing at a time on your phone (Sep 15, 2026) · latest
+## 💬 v2.12 — Buyer reviews & comments on listings (Sep 17, 2026) · latest
+
+Each listing now has a place for buyer questions and reviews, with free buyer signup or your existing account. Posting becomes available once database setup is complete; until then the section clearly shows a setup notice.
+
+- Reviews and comments sections on listing pages, including brand-new ads
+- Google or email buyer signup directly on the listing — no ad or phone number required
+- Posting requires a real signed-in session; email confirmation is respected
+- One 1–5 star review per member per ad, with own-post deletion and abuse reporting after database activation
+- Reviews are member opinions, not verified purchases; existing browser-only seller ratings are not imported
+- Deployment note: database migration must be applied before public posting is available
+- Desktop homepage hero has less empty space; mobile and tablet spacing is unchanged
+
+## 📱 v2.11 — One listing at a time on your phone (Sep 15, 2026)
 
 The home feed on mobile now shows one big, beautiful listing per screen — full-width photos, easier reading, less squinting. Prefer the compact look? Tap the new layout switch beside the sort dropdown to flip to the classic two-column grid, and we remember your choice. Best part: listings keep loading as you scroll — no more Load More button, just keep scrolling.
 

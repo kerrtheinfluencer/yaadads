@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v41', sw.includes('yaadadz-v41'));
+check('SW cache bumped to v42', sw.includes('yaadadz-v42'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
@@ -146,7 +146,7 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
-check('v2.11 home-view entry shipped + set as current', suSrc.includes("'home-view'") && suSrc.includes("current: 'home-view'"));
+check('v2.11 home-view history preserved + buyer feedback set as current', suSrc.includes("'home-view'") && suSrc.includes("current: 'ad-feedback'") && suSrc.includes("version: 'v2.12'"));
 check('v2.10 post-pro entry shipped', suSrc.includes("'post-pro'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',
@@ -219,6 +219,12 @@ const clWf = fs.existsSync('.github/workflows/changelog.yml') ? fs.readFileSync(
 check('CI changelog auto-update workflow ships with push permission',
   clWf.includes('contents: write') && clWf.includes("'js/site-updates.js'") && clWf.includes('git push'));
 check('npm run changelog:check available (stale-changelog guard)', pkgRaw.includes('"changelog:check"'));
+
+try {
+  execSync('node tools/test-ad-feedback.js', { stdio: 'pipe' });
+  check('buyer feedback integration on every listing', true);
+} catch (e) { check('buyer feedback integration on every listing', false, String(e.message)); }
+
 
 console.log('\n' + (failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED'));
 process.exit(failures === 0 ? 0 : 1);
