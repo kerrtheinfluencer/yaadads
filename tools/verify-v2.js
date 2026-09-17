@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v43', sw.includes('yaadadz-v43'));
+check('SW cache bumped to v44', sw.includes('yaadadz-v44'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
@@ -178,6 +178,16 @@ check('build-changelog tool exists', fs.existsSync('tools/build-changelog.js'));
       cl.includes('Auto-generated from `js/site-updates.js`') && clCount >= entryCount && (curVer ? cl.includes(curVer) : true));
   } catch (e) { check('CHANGELOG.md regenerated + current version present', false, 'build-changelog.js failed'); }
 })();
+
+// 6g. Release notes are member-facing: no credentials, internal file paths or
+//     database migration details may leak into the public changelog.
+check('release notes carry no private details (tools/changelog-privacy.js)', (function () {
+  try {
+    const { assertPublicNotes } = require('./changelog-privacy.js');
+    assertPublicNotes(fs.readFileSync('CHANGELOG.md', 'utf8'));
+    return true;
+  } catch (e) { return false; }
+})());
 
 // 7. JS modules syntax
 for (const f of fs.readdirSync('js')) {

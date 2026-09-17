@@ -17,6 +17,9 @@ on:
     paths:
       - 'js/site-updates.js'
       - 'tools/build-changelog.js'
+      - 'tools/changelog-privacy.js'
+      - 'tools/test-changelog-privacy.js'
+      - '.githooks/pre-commit'
       - '.github/workflows/changelog.yml'
   workflow_dispatch:
 
@@ -43,8 +46,14 @@ jobs:
 
       # No npm ci on purpose: build-changelog.js is dependency-free, and skipping
       # it keeps npm's "prepare" hook installer out of this job entirely.
+      - name: Test release-note privacy safeguards
+        run: node tools/test-changelog-privacy.js
+
       - name: Regenerate CHANGELOG.md from SITE_UPDATES
         run: node tools/build-changelog.js
+
+      - name: Ensure release notes carry no private details
+        run: node -e "const {assertPublicNotes}=require('./tools/changelog-privacy'); const s=require('fs').readFileSync('CHANGELOG.md','utf8'); assertPublicNotes(s);"
 
       - name: Commit and push the changelog if it changed
         run: |

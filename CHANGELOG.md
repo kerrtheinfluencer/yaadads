@@ -16,14 +16,14 @@ A more compact homepage with the same green-and-gold glass finish. Shorter text,
 
 ## 💬 v2.12 — Buyer reviews & comments on listings (Sep 17, 2026)
 
-Each listing now has a place for buyer questions and reviews, with free buyer signup or your existing account. Posting becomes available once database setup is complete; until then the section clearly shows a setup notice.
+Each listing now has a place for buyer questions and reviews, with free buyer signup or your existing account. Posting is rolling out; the section shows an availability notice until it is ready.
 
 - Reviews and comments sections on listing pages, including brand-new ads
 - Google or email buyer signup directly on the listing — no ad or phone number required
 - Posting requires a real signed-in session; email confirmation is respected
-- One 1–5 star review per member per ad, with own-post deletion and abuse reporting after database activation
+- One 1–5 star review per member per ad, with own-post deletion and abuse reporting as posting becomes available
 - Reviews are member opinions, not verified purchases; existing browser-only seller ratings are not imported
-- Deployment note: database migration must be applied before public posting is available
+- If posting is not yet available, the reviews section shows a clear notice
 - Desktop homepage hero has less empty space; mobile and tablet spacing is unchanged
 
 ## 📱 v2.11 — One listing at a time on your phone (Sep 15, 2026)
@@ -64,7 +64,6 @@ When yuh post a new ad, tapping it now shows the listing right away — no more 
 - New ads render instantly in-app — the old reload loop (waiting up to 2 hours for the generator) is gone
 - Thumbnails, galleries and "similar listings" now use size-optimised photos
 - Fonts no longer block first paint — ad pages and the homepage open sooner
-- Optional: instant static pages after posting (supabase-migration-3-instant-page-regen.sql)
 
 ## 🗞️ v2.4 — Updates keep their own history (Sep 11, 2026)
 

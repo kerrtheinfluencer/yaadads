@@ -7,13 +7,19 @@
  * Enabled once per clone with `npm run hooks:install` (that also runs from
  * `npm install` via the "prepare" script, so it is automatic for everyone).
  *
- * Rules: never blocks a commit, never fails a commit. If anything goes wrong
- * (no node, no git, bad SITE_UPDATES entry) the commit continues untouched and
- * .github/workflows/changelog.yml fixes it on push instead. */
+ * Privacy failures block the commit. Validate staged and working-tree release
+ * notes, regenerate the changelog, then stage the validated output.
+ * CI repeats validation; it is not a substitute for pre-push review. */
 'use strict';
 const { execFileSync } = require('child_process');
+const { assertPublicNotes } = require('../tools/changelog-privacy');
 
 try {
+  for (const file of ['js/site-updates.js', 'CHANGELOG.md']) {
+    assertPublicNotes(execFileSync('git', ['show', ':' + file], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    }));
+  }
   execFileSync(process.execPath, ['tools/build-changelog.js'], {
     cwd: process.cwd(),
     encoding: 'utf8',
@@ -22,7 +28,7 @@ try {
   execFileSync('git', ['add', 'CHANGELOG.md'], { stdio: 'ignore' });
   console.log('[pre-commit] CHANGELOG.md regenerated + staged (auto-update)');
 } catch (e) {
-  console.log('[pre-commit] changelog auto-update skipped (CI will fix it): ' +
-    String((e && (e.stderr || e.message)) || e).split('\n')[0]);
+  console.error('[pre-commit] Release-note validation or generation failed. Review locally; content is not logged.');
+  process.exit(1);
 }
 process.exit(0);
