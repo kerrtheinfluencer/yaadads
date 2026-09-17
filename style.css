@@ -470,7 +470,7 @@ nav.scrolled-transparent {
   transition: padding 0.2s ease, min-height 0.2s ease;
   /* iOS 27 premium glass */
   margin-top: calc(-1 * (var(--nav-h) + 24px));
-  padding: calc(104px + var(--nav-h)) 24px 72px;
+  padding: calc(64px + var(--nav-h)) 24px 48px;
   background:
     linear-gradient(145deg, rgba(8,31,22,.78), rgba(0,92,53,.58)),
     radial-gradient(circle at 22% 24%, rgba(244,195,0,.28), transparent 28rem),

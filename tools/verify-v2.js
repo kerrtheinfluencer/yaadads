@@ -51,7 +51,7 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v39', sw.includes('yaadadz-v39'));
+check('SW cache bumped to v41', sw.includes('yaadadz-v41'));
 check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
