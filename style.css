@@ -4893,6 +4893,8 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .pp-field-msg {
   font-size: 11.5px; font-weight: 600; color: #ff8a8a;
   max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height var(--dur-2) var(--ease-premium), opacity var(--dur-2) ease;
+}
 /* ═══════════════════════════════════════════════════════════════════════════
    §CHAT-V2-CSS — the v2 AI chat (js/ai-chat-v2.js + the AiChat renderer in
    js/search-ai.js). Everything lives inside .ai-sheet.ai-v2 / .ai-float-chat
@@ -4988,8 +4990,6 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   .ai-caret { animation: none; opacity: 1; }
 }
 
-  transition: max-height var(--dur-2) var(--ease-premium), opacity var(--dur-2) ease;
-}
 .pp-field-msg.show { max-height: 36px; opacity: 1; margin-top: 4px; }
 .form-inp.pp-bad { border-color: rgba(255, 138, 138, .8) !important; }
 .form-inp.pp-filled { animation: ppPulse .9s var(--ease-premium) 1; border-color: rgba(110, 231, 160, .65) !important; }

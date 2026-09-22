@@ -1259,7 +1259,7 @@ if ('serviceWorker' in navigator) {
         placeholder="Search listings or ask a question…"
         onkeydown="aiFloatKeydown(event)">
       <button class="ai-float-mic" id="floatMicBtn" type="button" onclick="aiVoiceInput('floatInput')" title="Speak your search" aria-label="Speak your search">🎙️</button>
-      <button class="ai-float-send" onclick="floatSubmit()" aria-label="Send">↑</button>
+      <button class="ai-float-send" id="floatSendBtn" onclick="floatSubmit()" aria-label="Send">↑</button>
     </div>
     <button class="ai-float-full" onclick="aiFloatOpenFull()" type="button">Open the full chat ↗</button>
   </div>
