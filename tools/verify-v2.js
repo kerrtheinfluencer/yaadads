@@ -183,6 +183,16 @@ check('build-changelog tool exists', fs.existsSync('tools/build-changelog.js'));
   } catch (e) { check('CHANGELOG.md regenerated + current version present', false, 'build-changelog.js failed'); }
 })();
 
+// 6g. Release notes are member-facing: no credentials, internal file paths or
+//     database migration details may leak into the public changelog.
+check('release notes carry no private details (tools/changelog-privacy.js)', (function () {
+  try {
+    const { assertPublicNotes } = require('./changelog-privacy.js');
+    assertPublicNotes(fs.readFileSync('CHANGELOG.md', 'utf8'));
+    return true;
+  } catch (e) { return false; }
+})());
+
 // 7. JS modules syntax
 for (const f of fs.readdirSync('js')) {
   if (!f.endsWith('.js')) continue;
@@ -223,6 +233,12 @@ const clWf = fs.existsSync('.github/workflows/changelog.yml') ? fs.readFileSync(
 check('CI changelog auto-update workflow ships with push permission',
   clWf.includes('contents: write') && clWf.includes("'js/site-updates.js'") && clWf.includes('git push'));
 check('npm run changelog:check available (stale-changelog guard)', pkgRaw.includes('"changelog:check"'));
+
+try {
+  execSync('node tools/test-ad-feedback.js', { stdio: 'pipe' });
+  check('buyer feedback integration on every listing', true);
+} catch (e) { check('buyer feedback integration on every listing', false, String(e.message)); }
+
 
 console.log('\n' + (failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED'));
 process.exit(failures === 0 ? 0 : 1);

@@ -127,7 +127,6 @@ var SITE_UPDATES = {
         'New ads render instantly in-app — the old reload loop (waiting up to 2 hours for the generator) is gone',
         'Thumbnails, galleries and "similar listings" now use size-optimised photos',
         'Fonts no longer block first paint — ad pages and the homepage open sooner',
-        'Optional: instant static pages after posting (supabase-migration-3-instant-page-regen.sql)',
       ],
       url: '/',
     },

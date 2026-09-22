@@ -12,6 +12,7 @@
  * changelog:check` fails if the file is stale. */
 const fs = require('fs');
 const path = require('path');
+const { assertPublicNotes } = require('./changelog-privacy');
 
 const ROOT = path.join(__dirname, '..');
 const SU_PATH = path.join(ROOT, 'js', 'site-updates.js');
@@ -74,6 +75,11 @@ function parseUpdates(src) {
     current: e.id === cur,
   }));
   items.sort((a, b) => dateNum(b.date) - dateNum(a.date));
+  // Member-facing text only: reject entries that look like credentials,
+  // internal paths or database internals before they reach the changelog.
+  for (const it of items) {
+    assertPublicNotes([it.title, it.body].concat(it.notes).join('\n'));
+  }
   return { current: cur, items };
 }
 
@@ -99,9 +105,12 @@ function renderMd(current, items) {
 
 try {
   const src = fs.readFileSync(SU_PATH, 'utf8');
+  assertPublicNotes(src); // Includes comments, metadata and links shipped to browsers.
   const { current, items } = parseUpdates(src);
   if (!items.length) throw new Error('No SITE_UPDATES entries parsed');
-  fs.writeFileSync(OUT_PATH, renderMd(current, items));
+  const markdown = renderMd(current, items);
+  assertPublicNotes(markdown);
+  fs.writeFileSync(OUT_PATH, markdown);
   console.log('CHANGELOG.md regenerated — ' + items.length + ' entries (current: ' + current + ')');
 } catch (e) {
   console.error('build-changelog failed: ' + e.message);

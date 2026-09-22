@@ -130,6 +130,11 @@ function showAdInline(ad) {
 
   var el = document.getElementById('detailPage');
   el.innerHTML = html;
+  var feedback = document.createElement('section');
+  feedback.dataset.adId = ad.id;
+  feedback.dataset.sellerId = ad.sellerId || '';
+  el.querySelector('.detail-body').appendChild(feedback);
+  if (window.AdFeedback) window.AdFeedback.mount(feedback, _db);
   goPage('detail');
   window.scrollTo(0, 0);
 

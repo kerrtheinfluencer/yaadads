@@ -5296,6 +5296,62 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   .pp-tour-p { font-size: 12.5px; }
 }
 
+/* §COMPACT-HERO — golden spacing (13/21/34), not a fixed-height banner.
+   Keep the liquid-glass materials and let text wrap at zoom/small widths.
+   Scope expanded spacing so the existing search collapse remains intact. */
+#page-home .hero:not(.searched) {
+  padding: calc(var(--nav-h) + var(--fib-7)) var(--fib-6) var(--fib-6);
+}
+#page-home .hero:not(.searched) h1 {
+  font-size: clamp(var(--fib-7), 4.5vw, var(--fib-8));
+  margin-bottom: var(--fib-5);
+  line-height: 1.18;
+}
+#page-home .hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: .1em;
+  padding: var(--fib-4) var(--fib-5);
+  margin-bottom: var(--fib-5);
+}
+#page-home .hero:not(.searched) .hero-sub {
+  max-width: 610px;
+  margin-bottom: var(--fib-6);
+  line-height: var(--phi);
+}
+#page-home .ai-suggestions {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto var(--fib-6);
+  padding: 4px;
+  gap: var(--fib-4);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.25) transparent;
+}
+#page-home .ai-sug { flex-shrink: 0; min-height: 44px; }
+#page-home .ai-sug:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+#page-home .hero-stats { gap: var(--fib-4); }
+#page-home .hero-stats > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fib-3);
+  min-width: 0;
+  padding: var(--fib-4) var(--fib-5);
+  border-radius: var(--fib-5);
+}
+#page-home .hero-stat-num { font-size: var(--fib-6); }
+#page-home .hero-stat-lbl { font-size: 11px; letter-spacing: 0; text-transform: none; margin-top: 0; }
+@media (max-width: 640px) {
+  #page-home .hero:not(.searched) { padding: calc(56px + var(--fib-7)) var(--fib-5) var(--fib-6); }
+  #page-home .hero:not(.searched) h1 { font-size: clamp(28px, 8vw, var(--fib-7)); }
+  #page-home .hero-eyebrow { font-size: 10px; }
+  /* Secondary stats repeat the intro or do not help buyers choose an ad. */
+  #page-home .hero-stats > div:nth-child(3),
+  #page-home .hero-stats > div:nth-child(4) { display: none; }
+}
+
 /* First-visit quick start — the same green/gold material as Post-Ad Pro. */
 #obRoot [hidden] { display: none !important; }
 #obRoot button { min-height: 44px; }
