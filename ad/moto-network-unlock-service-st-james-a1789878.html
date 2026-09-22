@@ -814,7 +814,7 @@ Feel free to buy Tracfone devices and resell 👌</p>
         <div class="ad-meta-tags">
           <span class="meta-tag">📍 St. James</span>
           <span class="meta-tag">🚗 Vehicles</span>
-          <span class="meta-tag">🕐 Yesterday</span>
+          <span class="meta-tag">🕐 2 days ago</span>
           <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">6</span> views</span>
           <span class="status-badge active">● Available</span>
         </div>
@@ -857,6 +857,14 @@ Feel free to buy Tracfone devices and resell 👌</p>
   <div class="similar-section">
     <h2 class="similar-heading">Similar listings</h2>
     <div class="similar-grid">
+      <a class="sim-card" href="https://yaadadz.com/ad/mercedes-190sl-roadster-year-1955-1963-st-ann-a1790068.html">
+        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/f11e384e-3270-4be2-9370-c58d9c389a9f/1790068753440_yxeek8.jpg?width=360&amp;quality=65" alt="Mercedes 190SL Roadster year (1955-1963)" loading="lazy"></div>
+        <div class="sim-body">
+          <div class="sim-price">J$2</div>
+          <div class="sim-title">Mercedes 190SL Roadster year (1955-1963)</div>
+          <div class="sim-meta">📍 St. Ann · Today</div>
+        </div>
+      </a>
       <a class="sim-card" href="https://yaadadz.com/ad/toyota-fortuner-2018-st-andrew-a1785325.html">
         <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/99619ca4-4da4-4e58-a9f5-af055170e5ed/1785325923464_hqaxyq.jpg?width=360&amp;quality=65" alt="Toyota Fortuner 2018" loading="lazy"></div>
         <div class="sim-body">
@@ -878,14 +886,6 @@ Feel free to buy Tracfone devices and resell 👌</p>
         <div class="sim-body">
           <div class="sim-price">J$3,962,000</div>
           <div class="sim-title">Toyota Land Cruisers</div>
-          <div class="sim-meta">📍 Kingston · 2 months ago</div>
-        </div>
-      </a>
-      <a class="sim-card" href="https://yaadadz.com/ad/2021-toyota-yaris-kingston-a1784391.html">
-        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/da84e67c-9f8b-442f-afa9-6539c3f6a479/1784391331299_2giuif.jpg?width=360&amp;quality=65" alt="2021 Toyota Yaris" loading="lazy"></div>
-        <div class="sim-body">
-          <div class="sim-price">J$2,180,000</div>
-          <div class="sim-title">2021 Toyota Yaris</div>
           <div class="sim-meta">📍 Kingston · 2 months ago</div>
         </div>
       </a></div>
@@ -1149,7 +1149,17 @@ Feel free to buy Tracfone devices and resell 👌 Price is J$8,000 firm.</p>
     }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
-    function dbg(msg) { console.log('[YaadAdz views]', msg); }
+    /* §DEBUG-GATE — console output ships only when the visitor opts in
+       (?debug=1 or localStorage ya_debug=1). Production stays silent so
+       ordinary visits never leak internals to DevTools. */
+    function yaDebugOn() {
+      try {
+        if (localStorage.getItem('ya_debug') === '1') return true;
+        if (typeof location !== 'undefined' && /(?:?|&)debug=1(?:&|$)/.test(location.search || '')) return true;
+      } catch (e) {}
+      return false;
+    }
+    function dbg(msg) { if (yaDebugOn()) { try { console.log('[YaadAdz views]', msg); } catch (e) {} } }
 
     // Fetch current count first
     fetch(BASE + '/ads?id=eq.' + adId + '&select=views', { headers: H })

@@ -766,7 +766,7 @@ Includes:
         <div class="ad-meta-tags">
           <span class="meta-tag">📍 St. Ann</span>
           <span class="meta-tag">🎵 Music & Arts</span>
-          <span class="meta-tag">🕐 9 days ago</span>
+          <span class="meta-tag">🕐 10 days ago</span>
           <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">25</span> views</span>
           <span class="status-badge active">● Available</span>
         </div>
@@ -802,12 +802,20 @@ Includes:
   <div class="similar-section">
     <h2 class="similar-heading">Similar listings</h2>
     <div class="similar-grid">
+      <a class="sim-card" href="https://yaadadz.com/ad/mercedes-190sl-roadster-year-1955-1963-st-ann-a1790068.html">
+        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/f11e384e-3270-4be2-9370-c58d9c389a9f/1790068753440_yxeek8.jpg?width=360&amp;quality=65" alt="Mercedes 190SL Roadster year (1955-1963)" loading="lazy"></div>
+        <div class="sim-body">
+          <div class="sim-price">J$2</div>
+          <div class="sim-title">Mercedes 190SL Roadster year (1955-1963)</div>
+          <div class="sim-meta">📍 St. Ann · Today</div>
+        </div>
+      </a>
       <a class="sim-card" href="https://yaadadz.com/ad/moto-network-unlock-service-st-james-a1789878.html">
         <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/3f66a147-056b-4ef2-8f2d-119fb6d33f1b/1789878451368_zs0as7.png?width=360&amp;quality=65" alt="Moto network unlock service" loading="lazy"></div>
         <div class="sim-body">
           <div class="sim-price">J$8,000</div>
           <div class="sim-title">Moto network unlock service</div>
-          <div class="sim-meta">📍 St. James · Yesterday</div>
+          <div class="sim-meta">📍 St. James · 2 days ago</div>
         </div>
       </a>
       <a class="sim-card" href="https://yaadadz.com/ad/need-your-air-conditioner-repaired-or-installed-st-catherine-a1789636.html">
@@ -815,7 +823,7 @@ Includes:
         <div class="sim-body">
           <div class="sim-price">J$10,000</div>
           <div class="sim-title">❄️ NEED YOUR AIR CONDITIONER REPAIRED OR INSTALLED?</div>
-          <div class="sim-meta">📍 St. Catherine · 4 days ago</div>
+          <div class="sim-meta">📍 St. Catherine · 5 days ago</div>
         </div>
       </a>
       <a class="sim-card" href="https://yaadadz.com/ad/books-st-catherine-a1789157.html">
@@ -824,14 +832,6 @@ Includes:
           <div class="sim-price">J$10,000</div>
           <div class="sim-title">Books</div>
           <div class="sim-meta">📍 St. Catherine · 10 days ago</div>
-        </div>
-      </a>
-      <a class="sim-card" href="https://yaadadz.com/ad/iphone-12-for-sale-clarendon-a1788759.html">
-        <div class="sim-img"><img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/d265fbaa-c0a7-4532-9c74-ce0eac5689fa/1788759873724_wntsly.jpg?width=360&amp;quality=65" alt="iPhone 12  for sale" loading="lazy"></div>
-        <div class="sim-body">
-          <div class="sim-price">J$29,999</div>
-          <div class="sim-title">iPhone 12  for sale</div>
-          <div class="sim-meta">📍 Clarendon · 14 days ago</div>
         </div>
       </a></div>
     <div style="text-align:center;margin-top:20px">
@@ -1086,7 +1086,17 @@ Includes:
     }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
-    function dbg(msg) { console.log('[YaadAdz views]', msg); }
+    /* §DEBUG-GATE — console output ships only when the visitor opts in
+       (?debug=1 or localStorage ya_debug=1). Production stays silent so
+       ordinary visits never leak internals to DevTools. */
+    function yaDebugOn() {
+      try {
+        if (localStorage.getItem('ya_debug') === '1') return true;
+        if (typeof location !== 'undefined' && /(?:?|&)debug=1(?:&|$)/.test(location.search || '')) return true;
+      } catch (e) {}
+      return false;
+    }
+    function dbg(msg) { if (yaDebugOn()) { try { console.log('[YaadAdz views]', msg); } catch (e) {} } }
 
     // Fetch current count first
     fetch(BASE + '/ads?id=eq.' + adId + '&select=views', { headers: H })

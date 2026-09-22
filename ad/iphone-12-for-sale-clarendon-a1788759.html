@@ -785,7 +785,7 @@ Number 802-3213</p>
         <div class="ad-meta-tags">
           <span class="meta-tag">📍 Clarendon</span>
           <span class="meta-tag">📱 Electronics</span>
-          <span class="meta-tag">🕐 14 days ago</span>
+          <span class="meta-tag">🕐 15 days ago</span>
           <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">24</span> views</span>
           <span class="status-badge active">● Available</span>
         </div>
@@ -857,7 +857,7 @@ Number 802-3213</p>
         <div class="sim-body">
           <div class="sim-price">J$890,000</div>
           <div class="sim-title">Reverse osmosis water filtration system + sink and 4 fossets</div>
-          <div class="sim-meta">📍 St. Catherine · 18 days ago</div>
+          <div class="sim-meta">📍 St. Catherine · 19 days ago</div>
         </div>
       </a></div>
     <div style="text-align:center;margin-top:20px">
@@ -1107,7 +1107,17 @@ Number 802-3213 The asking price of J$29,999 is negotiable.</p>
     }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
-    function dbg(msg) { console.log('[YaadAdz views]', msg); }
+    /* §DEBUG-GATE — console output ships only when the visitor opts in
+       (?debug=1 or localStorage ya_debug=1). Production stays silent so
+       ordinary visits never leak internals to DevTools. */
+    function yaDebugOn() {
+      try {
+        if (localStorage.getItem('ya_debug') === '1') return true;
+        if (typeof location !== 'undefined' && /(?:?|&)debug=1(?:&|$)/.test(location.search || '')) return true;
+      } catch (e) {}
+      return false;
+    }
+    function dbg(msg) { if (yaDebugOn()) { try { console.log('[YaadAdz views]', msg); } catch (e) {} } }
 
     // Fetch current count first
     fetch(BASE + '/ads?id=eq.' + adId + '&select=views', { headers: H })
