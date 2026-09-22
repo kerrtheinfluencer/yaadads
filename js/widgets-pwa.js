@@ -87,17 +87,20 @@ function toggleFloatChat() {
   document.getElementById('aiFloatChat').classList.toggle('open', _floatOpen);
   document.getElementById('aiFab').style.display = _floatOpen ? 'none' : '';
   if (_floatOpen) {
-    try { AiChat.wake('float'); } catch(e) { console.error('[AI v2 float wake]', e); }
+    try { AiChat.wake('float'); AiChat.syncSendBtn('float'); } catch(e) { console.error('[AI v2 float wake]', e); }
     setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
   }
 }
 
 function floatSubmit() {
-  /* §CHAT-V2 — the desktop float delegates to the same shared brain as
-     the mobile sheet: one thread, one renderer, one intelligence. */
+  /* §CHAT-UNIFORM — same guards as sheetSubmit: never send blanks, always
+     echo the typed line as a user bubble first so both surfaces read as
+     one chat, then hand the query to the shared brain. */
   const inp = document.getElementById('floatInput');
-  const query = (inp?.value || '').trim();
+  const query = (inp && inp.value || '').trim();
+  if (!query) return;
   if (inp) inp.value = '';
+  try { AiChat.syncSendBtn('float', ''); } catch(e) {}
   try {
     AiChat.wake('float');
     AiChat.submit('float', query);
@@ -106,8 +109,8 @@ function floatSubmit() {
     const msgs = document.getElementById('floatMsgs');
     if (msgs) {
       const el = document.createElement('div');
-      el.className = 'sheet-msg-ai';
-      el.innerHTML = '<div class="sheet-msg-text">Something went wrong — try rephrasing! 🔍</div>';
+      el.className = 'ai-msg ai-msg-ai';
+      el.innerHTML = '<div class="ai-avatar" aria-hidden="true">🤖</div><div class="ai-col"><div class="ai-bubble ai-bubble-ai"><div class="ai-text">Something went wrong — try rephrasing! 🔍</div></div></div>';
       msgs.appendChild(el);
     }
   }

@@ -1548,8 +1548,11 @@ const AiChat=(function(){
     requestAnimationFrame(function(){if(el)el.scrollTop=el.scrollHeight;});
   }
   function setStatus(txt){
-    const el=document.getElementById('aiSheetStatusTxt');
-    if(el)el.textContent=txt;
+    const a=document.getElementById('aiSheetStatusTxt');
+    if(a)a.textContent=txt;
+    /* §CHAT-UNIFORM — both headers echo the same brain status line. */
+    const b=document.getElementById('aiFloatStatusTxt');
+    if(b)b.textContent=txt;
   }
   function busy(surface,on){
     const chat=chatEl(surface);
@@ -2205,7 +2208,7 @@ const AiChat=(function(){
       if(inp&&query)inp.value='';
     }
     query=(query||'').trim();
-    if(surface==='sheet')syncClearBtn();
+    syncSendBtn(surface,query);
     if(!query){
       thread.push({role:'user',text:q||'…',ts:Date.now(),query:''});
       thread.push({role:'ai',kind:'answer',ts:Date.now(),
@@ -2227,12 +2230,16 @@ const AiChat=(function(){
   function wake(surface){
     if(!thread.length)restore();
     rehydrate();   /* listings may have arrived since the thread was saved */
-    if(!thread.length&&surface==='float'){
-      thread.push({role:'ai',kind:'greet',ts:Date.now(),text:pickGreeting()+" I'm your Yaad Adz assistant — search listings, compare prices, or ask me anything about the marketplace."});
+    /* §CHAT-UNIFORM — one greeting everywhere. Sheet copies used to say
+       "Wah gwaan! 👋 …" while the float said "I'm your Yaad Adz assistant
+       …" for the same empty thread. One line now, both surfaces. */
+    if(!thread.length){
+      thread.push({role:'ai',kind:'greet',ts:Date.now(),text:pickGreeting()+' What are we hunting for? 🇯🇲'});
       _v2History.push({role:'ai',text:thread[0].text});
       store();
     }
     paint(surface);
+    syncSendBtn(surface);
     refreshRail();
     setStatus('Yaad Brain v2 · 100% local');
   }
@@ -2322,9 +2329,28 @@ const AiChat=(function(){
     }
   }
   function syncClearBtn(){
+    /* §CHAT-UNIFORM — one send-state helper for BOTH surfaces. Each composer
+       button starts disabled (see index.html) and enables the moment its
+       input is non-empty, so empty-tap never fires and both chats feel
+       identical. Sheet keeps its extra ✕ clear button on top of this. */
+    syncSendBtn('sheet');
     const inp=document.getElementById('sheetInput');
     const btn=document.getElementById('aiClearBtn');
     if(btn)btn.hidden=!(inp&&inp.value.length);
+  }
+  /* Shared send-button state — surface is 'sheet' or 'float', force is the
+     already-trimmed query when the caller has it (submit path). */
+  function syncSendBtn(surface,force){
+    try{
+      const id=surface==='float'?'floatInput':'sheetInput';
+      const bid=surface==='float'?'floatSendBtn':'sheetSendBtn';
+      const inp=document.getElementById(id);
+      const btn=document.getElementById(bid);
+      if(!btn)return;
+      const q=(typeof force==='string')?force:((inp&&inp.value)||'').trim();
+      btn.disabled=!q;
+      btn.classList.toggle('is-empty',!q);
+    }catch(e){}
   }
   function refreshRail(){
     const wrap=document.getElementById('sheetSugs');if(!wrap)return;
@@ -2343,7 +2369,7 @@ const AiChat=(function(){
   return{
     submit:submit,ask:ask,wake:wake,newThread:newThread,hasThread:hasThread,
     pushRaw:pushRaw,store:store,restore:restore,refreshRail:refreshRail,
-    rehydrate:rehydrate,repaint:repaint,pinAd:pinAd,
+    rehydrate:rehydrate,repaint:repaint,pinAd:pinAd,syncSendBtn:syncSendBtn,
     bindKeyboard:bindKeyboard,syncClearBtn:syncClearBtn,lastQuery:function(){return state.lastQuery||'';}
   };
 })();
@@ -2446,7 +2472,7 @@ function openAiSheet(prefill) {
   /* §CHAT-V2 — wake the shared brain first (restores the persisted
      thread so a closed app reopens its conversation), then run any
      prefill as a fresh question. */
-  try{ AiChat.wake('sheet'); AiChat.bindKeyboard(); }catch(e){ console.error('[AI v2 wake]',e); }
+  try{ AiChat.wake('sheet'); AiChat.bindKeyboard(); AiChat.syncSendBtn('sheet'); }catch(e){ console.error('[AI v2 wake]',e); }
 
   const heroQ = typeof prefill === 'string' ? prefill : '';
   const sheetInp = document.getElementById('sheetInput');
@@ -2671,6 +2697,11 @@ function aiClearInput(){
   const inp=document.getElementById('sheetInput');
   if(inp){inp.value='';inp.focus();}
   AiChat.syncClearBtn();
+}
+/* §CHAT-UNIFORM — one entry point both composers share for enable/disable.
+   Called oninput from index.html (sheet + float) and from the submit path. */
+function aiChatSyncSend(surface){
+  try{ AiChat.syncSendBtn(surface); }catch(e){}
 }
 function aiSheetHelp(){sheetSearch('help');}
 function aiChatNewChat(){

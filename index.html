@@ -1246,8 +1246,8 @@ if ('serviceWorker' in navigator) {
   <header class="ai-float-header">
     <span class="ai-orb ai-orb-sm" aria-hidden="true"><span class="ai-orb-core">🤖</span></span>
     <div class="ai-float-header-info">
-      <div class="ai-float-header-name">Yaad <em style="color:var(--gold);font-style:italic">Adz</em> AI</div>
-      <div class="ai-float-header-sub"><i class="ai-dot" aria-hidden="true"></i> Yaad Brain v2 · local</div>
+      <div class="ai-float-header-name">Yaad <em>Adz</em> AI</div>
+      <div class="ai-float-header-sub"><i class="ai-dot" aria-hidden="true"></i><span id="aiFloatStatusTxt">Yaad Brain v2 · 100% local</span></div>
     </div>
     <button class="ai-tool-btn" onclick="aiChatNewChat()" title="New chat" aria-label="New chat">✦</button>
     <button class="ai-tool-btn ai-tool-close" onclick="toggleFloatChat()" title="Close" aria-label="Close">✕</button>
@@ -1257,10 +1257,11 @@ if ('serviceWorker' in navigator) {
     <div class="ai-float-input-bar">
       <input class="ai-float-input" id="floatInput" type="text" enterkeyhint="send" autocomplete="off"
         placeholder="Search listings or ask a question…"
-        onkeydown="aiFloatKeydown(event)">
+        onkeydown="aiFloatKeydown(event)" oninput="aiChatSyncSend('float')">
       <button class="ai-float-mic" id="floatMicBtn" type="button" onclick="aiVoiceInput('floatInput')" title="Speak your search" aria-label="Speak your search">🎙️</button>
-      <button class="ai-float-send" id="floatSendBtn" onclick="floatSubmit()" aria-label="Send">↑</button>
+      <button class="ai-float-send" id="floatSendBtn" onclick="floatSubmit()" aria-label="Send" disabled>↑</button>
     </div>
+    <div class="ai-sheet-hint ai-float-hint">Yaad Brain v2 · understands Patois · <button class="ai-hint-link" onclick="aiSheetHelp()" type="button">what can I ask?</button></div>
     <button class="ai-float-full" onclick="aiFloatOpenFull()" type="button">Open the full chat ↗</button>
   </div>
 </section>

@@ -130,6 +130,60 @@ const exitAt = t.lastIndexOf('process.exit(');
 check('tools/test-chat-v2.js has no checks after process.exit',
   exitAt > -1 && !/(^|\n)\s*(eq|check)\(/.test(t.slice(exitAt)));
 
+/* 10 — §CHAT-UNIFORM: the two surfaces must stay one chat.
+   Every check here covers a drift that actually shipped:
+     · float header said "local" while sheet said "100% local"
+     · float header inlined its gold <em> style instead of sharing the class
+     · float send fired on empty input while sheetSubmit never could
+     · float error bubble used dead sheet-msg-* classes (unstyled)
+     · one surface woke without syncing its send-button state
+     · each surface greeted an empty thread with different copy        */
+check('uniform: both headers carry the same status node', (function() {
+  var h = read('index.html');
+  return h.indexOf('id="aiSheetStatusTxt"') > -1 && h.indexOf('id="aiFloatStatusTxt"') > -1;
+})());
+check('uniform: float header shares the sheet <em> style (no inline style)', (function() {
+  var h = read('index.html');
+  var i = h.indexOf('ai-float-header-name');
+  if (i === -1) return false;
+  return h.slice(i, h.indexOf('</header>', i)).indexOf('style=') === -1;
+})());
+check('uniform: setStatus paints both headers', /aiFloatStatusTxt/.test(chat));
+check('uniform: float send starts disabled + syncs on input', (function() {
+  var h = read('index.html');
+  var i = h.indexOf('id="floatSendBtn"');
+  if (i === -1) return false;
+  var tag = h.slice(i - 200, h.indexOf('>', i) + 1);
+  return tag.indexOf('disabled') > -1 && h.indexOf("aiChatSyncSend('float')") > -1;
+})());
+check('uniform: AiChat exposes syncSendBtn + submit paths use it', (function() {
+  return /function syncSendBtn\(/.test(chat) && /syncSendBtn:syncSendBtn/.test(chat) &&
+    chat.indexOf("syncSendBtn(surface") > -1 && read('js/widgets-pwa.js').indexOf('syncSendBtn') > -1;
+})());
+check('uniform: floatSubmit guards empty input like sheetSubmit', (function() {
+  var w = read('js/widgets-pwa.js');
+  var i = w.indexOf('function floatSubmit');
+  if (i === -1) return false;
+  return w.slice(i, i + 600).indexOf('if (!query) return;') > -1;
+})());
+check('uniform: float error bubble uses styled ai-* classes', (function() {
+  var w = read('js/widgets-pwa.js');
+  var i = w.indexOf('function floatSubmit');
+  if (i === -1) return false;
+  var body = w.slice(i, i + 1400);
+  return body.indexOf('ai-msg ai-msg-ai') > -1 && body.indexOf('sheet-msg-ai') === -1;
+})());
+check('uniform: one greeting for an empty thread (no float-only copy)', (function() {
+  var body = chat.split('§CHAT-UNIFORM — one greeting everywhere')[0];
+  return body.indexOf("I'm your Yaad Adz assistant") === -1;
+})());
+check('uniform: float composer has the same Patois hint line as the sheet', (function() {
+  var h = read('index.html');
+  var i = h.indexOf('ai-float-input-wrap');
+  if (i === -1) return false;
+  return h.slice(i, i + 1200).indexOf('understands Patois') > -1;
+})());
+
 console.log('\n' + (failures === 0
   ? 'CHAT WIRING TESTS: ALL ' + passes + ' PASSED'
   : failures + ' FAILED / ' + passes + ' passed — do NOT deploy'));

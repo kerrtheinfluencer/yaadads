@@ -5126,12 +5126,23 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .ai-chip:hover { background: rgba(244,195,0,.16); border-color: rgba(244,195,0,.5); color: var(--gold); }
 .ai-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 /* ── float chat additions ──────────────────────────────────────────────── */
+/* §CHAT-UNIFORM — the float composer reuses the sheet's round-button DNA:
+   same 34px circle, same hover gold, same disabled + sending states. The
+   sheet rules stay the source of truth; these just alias the float's
+   differently-named classes onto them so both chats age together. */
 .ai-float-mic {
   width: 32px; height: 32px; flex-shrink: 0; border: none; border-radius: 50%;
   background: transparent; color: rgba(255,255,255,.55); font-size: 14px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
 .ai-float-mic:hover, .ai-float-mic.is-listening { color: var(--gold); background: rgba(244,195,0,.12); }
+.ai-float-send:disabled { opacity: .45; pointer-events: none; }
+.ai-float-send.sending { animation: sendPulse .8s ease-in-out infinite; }
+.ai-float-send.is-empty { opacity: .55; }
+.ai-float-header-name em { font-style: italic; color: var(--gold); }
+/* §CHAT-UNIFORM — float reuses the sheet's hint line verbatim; only the
+   spacing differs (tighter, above the "Open the full chat" link). */
+.ai-float-hint { margin: 8px 2px 0; }
 .ai-float-full {
   width: 100%; padding: 9px; border: none; cursor: pointer;
   background: rgba(255,255,255,.06); border-top: 1px solid rgba(255,255,255,.08);
