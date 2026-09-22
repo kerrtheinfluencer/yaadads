@@ -52,7 +52,10 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
 check('SW cache bumped to v41+', Number((sw.match(/yaadadz-v(\d+)/) || [])[1]) >= 41, (sw.match(/yaadadz-v\d+/) || [])[0]);
-check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'") && sw.includes("'/js/ai-chat-v2.js'"));
+check('SW precaches app shell (core + listings + search + auth + social + widgets + v2)',
+  sw.includes("'/js/core.js'") && sw.includes("'/js/ui-nav.js'") && sw.includes("'/js/listings.js'") && sw.includes("'/js/search-ai.js'") && sw.includes("'/js/auth-account.js'") && sw.includes("'/js/ad-social.js'") && sw.includes("'/js/widgets-pwa.js'") && sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'") && sw.includes("'/js/ai-chat-v2.js'") && sw.includes("'/js/post-pro.js'"));
+check('SW precache list parses (no stray indent breaking the const)',
+  /const PRECACHE_URLS = \[/.test(sw));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
 const _saSrc = fs.readFileSync('js/search-ai.js', 'utf8');

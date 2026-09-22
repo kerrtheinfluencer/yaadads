@@ -20,7 +20,11 @@ function scoreAd(ad, terms) {
   }
   // Boost active listings and recently posted
   if (ad.status === 'active') score += 2;
-  const ageDays = (Date.now() - new Date(ad.date||0)) / 86400000;
+  // §P1-TS — prefer the precomputed numeric post time (parsed once in
+  // buildHay); fall back to parsing so legacy/uncached objects rank sanely.
+  let ts = (typeof ad._ts === 'number' && ad._ts) || 0;
+  if (!ts) { try { ts = ad.date ? Date.parse(ad.date) || 0 : 0; } catch (e) { ts = 0; } }
+  const ageDays = (Date.now() - (ts || 0)) / 86400000;
   if (ageDays < 7)  score += 3;
   if (ageDays < 30) score += 1;
   return score;
@@ -1550,8 +1554,7 @@ const AiChat=(function(){
   function busy(surface,on){
     const chat=chatEl(surface);
     if(chat)chat.setAttribute('aria-busy',on?'true':'false');   /* screen readers */
-    if(surface!=='sheet')return;
-    const b=document.getElementById('sheetSendBtn');
+    const b=document.getElementById(surface==='float'?'floatSendBtn':'sheetSendBtn');
     if(b){b.disabled=on;b.classList.toggle('sending',on);}
   }
 
@@ -1679,11 +1682,11 @@ const AiChat=(function(){
           const cmp=(a&&b)?compareBlock(a,b):null;
           if(cmp)col.appendChild(cmp);
         }
-        if(surface==='sheet'&&m.kind==='search'&&m.filters&&m.total>0) col.appendChild(footerRow(m));
+        if(m.kind==='search'&&m.filters&&m.total>0) col.appendChild(footerRow(m,surface));
       }
     }
     if(m.kind&&m.kind!=='greet') col.appendChild(actionsRow(m,surface));
-    if(surface==='sheet') col.appendChild(chipsRow());
+    col.appendChild(chipsRow(surface));
     return el;
   }
 
@@ -1823,14 +1826,14 @@ const AiChat=(function(){
     }else{showToast('Share not available here','↗');}
   }
 
-  /* View-all + Notify row (sheet only) */
-  function footerRow(m){
+  /* View-all + Notify row (sheet + float) */
+  function footerRow(m,surface){
     const row=document.createElement('div');row.className='ai-btn-row';
     const viewAll=document.createElement('button');viewAll.className='ai-btn-viewall';
     viewAll.textContent='View all '+(m.total||'')+' results →';
     viewAll.onclick=function(){
       const f=m.filters||{};
-      closeAiSheet();
+      if(surface==='float'&&_floatOpen)toggleFloatChat(); else closeAiSheet();
       activeF=(f.categories&&f.categories.length===1)?f.categories[0]:'all';
       searchQ=(f.keywords||[]).join(' ');
       window._aiFilters=f;compactHero();
@@ -1944,15 +1947,27 @@ const AiChat=(function(){
     return (chips||[]).filter(function(c){return c&&c.label&&c.query;});
   }
 
-  /* Contextual follow-up chips (from the pure core) */
-  function chipsRow(){
+  /* Contextual follow-up chips (from the pure core) — both surfaces stay in
+     the surface they're in: a float chip must never yank the user to the sheet. */
+  function chipsRow(surface){
     const row=document.createElement('div');row.className='ai-chips';
     chipSet().slice(0,5).forEach(function(c){
       const b=document.createElement('button');b.className='ai-chip';b.textContent=c.label;
-      b.onclick=function(){sheetSearch(c.query);};
+      b.onclick=function(){runOnSurface(c.query,surface);};
       row.appendChild(b);
     });
     return row;
+  }
+
+  /* Run a query on a given surface without leaving it */
+  function runOnSurface(q,surface){
+    if(surface==='float'){
+      const inp=document.getElementById('floatInput');
+      if(inp)inp.value=q;
+      if(typeof floatSubmit==='function')floatSubmit();
+    }else{
+      sheetSearch(q);
+    }
   }
 
   function showTyping(surface){

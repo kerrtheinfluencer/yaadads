@@ -244,6 +244,12 @@ const L = {
    SUPABASE DATA FUNCTIONS §DB
 ═══════════════════════════════════════════════════════════ */
 
+/* §HOME-COLS — only the columns the home grid actually needs from the DB.
+   Keeps the cold-load payload small on mobile data. dbToAd() tolerates
+   missing fields (realtime payloads may carry the full row), so widening
+   this list later is safe. */
+const ADS_HOME_COLS = 'id,title,category,parish,price,description,phone,image_url,negotiable,seller_name,seller_init,seller_id,created_at,status,views';
+
 // Load all active ads into cache
 async function loadAds(_isRetry) {
   // ── Capture OLD ids BEFORE we replace _ads (so we can detect new arrivals) ──
@@ -260,7 +266,7 @@ async function loadAds(_isRetry) {
       throw new Error(msg);
     }
     const result = await _db.from('ads')
-      .select('*')
+      .select(ADS_HOME_COLS)
       .order('created_at', { ascending: false })
       .limit(500);
     data = result.data; error = result.error;
@@ -323,13 +329,19 @@ async function loadAds(_isRetry) {
 function buildHay(ad) {
   // Lowercased search cache: built ONCE per ad so scoreAd/getFiltered
   // don't re-lowercase 4 strings x N ads on every keystroke.
+  // _ts is the numeric post time, parsed once here so the sort comparators
+  // in getFiltered never call `new Date()` mid-sort.
   // Safe to call twice — just rebuilds the cache.
   if (!ad || typeof ad !== 'object') return ad;
   const title = (ad.title || '').toLowerCase();
   const desc = (ad.desc || '').toLowerCase();
   const par = (ad.parish || '').toLowerCase();
   const cat = (catById(ad.category).name || '').toLowerCase();
+  let ts = 0;
+  try { ts = ad.date ? Date.parse(ad.date) || 0 : 0; } catch (e) { ts = 0; }
+  if (!ts) ts = 0;
   ad._hay = { title, desc, par, cat, all: (title + ' ' + desc + ' ' + par + ' ' + cat) };
+  ad._ts = ts;
   return ad;
 }
 function dbToAd(row) {
