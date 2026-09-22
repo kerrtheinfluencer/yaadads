@@ -253,6 +253,10 @@ function toggleHideSold() {
   _hideSold = !_hideSold;
   const tog = document.getElementById('hideSoldToggle');
   if (tog) tog.classList.toggle('on', _hideSold);
+  // §DECK — the switch label + knob live inside one button[role=switch],
+  // so the pressed state has to travel with the aria attribute too.
+  const btn = document.getElementById('hideSoldBtn');
+  if (btn) btn.setAttribute('aria-checked', _hideSold ? 'true' : 'false');
   _homeShowCount = _homePageSize;
   renderHome();
 }
@@ -317,7 +321,9 @@ function renderHome() {
   const hdr = els.hdr;
   const cnt = els.cnt;
   if (hdr) hdr.style.display = 'flex';
-  if (cnt) cnt.innerHTML = `<strong>${ads.length}</strong> listing${ads.length !== 1 ? 's' : ''}${_hideSold ? ' (active only)' : ''}`;
+  // §DECK — count reads as a unit: big number, muted noun, and "Active only"
+  // as a gold status chip instead of an inline parenthetical.
+  if (cnt) cnt.innerHTML = `<strong>${ads.length}</strong> <span class="rc-word">listing${ads.length !== 1 ? 's' : ''}</span>${_hideSold ? ' <span class="rc-badge">Active only</span>' : ''}`;
 
   const visible = ads.slice(0, _homeShowCount);
   const remaining = ads.length - visible.length;
@@ -472,7 +478,7 @@ function setAiQuery(q) {
     sheetSearch(q);
     return;
   }
-  const inp = document.getElementById('aiInput');
+  const inp = searchInput();
   if (inp) inp.value = q;
   runAiSearch();
 }
@@ -1306,6 +1312,7 @@ const YaadBrain = (() => {
   }
 
   let _lastCtx=null;
+  let _lastPool=null;   // §CHAT-V2 — every listing scored in the last search (for chat follow-ups)
 
   function process(query,history){
     const rawQ=query.trim();
@@ -1335,7 +1342,7 @@ const YaadBrain = (() => {
     for(const [pattern,intent] of INTENT_PATTERNS){
       if(pattern.test(rawQ)&&(intent.startsWith('compare_')||intent==='price_check')){
         const result=handleComparison(intent,normalized);
-        if(result){result._qTerms=tokenize(normalized).filter(t=>t.length>2);return result;}
+        if(result){result._qTerms=tokenize(normalized).filter(t=>t.length>2);_lastPool=(result.allResults||[]).slice();return result;}
       }
     }
 
@@ -1385,6 +1392,7 @@ const YaadBrain = (() => {
     const results=scored.slice(offset,offset+6).map(s=>s.ad);
     const allResults=scored.map(s=>s.ad);
     _lastCtx={...ctx,_qTerms:qTerms};
+    _lastPool=allResults.slice();
 
     const msg=broadened?`No exact matches${ctx.parish?' in '+ctx.parish:''} — showing closest results. Try broader terms! 🔍`:buildMessage(allResults,ctx,rawQ);
     return{type:'search',message:msg,results,allResults,filters:{categories:ctx.cats,parish:ctx.parish,minPrice:ctx.lo,maxPrice:ctx.hi,keywords:qTerms,negotiable:!!ctx.negoOnly},_qTerms:qTerms};
@@ -1392,7 +1400,11 @@ const YaadBrain = (() => {
 
   function learn(adId,qTerms){recordClick(adId,qTerms||[]);}
   function suggestions(){return buildSuggestions();}
-  return{process,learn,suggestions,bigramSim};
+  /* §CHAT-V2 — expose the last scored pool + a clean-slate reset so the
+     chat can answer "which is best?" / "new chat" without another search */
+  function lastPool(){return _lastPool?_lastPool.slice():[];}
+  function reset(){_lastCtx=null;_lastPool=null;}
+  return{process,learn,suggestions,bigramSim,lastPool,reset};
 })();
 
 /* ══ Purge bad trending data on boot ════════════════════════ */
@@ -1413,21 +1425,17 @@ function purgeBadTrendingData(){
    SMART SEARCH — Hero bar
 ═══════════════════════════════════════════════════════════ */
 function runAiSearch(){
-  const inp=document.getElementById('aiInput');
-  const query=(inp?.value||'').trim();
+  const inp=searchInput();
+  const query=((inp&&inp.value)||'').trim();
   if(!query) return;
-  // Mobile: full-screen AI sheet (hero bar blurs on focus)
+  // Mobile: full-screen AI sheet
   if(window.innerWidth<=640){
     openAiSheet();
     sheetSearch(query);
     return;
   }
   saveRecentSearch(query);
-  gaEvent('search',{search_term:query});
-  const btn=document.getElementById('aiBtn');
-  const lbl=document.getElementById('aiBtnLabel');
-  if(btn) btn.classList.add('loading');
-  if(lbl) lbl.innerHTML='<div class="btn-spinner"></div>';
+  if(typeof gaEvent==='function'){try{gaEvent('search',{search_term:query});}catch(e){}}
   hideAiResponse();showSkeletons();
   requestAnimationFrame(function(){
     try{
@@ -1452,22 +1460,893 @@ function runAiSearch(){
       console.error('AI search error:',err);
       showAiResponse('Something went wrong — try different words or browse categories below.',null);
       renderHome();
-    }finally{
-      if(btn) btn.classList.remove('loading');
-      if(lbl) lbl.textContent='Search';
     }
   });
 }
 
+﻿/* ╔════════════════════════════════════════════════════════════╗
+   ║  AI CHAT V2 — ONE BRAIN, TWO SURFACES          §CHAT-V2   ║
+   ║  The mobile sheet and the desktop float share one thread,  ║
+   ║  one renderer and one intelligence:                        ║
+   ║    · AiChatV2  → conversational core (pure, unit-tested)   ║
+   ║    · YaadBrain → search / FAQ / learning (100% local)      ║
+   ║  The thread persists to ya_ai_thread_v2, so closing the    ║
+   ║  app never loses the conversation or its result cards.     ║
+   ╚════════════════════════════════════════════════════════════╝ */
+const AI_THREAD_KEY='ya_ai_thread_v2';
+const V2=(typeof window!=='undefined'&&window.AiChatV2)?window.AiChatV2:null;
+let _v2History=[];
+
+const AiChat=(function(){
+  const SURFACES={sheet:{chat:'sheetChat',body:'aiSheetBody'},float:{chat:'floatMsgs',body:null}};
+  const state={results:[],pool:[],stats:null,qTerms:[],filters:null,lastQuery:'',resultIds:[],poolIds:[],
+    budget:null,constraints:{photos:false,neg:false,parish:'',maxPrice:0}};
+  let thread=[];
+  const painted={sheet:0,float:0};
+  let kbBound=false;
+
+  /* Map-backed lookup: a thread can carry up to 80 ids and the old
+     Array.find() ran once per card on every paint of a 500-ad feed. */
+  let _adMap=null,_adMapSig='';
+  function adById(id){
+    const list=_ads||[];
+    const sig=list.length+':'+((list[0]&&list[0].id)||'')+':'+((list[list.length-1]&&list[list.length-1].id)||'');
+    if(!_adMap||_adMapSig!==sig){
+      _adMap=new Map();
+      for(let i=0;i<list.length;i++)_adMap.set(list[i].id,list[i]);
+      _adMapSig=sig;
+    }
+    return _adMap.get(id)||null;
+  }
+
+  /* ── persistence — the thread survives the app closing ─────────── */
+  function store(){
+    try{
+      localStorage.setItem(AI_THREAD_KEY,JSON.stringify({
+        v:2,ts:Date.now(),
+        thread:thread.slice(-40).map(function(m){return{r:m.role==='user'?'u':'a',k:m.kind||'',t:m.text,ids:m.ids||[],q:m.qTerms||[]};}),
+        state:{
+          results:(state.results||[]).slice(0,12).map(function(a){return a.id;}),
+          pool:(state.pool||[]).slice(0,80).map(function(a){return a.id;}),
+          qTerms:state.qTerms||[],filters:state.filters||null,lastQuery:state.lastQuery||'',
+          constraints:state.constraints||null,budget:state.budget||null
+        }
+      }));
+    }catch(e){}
+  }
+  function restore(){
+    let t=null;
+    try{t=JSON.parse(localStorage.getItem(AI_THREAD_KEY)||'null');}catch(e){t=null;}
+    if(!t||t.v!==2||!Array.isArray(t.thread)||!t.thread.length) return false;
+    thread=t.thread.map(function(m){return{role:m.r==='u'?'user':'ai',kind:m.k||'answer',text:m.t||'',ids:m.ids||[],qTerms:m.q||[]};});
+    const st=t.state||{};
+    /* Keep the raw ids, not just the resolved ads: if the sheet opens before
+       _ads has loaded, rehydrate() maps them again the moment listings arrive
+       instead of silently dropping the whole result set. */
+    state.resultIds=(st.results||[]).slice();
+    state.poolIds=(st.pool||[]).slice();
+    state.results=state.resultIds.map(adById).filter(Boolean);
+    state.pool=state.poolIds.map(adById).filter(Boolean);
+    state.qTerms=st.qTerms||[];state.filters=st.filters||null;state.lastQuery=st.lastQuery||'';
+    state.constraints=st.constraints||NO_CONSTRAINTS();
+    state.budget=st.budget||null;
+    state.stats=state.pool.length&&V2?V2.analyzePool(state.pool):null;
+    _v2History=thread.slice(-8).map(function(m){return{role:m.role,text:m.text};});
+    sheetHistory=_v2History;
+    return true;
+  }
+
+  /* ── surface plumbing ──────────────────────────────────────────── */
+  function chatEl(s){return document.getElementById(SURFACES[s].chat);}
+  function bodyEl(s){const id=SURFACES[s].body;return id?document.getElementById(id):null;}
+  function scrollEnd(s){
+    const el=bodyEl(s)||chatEl(s);
+    requestAnimationFrame(function(){if(el)el.scrollTop=el.scrollHeight;});
+  }
+  function setStatus(txt){
+    const el=document.getElementById('aiSheetStatusTxt');
+    if(el)el.textContent=txt;
+  }
+  function busy(surface,on){
+    const chat=chatEl(surface);
+    if(chat)chat.setAttribute('aria-busy',on?'true':'false');   /* screen readers */
+    if(surface!=='sheet')return;
+    const b=document.getElementById('sheetSendBtn');
+    if(b){b.disabled=on;b.classList.toggle('sending',on);}
+  }
+
+  /* ── painting ──────────────────────────────────────────────────── */
+  function paint(surface){
+    const chat=chatEl(surface);if(!chat)return;
+    for(let i=painted[surface];i<thread.length;i++) chat.appendChild(msgEl(thread[i],surface));
+    painted[surface]=thread.length;
+    const hero=document.getElementById('aiHero');
+    if(hero&&thread.length)hero.classList.add('ai-hero-hide');
+    scrollEnd(surface);
+  }
+
+  /* Full re-render — needed when a message's data changes after it was painted
+     (an ad sold while the thread sat in storage, feedback toggled, …).
+     paint() is append-only for speed, so cards would otherwise freeze. */
+  function repaint(surface){
+    const chat=chatEl(surface);if(!chat)return false;
+    chat.innerHTML='';painted[surface]=0;
+    paint(surface);
+    return true;
+  }
+
+  /* ── rehydrate — the conversation outlives the listing feed ──────────
+     A restored thread stores listing ids, not objects. If the sheet opens
+     before _ads has loaded (or the feed refreshed), the result set was empty
+     and every follow-up answered "search for something first". Re-map the
+     ids whenever listing data arrives. */
+  function rehydrate(){
+    if(!state.resultIds.length&&!state.poolIds.length) return false;
+    const before=state.results.length;
+    state.results=state.resultIds.map(adById).filter(Boolean);
+    state.pool=state.poolIds.map(adById).filter(Boolean);
+    state.stats=(state.pool.length&&V2)?V2.analyzePool(state.pool):null;
+    const grew=state.results.length!==before;
+    refreshRail();
+    if(grew&&thread.length){repaint('sheet');repaint('float');}
+    return grew;
+  }
+
+  /* ── pinAd — “ask about THIS listing” ────────────────────────────────
+     Called when a visitor arrives from a detail page (?ask=<id> or the
+     “Ask AI” button). Pins the ad into the conversation and answers the
+     question everybody actually has: is this a good deal? */
+  function pinAd(ad){
+    if(!ad||!V2)return false;
+    state.results=[ad];
+    state.pool=(state.pool||[]).filter(function(a){return a.id!==ad.id;});
+    state.pool=[ad].concat(state.pool);
+    state.resultIds=state.pool.map(function(a){return a.id;});
+    state.poolIds=state.resultIds.slice();
+    state.stats=V2.analyzePool(state.pool);
+    state.constraints=NO_CONSTRAINTS();
+    state.budget=null;
+    state.lastQuery=ad.title||ad.id;
+    state.qTerms=(ad._hay&&ad._hay.title)?ad._hay.title.split(' ').slice(0,6):[];
+    const advice=V2.priceAdvice(ad,state.stats);
+    thread.push({role:'user',text:'Is “'+(ad.title||'this one')+'” a good deal?',ts:Date.now(),query:state.lastQuery});
+    thread.push({role:'ai',kind:'detail',ts:Date.now(),
+      text:(advice.label+' 📊\n'+advice.text),
+      ids:[ad.id],qTerms:state.qTerms,advice:advice,query:state.lastQuery});
+    store();paint('sheet');
+    setStatus('Answering about “'+((ad.title||'').slice(0,28))+'”');
+    return true;
+  }
+
+  /* ── sticky refinements ─────────────────────────────────────────────
+     “only ones with photos” then “negotiable too” should mean BOTH, and the
+     choice has to survive the next follow-up — before this, every refinement
+     silently forgot the one before it. */
+  /* hoisted on purpose: restore()/newThread() run before this line is reached */
+  function NO_CONSTRAINTS(){return{photos:false,neg:false,parish:'',maxPrice:0};}
+  function applyConstraints(list){
+    const c=state.constraints;
+    return (list||[]).filter(function(a){
+      if(c.photos&&!a.image)return false;
+      if(c.neg&&!a.neg)return false;
+      if(c.parish&&a.parish!==c.parish)return false;
+      if(c.maxPrice&&Number(a.price)>c.maxPrice)return false;
+      return true;
+    });
+  }
+  function constraintNote(){
+    const c=state.constraints,on=[];
+    if(c.photos)on.push('📸 photos');
+    if(c.neg)on.push('🤝 negotiable');
+    if(c.parish)on.push('📍 '+c.parish);
+    if(c.maxPrice)on.push('💸 under '+((V2&&V2.money)?V2.money(c.maxPrice):c.maxPrice));
+    return on.length?('\n(filtering: '+on.join(' · ')+')'):'';
+  }
+  function timeLabel(ts){
+    try{return new Date(ts||Date.now()).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}catch(e){return '';}
+  }
+  function textHtml(t){return escHtml(t).replace(/\n/g,'<br>');}
+
+  function msgEl(m,surface){
+    const el=document.createElement('div');
+    if(m.role==='user'){
+      el.className='ai-msg ai-msg-user';
+      el.innerHTML='<div class="ai-bubble ai-bubble-user"><div class="ai-text">'+textHtml(m.text)+'</div></div><span class="ai-time">'+timeLabel(m.ts)+'</span>';
+      return el;
+    }
+    el.className='ai-msg ai-msg-ai';
+    const av=document.createElement('div');av.className='ai-avatar';av.textContent='🤖';
+    const col=document.createElement('div');col.className='ai-col';
+    const bubble=document.createElement('div');bubble.className='ai-bubble ai-bubble-ai';
+    const txt=document.createElement('div');txt.className='ai-text';
+    bubble.appendChild(txt);col.appendChild(bubble);
+    el.appendChild(av);el.appendChild(col);
+    revealText(txt,m.text);
+
+    /* result cards */
+    if(m.ids&&m.ids.length){
+      const block=resultsBlock(m.ids,m.qTerms,surface==='float'?4:6,surface);
+      if(block){
+        if(m.kind==='search'){
+          const tag=document.createElement('div');tag.className='ai-count-tag';
+          const total=m.total||m.ids.length;
+          tag.textContent=total>0?('Showing '+m.ids.length+' of '+total+' result'+(total!==1?'s':'')):'No listings found';
+          col.appendChild(tag);
+        }
+        col.appendChild(block);
+        if(m.kind==='compare'&&m.ids.length>=2){
+          const a=adById(m.ids[0]),b=adById(m.ids[1]);
+          const cmp=(a&&b)?compareBlock(a,b):null;
+          if(cmp)col.appendChild(cmp);
+        }
+        if(surface==='sheet'&&m.kind==='search'&&m.filters&&m.total>0) col.appendChild(footerRow(m));
+      }
+    }
+    if(m.kind&&m.kind!=='greet') col.appendChild(actionsRow(m,surface));
+    if(surface==='sheet') col.appendChild(chipsRow());
+    return el;
+  }
+
+  /* progressive reveal — feels alive, respects reduced-motion, and stops
+     animating the moment the bubble scrolls out of view (a long restored
+     thread used to run one rAF loop per message forever). */
+  function revealText(el,text){
+    const reduce=window.matchMedia&&typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce||!text||text.length>420||thread.length>12){el.innerHTML=textHtml(text);return;}
+    const steps=Math.min(26,Math.max(8,Math.ceil(text.length/18)));
+    let i=0,frames=0;
+    const tick=function(){
+      i+=steps;
+      if(i>=text.length){el.innerHTML=textHtml(text);return;}
+      el.innerHTML=textHtml(text.slice(0,i))+'<span class="ai-caret"></span>';
+      if((++frames%5)===0&&!inViewport(el)){el.innerHTML=textHtml(text);return;}
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+  function inViewport(el){
+    try{
+      const r=el.getBoundingClientRect();
+      return r.bottom>0&&r.top<(window.innerHeight||800);
+    }catch(e){return true;}
+  }
+
+  function resultsBlock(ids,qTerms,max,surface){
+    const wrap=document.createElement('div');wrap.className='ai-results';
+    let n=0;
+    (ids||[]).forEach(function(id){
+      if(n>=max)return;
+      const ad=adById(id);
+      if(!ad){wrap.appendChild(goneCard(surface));n++;return;}
+      wrap.appendChild(resultCard(ad,qTerms));n++;
+    });
+    return n?wrap:null;
+  }
+
+  /* An ad that was sold or removed since the question was asked — say so
+     instead of quietly dropping the card (the old behaviour looked like a bug). */
+  function goneCard(surface){
+    const card=document.createElement('div');
+    card.className='ai-result-card is-gone';
+    card.innerHTML='<div class="ai-thumb ai-thumb-icon">🚫</div>'
+      +'<div class="ai-result-info">'
+      +'<div class="ai-result-price">No longer listed<span class="ai-badge ai-badge-gone">gone</span></div>'
+      +'<div class="ai-result-title">Sold or removed since you asked</div>'
+      +'<div class="ai-result-meta">Tap to run that search again</div>'
+      +'</div><div class="ai-result-arrow">›</div>';
+    card.onclick=function(){
+      const q=state.lastQuery;
+      if(!q){showToast('That listing is gone 🔍','🤖');return;}
+      ask(q,surface,{silentUser:true});
+    };
+    return card;
+  }
+
+  function resultCard(ad,qTerms){
+    const cat=catById(ad.category);
+    const isSold=ad.status==='sold';      /* sold while the thread was stored */
+    const card=document.createElement('div');card.className='ai-result-card'+(isSold?' is-gone':'');
+    const isNew=((Date.now()-new Date(ad.date||0))/86400000)<3;
+    const thumb=ad.image
+      ?'<img class="ai-thumb" src="'+escHtml(thumbUrl(ad.image,120))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+      :'<div class="ai-thumb ai-thumb-icon">'+(cat.icon||'📦')+'</div>';
+    card.innerHTML=thumb
+      +'<div class="ai-result-info">'
+      +'<div class="ai-result-price">J$'+fmtN(ad.price)
+      +(ad.neg?'<span class="ai-badge ai-badge-neg">neg.</span>':'')
+      +(isSold?'<span class="ai-badge ai-badge-gone">sold</span>':'')
+      +(!isSold&&isNew?'<span class="ai-badge ai-badge-new">New</span>':'')
+      +'</div>'
+      +'<div class="ai-result-title">'+escHtml(ad.title)+'</div>'
+      +'<div class="ai-result-meta">📍 '+escHtml(ad.parish||'')+' · '+escHtml(cat.name||'Other')+'</div>'
+      +'</div><div class="ai-result-arrow">›</div>';
+    card.onclick=function(){
+      if(qTerms&&qTerms.length)YaadBrain.learn(ad.id,qTerms);
+      if(sheetOpen)closeAiSheet();
+      setTimeout(function(){openDetail(ad.id);},200);
+    };
+    return card;
+  }
+
+  /* ── Visual head-to-head ─────────────────────────────────────────────
+     compareText() writes the words; this draws the grid so “the second one
+     is 20% above the median and 3 weeks older” is readable at a glance. */
+  function belowLabel(ad,stats){
+    if(!stats||!stats.median||!Number(ad.price))return '—';
+    const pct=V2.pctBelow(Number(ad.price),stats.median);
+    if(pct>0)return pct+'% below';
+    if(pct<0)return Math.abs(pct)+'% above';
+    return 'at median';
+  }
+  function compareBlock(a,b){
+    if(!V2||!a||!b)return null;
+    const wrap=document.createElement('div');wrap.className='ai-compare';
+    const s=state.stats||null;
+    const cut=function(t){t=String(t||'This one');return escHtml(t.length>38?t.slice(0,37)+'…':t);};
+    const row=function(label,va,vb,win){
+      const cls='ai-compare-row'+(win==='a'?' win-a':(win==='b'?' win-b':''));
+      return '<div class="'+cls+'">'
+        +'<div class="ai-compare-label">'+label+'</div>'
+        +'<div class="ai-compare-val">'+va+'</div>'
+        +'<div class="ai-compare-val">'+vb+'</div>'
+        +'</div>';
+    };
+    wrap.innerHTML='<div class="ai-compare-head"><span></span><span>'+cut(a.title)+'</span><span>'+cut(b.title)+'</span></div>'
+      +row('Price','J$'+fmtN(a.price),'J$'+fmtN(b.price),Number(a.price)<=Number(b.price)?'a':'b')
+      +row('vs median',belowLabel(a,s),belowLabel(b,s),'')
+      +row('Posted',V2.relativeAge(a),V2.relativeAge(b),V2.ageDays(a)<=V2.ageDays(b)?'a':'b')
+      +row('Views',String(a.views||0),String(b.views||0),Number(a.views||0)>=Number(b.views||0)?'a':'b')
+      +row('Parish',escHtml(a.parish||'—'),escHtml(b.parish||'—'),'')
+      +row('Negotiable',a.neg?'✅':'—',b.neg?'✅':'—','')
+      +row('Photos',a.image?'✅':'—',b.image?'✅':'—','');
+    return wrap;
+  }
+
+  /* Share/export a reply — WhatsApp is where deals actually happen here. */
+  function adLink(ad){
+    try{
+      return (typeof BASE_URL==='string'?BASE_URL:'')+'/ad/'+slugify(ad)+'.html';
+    }catch(e){return '';}
+  }
+  function shareChatMessage(m){
+    let text=m.text||'';
+    const lines=(m.ids||[]).slice(0,3).map(adById).filter(Boolean).map(function(a){
+      return '• '+a.title+' — J$'+fmtN(a.price)+' ('+(a.parish||'')+')\n  '+adLink(a);
+    });
+    if(lines.length)text+='\n\n'+lines.join('\n');
+    text+='\n— via Yaad Adz AI';
+    try{
+      if(navigator.share){navigator.share({title:'Yaad Adz AI',text:text}).catch(function(){});return;}
+    }catch(e){}
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){showToast('Copied — paste it anywhere','↗');},function(){showToast('Share not available here','↗');});
+    }else{showToast('Share not available here','↗');}
+  }
+
+  /* View-all + Notify row (sheet only) */
+  function footerRow(m){
+    const row=document.createElement('div');row.className='ai-btn-row';
+    const viewAll=document.createElement('button');viewAll.className='ai-btn-viewall';
+    viewAll.textContent='View all '+(m.total||'')+' results →';
+    viewAll.onclick=function(){
+      const f=m.filters||{};
+      closeAiSheet();
+      activeF=(f.categories&&f.categories.length===1)?f.categories[0]:'all';
+      searchQ=(f.keywords||[]).join(' ');
+      window._aiFilters=f;compactHero();
+      const inp=document.getElementById('navSearchInput');if(inp)inp.value=searchQ;
+      renderCats();renderHome();delete window._aiFilters;
+      if(typeof showAiResponse==='function')showAiResponse(m.text,m.total);
+      if(typeof scrollToResults==='function')scrollToResults();
+    };
+    row.appendChild(viewAll);
+    const notify=document.createElement('button');notify.className='ai-btn-notify';
+    const saved=m.query?getSavedSearches().find(function(s){return s.query===m.query;}):null;
+    if(saved)notify.classList.add('is-saved');
+    notify.innerHTML=saved?'🔔 <span>Saved</span>':'🔔 <span>Notify me</span>';
+    notify.title='Get notified when new listings match';
+    notify.onclick=function(){
+      if(!m.query)return;
+      saveSearchAlert(m.query,m.filters);
+      notify.innerHTML='🔔 <span>Saved</span>';
+      notify.classList.add('is-saved');
+    };
+    row.appendChild(notify);
+    return row;
+  }
+
+  /* Copy / retry / 👍👎 — small, honest, all local */
+  function actionsRow(m,surface){
+    const row=document.createElement('div');row.className='ai-actions';
+    function mk(cls,label,title,fn){
+      const b=document.createElement('button');b.className='ai-act '+cls;b.textContent=label;b.title=title;
+      b.onclick=function(ev){ev.stopPropagation();fn(b);};
+      return b;
+    }
+    row.appendChild(mk('ai-act-copy','⧉','Copy reply',function(){
+      const t=m.text||'';
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){showToast('Reply copied','⧉');},function(){});}
+      else{showToast('Copy not available here','⧉');}
+    }));
+    if(m.query)row.appendChild(mk('ai-act-retry','↻','Ask again',function(){
+      ask(m.query,surface,{silentUser:true});
+    }));
+    row.appendChild(mk('ai-act-share','↗','Share this reply',function(){
+      shareChatMessage(m);
+    }));
+    row.appendChild(mk('ai-act-up','👍','Helpful',function(b){
+      b.classList.add('is-on');recordFeedback(m,true,surface);
+    }));
+    row.appendChild(mk('ai-act-down','👎','Not helpful',function(b){
+      b.classList.add('is-on');recordFeedback(m,false,surface);
+    }));
+    return row;
+  }
+
+  /* ── feedback — a 👎 must change what happens next, not just toast ────
+     Thumbs were being written to ya_ai_feedback_v2 and never read by anything.
+     Now they steer the follow-up chips (and a 👍 teaches the brain about every
+     listing it showed, not only the first). */
+  function feedbackSummary(){
+    try{
+      const all=JSON.parse(localStorage.getItem('ya_ai_feedback_v2')||'[]');
+      const s={up:0,down:0,kinds:{}};
+      all.forEach(function(f){
+        const k=f.kind||'answer';
+        s.kinds[k]=s.kinds[k]||{up:0,down:0};
+        if(f.up){s.up++;s.kinds[k].up++;}else{s.down++;s.kinds[k].down++;}
+      });
+      return s;
+    }catch(e){return {up:0,down:0,kinds:{}};}
+  }
+  function recordFeedback(m,up,surface){
+    try{
+      const all=JSON.parse(localStorage.getItem('ya_ai_feedback_v2')||'[]');
+      all.push({up:!!up,kind:m.kind||'',q:m.query||'',ts:Date.now()});
+      if(all.length>100)all.splice(0,all.length-100);
+      localStorage.setItem('ya_ai_feedback_v2',JSON.stringify(all));
+    }catch(e){}
+    if(!surface)return;
+    try{
+      if(up){
+        if(state.qTerms&&state.qTerms.length){
+          (state.results||[]).slice(0,6).forEach(function(a){YaadBrain.learn(a.id,state.qTerms);});
+        }
+      }else if(isDemoted(m.kind||'answer')){
+        showToast('Noted — switching to different suggestions 🔁','🤖');
+        repaint(surface);
+      }
+      refreshRail();
+    }catch(e){}
+  }
+
+  /* ── follow-up chips → the next best questions ────────────────────────
+     When a whole kind of answer has been down-voted repeatedly, stop pushing
+     more of the same: hand over search-first chips instead. */
+  function lastAiKind(){
+    for(let i=thread.length-1;i>=0;i--){const m=thread[i];if(m.role==='ai'&&m.kind)return m.kind;}
+    return '';
+  }
+  function isDemoted(kind){
+    if(!kind)return false;
+    const k=feedbackSummary().kinds[kind];
+    return !!k&&k.down>=2&&k.down>k.up;
+  }
+  function chipSet(){
+    let chips=[];
+    try{
+      if(isDemoted(lastAiKind())){
+        chips=(YaadBrain.suggestions()||[]).map(function(s){return{label:s.label,query:s.query};});
+      }else{
+        chips=(V2&&V2.followUpChips)?V2.followUpChips(state.lastQuery,{results:state.results,stats:state.stats}):[];
+      }
+    }catch(e){chips=[];}
+    return (chips||[]).filter(function(c){return c&&c.label&&c.query;});
+  }
+
+  /* Contextual follow-up chips (from the pure core) */
+  function chipsRow(){
+    const row=document.createElement('div');row.className='ai-chips';
+    chipSet().slice(0,5).forEach(function(c){
+      const b=document.createElement('button');b.className='ai-chip';b.textContent=c.label;
+      b.onclick=function(){sheetSearch(c.query);};
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  function showTyping(surface){
+    const chat=chatEl(surface);if(!chat)return{remove:function(){}};
+    const row=document.createElement('div');
+    row.className='ai-msg ai-msg-typing';
+    row.innerHTML='<div class="ai-avatar">🤖</div>'
+      +'<div class="ai-bubble ai-bubble-ai"><span class="ai-typing"><i></i><i></i><i></i></span><span class="ai-thinking">thinking…</span></div>';
+    chat.appendChild(row);
+    scrollEnd(surface);
+    return row;
+  }
+
+  /* ── the pipeline: decide → answer ─────────────────────────────── */
+  function missPick(msg){
+    return{role:'ai',kind:'answer',text:msg||'That result is gone from the live results — run the search again and I will pick it up 🔍'};
+  }
+  function pickAd(i){return (state.results||[])[i]||null;}
+
+  function decide(q){
+    let c=null;
+    try{c=(V2&&V2.classify)?V2.classify(q,{results:state.results}):null;}catch(e){c=null;}
+    if(c&&c.intent!=='search') return{type:'local',c:c};
+    return{type:'brain',r:YaadBrain.process(q,_v2History)};
+  }
+
+  function buildAnswer(d,q){
+    if(d.type==='brain'){
+      const r=d.r||{};
+      if(r.type==='answer') return{role:'ai',kind:'answer',text:r.message||''};
+      state.results=(r.results||[]).slice();
+      state.pool=(r.allResults||[]).slice();
+      state.resultIds=state.results.map(function(a){return a.id;});
+      state.poolIds=state.pool.map(function(a){return a.id;});
+      state.constraints=NO_CONSTRAINTS();     /* a fresh search = a fresh context */
+      state.budget=(V2&&V2.parseBudget)?V2.parseBudget(q):null;
+      state.qTerms=(r._qTerms&&r._qTerms.length)?r._qTerms.slice():[];
+      state.filters=r.filters||null;
+      state.lastQuery=q;
+      state.stats=(state.pool.length&&V2)?V2.analyzePool(state.pool):null;
+      return{role:'ai',kind:'search',text:r.message||'',ids:(r.results||[]).map(function(a){return a.id;}),
+        total:(r.allResults||r.results||[]).length,filters:state.filters,qTerms:state.qTerms,query:q};
+    }
+    return buildLocal(d.c,q);
+  }
+
+  function buildLocal(c,q){
+    const A2=V2;
+    if(!A2) return{role:'ai',kind:'answer',text:YaadBrain.process(q,_v2History).message};
+    switch(c.intent){
+      case 'greeting': case 'help':
+        return{role:'ai',kind:'answer',text:YaadBrain.process(q,_v2History).message};
+      case 'new_chat':
+        newThread();
+        return{role:'ai',kind:'greet',text:pickGreeting()+' Fresh start — what are we hunting for? 🇯🇲'};
+      case 'open_pick':{
+        const ad=pickAd(c.index);
+        if(!ad)return missPick();
+        setTimeout(function(){if(sheetOpen)closeAiSheet();setTimeout(function(){openDetail(ad.id);},240);},700);
+        return{role:'ai',kind:'pick',text:'Opening “'+(ad.title||'that one')+'” for you… 📲',ids:[ad.id],qTerms:state.qTerms};
+      }
+      case 'detail':{
+        const ad=pickAd(c.index);
+        if(!ad)return missPick();
+        const advice=A2.priceAdvice(ad,state.stats);
+        return{role:'ai',kind:'detail',text:A2.detailText(ad,{catName:catById(ad.category).name,advice:advice}),ids:[ad.id],qTerms:state.qTerms,query:q};
+      }
+      case 'best_pick':{
+        const pool=state.pool.length?state.pool:state.results;
+        if(!pool.length)return missPick('Nothing to judge yet — search for something first 🔍');
+        const verdict=A2.bestPick(pool,state.stats);
+        if(!verdict||!verdict.pick)return missPick();
+        const p=verdict.pick,lines=['🏆 My pick: '+(p.ad.title||'')];
+        if(p.reasons.length)lines.push(p.reasons.map(function(r){return '• '+r;}).join('\n'));
+        if(verdict.runnerUp)lines.push('','🥈 Backup: '+(verdict.runnerUp.ad.title||'')+' — '+A2.money(verdict.runnerUp.ad.price));
+        lines.push('','Say “open the first one”, or “compare the first and second”.');
+        return{role:'ai',kind:'best',text:lines.join('\n'),ids:[p.ad.id],qTerms:state.qTerms,advice:A2.priceAdvice(p.ad,state.stats),query:q};
+      }
+      case 'compare_2':{
+        const a=pickAd(c.indices[0]),b=pickAd(c.indices[1]);
+        if(!a||!b)return missPick('I need two live results to compare — search for something first.');
+        return{role:'ai',kind:'compare',text:A2.compareText(a,b,state.stats),ids:[a.id,b.id],qTerms:state.qTerms,query:q};
+      }
+      case 'price_advice':{
+        const ad=pickAd(c.index);
+        if(!ad)return missPick();
+        const adv=A2.priceAdvice(ad,state.stats);
+        return{role:'ai',kind:'detail',text:adv.label+' 📊\n'+adv.text,ids:[ad.id],qTerms:state.qTerms,advice:adv,query:q};
+      }
+      default:
+        return buildSharedRefiners(c,q);   /* refiners live in the shared switch */
+    }
+  }
+
+  /* remaining local intents — refiners and advice variants
+     §CHAT-V2-FIX: this lives INSIDE the AiChat closure on purpose — it reads
+     the private `state`, `pickAd()` and `missPick()`. A file-level copy that
+     referenced those names threw ReferenceError and (via the stray braces it
+     shipped with) killed the whole file with a syntax error. */
+  function buildSharedRefiners(c,q){
+    const A2=V2;
+    switch(c.intent){
+      case 'cheaper_than':{
+        const pick=pickAd(c.index);
+        if(!pick)return missPick();
+        const cap=Math.max(1000,Math.floor(Number(pick.price)*0.85));
+        state.constraints.maxPrice=cap;              /* the new budget sticks */
+        const refined=applyConstraints(state.pool.length?state.pool:state.results)
+          .filter(function(a){return Number(a.price)<cap;})
+          .sort(function(x,y){return Number(x.price)-Number(y.price);});
+        if(!refined.length)return{role:'ai',kind:'answer',text:'That was already the cheapest at '+A2.money(pick.price)+' 💸 Widen the category or try a different search.'};
+        const shown=refined.slice(0,6);
+        state.results=shown;state.pool=refined;state.stats=A2.analyzePool(refined);
+        return{role:'ai',kind:'search',text:'💸 Under '+A2.money(cap)+' — cheaper than “'+(pick.title||'that one')+'”:'+constraintNote(),
+          ids:shown.map(function(a){return a.id;}),total:refined.length,qTerms:state.qTerms,query:q};
+      }
+      case 'explain_pick':{
+        const ad=pickAd(c.index);
+        if(!ad)return missPick();
+        const sc=A2.scorePick(ad,state.stats);
+        const lines=['🔎 My thinking on “'+(ad.title||'')+'”:'];
+        (sc.reasons.length?sc.reasons:['• It matched your search best']).forEach(function(r){lines.push(r);});
+        if(state.stats&&state.stats.median)lines.push('• '+A2.money(ad.price)+' vs a median of '+A2.money(state.stats.median)+' in this set');
+        return{role:'ai',kind:'detail',text:lines.join('\n'),ids:[ad.id],qTerms:state.qTerms,query:q};
+      }
+      case 'contact':{
+        const ad=pickAd(c.index);
+        if(!ad)return missPick();
+        return{role:'ai',kind:'detail',text:'👤 “'+(ad.title||'')+'” is sold by '+escHtml(ad.seller||'an independent seller')+'.\n\nOpen the listing for 📞 Call, 💬 WhatsApp and ✉️ Message — WhatsApp usually replies fastest.',ids:[ad.id],qTerms:state.qTerms,query:q};
+      }
+      case 'photos_only': case 'negotiable_only': case 'same_parish':
+      case 'cheapest_half': case 'newest_half':{
+        const base=state.pool.length?state.pool:state.results;
+        if(c.intent==='photos_only')state.constraints.photos=true;
+        else if(c.intent==='negotiable_only')state.constraints.neg=true;
+        else if(c.intent==='same_parish'){
+          const counts={};base.forEach(function(a){counts[a.parish]=(counts[a.parish]||0)+1;});
+          let top=base.length?(base[0].parish||''):'';
+          Object.keys(counts).forEach(function(p){if(counts[p]>(counts[top]||0))top=p;});
+          state.constraints.parish=top;
+        }
+        const refined=applyConstraints(A2.refinePool(base,c.intent));
+        if(!refined.length)return{role:'ai',kind:'answer',text:'None of the current results match that — try a fresh search 🔍'};
+        const shown=refined.slice(0,6);
+        const label={photos_only:'📸 Ones with photos',negotiable_only:'🤝 Negotiable ones',same_parish:'📍 Same area',cheapest_half:'💸 The cheapest half',newest_half:'🆕 The freshest half'}[c.intent];
+        state.results=shown;state.pool=refined;state.stats=A2.analyzePool(refined);
+        return{role:'ai',kind:'search',text:label+' ('+refined.length+'):'+constraintNote(),ids:shown.map(function(a){return a.id;}),total:refined.length,qTerms:state.qTerms,query:q};
+      }
+      case 'sort_price_asc': case 'sort_price_desc': case 'sort_newest': case 'sort_views':{
+        const base=applyConstraints(state.pool.length?state.pool:state.results);
+        if(!base.length)return missPick('Nothing to sort yet — search for something first 🔍');
+        const sorted=base.slice().sort(function(x,y){
+          if(c.intent==='sort_price_asc')return Number(x.price||0)-Number(y.price||0);
+          if(c.intent==='sort_price_desc')return Number(y.price||0)-Number(x.price||0);
+          if(c.intent==='sort_newest')return A2.ageDays(x)-A2.ageDays(y);
+          return Number(y.views||0)-Number(x.views||0);
+        });
+        const label={sort_price_asc:'💸 Cheapest first',sort_price_desc:'💎 Most expensive first',sort_newest:'🆕 Newest first',sort_views:'🔥 Most viewed first'}[c.intent];
+        const shown=sorted.slice(0,6);
+        state.results=shown;state.pool=sorted;state.stats=A2.analyzePool(sorted);
+        return{role:'ai',kind:'search',text:label+' ('+sorted.length+'):'+constraintNote(),
+          ids:shown.map(function(a){return a.id;}),total:sorted.length,qTerms:state.qTerms,query:q};
+      }
+      default:
+        return{role:'ai',kind:'answer',text:YaadBrain.process(q,_v2History).message};
+    }
+  }
+
+
+  /* ── greetings ─────────────────────────────────────────────────── */
+  function pickGreeting(){
+    const g=['Wah gwaan! 👋','Big up! 🇯🇲','Hey! 👋','Respect! 🤝'];
+    return g[Math.floor(Math.random()*g.length)];
+  }
+
+  /* ── one exchange (used by both surfaces) ──────────────────────── */
+  function ask(q,surface,opts){
+    opts=opts||{};
+    if(!opts.silentUser){
+      thread.push({role:'user',text:q,ts:Date.now(),query:q});
+      _v2History.push({role:'user',text:q});
+      paint(surface);
+    }
+    const typing=showTyping(surface);
+    busy(surface,true);
+    setStatus('Thinking…');
+    setTimeout(function(){
+      try{
+        const d=decide(q);
+        const msg=(d.type==='local')?buildLocal(d.c,q):buildAnswer(d,q);
+        msg.ts=Date.now();
+        thread.push(msg);
+        _v2History.push({role:'ai',text:msg.text});
+        if(_v2History.length>8)_v2History=_v2History.slice(-8);
+        store();
+        typing.remove();
+        paint(surface);
+        setStatus(statusFor(msg));
+        if(surface==='sheet')updateSheetSugsAfterSearch(null);
+      }catch(err){
+        console.error('[AI v2]',err);
+        typing.remove();
+        thread.push({role:'ai',kind:'answer',text:'Something went wrong — try rephrasing that 🔍',ts:Date.now()});
+        paint(surface);
+        setStatus('Yaad Brain · 100% local');
+      }finally{
+        busy(surface,false);
+        if(surface==='sheet'&&!opts.noFocus){
+          const inp=document.getElementById('sheetInput');
+          if(inp&&sheetOpen)inp.focus();
+        }
+      }
+    },170);
+  }
+  function statusFor(m){
+    if(!m)return 'Yaad Brain · 100% local';
+    if(m.kind==='search'&&m.total)return m.total+' result'+(m.total!==1?'s':'')+' · median '+medianLabel()+(state.budget?(' · '+state.budget.label):'');
+    if(m.kind==='best')return 'Best pick · by value, age & demand';
+    if(m.kind==='compare')return 'Head-to-head comparison';
+    if(m.kind==='detail')return 'Listing details';
+    return 'Yaad Brain · 100% local';
+  }
+  function medianLabel(){
+    try{
+      const s=state.stats||((state.pool.length&&V2)?V2.analyzePool(state.pool):null);
+      return s&&s.median?('J$'+fmtN(s.median)):'—';
+    }catch(e){return '—';}
+  }
+
+  function submit(surface,q){
+    let query=q||'';
+    if(!query){
+      const inp=document.getElementById(surface==='sheet'?'sheetInput':'floatInput');
+      query=(inp&&inp.value||'').trim();
+      if(inp&&query)inp.value='';
+    }
+    query=(query||'').trim();
+    if(surface==='sheet')syncClearBtn();
+    if(!query){
+      thread.push({role:'user',text:q||'…',ts:Date.now(),query:''});
+      thread.push({role:'ai',kind:'answer',ts:Date.now(),
+        text:'What are you looking for? Try:\n• “cheap car under 2 million”\n• “iPhone in Kingston”\n• “house for rent Portmore”\n• “how do I post an ad?”'});
+      paint(surface);
+      return;
+    }
+    if(!_ads||!_ads.length){
+      thread.push({role:'ai',kind:'answer',ts:Date.now(),text:'Listings are still loading — try again in a moment, or browse the homepage.'});
+      paint(surface);
+      return;
+    }
+    saveRecentSearch(query);
+    if(typeof gaEvent==='function'){try{gaEvent('search',{search_term:query});}catch(e){}}
+    ask(query,surface);
+  }
+
+  /* ── lifecycle ─────────────────────────────────────────────────── */
+  function wake(surface){
+    if(!thread.length)restore();
+    rehydrate();   /* listings may have arrived since the thread was saved */
+    if(!thread.length&&surface==='float'){
+      thread.push({role:'ai',kind:'greet',ts:Date.now(),text:pickGreeting()+" I'm your Yaad Adz assistant — search listings, compare prices, or ask me anything about the marketplace."});
+      _v2History.push({role:'ai',text:thread[0].text});
+      store();
+    }
+    paint(surface);
+    refreshRail();
+    setStatus('Yaad Brain v2 · 100% local');
+  }
+  function hasThread(){return thread.length>0;}
+  function newThread(surface){
+    thread=[];painted.sheet=0;painted.float=0;
+    state.results=[];state.pool=[];state.stats=null;state.qTerms=[];state.filters=null;state.lastQuery='';
+    state.resultIds=[];state.poolIds=[];state.budget=null;state.constraints=NO_CONSTRAINTS();
+    _v2History=[];sheetHistory=_v2History;
+    YaadBrain.reset();
+    try{localStorage.removeItem(AI_THREAD_KEY);}catch(e){}
+    ['sheetChat','floatMsgs'].forEach(function(id){const el=document.getElementById(id);if(el)el.innerHTML='';});
+    const hero=document.getElementById('aiHero');if(hero)hero.classList.remove('ai-hero-hide');
+    if(surface){pushGreetAndPaint(surface);}else{setStatus('Yaad Brain v2 · 100% local');}
+  }
+  function pushGreetAndPaint(surface){
+    thread.push({role:'ai',kind:'greet',ts:Date.now(),text:pickGreeting()+' What are we hunting for? 🇯🇲'});
+    _v2History.push({role:'ai',text:thread[0].text});
+    store();paint(surface);
+  }
+  function pushRaw(m){
+    m.ts=m.ts||Date.now();
+    thread.push(m);
+    _v2History.push({role:m.role,text:m.text});
+    if(_v2History.length>8)_v2History=_v2History.slice(-8);
+    store();paint('sheet');paint('float');
+  }
+
+  /* ── keyboard / viewport (iOS 27 behaviour) ────────────────────── */
+  function typingInField(){
+    const el=document.activeElement;
+    if(!el)return false;
+    const tag=(el.tagName||'').toUpperCase();
+    return tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||el.isContentEditable===true;
+  }
+  /* The sheet is a modal dialog — Tab must cycle inside it, never escape to
+     the page behind it. */
+  function trapTab(e){
+    const sheet=document.getElementById('aiSheet');if(!sheet)return;
+    const nodes=sheet.querySelectorAll('button,input,[href],select,textarea,[tabindex]:not([tabindex="-1"])');
+    const list=[];
+    for(let i=0;i<nodes.length;i++){
+      const el=nodes[i];
+      if(!el.disabled&&el.offsetParent!==null)list.push(el);
+    }
+    if(!list.length)return;
+    const first=list[0],last=list[list.length-1],active=document.activeElement;
+    if(e.shiftKey&&(active===first||!sheet.contains(active))){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&active===last){e.preventDefault();first.focus();}
+  }
+  function bindKeyboard(){
+    if(kbBound)return;kbBound=true;
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape'){
+        if(sheetOpen){closeAiSheet();}
+        else if(_floatOpen){toggleFloatChat();}
+        return;
+      }
+      if(e.key==='Tab'&&sheetOpen){trapTab(e);return;}
+      /* "/" jumps straight into the composer (⌘K/Ctrl+K is handled by the nav) */
+      if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!typingInField()){
+        const target=sheetOpen?document.getElementById('sheetInput')
+          :(_floatOpen?document.getElementById('floatInput'):null);
+        if(target){e.preventDefault();target.focus();}
+      }
+    });
+    const inp=document.getElementById('sheetInput');
+    if(inp)inp.addEventListener('input',syncClearBtn);
+    if(window.visualViewport&&typeof window.visualViewport.addEventListener==='function'){
+      window.visualViewport.addEventListener('resize',onViewport);
+      window.visualViewport.addEventListener('scroll',onViewport);
+    }else{
+      window.addEventListener('resize',onViewport);
+    }
+  }
+  function onViewport(){
+    if(!sheetOpen)return;
+    const sheet=document.getElementById('aiSheet');if(!sheet)return;
+    const vv=window.visualViewport;
+    const kb=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;
+    if(kb>140){
+      sheet.style.setProperty('--ai-kb',Math.round(kb)+'px');
+      sheet.classList.add('ai-sheet-keyboard-open');
+    }else{
+      sheet.style.removeProperty('--ai-kb');
+      sheet.classList.remove('ai-sheet-keyboard-open');
+    }
+  }
+  function syncClearBtn(){
+    const inp=document.getElementById('sheetInput');
+    const btn=document.getElementById('aiClearBtn');
+    if(btn)btn.hidden=!(inp&&inp.value.length);
+  }
+  function refreshRail(){
+    const wrap=document.getElementById('sheetSugs');if(!wrap)return;
+    if(!state.results.length)return;
+    wrap.querySelectorAll('.sheet-sug-dynamic').forEach(function(el){el.remove();});
+    const chips=chipSet();
+    chips.slice(0,4).forEach(function(c){
+      const b=document.createElement('button');
+      b.className='sheet-sug sheet-sug-dynamic';
+      b.textContent=c.label;
+      b.onclick=function(){sheetSearch(c.query);};
+      wrap.appendChild(b);
+    });
+  }
+
+  return{
+    submit:submit,ask:ask,wake:wake,newThread:newThread,hasThread:hasThread,
+    pushRaw:pushRaw,store:store,restore:restore,refreshRail:refreshRail,
+    rehydrate:rehydrate,repaint:repaint,pinAd:pinAd,
+    bindKeyboard:bindKeyboard,syncClearBtn:syncClearBtn,lastQuery:function(){return state.lastQuery||'';}
+  };
+})();
+
 /* ═══════════════════════════════════════════════════════════
-   AI SHEET STATE & FUNCTIONS
+   AI SHEET STATE & FUNCTIONS  (legacy surface wiring, v2 brain)
 ═══════════════════════════════════════════════════════════ */
-let sheetOpen=false,sheetHistory=[],_sheetLastQTerms=[];
+let sheetOpen=false,sheetHistory=[],_sheetLastQTerms=[],_chatReturnFocus=null;
 
 function saveRecentSearch(q){
   if(!q||q.length<3) return;
-  const searches=L.searches.filter(s=>s!==q);
-  L.searches=[q,...searches];
+  // §DECK — the recents rail stays "searches only": an email typed into the
+  // box (people sign in there by mistake) or a runaway paste is not a search,
+  // and it should never resurface as a chip.
+  const clean=q.trim();
+  if(clean.length>40||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return;
+  const searches=L.searches.filter(s=>s!==clean);
+  L.searches=[clean,...searches];
 }
 
 function renderRecentSearches(){
@@ -1485,7 +2364,6 @@ function updateSheetSugs(){
   const wrap=document.getElementById('sheetSugs');
   if(!wrap) return;
   wrap.querySelectorAll('.sheet-sug-dynamic').forEach(el=>el.remove());
-  // Replace static chips with live data-driven ones
   if(_ads&&_ads.length>0){
     const active=_ads.filter(a=>a.status!=='sold');
     const catCounts={};active.forEach(a=>{catCounts[a.category]=(catCounts[a.category]||0)+1;});
@@ -1511,7 +2389,7 @@ function updateSheetSugs(){
     });
   }
   if(!sugs.length) return;
-  const extra=sugs.map(s=>`<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'") }'">${s.label}</button>`).join('');
+  const extra=sugs.map(s=>`<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'") }'")">${s.label}</button>`).join('');
   wrap.insertAdjacentHTML('beforeend',extra);
 }
 
@@ -1524,6 +2402,8 @@ function openAiSheet(prefill) {
     return;
   }
   sheetOpen = true;
+  /* a11y: remember what had focus so closing can return it */
+  if(document.activeElement&&document.activeElement!==document.body)_chatReturnFocus=document.activeElement;
 
   const sheet = document.getElementById('aiSheet');
   const overlay = document.getElementById('aiSheetOverlay');
@@ -1540,8 +2420,6 @@ function openAiSheet(prefill) {
 
   document.body.style.overflow = 'hidden';
   document.body.classList.add('ai-sheet-open');
-
-  // Clear any previous keyboard class
   sheet.classList.remove('ai-sheet-keyboard-open');
 
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
@@ -1550,14 +2428,20 @@ function openAiSheet(prefill) {
   renderRecentSearches();
   updateSheetSugs();
 
-  const heroQ = (typeof prefill === 'string' ? prefill : '') || document.getElementById('aiInput')?.value?.trim() || '';
+  /* §CHAT-V2 — wake the shared brain first (restores the persisted
+     thread so a closed app reopens its conversation), then run any
+     prefill as a fresh question. */
+  try{ AiChat.wake('sheet'); AiChat.bindKeyboard(); }catch(e){ console.error('[AI v2 wake]',e); }
+
+  const heroQ = typeof prefill === 'string' ? prefill : '';
   const sheetInp = document.getElementById('sheetInput');
-  if (sheetInp && heroQ) sheetInp.value = heroQ;
+  if (sheetInp && heroQ) { sheetInp.value = heroQ; setTimeout(() => sheetSubmit(), 260); }
 
   setTimeout(() => {
     const body = document.getElementById('aiSheetBody');
-    if (body) body.scrollTop = 0;           // Force scroll to top on open
-    document.getElementById('sheetInput')?.focus();
+    if (body && !AiChat.hasThread()) body.scrollTop = 0;   // top only on a fresh thread
+    else if (body) body.scrollTop = body.scrollHeight;
+    if (sheetInp && !heroQ) sheetInp.focus();
   }, 420);
 }
 
@@ -1565,15 +2449,17 @@ function closeAiSheet() {
   sheetOpen = false;
   const sheet = document.getElementById('aiSheet');
   const overlay = document.getElementById('aiSheetOverlay');
-
   sheet.classList.remove('open', 'ai-sheet-keyboard-open');
   overlay.classList.remove('open');
-
   document.body.style.overflow = '';
   document.body.classList.remove('ai-sheet-open', 'ai-sheet-keyboard-open');
-
   if (document.activeElement) document.activeElement.blur();
-
+  /* a11y: hand focus back to whatever opened the sheet */
+  const back = _chatReturnFocus;
+  _chatReturnFocus = null;
+  if (back && typeof back.focus === 'function' && document.contains(back)) {
+    setTimeout(function(){ try { back.focus(); } catch(e){} }, 60);
+  }
   setTimeout(() => {
     if (!sheetOpen) {
       sheet.style.display = 'none';
@@ -1583,15 +2469,82 @@ function closeAiSheet() {
 }
 
 function clearSheetChat(){
-  const chat=document.getElementById('sheetChat');
-  if(chat) chat.innerHTML='';
-  sheetHistory=[];
+  /* §CHAT-V2 — the trash button and New chat share one lifecycle */
+  AiChat.newThread(sheetOpen?'sheet':null);
   _sheetLastQTerms=[];
   document.getElementById('sheetSugs')?.classList.remove('hidden');
   document.getElementById('sheetRecentWrap')?.style.removeProperty('display');
   renderRecentSearches();
   updateSheetSugs();
   showToast('Conversation cleared','🗑️');
+}
+
+/* ═══ §CHAT-V2 — ask about a SPECIFIC listing ═══════════════════
+   Entry points: the “🤖 Ask AI” button on a listing view and ?ask=<id>.
+   Highest-intent moment there is — the visitor is already looking at one
+   item and wants to know if it is a good deal. */
+function askAboutAd(ref){
+  if(!ref) return;
+  const ad=(typeof findAd==='function'?findAd(ref):null)
+    || ((typeof _ads!=='undefined'&&_ads)||[]).find(function(a){return a.id===ref;})
+    || null;
+  if(!ad){showToast('That listing is no longer available','🤖');return;}
+  openAiSheet();
+  setTimeout(function(){
+    try{ AiChat.pinAd(ad); }catch(e){ console.error('[AI askAboutAd]',e); }
+  },260);
+}
+
+/* ═══ §CHAT-V2 — voice input (Web Speech API) ═══════════════════
+   Typing is the biggest friction on a phone, and “mi waan a criss phone fi
+   likkle money” should be speakable. Feature-detected: browsers without
+   SpeechRecognition get an honest toast instead of a dead button. */
+let _vaRecog=null;
+function aiVoiceInput(targetId){
+  const btn=document.getElementById(targetId==='floatInput'?'floatMicBtn':'sheetMicBtn');
+  if(_vaRecog){                       /* a second tap stops dictation */
+    try{_vaRecog.stop();}catch(e){}
+    _vaRecog=null;
+    if(btn)btn.classList.remove('is-listening');
+    return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){showToast('Voice input is not supported in this browser','🎙️');return;}
+  const inp=document.getElementById(targetId);
+  if(!inp)return;
+  let recog;
+  try{
+    recog=new SR();
+    recog.lang='en-JM';               /* device default if the locale is unsupported */
+    recog.interimResults=true;
+    recog.continuous=false;
+    recog.maxAlternatives=1;
+  }catch(e){showToast('Voice input is not available right now','🎙️');return;}
+  const base=(inp.value||'').trim();
+  _vaRecog=recog;
+  if(btn)btn.classList.add('is-listening');
+  showToast('Listening… speak your search','🎙️');
+  recog.onresult=function(ev){
+    let finalText='',interim='';
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const r=ev.results[i];
+      if(r.isFinal)finalText+=r[0].transcript;else interim+=r[0].transcript;
+    }
+    inp.value=(base?base+' ':'')+(finalText||interim);
+  };
+  recog.onerror=function(ev){
+    const denied=ev&&(ev.error==='not-allowed'||ev.error==='service-not-allowed');
+    showToast(denied?'Microphone permission is blocked':'Voice input failed — try again','🎙️');
+  };
+  recog.onend=function(){
+    _vaRecog=null;
+    if(btn)btn.classList.remove('is-listening');
+    const text=(inp.value||'').trim();
+    if(!text||text===base)return;     /* nothing heard — leave the box alone */
+    if(targetId==='floatInput'){ if(typeof floatSubmit==='function')floatSubmit(); }
+    else if(typeof sheetSubmit==='function')sheetSubmit();
+  };
+  try{recog.start();}catch(e){_vaRecog=null;if(btn)btn.classList.remove('is-listening');}
 }
 
 function sheetSearch(query){
@@ -1601,59 +2554,18 @@ function sheetSearch(query){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SHEET SUBMIT
+   SHEET SUBMIT — §CHAT-V2: one line, one brain. The v2 pipeline
+   classifies the line first (conversation vs search) and falls
+   back to YaadBrain exactly as before when it is a real search.
 ═══════════════════════════════════════════════════════════ */
 function sheetSubmit(){
   const inp=document.getElementById('sheetInput');
-  const sendBtn=document.getElementById('sheetSendBtn');
   const query=(inp?.value||'').trim();
-  // Empty query — show helpful prompt
-  if(!query){
-    addSheetMsg('ai','What are you looking for? Try:\n• "cheap car under 2 million"\n• "iPhone in Kingston"\n• "house for rent Portmore"\n• "how do I post an ad?"',null,null);
-    return;
-  }
-  if(!_ads.length){
-    addSheetMsg('ai','Listings are still loading — try again in a moment, or browse the homepage.',null,null);
-    return;
-  }
-  inp.value='';
-  saveRecentSearch(query);
-  sendBtn.disabled=true;sendBtn.classList.add('sending');
+  if(inp) inp.value='';
+  AiChat.syncClearBtn();
   document.getElementById('sheetSugs')?.classList.add('hidden');
   document.getElementById('sheetRecentWrap')?.classList.add('hidden');
-  addSheetMsg('user',query);
-  const typingEl=addTyping();
-  requestAnimationFrame(()=>{
-    setTimeout(()=>{
-      try{
-        const result=YaadBrain.process(query,sheetHistory);
-        typingEl.remove();
-        if(result.type==='answer'){
-          addSheetMsg('ai',result.message,null,null);
-          // Nudge with popular listings after FAQ answers about selling/buying
-          const nudgeIntents=/how.*(post|sell|list)|how.*(contact|reach|message)|how.*(work|use)|delivery|payment/i;
-          if(nudgeIntents.test(query)&&_ads.length){
-            const active=_ads.filter(a=>a.status!=='sold');
-            const popular=[...active].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,2);
-            if(popular.length) setTimeout(function(){addSheetMsg('ai',"Here's what's listed on Yaad Adz right now 👇",popular,null,popular,[]);},400);
-          }
-        }else{
-          _sheetLastQTerms=result._qTerms||[];
-          addSheetMsg('ai',result.message,result.results,result.filters,result.allResults,_sheetLastQTerms);
-        }
-        sheetHistory.push({role:'user',text:query},{role:'ai',text:result.message});
-        if(sheetHistory.length>8) sheetHistory=sheetHistory.slice(-8);
-        updateSheetSugsAfterSearch(result);
-      }catch(err){
-        console.error('Brain error:',err);
-        typingEl.remove();
-        addSheetMsg('ai',"Something went wrong — try rephrasing your search! 🔍",null,null);
-      }finally{
-        sendBtn.disabled=false;sendBtn.classList.remove('sending');
-        document.getElementById('sheetInput')?.focus();
-      }
-    },180);
-  });
+  AiChat.submit('sheet',query);
 }
 
 /* ── Context-aware chips after each search ── */
@@ -1705,6 +2617,8 @@ function saveSearchAlert(query,filters){
     if(typeof requestPushPermission==='function') setTimeout(requestPushPermission,1000);
   }catch(e){}
 }
+
+
 function checkSavedSearchAlerts(newAds){
   if(!newAds||!newAds.length) return;
   if(Notification.permission!=='granted') return;
@@ -1722,116 +2636,35 @@ function checkSavedSearchAlerts(newAds){
   }
 }
 
-function addSheetMsg(role,text,results,filters,allResults,qTerms){
-  const chat=document.getElementById('sheetChat');
-  const body=document.getElementById('aiSheetBody');
-  const scrollToBottom=function(){requestAnimationFrame(function(){if(body) body.scrollTop=body.scrollHeight;});};
 
-  if(role==='user'){
-    const el=document.createElement('div');
-    el.className='sheet-msg-user';el.textContent=text;
-    chat.appendChild(el);scrollToBottom();return el;
+/* ── public entry points (wired from index.html) ─────────────────── */
+function aiSheetKeydown(ev){
+  if(ev.key==='Enter'){ev.preventDefault();sheetSubmit();}
+  else if(ev.key==='ArrowUp'){
+    const inp=document.getElementById('sheetInput');
+    if(inp&&!inp.value&&AiChat.lastQuery())inp.value=AiChat.lastQuery();
   }
-
-  const row=document.createElement('div');
-  row.className='sheet-msg-ai-row';
-  row.innerHTML='<div class="sheet-msg-avatar">🤖</div>';
-  const el=document.createElement('div');
-  el.className='sheet-msg-ai';
-  el.innerHTML='<div class="sheet-msg-text">'+escHtml(text).replace(/\n/g,'<br>')+'</div>';
-  row.appendChild(el);
-
-  if(results!==null){
-    const count=results?results.length:0;
-    const totalCount=allResults?allResults.length:count;
-    const tag=document.createElement('div');
-    tag.className='sheet-count-tag';
-    tag.textContent=count===0?'No listings found':totalCount+' result'+(totalCount!==1?'s':'')+' — top '+Math.min(count,totalCount)+' shown';
-    el.appendChild(tag);
-
-    if(results&&results.length>0){
-      const resWrap=document.createElement('div');resWrap.className='sheet-results';
-      results.forEach(function(ad){
-        const cat=catById(ad.category);
-        const card=document.createElement('div');card.className='sheet-result-card';
-        const isNew=((Date.now()-new Date(ad.date||0))/86400000)<3;
-        const negBadge=ad.neg?'<span class="src-neg-badge">neg.</span>':'';
-        const newBadge=isNew?'<span class="src-new-badge">New</span>':'';
-        const thumb=ad.image?'<img class="src-thumb" src="'+thumbUrl(ad.image,120)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<div class="src-icon">'+(cat.icon||'📦')+'</div>';
-        card.innerHTML=thumb+'<div class="src-info"><div class="src-price">J$'+fmtN(ad.price)+' '+negBadge+newBadge+'</div><div class="src-title">'+escHtml(ad.title)+'</div><div class="src-meta">📍 '+ad.parish+' · '+(cat.name||'Other')+'</div></div><div class="src-arrow">›</div>';
-        card.onclick=(function(adCopy){return function(){if(qTerms&&qTerms.length)YaadBrain.learn(adCopy.id,qTerms);closeAiSheet();setTimeout(function(){openDetail(adCopy.id);},200);};})(ad);
-        resWrap.appendChild(card);
-      });
-
-      // View All + Notify Me button row
-      if(filters&&totalCount>0){
-        const btnRow=document.createElement('div');btnRow.className='sheet-btn-row';
-        const viewAll=document.createElement('button');viewAll.className='sheet-btn-primary';
-        viewAll.textContent='View all '+totalCount+' results →';
-        viewAll.onclick=function(){
-          closeAiSheet();
-          activeF=(filters.categories&&filters.categories.length===1)?filters.categories[0]:'all';
-          searchQ=(filters.keywords||[]).join(' ');
-          window._aiFilters=filters;compactHero();
-          const inp=document.getElementById('aiInput');if(inp) inp.value=searchQ;
-          renderCats();renderHome();delete window._aiFilters;
-          showAiResponse(text,totalCount);scrollToResults();
-        };
-        btnRow.appendChild(viewAll);
-        const notifyBtn=document.createElement('button');notifyBtn.className='sheet-btn-notify';
-        notifyBtn.title='Get notified when new listings match';
-        const currentQuery=sheetHistory.length?sheetHistory[sheetHistory.length-2]?.text||'':'';
-        const isSaved=getSavedSearches().find(s=>s.query===currentQuery);
-        if(isSaved) notifyBtn.classList.add('is-saved');
-        notifyBtn.innerHTML=isSaved?'🔔 <span>Saved</span>':'🔔 <span>Notify me</span>';
-        notifyBtn.onclick=function(){
-          if(!currentQuery) return;
-          saveSearchAlert(currentQuery,filters);
-          notifyBtn.innerHTML='🔔 <span>Saved</span>';
-          notifyBtn.classList.add('is-saved');
-        };
-        btnRow.appendChild(notifyBtn);
-        resWrap.appendChild(btnRow);
-      }
-      el.appendChild(resWrap);
-
-    }else{
-      // Zero results — "Did you mean?" fuzzy suggestions
-      const emptyWrap=document.createElement('div');emptyWrap.style.cssText='text-align:center;padding:12px 0 4px';
-      const qTokens=qTerms||[];
-      const candidates=_ads.filter(a=>a.status!=='sold').map(ad=>{
-        const words=ad.title.toLowerCase().split(/\s+/);
-        let best=0;
-        for(const qt of qTokens){for(const tw of words){const sim=YaadBrain.bigramSim(qt,tw);if(sim>best)best=sim;}}
-        return{ad,score:best};
-      }).filter(c=>c.score>=0.55).sort((a,b)=>b.score-a.score).slice(0,3);
-
-      if(candidates.length){
-        emptyWrap.innerHTML='<div style="font-size:28px;margin-bottom:8px">🤔</div><div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px">Nothing exact — did you mean one of these?</div>';
-        const dymWrap=document.createElement('div');dymWrap.style.cssText='display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:left';
-        candidates.forEach(function(c){
-          const btn=document.createElement('button');btn.className='sheet-result-card';
-          btn.style.cssText='background:rgba(29,185,84,0.06);border-color:rgba(29,185,84,0.2);cursor:pointer;width:100%';
-          const cat=catById(c.ad.category);
-          btn.innerHTML='<div style="font-size:20px;width:36px;text-align:center;flex-shrink:0">'+(cat.icon||'📦')+'</div><div class="src-info"><div class="src-price">J$'+fmtN(c.ad.price)+'</div><div class="src-title">'+escHtml(c.ad.title)+'</div></div><div class="src-arrow" style="color:rgba(29,185,84,0.6)">›</div>';
-          btn.onclick=(function(adCopy){return function(){if(qTerms&&qTerms.length)YaadBrain.learn(adCopy.id,qTerms);closeAiSheet();setTimeout(function(){openDetail(adCopy.id);},200);};})(c.ad);
-          dymWrap.appendChild(btn);
-        });
-        emptyWrap.appendChild(dymWrap);
-      }else{
-        emptyWrap.innerHTML='<div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px">Nothing found — try these popular searches:</div>';
-      }
-      const sugWrap=document.createElement('div');sugWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px';
-      ['cheap car','phone Kingston','house for rent','jobs','laptop under 100k','furniture'].forEach(function(s){
-        const chip=document.createElement('button');chip.className='sheet-sug';chip.textContent=s;chip.onclick=function(){sheetSearch(s);};sugWrap.appendChild(chip);
-      });
-      emptyWrap.appendChild(sugWrap);
-      const browseBtn=document.createElement('button');browseBtn.className='sheet-view-all';browseBtn.textContent='Browse all listings →';browseBtn.onclick=function(){closeAiSheet();goHome();};
-      emptyWrap.appendChild(browseBtn);el.appendChild(emptyWrap);
-    }
+}
+function aiFloatKeydown(ev){
+  if(ev.key==='Enter'){ev.preventDefault();floatSubmit();}
+  else if(ev.key==='ArrowUp'){
+    const inp=document.getElementById('floatInput');
+    if(inp&&!inp.value&&AiChat.lastQuery())inp.value=AiChat.lastQuery();
   }
-
-  chat.appendChild(row);scrollToBottom();return row;
+}
+function aiClearInput(){
+  const inp=document.getElementById('sheetInput');
+  if(inp){inp.value='';inp.focus();}
+  AiChat.syncClearBtn();
+}
+function aiSheetHelp(){sheetSearch('help');}
+function aiChatNewChat(){
+  AiChat.newThread(sheetOpen?'sheet':(_floatOpen?'float':null));
+  showToast('Fresh chat started','✦');
+}
+function aiFloatOpenFull(){
+  if(_floatOpen)toggleFloatChat();
+  openAiSheet();
 }
 
 function addTyping(){

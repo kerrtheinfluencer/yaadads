@@ -151,14 +151,22 @@ function ppAddFilesToBoard(files, board) {
   if (!b || !b.list) return;
   var room = 6 - b.list.length;
   if (room <= 0) { showToast('6 photos max — remove one first', '⚠️'); return; }
-  var n = Math.min(files.length, room);
-  _addFilesToPhotos(files, b.list, b.render);
-  if (b.label === 'ad' && b.list.length) {
-    uploadUrl = b.list[0].preview;
-    ppAward(PP_XP.photo * n, n + ' photo' + (n === 1 ? '' : 's') + ' added');
-    ppStore.check.photo = true; ppSave();
-    showToast(n + ' photo' + (n === 1 ? '' : 's') + ' added ✨', '');
-  }
+  // Single completion callback — the batch reader appends in selection
+  // order, then we sync the cover preview + XP exactly once.
+  _addFilesToPhotos(files, b.list, function(added) {
+    b.render();
+    if (b.label === 'ad' && b.list.length) { uploadUrl = b.list[0].preview; }
+    if (added > 0) {
+      if (b.label === 'ad') {
+        ppAward(PP_XP.photo * added, added + ' photo' + (added === 1 ? '' : 's') + ' added');
+        ppStore.check.photo = true; ppSave();
+        showToast(added + ' photo' + (added === 1 ? '' : 's') + ' added ✨', '');
+      } else {
+        showToast(added + ' photo' + (added === 1 ? '' : 's') + ' added ✨', '');
+      }
+    }
+    ppPaintChrome();
+  });
   ppPaintChrome();
 }
 

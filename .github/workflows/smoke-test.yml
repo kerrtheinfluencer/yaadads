@@ -132,6 +132,11 @@ jobs:
         timeout-minutes: 5
         run: npm run test:onboarding
 
+      - name: Run AI chat regression tests (pure core + wiring)
+        run: |
+          node tools/test-chat-v2.js
+          node tools/test-chat-wiring.js
+
       - name: Check v2 onboarding + recents are wired up
         run: |
           grep -q 'js/onboarding.js' index.html || { echo "::error::onboarding.js is not included in index.html"; exit 1; }

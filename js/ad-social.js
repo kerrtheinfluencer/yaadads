@@ -120,7 +120,10 @@ function showAdInline(ad) {
       + (ad.phone ? '<a class="btn btn-green" href="tel:' + escHtml(ad.phone) + '" style="flex:1;text-align:center">📞 Call</a>' : '')
       + (waHref ? '<a class="btn btn-gold" href="' + waHref + '" target="_blank" rel="noopener noreferrer" style="flex:1;text-align:center">💬 WhatsApp</a>' : '')
       + '<button class="btn btn-outline" style="flex:1" onclick="shareAdInline(\'' + slug + '\')">🔗 Share</button>'
-      + '</div>' : '<div style="color:var(--text-2);font-size:14px">This item has been sold.</div>')
+      + '</div>'
+      /* §CHAT-V2 — the highest-intent chat entry point: ask about THIS ad */
+      + '<button class="btn btn-outline detail-ask-ai" type="button" style="width:100%;margin-top:8px">🤖 Ask AI about this listing</button>'
+      : '<div style="color:var(--text-2);font-size:14px">This item has been sold.</div>')
     + '</div>'
     + similarHtml
     + '</div>';
@@ -129,6 +132,13 @@ function showAdInline(ad) {
   el.innerHTML = html;
   goPage('detail');
   window.scrollTo(0, 0);
+
+  /* §CHAT-V2 — “Ask AI about this listing” (wired by addEventListener so no
+     listing text ever gets interpolated into an inline handler) */
+  var askAiBtn = el.querySelector('.detail-ask-ai');
+  if (askAiBtn) askAiBtn.addEventListener('click', function () {
+    if (typeof askAboutAd === 'function') askAboutAd(ad.id);
+  });
 
   var track = el.querySelector('.gallery-track');
   if (track && photos.length > 1) {

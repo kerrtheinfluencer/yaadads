@@ -30,8 +30,43 @@
 
 
 var SITE_UPDATES = {
-  current: 'home-view',
+  current: 'ai-chat-v2',
   items: {
+    'ai-chat-v2': {
+      version: 'v2.13',
+      icon: '🤖',
+      title: 'The AI chat got a full glow-up',
+      cta: 'Try it',
+      ctaFn: 'openAiSheet',
+      body: 'Yaad Brain now chats like a proper assistant. Ask a follow-up like "the second one" or "anything cheaper?", compare two listings side by side, and get straight answers about any ad. And as always — it all runs 100% on your phone. No account, no cloud, no waiting.',
+      date: 'Sep 21, 2026',
+      notes: [
+        'New: real follow-up chat — "the second one", "cheaper?", "only with photos" all remember the conversation',
+        'New: side-by-side compare grid for any two listings — price, vs median, age, views at a glance',
+        'New: 👍👎 on replies actually steer the next suggestions',
+        'New: the conversation survives closing the app — come back and pick up right where you left off',
+        'New: copy, retry or share any reply straight to WhatsApp',
+        'Fixed: the whole chat got its glass-and-gold finish — desktop side panel and floating bubble included',
+      ],
+      url: '/',
+    },
+    'photo-refresh': {
+      version: 'v2.12',
+      icon: '📸',
+      title: 'Photos view right + smoother pull-to-refresh',
+      cta: 'Try now',
+      ctaFn: 'openPostAd',
+      body: 'Two fixes yuh asked for. Photos on the Post-Ad page now stay in the order yuh pick them, the first one is always the cover, and tapping any photo opens it fullscreen. Pull-to-refresh on mobile is calmer too — a short tug just shows the hint; only a proper pull past the line reloads the listings.',
+      date: 'Sep 19, 2026',
+      notes: [
+        'Fixed: picked photos kept scrambling order and the cover preview pointed at the wrong photo',
+        'New: tap any Post-Ad or Edit-Ad photo to view it fullscreen (swipe/arrows, dots + counter)',
+        'New: ★ Cover button on non-cover photos to pick your cover without re-uploading',
+        'Fixed: tiny overscrolls at the top of the feed no longer trigger a full reload',
+        'Pull-to-refresh now needs a deliberate ~110px pull, ignores sideways swipes and pinch-zoom, and never fires inside modals or while typing',
+      ],
+      url: '/',
+    },
     'home-view': {
       version: 'v2.11',
       icon: '📱',

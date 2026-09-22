@@ -94,6 +94,17 @@ function escHtml(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/* §CHAT-V2 — the search field the visitor can actually see and type into.
+   The old hero AI search bar (id="aiInput") was removed from index.html, which
+   left ⌘K, deep links (?q=) and every “clear the search” path pointing at a
+   dead node. The live fields are the nav search pill (desktop) and the AI
+   sheet composer (mobile); this resolves whichever is on screen. */
+function searchInput() {
+  return document.getElementById('navSearchInput') ||
+         document.getElementById('sheetInput') ||
+         document.getElementById('floatInput') || null;
+}
+
 const DEMO = [
   {id:'d1',title:'2019 Honda Civic LX — Low Mileage',category:'vehicles',price:2800000,parish:'Kingston',desc:'Excellent condition. Full AC, new tyres. 34,000 km only. Never in accident. Registered 2024. Serious enquiries only.',seller:'Marcus Reid',sellerInit:'MR',sellerId:'s1',phone:'876-456-7890',date:'2025-06-01',image:'',status:'active',neg:false, views:47},
   {id:'d2',title:'3-Bedroom House — Spanish Town',category:'property',price:18500000,parish:'St. Catherine',desc:'Newly renovated 3BR 2BA in quiet residential area. Large yard, modern kitchen, burglar bars. Close to school & market.',seller:'Donna Clarke',sellerInit:'DC',sellerId:'s2',phone:'876-321-5678',date:'2025-06-03',image:'',status:'active',neg:true, views:83},
@@ -298,6 +309,13 @@ async function loadAds(_isRetry) {
   const newAds = _ads.filter(a => !prevIds.has(a.id));
   if (newAds.length && prevIds.size > 0) {
     setTimeout(function() { checkSavedSearchAlerts(newAds); }, 1500);
+  }
+
+  // ── §CHAT-V2: the AI thread stores listing ids, not objects. Once listings
+  // exist again, re-map them so follow-ups ("which is best?") keep working on
+  // a conversation restored from storage before this load finished.
+  if (typeof AiChat !== 'undefined' && AiChat && typeof AiChat.rehydrate === 'function') {
+    try { AiChat.rehydrate(); } catch (e) {}
   }
 }
 

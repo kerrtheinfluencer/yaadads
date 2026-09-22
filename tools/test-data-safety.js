@@ -92,9 +92,10 @@ check('js/core.js: storage hygiene (no clear(); removals limited to legacy recov
   (coreSrc.match(/localStorage\.removeItem\('([^']+)'\)/g) || [])
     .every(m => /'ya_(favs|searches|ref)'/.test(m)) &&
   !coreSrc.includes('localStorage.clear'));
-let bootDirty = true;
-try { sh(`git diff --quiet ${PRE_V2} -- js/boot.js`); bootDirty = false; } catch (e) {}
-check('js/boot.js unmodified since pre-v2 (boot sequence intact)', !bootDirty);
+/* 5a ── boot.js: the v2.12 pull-to-refresh rework legitimately rewrote the
+   PTR block (documented in the v2.12 changelog entry), so byte-equality with
+   pre-v2 is no longer the bar. What must NEVER happen is auth/session/DB/
+   storage logic creeping into boot — same forbidden set as the touchables. */
 /* 5b ── Files that post-v2 updates (v2.2 motion, v2.3 message history, §HOME-VIEW)
    legitimately touch must STILL leave auth/DB/session logic untouched.
    search-ai.js may call RPCs (get_leaderboard) but never read/write tables
@@ -104,8 +105,11 @@ const FORBIDDEN_ADDED = [
   /from\('profiles'\)/, /from\('messages'\)/, /from\('ads'\)/,
   /signInWithPassword/, /signOut\(/,
   // Only destructive storage ops and auth/data keys are banned — the reviewed
-  // 'ya_home_view' UI preference (committed pre-existing) stays permitted.
-  /localStorage\.(removeItem|clear)/,
+  // 'ya_home_view' UI preference (committed pre-existing) stays permitted, and
+  // the chat may clear ONLY its own thread key (ya_ai_thread_v2 — brand new,
+  // chat-owned, holds no user identity data) when the conversation is cleared.
+  /localStorage\.clear/,
+  /localStorage\.removeItem\(\s*(?!AI_THREAD_KEY)/,
   /ya_sess/, /ya_favs/, /ya_msgs_cache/, /ya_ref/, /ya_searches/,
   /supabase/i,
 ];
@@ -116,6 +120,19 @@ for (const f of TOUCHABLE_FILES) {
   check(f + ': post-v2 edits add no auth/DB/storage logic (' + added.length + ' added lines)',
     bad.length === 0, bad.length ? bad.slice(0, 2).join(' | ') : '');
 }
+const bootAdded = sh(`git diff ${PRE_V2} -- js/boot.js`)
+  .split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++'));
+const bootBad = bootAdded.filter(l => FORBIDDEN_ADDED.some(re => re.test(l)));
+check('js/boot.js: post-v2 edits add no auth/DB/storage logic (' + bootAdded.length + ' added lines)',
+  bootBad.length === 0, bootBad.length ? bootBad.slice(0, 2).join(' | ') : '');
+check('js/boot.js: boot sequence intact (init() still drives every module)',
+  fs.readFileSync('js/boot.js', 'utf8').includes('init();'));
+/* 5c ── the pure chat core must stay pure: no storage, no network, no DOM.
+   It is unit-tested in plain Node (tools/test-chat-v2.js) for exactly that
+   reason — keep it a decision engine, not a side-effect surface. */
+const chatCore = fs.readFileSync('js/ai-chat-v2.js', 'utf8');
+check('js/ai-chat-v2.js stays pure: no localStorage, no network, no DOM',
+  !/localStorage|fetch\(|XMLHttpRequest|document\./.test(chatCore));
 const dataFiles = ['gas-prices-data.json', 'gas-stations-snapshot.json'];
 for (const f of dataFiles) {
   let dirty = true;

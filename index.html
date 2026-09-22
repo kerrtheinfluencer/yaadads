@@ -459,16 +459,6 @@ if ('serviceWorker' in navigator) {
       <!-- Reset button (shown after search) -->
       <button class="hero-reset" onclick="resetHeroSearch()">← Back to all listings</button>
 
-      <!-- Suggestion chips -->
-      <div class="ai-suggestions">
-        <button class="ai-sug" onclick="setAiQuery('cheap car under 2 million')">🚗 Cheap cars</button>
-        <button class="ai-sug" onclick="setAiQuery('phone under 80000 in Kingston')">📱 Phones in Kingston</button>
-        <button class="ai-sug" onclick="setAiQuery('house under 20 million')">🏡 Houses for sale</button>
-        <button class="ai-sug" onclick="setAiQuery('jobs available near me')">💼 Jobs</button>
-        <button class="ai-sug" onclick="setAiQuery('budget laptop under 100000')">💻 Laptops</button>
-        <button class="ai-sug" onclick="setAiQuery('how do I post an ad?')">❓ How to post</button>
-      </div>
-
       <!-- Stats -->
       <div class="hero-stats">
         <div><div class="hero-stat-num" id="sStat">0</div><div class="hero-stat-lbl">Listings</div></div>
@@ -483,9 +473,6 @@ if ('serviceWorker' in navigator) {
 
 <!-- RESULTS AREA (categories + AI response + listings, all unified) -->
   <div class="results-area">
-
-    <!-- V2: recent searches (populated by js/recent.js) -->
-    <div class="recent-search-row" id="recentSearchRow"></div>
 
     <!-- STATIC SEO INTRO — indexed by Google, hidden once JS boots -->
     <div id="seoIntro" style="padding:20px 24px 0;max-width:960px;margin:0 auto">
@@ -505,8 +492,22 @@ if ('serviceWorker' in navigator) {
 
     <!-- Ad: below hero (hidden until AdSense ready) -->
 
-    <!-- Compact category row -->
-    <div class="cat-row" id="catRow"></div>
+    <!-- ── BROWSE DECK ───────────────────────────────────────────────────
+         One iOS-27 glass surface holding both "ways to find something":
+         🕐 recent searches (js/recent.js) over 📂 category pills
+         (js/ui-nav.js renderCats). Sharing a single panel — with a
+         hairline divider between the rails — replaces the three stacked
+         floating bars that used to compete for the eye here.
+         ────────────────────────────────────────────────────────────────── -->
+    <div class="browse-deck">
+
+      <!-- Recent searches — rendered by js/recent.js, hidden until there is history -->
+      <div class="recent-search-row" id="recentSearchRow"></div>
+
+      <!-- Compact category rail -->
+      <div class="cat-row" id="catRow" role="group" aria-label="Browse by category"></div>
+
+    </div>
 
     <!-- AI response card -->
     <div class="ai-response-card" id="aiResponseCard">
@@ -518,42 +519,56 @@ if ('serviceWorker' in navigator) {
       <div class="ai-response-text" id="aiResponseText"></div>
     </div>
 
-    <!-- Results header -->
+    <!-- ── RESULTS TOOLBAR ───────────────────────────────────────────────
+         A single slim control bar: how many listings on the left, then the
+         controls grouped on the right (Hide sold ⇄ iOS switch, sort, and the
+         mobile single/grid switch). The old bar scattered a bare label, a
+         loose toggle and a native select across the full width, which is what
+         made this area read as cluttered.
+         ────────────────────────────────────────────────────────────────── -->
     <div class="results-header" id="resultsHeader" style="display:none">
-      <div class="results-count" id="resultsCount"></div>
-      <div class="filter-toggle-wrap">
-        <label class="filter-toggle-label" onclick="toggleHideSold()">Hide sold</label>
-        <div class="toggle-switch" id="hideSoldToggle" onclick="toggleHideSold()"></div>
-      </div>
-      <select class="fselect" id="homeSortSel" onchange="renderHome()">
-        <option value="newest">Newest First</option>
-        <option value="price-lo">Price: Low → High</option>
-        <option value="price-hi">Price: High → Low</option>
-      </select>
-      <!-- §HOME-VIEW: mobile-only single ⇄ grid switch (js/search-ai.js setHomeView) -->
-      <div class="view-toggle" id="homeViewBtn" role="group" aria-label="Listing layout">
-        <button type="button" class="view-opt" data-view="single" onclick="setHomeView('single')"
-                aria-pressed="true" title="Single view" aria-label="Single view">
-          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-            <rect x="2.5" y="3.75" width="15" height="12.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
-          </svg>
+      <div class="results-count" id="resultsCount" aria-live="polite"></div>
+      <div class="rb-controls">
+        <!-- One tap target: label + switch read as a single iOS control -->
+        <button type="button" class="hs-switch" id="hideSoldBtn" role="switch"
+                aria-checked="false" aria-label="Hide sold listings"
+                onclick="toggleHideSold()">
+          <span class="hs-switch-label">Hide sold</span>
+          <span class="toggle-switch" id="hideSoldToggle" aria-hidden="true"></span>
         </button>
-        <button type="button" class="view-opt" data-view="grid" onclick="setHomeView('grid')"
-                aria-pressed="false" title="Grid view" aria-label="Grid view">
-          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-            <rect x="2.5" y="2.5" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
-            <rect x="10.9" y="2.5" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
-            <rect x="2.5" y="10.9" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
-            <rect x="10.9" y="10.9" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
-          </svg>
-        </button>
+        <div class="rb-select">
+          <select class="fselect" id="homeSortSel" onchange="renderHome()" aria-label="Sort listings">
+            <option value="newest">Newest First</option>
+            <option value="price-lo">Price: Low → High</option>
+            <option value="price-hi">Price: High → Low</option>
+          </select>
+        </div>
+        <!-- §HOME-VIEW: mobile-only single ⇄ grid switch (js/search-ai.js setHomeView) -->
+        <div class="view-toggle" id="homeViewBtn" role="group" aria-label="Listing layout">
+          <button type="button" class="view-opt" data-view="single" onclick="setHomeView('single')"
+                  aria-pressed="true" title="Single view" aria-label="Single view">
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <rect x="2.5" y="3.75" width="15" height="12.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            </svg>
+          </button>
+          <button type="button" class="view-opt" data-view="grid" onclick="setHomeView('grid')"
+                  aria-pressed="false" title="Grid view" aria-label="Grid view">
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <rect x="2.5" y="2.5" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <rect x="10.9" y="2.5" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <rect x="2.5" y="10.9" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <rect x="10.9" y="10.9" width="6.6" height="6.6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- V2: Recently viewed strip (populated by js/recent.js) -->
     <div class="recent-strip" id="recentStrip" style="display:none">
       <div class="recent-strip-hd">
-        <span>👁️ Recently viewed</span>
+        <span class="rs-hd-ico" aria-hidden="true">👁️</span>
+        <span class="rs-hd-title">Recently viewed</span>
         <button class="recent-clear" id="recentClear" type="button">Clear</button>
       </div>
       <div class="recent-strip-row" id="recentStripRow"></div>
@@ -957,59 +972,68 @@ if ('serviceWorker' in navigator) {
   <span id="tIcon">✅</span><span id="tMsg"></span>
 </div>
 
-<!-- ─── AI SEARCH SHEET (full-screen slide-up) ─── -->
+<!-- ─── AI CHAT v2 (full-screen glass sheet · φ proportions · 100% local) ─── -->
 <div class="ai-sheet-overlay" id="aiSheetOverlay" onclick="closeAiSheet()"></div>
-<div class="ai-sheet" id="aiSheet">
-  <div class="ai-sheet-handle"></div>
-  <div class="ai-sheet-header">
+<section class="ai-sheet ai-v2" id="aiSheet" role="dialog" aria-modal="true" aria-label="Yaad Adz AI chat">
+  <div class="ai-sheet-handle" aria-hidden="true"><span></span></div>
+  <header class="ai-sheet-header">
     <div class="ai-sheet-title">
-      <span class="ai-sheet-icon">🤖</span>
-      <div>
-        <div class="ai-sheet-name">Yaad Adz AI</div>
-        <div class="ai-sheet-sub">Ask anything · Search listings</div>
+      <span class="ai-orb" aria-hidden="true"><span class="ai-orb-core">🤖</span></span>
+      <div class="ai-title-txt">
+        <div class="ai-sheet-name">Yaad <em>Adz</em> AI</div>
+        <div class="ai-sheet-sub" id="aiSheetStatus"><i class="ai-dot" aria-hidden="true"></i><span id="aiSheetStatusTxt">Yaad Brain v2 · 100% local</span></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="ai-sheet-close" onclick="clearSheetChat()" title="Clear conversation" style="font-size:13px">🗑️</button>
-      <button class="ai-sheet-close" onclick="closeAiSheet()">✕</button>
+    <div class="ai-sheet-tools">
+      <button class="ai-tool-btn" onclick="aiChatNewChat()" title="New chat" aria-label="New chat">✦</button>
+      <button class="ai-tool-btn" onclick="clearSheetChat()" title="Clear conversation" aria-label="Clear conversation">🗑️</button>
+      <button class="ai-tool-btn ai-tool-close" onclick="closeAiSheet()" title="Close" aria-label="Close">✕</button>
     </div>
-  </div>
+  </header>
 
-  <!-- Scrollable body -->
+  <!-- Scrollable thread -->
   <div class="ai-sheet-body" id="aiSheetBody">
+    <!-- Hero welcome (hidden once the conversation starts) -->
+    <div class="ai-hero" id="aiHero">
+      <div class="ai-hero-greet" id="aiHeroGreet">Wah gwaan! 👋</div>
+      <div class="ai-hero-lead">Ask me anything — search listings, check prices, compare deals or get advice. It all runs on Yaad Brain, right on your phone.</div>
+    </div>
+
     <!-- Recent searches (populated by JS) -->
     <div class="ai-sheet-recent" id="sheetRecentWrap" style="display:none">
       <div class="sheet-recent-label">Recent searches</div>
       <div class="sheet-recent-list" id="sheetRecentList"></div>
     </div>
 
-    <!-- Quick suggestion chips -->
+    <!-- φ chip rail -->
     <div class="ai-sheet-sugs" id="sheetSugs">
       <button class="sheet-sug" onclick="sheetSearch('cheap car under 2 million')">🚗 Cheap cars</button>
       <button class="sheet-sug" onclick="sheetSearch('phone under 80000 Kingston')">📱 Phones KGN</button>
       <button class="sheet-sug" onclick="sheetSearch('house under 20 million')">🏡 Houses</button>
       <button class="sheet-sug" onclick="sheetSearch('jobs available')">💼 Jobs</button>
       <button class="sheet-sug" onclick="sheetSearch('laptop under 100000')">💻 Laptops</button>
-      <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food & Farm</button>
+      <button class="sheet-sug" onclick="sheetSearch('fresh food farm produce')">🥭 Food &amp; Farm</button>
     </div>
 
-    <!-- Chat history -->
-    <div class="ai-sheet-chat" id="sheetChat"></div>
+    <!-- Conversation thread -->
+    <div class="ai-sheet-chat" id="sheetChat" role="log" aria-live="polite" aria-busy="false"></div>
   </div>
 
-  <!-- Input bar pinned to bottom -->
+  <!-- Composer pinned to bottom -->
   <div class="ai-sheet-input-wrap">
     <div class="ai-sheet-input-bar">
-      <input class="ai-sheet-input" id="sheetInput" type="text"
+      <input class="ai-sheet-input" id="sheetInput" type="text" inputmode="search" enterkeyhint="send"
         placeholder="cheap phone, house in Kingston, how do I post…"
-        onkeydown="if(event.key==='Enter')sheetSubmit()">
-      <button class="ai-sheet-send" id="sheetSendBtn" onclick="sheetSubmit()">
+        onkeydown="aiSheetKeydown(event)" autocomplete="off">
+      <button class="ai-clear-btn" id="aiClearBtn" onclick="aiClearInput()" title="Clear text" aria-label="Clear text" hidden>✕</button>
+      <button class="ai-mic-btn" id="sheetMicBtn" type="button" onclick="aiVoiceInput('sheetInput')" title="Speak your search" aria-label="Speak your search">🎙️</button>
+      <button class="ai-sheet-send" id="sheetSendBtn" onclick="sheetSubmit()" aria-label="Send">
         <span id="sheetSendLabel">↑</span>
       </button>
     </div>
-    <div class="ai-sheet-hint">Yaad Brain · Understands Patois &amp; natural search</div>
+    <div class="ai-sheet-hint">Yaad Brain v2 · understands Patois · <button class="ai-hint-link" onclick="aiSheetHelp()" type="button">what can I ask?</button></div>
   </div>
-</div>
+</section>
 
 <!-- Ad: above footer (hidden until AdSense ready) -->
 
@@ -1215,31 +1239,30 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<!-- FLOATING AI CHAT (desktop) -->
-<button class="ai-fab" id="aiFab" onclick="toggleFloatChat()">🤖</button>
-<div class="ai-float-chat" id="aiFloatChat">
-  <div class="ai-float-header">
-    <span class="ai-float-header-icon">🤖</span>
+<!-- FLOATING AI CHAT v2 (desktop · shares one brain with the sheet) -->
+<button class="ai-fab" id="aiFab" onclick="toggleFloatChat()" aria-label="Open AI chat">🤖</button>
+<section class="ai-float-chat ai-v2" id="aiFloatChat" role="dialog" aria-label="Yaad Adz AI chat">
+  <header class="ai-float-header">
+    <span class="ai-orb ai-orb-sm" aria-hidden="true"><span class="ai-orb-core">🤖</span></span>
     <div class="ai-float-header-info">
       <div class="ai-float-header-name">Yaad <em style="color:var(--gold);font-style:italic">Adz</em> AI</div>
-      <div class="ai-float-header-sub">Search listings · Get answers</div>
+      <div class="ai-float-header-sub"><i class="ai-dot" aria-hidden="true"></i> Yaad Brain v2 · local</div>
     </div>
-    <button class="ai-float-close" onclick="toggleFloatChat()">✕</button>
-  </div>
-  <div class="ai-float-msgs" id="floatMsgs">
-    <div class="sheet-msg-ai" style="animation:none">
-      <div class="sheet-msg-text">Hey! 👋 I'm your Yaad Adz assistant. Search for items, compare prices, or ask me anything about the marketplace.</div>
-    </div>
-  </div>
+    <button class="ai-tool-btn" onclick="aiChatNewChat()" title="New chat" aria-label="New chat">✦</button>
+    <button class="ai-tool-btn ai-tool-close" onclick="toggleFloatChat()" title="Close" aria-label="Close">✕</button>
+  </header>
+  <div class="ai-float-msgs" id="floatMsgs" role="log" aria-live="polite" aria-busy="false"></div>
   <div class="ai-float-input-wrap">
     <div class="ai-float-input-bar">
-      <input class="ai-float-input" id="floatInput" type="text"
+      <input class="ai-float-input" id="floatInput" type="text" enterkeyhint="send" autocomplete="off"
         placeholder="Search listings or ask a question…"
-        onkeydown="if(event.key==='Enter')floatSubmit()">
-      <button class="ai-float-send" onclick="floatSubmit()">↑</button>
+        onkeydown="aiFloatKeydown(event)">
+      <button class="ai-float-mic" id="floatMicBtn" type="button" onclick="aiVoiceInput('floatInput')" title="Speak your search" aria-label="Speak your search">🎙️</button>
+      <button class="ai-float-send" onclick="floatSubmit()" aria-label="Send">↑</button>
     </div>
+    <button class="ai-float-full" onclick="aiFloatOpenFull()" type="button">Open the full chat ↗</button>
   </div>
-</div>
+</section>
 
 <!-- ══════════════════════════════════════
      INVITE FRIENDS MODAL
@@ -1336,6 +1359,7 @@ if ('serviceWorker' in navigator) {
 <script src="js/caption-parse.js" defer></script>
 <script src="js/post-pro.js" defer></script>
 <script src="js/ui-nav.js" defer></script>
+<script src="js/ai-chat-v2.js" defer></script>
 <script src="js/search-ai.js" defer></script>
 <script src="js/ad-social.js" defer></script>
 <script src="js/widgets-pwa.js" defer></script>

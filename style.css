@@ -758,22 +758,60 @@ nav.scrolled-transparent {
    ═══════════════════════════════════════════════════════════════════════════ */
 .results-area { max-width: 1200px; margin: 0 auto; padding: 0 24px 52px; position: relative; }
 
-/* Compact category pills row */
+/* ═══════════════════════════════════════════════════════════════════════════
+   BROWSE DECK §DECK — iOS 27 glass panel: 🕐 recents over 📂 categories
+   The deck owns the border, the blur and the shadow; the two rails inside it
+   are transparent, so the eye reads one calm control block with a hairline
+   between the rows instead of three stacked floating bars.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.browse-deck {
+  position: relative;
+  margin: 18px 0 var(--fib-4);
+  padding: var(--fib-1) var(--fib-5);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .035));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13), 0 18px 44px rgba(0, 8, 4, .2);
+  -webkit-backdrop-filter: blur(26px) saturate(165%);
+  backdrop-filter: blur(26px) saturate(165%);
+}
+
+/* Scrollable rails — scrolls sideways. The mask softens whichever end still has
+   more to show (js/ui-nav.js initRailFade toggles .rail-start/.rail-end),
+   so overflow reads as "there's more" instead of a pill or card sliced in half.
+   Two rails opt in: the category row in the deck and the recently-viewed strip. */
 .cat-row {
-  display: flex; gap: 8px; overflow-x: auto; padding: 22px 0 6px;
+  display: flex; gap: var(--fib-4); overflow-x: auto;
+  padding: var(--fib-5) var(--fib-1) var(--fib-6);
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
   scrollbar-width: none; align-items: center;
 }
+.cat-row,
+.recent-strip-row {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--rail-fade-l, 21px), #000 calc(100% - var(--rail-fade-r, 34px)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--rail-fade-l, 21px), #000 calc(100% - var(--rail-fade-r, 34px)), transparent 100%);
+}
+.cat-row.rail-start,
+.recent-strip-row.rail-start { --rail-fade-l: 0px; }
+.cat-row.rail-end,
+.recent-strip-row.rail-end   { --rail-fade-r: 0px; }
 .cat-row::-webkit-scrollbar { display: none; }
 /* §FIB-HERO — category pills join the golden set: 21px pill radius,
-   8·13 padding, 161ms golden-eased hover lift with 13px gold glow. */
+   8·13 padding, 161ms golden-eased hover lift with 13px gold glow.
+   §DECK — one 34px control per pill with the live count in a badge: the
+   number now sits in its own chip instead of trailing the label as loose
+   grey text, and a category with nothing live is dimmed and drops its
+   badge entirely, so the rail reads "what's actually here". */
 .cat-pill-sm {
   display: flex;
   align-items: center;
-  gap: var(--fib-3);
+  gap: var(--fib-4);
+  height: var(--fib-7);
   flex-shrink: 0;
-  padding: var(--fib-4) var(--fib-5);
+  scroll-snap-align: start;
+  padding: 0 var(--fib-5);
   background: rgba(255,255,255,.08);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -806,7 +844,24 @@ nav.scrolled-transparent {
   box-shadow: 0 var(--fib-3) calc(var(--fib-10) / 6) rgba(0,92,53,0.2);
   transform: translateY(calc(var(--fib-1) * -1));
 }
-.cat-pill-sm .cp-icon { font-size: 15px; }
+.cat-pill-sm:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.cat-pill-sm:active { transform: scale(.97); }
+.cat-pill-sm .cp-icon { font-size: 15px; line-height: 1; }
+.cat-pill-sm .cp-name { white-space: nowrap; }
+.cat-pill-sm .cp-n {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 20px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,.14);
+  color: inherit;
+}
+.cat-pill-sm.active .cp-n { background: rgba(255,255,255,.24); }
+/* Nothing live in this category — quieter, and no "0" to read past. */
+.cat-pill-sm.is-empty { opacity: .55; }
+.cat-pill-sm.is-empty .cp-n { display: none; }
 
 /* AI response card */
 .ai-response-card {
@@ -870,13 +925,50 @@ nav.scrolled-transparent {
   to   { opacity:1; transform:none; }
 }
 
-/* Results header */
+/* ── RESULTS TOOLBAR §DECK ──
+   Count on the left; Hide sold, sort and the mobile layout switch grouped
+   hard right as one cluster of 34px controls on a shared baseline. Previously
+   a bare label, a loose knob and a native select were spread across the whole
+   width, which is what made the bar feel busy. */
 .results-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin: 20px 0 16px; flex-wrap: wrap; gap: 10px;
+  margin: var(--fib-5) 0 var(--fib-5); flex-wrap: wrap; gap: var(--fib-4);
+  padding: var(--fib-3) var(--fib-4) var(--fib-3) var(--fib-5);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
 }
-.results-count { font-size: 14px; color: var(--text-3); }
-.results-count strong { color: var(--text-1); font-weight: 700; }
+.results-count {
+  display: flex; align-items: center; gap: var(--fib-4);
+  font-size: 13px; color: var(--text-3); min-width: 0;
+}
+.results-count strong { color: var(--text-1); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.results-count .rc-word { white-space: nowrap; }
+/* "Active only" reads as a status, not as part of the sentence. */
+.results-count .rc-badge {
+  font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap;
+  padding: 4px 9px; border-radius: 20px;
+  background: rgba(244,195,0,.16); border: 1px solid rgba(244,195,0,.42); color: var(--gold-dark);
+}
+.rb-controls { margin-left: auto; display: flex; align-items: center; gap: var(--fib-4); }
+/* Sort: the native arrow is swapped for a hairline chevron that matches
+   the rest of the controls (and the option list is themed dark). */
+.rb-select { position: relative; display: flex; align-items: center; }
+.rb-select::after {
+  content: ''; position: absolute; right: var(--fib-5); top: 50%;
+  width: 7px; height: 7px; margin-top: -5px;
+  border-right: 1.7px solid rgba(255,255,255,.55);
+  border-bottom: 1.7px solid rgba(255,255,255,.55);
+  transform: rotate(45deg); pointer-events: none;
+}
+.rb-select .fselect { margin-left: 0; height: var(--fib-7); padding-top: 0; padding-bottom: 0; padding-right: var(--fib-7); -webkit-appearance: none; appearance: none; }
+.rb-select .fselect::-ms-expand { display: none; }
+#homeSortSel option { background: #0b2a1b; color: #fff; }
+.rb-select .fselect:hover { border-color: rgba(244,195,0,.5); }
+.rb-select .fselect:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 /* Loading skeletons — premium glassmorphic style */
 .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
@@ -1903,6 +1995,16 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   padding: 2px 7px; border-radius: 6px;
   text-transform: uppercase; letter-spacing: .3px;
 }
+.photo-cover-btn {
+  position: absolute; bottom: 4px; left: 4px;
+  background: rgba(0,0,0,.65); color: #fff;
+  font-size: 9px; font-weight: 800;
+  padding: 2px 7px; border-radius: 6px; border: none; cursor: pointer;
+  text-transform: uppercase; letter-spacing: .3px;
+  opacity: 0; transition: opacity .15s;
+}
+.photo-thumb-wrap:hover .photo-cover-btn, .photo-cover-btn:focus-visible { opacity: 1; }
+.photo-cover-btn:hover { background: var(--green); }
 .photo-add-btn {
   aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -2524,8 +2626,9 @@ footer {
 
   /* Results area */
   .results-area { padding: 0 12px 48px; }
-  .cat-row { padding: 14px 0 4px; gap: 6px; }
-  .cat-pill-sm { padding: 6px 12px; font-size: 11px; }
+  .cat-row { padding: var(--fib-4) 0 var(--fib-5); gap: var(--fib-3); }
+  /* 44px pills on phones — the same tap target every other control gets. */
+  .cat-pill-sm { height: 44px; padding: 0 var(--fib-6); font-size: 13px; }
 
   /* Grid */
   .listings-grid { grid-template-columns: repeat(2, 1fr); gap: var(--fib-4); }
@@ -3162,21 +3265,43 @@ footer {
 .load-more-count { font-size: var(--fib-5); font-weight: 500; color: var(--text-3); background: var(--surface-2); border-radius: var(--fib-4); padding: var(--fib-1) var(--fib-4); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   HIDE SOLD TOGGLE
+   HIDE SOLD — one switch control §DECK
    ═══════════════════════════════════════════════════════════════════════════ */
-/* Hide-sold switch — a 34×21 Fibonacci pill with a 13px knob (13px travel).
-   The knob glides on the golden easing, so the flip feels weighty but quick. */
-.filter-toggle-wrap { display: flex; align-items: center; gap: var(--fib-4); margin-left: auto; flex-shrink: 0; }
-.filter-toggle-label { font-size: var(--fib-5); color: var(--text-3); font-weight: 500; cursor: pointer; user-select: none; white-space: nowrap; }
+/* Label + track now live inside a single <button role="switch">, so the whole
+   thing is one tap target that reads as an iOS switch instead of a bare label
+   sitting next to a loose knob. Track 34×21 with a 13px knob (15px travel) —
+   the knob glides on the golden easing, so the flip feels weighty but quick. */
+.hs-switch {
+  -webkit-appearance: none; appearance: none;
+  display: inline-flex; align-items: center; gap: var(--fib-4);
+  height: var(--fib-7); padding: 0 var(--fib-4) 0 var(--fib-5);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--r-f4);
+  background: rgba(255,255,255,.07);
+  color: var(--text-2);
+  font: inherit; font-size: var(--fib-5); font-weight: 500;
+  white-space: nowrap; flex-shrink: 0; cursor: pointer;
+  transition:
+    background var(--dur-gold-1) var(--ease-gold),
+    border-color var(--dur-gold-1) var(--ease-gold),
+    color var(--dur-gold-1) var(--ease-gold),
+    transform 80ms var(--ease-gold);
+}
+.hs-switch:hover { background: rgba(255,255,255,.13); color: var(--text-1); }
+.hs-switch:active { transform: scale(.97); }
+.hs-switch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* On = gold, the same accent money and prices use. */
+.hs-switch[aria-checked="true"] { background: rgba(244,195,0,.13); border-color: rgba(244,195,0,.48); color: var(--gold-dark); }
+.hs-switch-label { white-space: nowrap; }
 .toggle-switch {
   position: relative; width: var(--fib-7); height: var(--fib-6);
-  background: rgba(0,0,0,.12); border-radius: calc(var(--fib-6) / 2); cursor: pointer;
-  transition: background var(--dur-gold-2) var(--ease-gold); flex-shrink: 0;
+  background: rgba(0,0,0,.12); border-radius: calc(var(--fib-6) / 2); flex-shrink: 0;
+  transition: background var(--dur-gold-2) var(--ease-gold);
   border: 1px solid rgba(0,0,0,.06);
 }
 .toggle-switch.on { background: var(--gold); border-color: rgba(244,195,0,.6); }
 .toggle-switch::after { content: ''; position: absolute; top: var(--fib-2); left: var(--fib-2); width: var(--fib-5); height: var(--fib-5); background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform var(--dur-gold-2) var(--ease-gold); }
-.toggle-switch.on::after { transform: translateX(16px); }
+.toggle-switch.on::after { transform: translateX(15px); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MODAL DRAG HANDLE + PHOTO COUNT BADGE
@@ -3354,7 +3479,10 @@ body.ai-sheet-open #gasBanner {
   transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
   display: none;
 }
+.ptr-bar { overscroll-behavior: none; touch-action: pan-x pan-y; }
 .ptr-bar.show { transform: translateX(-50%) translateY(0); display: block; }
+.ptr-bar.ready { border-color: var(--green); color: #fff; }
+.ptr-bar.loading { border-color: var(--gold); color: #fff; }
 @media (min-width: 641px) {
   .ptr-bar { display: none; }
 }
@@ -3898,18 +4026,31 @@ button:disabled,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   V2 — RECENTLY VIEWED STRIP + RECENT SEARCH ROW
+   RECENTS §RECENT — 🕐 recent-search rail (lives inside the browse deck) and
+   the 👁️ recently-viewed strip above the grid. Both are quiet by design: one
+   glass surface or glass insets, a hairline separator, and a remove control
+   that reads as part of the chip instead of a stray ✕ floating beside it.
    ═══════════════════════════════════════════════════════════════════════════ */
-.recent-strip {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
+
+/* ── 👁️ Recently viewed ── */
+.recent-strip { margin: var(--fib-5) 0 0; }
 .recent-strip-hd {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 22px 0 10px;
+  gap: var(--fib-4);
+  margin: 0 0 var(--fib-5);
+}
+/* The eye sits in its own little glass tile so the heading reads as a
+   section label rather than an emoji glued to some text. */
+.recent-strip-hd .rs-hd-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--fib-6); height: var(--fib-6); flex-shrink: 0;
+  border-radius: var(--fib-3);
+  background: var(--glass-inset);
+  border: 1px solid var(--glass-line);
+  font-size: 11px; line-height: 1;
+}
+.recent-strip-hd .rs-hd-title {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-2);
@@ -3930,77 +4071,116 @@ button:disabled,
 .recent-strip-hd .recent-clear:hover { color: var(--red); background: var(--surface-2); }
 .recent-strip-row {
   display: flex;
-  gap: 12px;
+  gap: var(--fib-5);
   overflow-x: auto;
-  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  padding: var(--fib-1) var(--fib-1) var(--fib-4);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 .recent-strip-row::-webkit-scrollbar { display: none; }
 .recent-card {
   flex: 0 0 150px;
+  scroll-snap-align: start;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-f4);
   overflow: hidden;
   cursor: pointer;
-  transition: transform .2s var(--ease-premium), box-shadow .2s;
+  transition:
+    transform var(--dur-gold-2) var(--ease-gold),
+    box-shadow var(--dur-gold-2) var(--ease-gold),
+    border-color var(--dur-gold-2) var(--ease-gold);
 }
-.recent-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.recent-card:hover { transform: translateY(calc(var(--fib-1) * -2)); box-shadow: var(--shadow-md); }
+.recent-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .recent-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
-.recent-card-body { padding: 8px 10px 10px; }
-.recent-card-price { font-size: 13px; font-weight: 800; color: var(--green); }
+/* Listings without a photo get a flat themed tile — the old inline cream box
+   used to glow out of the dark canvas. */
+.recent-noimg {
+  width: 100%; aspect-ratio: 4 / 3;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 28px;
+}
+.recent-card-body { padding: var(--fib-4) var(--fib-5) var(--fib-5); }
+.recent-card-price { font-size: 13px; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; }
 .recent-card-title {
   font-size: 12px;
   color: var(--text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 2px;
+  margin-top: var(--fib-1);
 }
+/* ── 🕐 Recent searches (row of the browse deck) ──
+   A single-line rail: quiet chips, no duplicated clock on every chip (the
+   label already says "recent"), and the remove cross tucked into the chip's
+   own footprint. Long or noisy queries are trimmed by js/recent.js before
+   they ever get here. */
 .recent-search-row {
-  max-width: 960px;
-  margin: 14px auto 0;
-  padding: 0 24px;
   display: none;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--fib-4);
+  padding: var(--fib-5) var(--fib-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
+.recent-search-row::-webkit-scrollbar { display: none; }
 .recent-search-row.show { display: flex; }
+/* The rail that follows owns the divider — it only exists when recents show. */
+.recent-search-row.show + .cat-row { border-top: 1px solid rgba(255, 255, 255, .09); }
 .recent-search-row .rsr-label {
-  font-size: 12px;
-  font-weight: 600;
+  display: inline-flex; align-items: center; gap: var(--fib-3);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: .08em;
+  white-space: nowrap;
 }
 .recent-search-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fib-2);
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 210px;
+  height: var(--fib-7);
+  padding: 0 var(--fib-2) 0 var(--fib-5);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 50px;
-  padding: 7px 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--text-1);
   cursor: pointer;
-  transition: border-color .15s, background .15s;
-  min-height: 32px;
+  transition: border-color var(--dur-1) var(--ease-gold), background var(--dur-1) var(--ease-gold), transform 80ms var(--ease-gold);
 }
 .recent-search-chip:hover { border-color: var(--green); background: var(--green-light); }
+.recent-search-chip:active { transform: scale(.97); }
+.recent-search-chip .rsr-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The remove cross is a small round hit area inside the chip, so it no longer
+   reads as a stray ✕ floating in the middle of the rail. */
 .recent-search-chip .rsr-x {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--fib-6); height: var(--fib-6);
   background: none;
   border: none;
+  border-radius: 50%;
   color: var(--text-3);
-  font-size: 13px;
-  cursor: pointer;
-  padding: 0 2px;
+  font-size: 12px;
   line-height: 1;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease-gold), background var(--dur-1) var(--ease-gold);
 }
-.recent-search-chip .rsr-x:hover { color: var(--red); }
+.recent-search-chip .rsr-x:hover { color: var(--red); background: rgba(230, 57, 70, .14); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    V2 — DESKTOP NAV POST BUTTON (gold, matches Join Free)
@@ -4078,14 +4258,9 @@ nav {
   backdrop-filter: blur(16px);
 }
 .hero-stat-lbl { color: rgba(255, 255, 255, .78); }
-.recent-search-row {
-  padding: 11px 14px;
-  border: 1px solid rgba(255, 255, 255, .12);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, .06);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  backdrop-filter: blur(22px) saturate(150%);
-}
+/* §DECK — the deck owns the panel, so the recents rail is now transparent and
+   only keeps its own inline rhythm. */
+.recent-search-row .rsr-label { color: rgba(255, 255, 255, .5); }
 .recent-search-chip,
 .cat-pill-sm,
 .fselect {
@@ -4094,23 +4269,29 @@ nav {
   color: rgba(255, 255, 255, .86);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 8px 22px rgba(0, 12, 7, .1);
 }
+.recent-search-chip:hover,
 .cat-pill-sm:hover,
 .fselect:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+.recent-search-chip .rsr-x { color: rgba(255, 255, 255, .5); }
+.recent-search-chip .rsr-x:hover { color: #ff8a95; background: rgba(230, 57, 70, .22); }
+.browse-deck {
+  border-color: rgba(255, 255, 255, .12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 20px 46px rgba(0, 8, 4, .26);
+}
+.cat-pill-sm .cp-n { background: rgba(255, 255, 255, .16); }
+.cat-pill-sm.is-empty { opacity: .5; }
 .cat-pill-sm.active {
   background: rgba(0, 122, 72, .7);
   border-color: rgba(227, 255, 242, .35);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 10px 26px rgba(0, 45, 26, .28);
 }
-.results-header {
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, .11);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, .055);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-}
-.results-count, .filter-toggle-label { color: rgba(255, 255, 255, .62); }
+.cat-pill-sm.active .cp-n { background: rgba(255, 255, 255, .26); }
+.results-count { color: rgba(255, 255, 255, .62); }
 .results-count strong { color: #fff; }
+.results-count .rc-badge { background: rgba(244,195,0,.16); border-color: rgba(244,195,0,.42); color: #ffd94a; }
+.hs-switch { border-color: rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .07); color: rgba(255, 255, 255, .74); }
+.hs-switch:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+.hs-switch[aria-checked="true"] { background: rgba(244, 195, 0, .14); border-color: rgba(244, 195, 0, .5); color: #ffd94a; }
 .toggle-switch { background: rgba(255, 255, 255, .18); border-color: rgba(255, 255, 255, .16); }
 
 .ad-card {
@@ -4127,9 +4308,24 @@ nav {
   body { background-attachment: scroll; }
   .hero-stats { gap: 8px; }
   .hero-stats > div { min-width: 66px; padding: 10px 8px 8px; border-radius: 15px; }
-  .recent-search-row { border-radius: 14px; }
-  .results-header { border-radius: 15px; padding: var(--fib-5); }
+  /* §DECK on a phone: one tighter panel; the count leads and the controls sit
+     right under it as soon as they no longer fit beside it */
+  .browse-deck { margin-top: var(--fib-5); padding: var(--fib-1) var(--fib-4); border-radius: var(--r); }
+  .cat-row { padding: var(--fib-4) var(--fib-1) var(--fib-5); gap: var(--fib-3); }
+  .recent-search-row { padding: var(--fib-4) var(--fib-1); gap: var(--fib-3); }
+  .results-header { border-radius: var(--r); padding: var(--fib-3) var(--fib-4); }
   .results-count { font-size: var(--fib-5); }
+  .rb-controls { gap: var(--fib-3); }
+  .hs-switch { padding: 0 var(--fib-3) 0 var(--fib-4); }
+}
+
+/* §DECK — narrow phones: the count plus the three controls do not fit on one
+   line, and the gold "Active only" chip (only present while Hide sold is on)
+   was the difference between one row and two — so the toolbar grew a row and
+   shoved the grid down the moment the switch was tapped. Reserve the count's
+   own line up front so the bar keeps the same height either way. */
+@media (max-width: 480px) {
+  .results-count { flex: 1 1 100%; }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -4214,11 +4410,13 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .empty h3 { color: #fff; }
 .empty p, .results-search-query { color: var(--muted-on-glass); }
 .empty-icon { background: var(--glass-inset); border-color: var(--glass-line); box-shadow: inset 0 1px 0 var(--glass-highlight); }
-.recent-strip, .recent-search-row, .results-header, .ai-response-card {
+.recent-strip, .results-header, .ai-response-card {
   border-color: var(--glass-line);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 14px 32px rgba(0, 8, 4, .1);
 }
-.recent-strip-hd, .recent-strip-hd .recent-clear { color: var(--ink-on-glass); }
+.recent-strip-hd .rs-hd-title, .recent-strip-hd .recent-clear { color: var(--ink-on-glass); }
+.recent-strip-hd .rs-hd-title { color: var(--muted-on-glass); }
+.recent-noimg { background: var(--glass-inset); color: var(--muted-on-glass); }
 .recent-card { background: var(--glass-inset); border-color: var(--glass-line); }
 
 /* Footer and page-level text no longer fall back to a light-document appearance. */
@@ -4234,7 +4432,8 @@ body { color: var(--ink-on-glass); }
    see "RESPECT system motion preference". No duplicate here.) */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   nav, .modal, .modal-full, .ai-sheet, .mob-nav, .toast, .pwa-banner, #gasBanner { background: #0b2a1b; }
-  .recent-search-row, .results-header, .recent-strip, .seller-box, .analytics-strip { background: #123b27; }
+  .browse-deck { background: #123b27; }
+  .results-header, .recent-strip, .seller-box, .analytics-strip { background: #123b27; }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -4694,6 +4893,101 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 .pp-field-msg {
   font-size: 11.5px; font-weight: 600; color: #ff8a8a;
   max-height: 0; overflow: hidden; opacity: 0;
+/* ═══════════════════════════════════════════════════════════════════════════
+   §CHAT-V2-CSS — the v2 AI chat (js/ai-chat-v2.js + the AiChat renderer in
+   js/search-ai.js). Everything lives inside .ai-sheet.ai-v2 / .ai-float-chat
+   so the v1 rules above keep working untouched. Same dark-green glass, same
+   gold, same φ rhythm as the rest of the app.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ai-sheet.ai-v2, .ai-float-chat.ai-v2 {
+  background: rgba(7, 30, 21, .72);
+}
+/* ── header chrome: orb, title, tool buttons ───────────────────────────── */
+.ai-orb {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(244,195,0,.28), rgba(0,112,63,.45) 62%, rgba(0,0,0,.32));
+  border: 1px solid rgba(244,195,0,.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 0 18px rgba(244,195,0,.14);
+}
+.ai-orb-core { font-size: 17px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.45)); }
+.ai-orb-sm { width: 26px; height: 26px; }
+.ai-orb-sm .ai-orb-core { font-size: 12px; }
+.ai-title-txt { min-width: 0; }
+.ai-title-txt em { font-style: italic; color: var(--gold); }
+.ai-sheet-tools { display: flex; align-items: center; gap: 8px; }
+.ai-tool-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.7); font-size: 14px; cursor: pointer;
+  transition: background var(--dur-gold-1) var(--ease-gold), color var(--dur-gold-1), border-color var(--dur-gold-1);
+}
+.ai-tool-btn:hover { background: rgba(244,195,0,.16); border-color: rgba(244,195,0,.5); color: var(--gold); }
+.ai-tool-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.ai-tool-close { margin-left: 2px; }
+.ai-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: #39d98a; margin-right: 5px; vertical-align: 1px;
+  box-shadow: 0 0 6px rgba(57,217,138,.7);
+}
+/* ── hero (empty state) — fades out once the thread has messages ───────── */
+.ai-hero { padding: 26px 22px 14px; text-align: left; transition: opacity .3s, transform .3s; }
+.ai-hero-greet {
+  font-family: var(--font-d); font-size: 24px; font-weight: 800; color: #fff;
+  margin-bottom: 8px;
+}
+.ai-hero-lead { font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,.6); max-width: 34ch; }
+.ai-hero-hide { opacity: 0; transform: translateY(-8px); pointer-events: none; height: 0; overflow: hidden; margin: 0; padding: 0; }
+/* ── messages: rows, avatar, column, bubbles ───────────────────────────── */
+.ai-msg { display: flex; gap: 10px; padding: 9px 20px; animation: aiMsgIn .3s var(--ease-gold) both; }
+@keyframes aiMsgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ai-msg-user { justify-content: flex-end; }
+.ai-msg-ai, .ai-msg-typing { justify-content: flex-start; }
+.ai-avatar {
+  width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+  background: rgba(0,112,63,.4); border: 1px solid rgba(255,255,255,.14);
+  align-self: flex-end; margin-bottom: 2px;
+}
+.ai-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: min(86%, 460px); }
+.ai-bubble { border-radius: 18px; padding: 10px 14px; }
+.ai-bubble-user {
+  background: linear-gradient(135deg, #0e7a43, #0a5c33);
+  border: 1px solid rgba(255,255,255,.14);
+  border-bottom-right-radius: 6px; color: #fff;
+  box-shadow: 0 4px 14px rgba(0,40,20,.35);
+}
+.ai-bubble-ai {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-bottom-left-radius: 6px; color: rgba(255,255,255,.92);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.ai-text { font-size: 14px; line-height: 1.62; word-wrap: break-word; min-width: 0; }
+.ai-time { font-size: 10.5px; color: rgba(255,255,255,.35); margin-right: 4px; align-self: flex-end; }
+/* typing dots + caret */
+.ai-typing { display: inline-flex; gap: 4px; align-items: center; margin-right: 8px; }
+.ai-typing i {
+  width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.55);
+  animation: aiDot 1.1s ease-in-out infinite;
+}
+.ai-typing i:nth-child(2) { animation-delay: .15s; }
+.ai-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes aiDot { 0%, 100% { transform: translateY(0); opacity: .45; } 50% { transform: translateY(-4px); opacity: 1; } }
+.ai-thinking { font-size: 12px; color: rgba(255,255,255,.5); }
+.ai-caret {
+  display: inline-block; width: 2px; height: .95em; margin-left: 2px; vertical-align: -2px;
+  background: var(--gold); animation: blink .8s step-end infinite;
+}
+/* keyboard shoves the input bar up — keep the sheet usable over it */
+.ai-sheet-keyboard-open { height: calc(100dvh - var(--ai-kb, 240px)); transition: height .05s; }
+@media (prefers-reduced-motion: reduce) {
+  .ai-msg, .ai-typing i { animation: none; }
+  .ai-caret { animation: none; opacity: 1; }
+}
+
   transition: max-height var(--dur-2) var(--ease-premium), opacity var(--dur-2) ease;
 }
 .pp-field-msg.show { max-height: 36px; opacity: 1; margin-top: 4px; }
@@ -4718,6 +5012,134 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   animation: ppShimmer 1.5s linear infinite;
 }
 @keyframes ppShimmer { from { background-position: 0% 0; } to { background-position: 200% 0; } }
+/* ── composer extras: clear, mic, hint link ────────────────────────────── */
+.ai-clear-btn, .ai-mic-btn {
+  width: 34px; height: 34px; flex-shrink: 0; border: none; border-radius: 50%;
+  background: transparent; color: rgba(255,255,255,.55); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: color var(--dur-gold-1), background var(--dur-gold-1);
+}
+.ai-clear-btn:hover, .ai-mic-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
+.ai-mic-btn.is-listening {
+  color: var(--gold); background: rgba(244,195,0,.14); animation: aiPulse 1.4s ease-in-out infinite;
+}
+@keyframes aiPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(244,195,0,.35); } 50% { box-shadow: 0 0 0 7px rgba(244,195,0,0); } }
+.ai-hint-link {
+  background: none; border: none; padding: 0; color: rgba(244,195,0,.85);
+  font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.ai-hint-link:hover { color: var(--gold); }
+/* ── result cards ──────────────────────────────────────────────────────── */
+.ai-count-tag {
+  font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  color: rgba(255,255,255,.5); padding-left: 2px;
+}
+.ai-results { display: flex; flex-direction: column; gap: 8px; }
+.ai-result-card {
+  display: flex; align-items: center; gap: 11px;
+  background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r-f4); padding: 8px 10px; cursor: pointer; text-align: left;
+  transition: transform var(--dur-gold-1) var(--ease-gold), border-color var(--dur-gold-1), background var(--dur-gold-1);
+}
+.ai-result-card:hover { transform: translateY(-1px); border-color: rgba(244,195,0,.45); background: rgba(255,255,255,.08); }
+.ai-result-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.ai-thumb {
+  width: 52px; height: 52px; flex-shrink: 0; border-radius: 12px; object-fit: cover;
+  background: var(--surface-2); border: 1px solid rgba(255,255,255,.1);
+}
+.ai-thumb-icon { display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.ai-result-info { min-width: 0; flex: 1; }
+.ai-result-price {
+  font-size: 13.5px; font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.ai-result-title {
+  font-size: 12.5px; color: #fff; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+}
+.ai-result-meta { font-size: 11px; color: rgba(255,255,255,.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.ai-result-arrow { flex-shrink: 0; font-size: 20px; color: rgba(255,255,255,.3); line-height: 1; }
+/* tiny status badges on cards */
+.ai-badge {
+  font-size: 9.5px; font-weight: 800; line-height: 1; padding: 3px 6px; border-radius: 20px;
+  letter-spacing: .4px; text-transform: uppercase;
+}
+.ai-badge-neg { background: rgba(244,195,0,.14); border: 1px solid rgba(244,195,0,.4); color: var(--gold); }
+.ai-badge-new { background: rgba(57,217,138,.12); border: 1px solid rgba(57,217,138,.4); color: #39d98a; }
+.ai-badge-gone { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.55); }
+.ai-result-card.is-gone { opacity: .62; }
+
+/* ── head-to-head compare grid ─────────────────────────────────────────── */
+.ai-compare {
+  border: 1px solid rgba(255,255,255,.12); border-radius: var(--r-f4);
+  overflow: hidden; background: rgba(0,0,0,.18);
+}
+.ai-compare-head, .ai-compare-row {
+  display: grid; grid-template-columns: 1fr 1.4fr 1.4fr; gap: 6px; align-items: center;
+  padding: 7px 11px; font-size: 12px;
+}
+.ai-compare-head {
+  font-weight: 800; color: #fff; background: rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.ai-compare-head span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-compare-row { color: rgba(255,255,255,.75); border-bottom: 1px solid rgba(255,255,255,.05); }
+.ai-compare-row:last-child { border-bottom: none; }
+.ai-compare-label { color: rgba(255,255,255,.45); font-weight: 600; }
+.ai-compare-val { font-variant-numeric: tabular-nums; }
+.ai-compare-row.win-a .ai-compare-val:nth-child(2),
+.ai-compare-row.win-b .ai-compare-val:nth-child(3) { color: var(--gold); font-weight: 700; }
+/* ── footer + feedback actions ─────────────────────────────────────────── */
+.ai-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ai-btn-viewall {
+  flex: 1; min-height: 34px; border: none; border-radius: 17px; cursor: pointer;
+  background: var(--gold); color: #253315; font-size: 12.5px; font-weight: 800;
+  transition: transform var(--dur-gold-1) var(--ease-gold), filter var(--dur-gold-1);
+}
+.ai-btn-viewall:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.ai-btn-notify {
+  min-height: 34px; padding: 0 13px; border-radius: 17px; cursor: pointer;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.8); font-size: 12.5px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: border-color var(--dur-gold-1), color var(--dur-gold-1);
+}
+.ai-btn-notify:hover { border-color: rgba(244,195,0,.5); color: var(--gold); }
+.ai-btn-notify.is-saved { border-color: rgba(57,217,138,.45); color: #39d98a; }
+.ai-actions { display: flex; gap: 4px; flex-wrap: wrap; padding-left: 2px; }
+.ai-act {
+  min-width: 28px; height: 28px; padding: 0 7px; border-radius: 14px; cursor: pointer;
+  background: transparent; border: 1px solid transparent; font-size: 12.5px;
+  color: rgba(255,255,255,.4); display: inline-flex; align-items: center; justify-content: center;
+  transition: color var(--dur-gold-1), border-color var(--dur-gold-1), background var(--dur-gold-1);
+}
+.ai-act:hover { color: #fff; background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12); }
+.ai-act.is-on { color: var(--gold); border-color: rgba(244,195,0,.4); background: rgba(244,195,0,.1); }
+/* ── follow-up chips ───────────────────────────────────────────────────── */
+.ai-chips { display: flex; gap: 7px; flex-wrap: wrap; padding-top: 2px; }
+.ai-chip {
+  padding: 6px 12px; border-radius: 16px; cursor: pointer;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13);
+  color: rgba(255,255,255,.75); font-size: 12px; font-weight: 500; font-family: var(--font-b);
+  transition: background var(--dur-gold-1), border-color var(--dur-gold-1), color var(--dur-gold-1);
+}
+.ai-chip:hover { background: rgba(244,195,0,.16); border-color: rgba(244,195,0,.5); color: var(--gold); }
+.ai-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* ── float chat additions ──────────────────────────────────────────────── */
+.ai-float-mic {
+  width: 32px; height: 32px; flex-shrink: 0; border: none; border-radius: 50%;
+  background: transparent; color: rgba(255,255,255,.55); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-float-mic:hover, .ai-float-mic.is-listening { color: var(--gold); background: rgba(244,195,0,.12); }
+.ai-float-full {
+  width: 100%; padding: 9px; border: none; cursor: pointer;
+  background: rgba(255,255,255,.06); border-top: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.65); font-size: 12px; font-weight: 600;
+  transition: color var(--dur-gold-1), background var(--dur-gold-1);
+}
+.ai-float-full:hover { color: var(--gold); background: rgba(244,195,0,.08); }
+
 
 /* ── Drag & drop state on the photo board ── */
 .pp-drag {

@@ -359,8 +359,6 @@ function handleNavSearch(ev) {
   hideAiResponse();
   const heroEl = document.querySelector('.hero');
   if (heroEl) heroEl.classList.remove('searched');
-  const aiInp = document.getElementById('aiInput');
-  if (aiInp) aiInp.value = q;
   if (inp) inp.blur();
   renderCats(); renderHome();
   setTimeout(function(){
@@ -403,8 +401,7 @@ function updateMobAccountIcon() {
 function goHome() {
   activeF = 'all'; searchQ = '';
   _homeShowCount = _homePageSize;
-  // navSearch removed
-  const inp = document.getElementById('aiInput');
+  const inp = searchInput();
   if (inp) inp.value = '';
   hideAiResponse();
   document.querySelector('.hero')?.classList.remove('searched');
@@ -447,30 +444,70 @@ function handleAccountTab() {
 /* ═══════════════════════════════════════════════════════════
    CATEGORIES — compact row
 ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   CATEGORIES — compact rail inside the browse deck §DECK
+   Each pill is icon + name + live-count badge. A category with nothing live
+   is dimmed and drops its badge, and the active pill carries aria-pressed, so
+   the rail answers "what's actually here" and "where am I" at a glance.
+   The rail fades whichever edge still has more to show (syncRailFade) —
+   overflow is then obvious without a scrollbar slicing a pill in half.
+═══════════════════════════════════════════════════════════ */
+/* Generic rail fade — .rail-start/.rail-end drive the mask in style.css. Any
+   sideways-scrolling rail can opt in; the category row and the recently-viewed
+   strip (js/recent.js renderStrip) both do. Re-sync after the rail's content or
+   its width changes, since the fade only has to show where more is hidden. */
+function syncRailFade(row) {
+  if (!row) return;
+  const max = row.scrollWidth - row.clientWidth;
+  row.classList.toggle('rail-start', row.scrollLeft <= 2);
+  row.classList.toggle('rail-end', max <= 2 || row.scrollLeft >= max - 2);
+}
+
+function initRailFade(row) {
+  if (!row) return;
+  syncRailFade(row);
+  if (row._railFadeWired) return; // listeners are per rail node, wired once
+  row._railFadeWired = true;
+  row.addEventListener('scroll', function() { syncRailFade(row); }, { passive: true });
+  window.addEventListener('resize', function() { syncRailFade(row); });
+  window.addEventListener('load', function() { syncRailFade(row); }); // web fonts shift widths
+}
+
+function syncCatRailFade() { syncRailFade(document.getElementById('catRow')); }
+function initCatRailFade() { initRailFade(document.getElementById('catRow')); }
+
 function renderCats() {
   const ads = L.ads;
   const row = document.getElementById('catRow');
   if (!row) return;
+  const liveCount = id => ads.filter(a => a.category === id && a.status !== 'sold').length;
   const allCount = ads.filter(a => a.status !== 'sold').length;
   // If already rendered, just update active state and counts — no innerHTML wipe
   const existing = row.querySelectorAll('.cat-pill-sm');
   if (existing.length === CATS.length + 1) {
-    existing[0].classList.toggle('active', activeF === 'all');
-    existing[0].querySelector('span:last-child').textContent = allCount;
-    CATS.forEach((c, i) => {
-      const n = ads.filter(a => a.category===c.id && a.status!=='sold').length;
-      existing[i+1].classList.toggle('active', activeF === c.id);
-      existing[i+1].querySelector('span:last-child').textContent = n;
-    });
+    const sync = (pill, on, n) => {
+      pill.classList.toggle('active', on);
+      pill.classList.toggle('is-empty', n === 0);
+      pill.setAttribute('aria-pressed', on ? 'true' : 'false');
+      pill.querySelector('span:last-child').textContent = n;
+    };
+    sync(existing[0], activeF === 'all', allCount);
+    CATS.forEach((c, i) => sync(existing[i + 1], activeF === c.id, liveCount(c.id)));
+    syncCatRailFade();
     return;
   }
   // First render — build from scratch
-  let html = `<button class="cat-pill-sm ${activeF==='all'?'active':''}" onclick="catFilter('all')"><span class="cp-icon">✨</span> All <span style="opacity:.6;font-size:11px">${allCount}</span></button>`;
-  html += CATS.map(c => {
-    const n = ads.filter(a => a.category===c.id && a.status!=='sold').length;
-    return `<button class="cat-pill-sm ${activeF===c.id?'active':''}" onclick="catFilter('${c.id}')"><span class="cp-icon">${c.icon}</span> ${c.name} <span style="opacity:.6;font-size:11px">${n}</span></button>`;
-  }).join('');
+  const pill = (id, icon, name, n, on) =>
+    `<button type="button" class="cat-pill-sm ${on ? 'active' : ''}${n === 0 ? ' is-empty' : ''}" ` +
+    `aria-pressed="${on}" onclick="catFilter('${id}')">` +
+      `<span class="cp-icon" aria-hidden="true">${icon}</span>` +
+      `<span class="cp-name">${name}</span>` +
+      `<span class="cp-n">${n}</span>` +
+    `</button>`;
+  let html = pill('all', '✨', 'All', allCount, activeF === 'all');
+  html += CATS.map(c => pill(c.id, c.icon, c.name, liveCount(c.id), activeF === c.id)).join('');
   row.innerHTML = html;
+  initCatRailFade();
 }
 
 function renderHomeFilters() {} // no-op — replaced by catRow
@@ -481,7 +518,7 @@ function catFilter(id) {
   _homeShowCount = _homePageSize;
   hideAiResponse();
   document.querySelector('.hero')?.classList.remove('searched');
-  const inp = document.getElementById('aiInput');
+  const inp = searchInput();
   if (inp) inp.value = '';
   renderCats();   // surgical update — fast
   renderHome();   // grid swap

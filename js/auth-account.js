@@ -136,7 +136,7 @@ function compactHero() {
 function resetHeroSearch() {
   searchQ = ''; activeF = 'all'; window._aiFilters = null;
   _homeShowCount = _homePageSize;
-  const inp = document.getElementById('aiInput');
+  const inp = document.getElementById('navSearchInput');
   if (inp) inp.value = '';
   const hero = document.getElementById('heroSection');
   if (hero) hero.classList.remove('compact');
