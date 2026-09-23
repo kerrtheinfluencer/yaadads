@@ -237,6 +237,38 @@ check('CI changelog auto-update workflow ships with push permission',
   clWf.includes('contents: write') && clWf.includes("'js/site-updates.js'") && clWf.includes('git push'));
 check('npm run changelog:check available (stale-changelog guard)', pkgRaw.includes('"changelog:check"'));
 
+// 13. cross-file global-scope collisions. Every <script src> file on index.html
+//     is a plain top-level script sharing ONE global scope, so if two of them
+//     declare the same top-level let/const/var the browser throws
+//     "Identifier 'x' has already been declared" while parsing the LATER file
+//     and silently kills everything in it. That is exactly how the scroll
+//     handler in js/widgets-pwa.js (which shrinks the nav icons and the
+//     gas/water banner pills on scroll) died in production: js/listings.js had
+//     begun declaring the lightbox state (_lbPhotos/_lbIndex) that
+//     js/widgets-pwa.js owned. Per-file syntax checks cannot catch this — it
+//     only appears when the files share a scope. Heuristic by design: it looks
+//     at unindented (column-0) declarations outside block comments, which is
+//     how top-level declarations are written across this codebase.
+const loadedScripts = [...html.matchAll(/<script src="(js\/[^"]+)"[^>]*>\s*<\/script>/g)].map(m => m[1]);
+const declOwners = new Map();
+for (const file of loadedScripts) {
+  const src = fs.readFileSync(file, 'utf8');
+  let inBlockComment = false;
+  for (const line of src.split(/\r?\n/)) {
+    if (inBlockComment) { if (line.includes('*/')) inBlockComment = false; continue; }
+    if (/^\s*\/\*/.test(line)) { if (!line.includes('*/')) inBlockComment = true; continue; }
+    const m = /^(?:let|const|var)\s+([A-Za-z_$][\w$]*)/.exec(line);
+    if (!m) continue;
+    if (!declOwners.has(m[1])) declOwners.set(m[1], []);
+    declOwners.get(m[1]).push(file);
+  }
+}
+const collisions = [...declOwners.entries()]
+  .filter(([, files]) => new Set(files).size > 1)
+  .map(([name, files]) => name + ' declared in ' + [...new Set(files)].join(' + '));
+check('no cross-file global redeclarations among the ' + loadedScripts.length + ' index.html scripts',
+  collisions.length === 0, collisions.join('; '));
+
 try {
   execSync('node tools/test-ad-feedback.js', { stdio: 'pipe' });
   check('buyer feedback integration on every listing', true);

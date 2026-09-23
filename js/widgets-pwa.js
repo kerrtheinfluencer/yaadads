@@ -1,8 +1,14 @@
 /* ═══════════════════════════════════════════════════════════
    FULLSCREEN LIGHTBOX §LIGHTBOX
+   NOTE: _lbPhotos / _lbIndex are declared ONCE, in js/listings.js —
+   index.html loads that file first (line ~1360) and this one later
+   (line ~1368), and both are plain top-level scripts sharing the same
+   global scope. Declaring them here as well made the browser throw
+   "Identifier '_lbPhotos' has already been declared" while parsing THIS
+   file, which silently killed everything below it — including the scroll
+   handler that shrinks the nav icons and the gas/water banner pills.
+   Do not re-declare them here.
 ═══════════════════════════════════════════════════════════ */
-let _lbPhotos = [];
-let _lbIndex = 0;
 
 function openLightbox(photos, startIndex) {
   _lbPhotos = photos || [];
