@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Water Advisories — Yaad Adz</title>
+<meta name="description" content="Live NWC water supply advisories and disruptions by parish, Jamaica.">
+<style>
+  :root{
+    --bg:#0a1610;
+    --glass:rgba(10,22,16,.52);
+    --border:rgba(255,255,255,.08);
+    --ink:#f4f2ea;
+    --ink-dim:#a9b3ac;
+    --brand:#005c35;
+    --gold:#e0b84a;
+    --red:#e5484d;
+    --amber:#e0b84a;
+    --green:#3fae5a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  body{padding-bottom:48px;}
+
+  header{position:sticky;top:0;z-index:10;background:var(--glass);
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border-bottom:1px solid var(--border);padding:16px 20px;}
+  header h1{margin:0;font-size:20px;font-weight:700;}
+  header p{margin:4px 0 0;font-size:13px;color:var(--ink-dim);}
+
+  main{max-width:720px;margin:0 auto;padding:20px 16px;}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-dim);
+    margin-bottom:20px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .dot.red{background:var(--red);} .dot.amber{background:var(--amber);} .dot.green{background:var(--green);}
+
+  .parish-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:28px;}
+  @media(min-width:520px){.parish-grid{grid-template-columns:repeat(3,1fr);}}
+
+  .parish-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+    padding:14px;cursor:pointer;transition:transform .15s ease, border-color .15s ease;
+    -webkit-tap-highlight-color:transparent;}
+  .parish-card:active{transform:scale(.97);}
+  .parish-card.selected{border-color:var(--gold);}
+  .parish-card .name{font-weight:600;font-size:14px;}
+  .parish-card .status{font-size:12px;color:var(--ink-dim);margin-top:4px;display:flex;align-items:center;gap:6px;}
+
+  .parish-card.status-current{border-left:3px solid var(--red);}
+  .parish-card.status-planned{border-left:3px solid var(--amber);}
+  .parish-card.status-clear{border-left:3px solid var(--green);}
+
+  .advisories h2{font-size:15px;margin:0 0 12px;color:var(--ink-dim);
+    text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+
+  .advisory{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+    padding:16px;margin-bottom:12px;}
+  .advisory .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .advisory .title{font-size:14px;line-height:1.4;font-weight:500;}
+  .advisory .meta{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+  .tag{font-size:11px;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,.06);
+    color:var(--ink-dim);white-space:nowrap;}
+  .tag.cause-power{color:#7fb3ff;} .tag.cause-quality{color:#e0b84a;}
+  .tag.cause-pipeline{color:#ff9d6c;} .tag.cause-mechanical{color:#c792ea;}
+  .tag.cause-maintenance{color:#7fd8a0;}
+  .tag.status-current{background:rgba(229,72,77,.15);color:var(--red);}
+  .tag.status-planned{background:rgba(224,184,74,.15);color:var(--amber);}
+
+  .empty, .loading, .error{text-align:center;color:var(--ink-dim);font-size:13px;padding:32px 0;}
+  .error{color:var(--red);}
+
+  .refresh-note{text-align:center;font-size:11px;color:var(--ink-dim);margin-top:20px;}
+  .back-link{display:inline-block;margin-bottom:16px;color:var(--gold);text-decoration:none;font-size:13px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💧 Water Advisories</h1>
+  <p>Live NWC supply disruptions by parish — auto-updates every few minutes</p>
+</header>
+
+<main>
+  <a class="back-link" href="/">← Back to Yaad Adz</a>
+
+  <div class="legend">
+    <span><span class="dot red"></span> Current disruption</span>
+    <span><span class="dot amber"></span> Planned works</span>
+    <span><span class="dot green"></span> No active advisories</span>
+  </div>
+
+  <div id="parishGrid" class="parish-grid"></div>
+
+  <div class="advisories">
+    <h2 id="listTitle">All active advisories</h2>
+    <div id="advisoryList"><div class="loading">Loading advisories…</div></div>
+  </div>
+
+  <p class="refresh-note" id="refreshNote"></p>
+</main>
+
+<script>
+(function(){
+  // Same Supabase project as the rest of Yaad Adz — anon key, read-only
+  // (water_advisories has a public SELECT policy and no anon write policy).
+  var SUPABASE_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+
+  var PARISHES = [
+    'Kingston','St. Andrew','St. Thomas','Portland','St. Mary','St. Ann',
+    'Trelawny','St. James','Hanover','Westmoreland','St. Elizabeth',
+    'Manchester','Clarendon','St. Catherine'
+  ];
+
+  var selectedParish = null;
+  var allAdvisories = [];
+
+  function causeLabel(c){
+    return { power:'Power (JPS)', quality:'Water quality', pipeline:'Pipeline/mains',
+             mechanical:'Mechanical', maintenance:'Scheduled maintenance', other:'Other' }[c] || 'Other';
+  }
+
+  function timeAgo(iso){
+    var diff = Date.now() - new Date(iso).getTime();
+    var mins = Math.round(diff / 60000);
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.round(hrs / 24) + 'd ago';
+  }
+
+  function renderParishGrid(){
+    var grid = document.getElementById('parishGrid');
+    grid.innerHTML = '';
+    PARISHES.forEach(function(parish){
+      var advisories = allAdvisories.filter(function(a){ return a.parish === parish; });
+      var hasCurrent = advisories.some(function(a){ return a.status === 'current'; });
+      var hasPlanned = advisories.some(function(a){ return a.status === 'planned'; });
+      var statusClass = hasCurrent ? 'status-current' : (hasPlanned ? 'status-planned' : 'status-clear');
+      var dotClass = hasCurrent ? 'red' : (hasPlanned ? 'amber' : 'green');
+      var label = hasCurrent ? advisories.length + ' active' : (hasPlanned ? 'Planned works' : 'Clear');
+
+      var card = document.createElement('div');
+      card.className = 'parish-card ' + statusClass + (selectedParish === parish ? ' selected' : '');
+      card.innerHTML = '<div class="name">' + parish + '</div>' +
+        '<div class="status"><span class="dot ' + dotClass + '"></span>' + label + '</div>';
+      card.addEventListener('click', function(){
+        selectedParish = (selectedParish === parish) ? null : parish;
+        renderParishGrid();
+        renderAdvisoryList();
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function renderAdvisoryList(){
+    var listEl = document.getElementById('advisoryList');
+    var titleEl = document.getElementById('listTitle');
+    var filtered = selectedParish
+      ? allAdvisories.filter(function(a){ return a.parish === selectedParish; })
+      : allAdvisories;
+
+    titleEl.textContent = selectedParish ? selectedParish + ' advisories' : 'All active advisories';
+
+    if (!filtered.length){
+      listEl.innerHTML = '<div class="empty">No active advisories' +
+        (selectedParish ? ' for ' + selectedParish : '') + ' right now. 🎉</div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(function(a){
+      return '<div class="advisory">' +
+        '<div class="top"><div class="title">' + escapeHtml(a.title) + '</div></div>' +
+        '<div class="meta">' +
+          '<span class="tag status-' + a.status + '">' + (a.status === 'current' ? 'Current' : 'Planned') + '</span>' +
+          '<span class="tag cause-' + a.cause + '">' + causeLabel(a.cause) + '</span>' +
+          (a.parish ? '<span class="tag">' + a.parish + '</span>' : '') +
+          '<span class="tag">Seen ' + timeAgo(a.last_seen_at) + '</span>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML;
+  }
+
+  function loadAdvisories(){
+    return fetch(SUPABASE_URL + '/rest/v1/water_advisories?is_active=eq.true&select=parish,title,cause,status,last_seen_at&order=last_seen_at.desc', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data){
+      allAdvisories = data || [];
+      renderParishGrid();
+      renderAdvisoryList();
+      document.getElementById('refreshNote').textContent =
+        'Last updated ' + new Date().toLocaleTimeString();
+    })
+    .catch(function(err){
+      document.getElementById('advisoryList').innerHTML =
+        '<div class="error">Couldn\'t load advisories — ' + escapeHtml(err.message) + '</div>';
+    });
+  }
+
+  loadAdvisories();
+  // Auto-refresh every 3 minutes — the scraper itself runs every 30 min,
+  // this just keeps an open tab in sync without a full page reload.
+  setInterval(loadAdvisories, 3 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

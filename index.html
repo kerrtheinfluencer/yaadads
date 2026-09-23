@@ -1391,6 +1391,16 @@ if ('serviceWorker' in navigator) {
   <div class="gas-banner-arrow">›</div>
 </a>
 
+<a href="/water.html" id="waterBanner" aria-label="Water supply advisories today">
+  <div class="gas-banner-icon">💧</div>
+  <div class="gas-banner-body">
+    <div class="gas-banner-label">Water Advisory</div>
+    <div class="gas-banner-price" id="waterBannerCount">…</div>
+    <div class="gas-banner-sub" id="waterBannerSub">Checking your parish…</div>
+  </div>
+  <div class="gas-banner-arrow">›</div>
+</a>
+
 <script>
 // ── GAS BANNER — live from gas-prices-data.json (Petrojam archive) ──
 (function() {
@@ -1411,6 +1421,29 @@ if ('serviceWorker' in navigator) {
       else showPump(194.1328);
     })
     .catch(function() { showPump(194.1328); });
+})();
+</script>
+
+<script>
+// ── WATER BANNER — live active-advisory count from Supabase ──
+(function() {
+  var SUPABASE_URL = 'https://cquwshpsfybvgqodbxsf.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+  var countEl = document.getElementById('waterBannerCount');
+  var subEl = document.getElementById('waterBannerSub');
+  fetch(SUPABASE_URL + '/rest/v1/water_advisories?is_active=eq.true&status=eq.current&select=parish', {
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+  })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function(rows) {
+      if (!countEl) return;
+      countEl.textContent = rows.length;
+      if (subEl) subEl.textContent = rows.length === 1 ? 'parish affected' : 'parishes affected';
+    })
+    .catch(function() {
+      if (countEl) countEl.textContent = '—';
+      if (subEl) subEl.textContent = 'Tap for details';
+    });
 })();
 </script>
 
