@@ -397,7 +397,6 @@ window.addEventListener('resize', () => {
         const navEl    = document.querySelector('nav');
         const mobNavEl = document.getElementById('mobNav');
         const gasEl    = document.getElementById('gasBanner');
-        const waterEl  = document.getElementById('waterBanner');
         if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
         if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
 
@@ -410,7 +409,6 @@ window.addEventListener('resize', () => {
           if (navEl)    navEl.classList.toggle('nav-hidden', scrollingDown);
           if (mobNavEl) mobNavEl.classList.toggle('mob-nav-compact', scrollingDown);
           if (gasEl)    gasEl.classList.toggle('gas-banner-compact', scrollingDown);
-          if (waterEl)  waterEl.classList.toggle('gas-banner-compact', scrollingDown);
           if (fab)      fab.classList.toggle('back-to-top-compact', scrollingDown);
           lastY = scrollY;
         }
@@ -418,7 +416,6 @@ window.addEventListener('resize', () => {
           if (navEl)    navEl.classList.remove('nav-hidden');
           if (mobNavEl) mobNavEl.classList.remove('mob-nav-compact');
           if (gasEl)    gasEl.classList.remove('gas-banner-compact');
-          if (waterEl)  waterEl.classList.remove('gas-banner-compact');
           if (fab)      fab.classList.remove('back-to-top-compact');
         }
 
