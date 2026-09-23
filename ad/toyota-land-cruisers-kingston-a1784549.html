@@ -1091,7 +1091,17 @@
     }
 
     function show(n) { if (el) el.textContent = Number(n).toLocaleString('en-JM'); }
-    function dbg(msg) { console.log('[YaadAdz views]', msg); }
+    /* §DEBUG-GATE — console output ships only when the visitor opts in
+       (?debug=1 or localStorage ya_debug=1). Production stays silent so
+       ordinary visits never leak internals to DevTools. */
+    function yaDebugOn() {
+      try {
+        if (localStorage.getItem('ya_debug') === '1') return true;
+        if (typeof location !== 'undefined' && /(?:?|&)debug=1(?:&|$)/.test(location.search || '')) return true;
+      } catch (e) {}
+      return false;
+    }
+    function dbg(msg) { if (yaDebugOn()) { try { console.log('[YaadAdz views]', msg); } catch (e) {} } }
 
     // Fetch current count first
     fetch(BASE + '/ads?id=eq.' + adId + '&select=views', { headers: H })

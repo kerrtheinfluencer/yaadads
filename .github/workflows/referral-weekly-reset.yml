@@ -1,0 +1,29 @@
+name: Referral Weekly Reset (Top-5 Prize)
+
+on:
+  schedule:
+    # Every Sunday 22:00 UTC — records the week's Top 5 referrers (🏆) and
+    # zeroes referrals_this_week for the new week.
+    - cron: '0 22 * * 0'
+  workflow_dispatch:
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run weekly referral reset
+        run: node tools/reset-referral-week.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # Add SUPABASE_SERVICE_ROLE_KEY to repo secrets (Dashboard → Settings → API → service_role key)
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

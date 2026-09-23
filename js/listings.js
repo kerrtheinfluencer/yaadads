@@ -41,12 +41,18 @@ function openEditAd(id) {
 let _editAdPhotos = []; // Array of { url: existing URL or null, file: File or null, preview: dataURL or URL }
 
 /* ── Shared photo-grid renderer (post-ad + edit-ad use one path) ── */
-function _photoThumbsHTML(photos, rmFn, fileInputId, addLabel) {
+/* Escapes a dataURL/remote URL for safe use inside src="..." */
+function _escAttr(s) {
+  var out = String(s == null ? '' : s);
+  if (typeof escHtml === 'function') return escHtml(out);
+  return out.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+function _photoThumbsHTML(photos, rmFn, fileInputId, addLabel, viewFn, coverFn) {
   var thumbs = photos.map(function(item, i) {
     return '<div class="photo-thumb-wrap">' +
-      '<img src="' + item.preview + '" class="photo-thumb" loading="lazy">' +
-      '<button type="button" class="photo-rm" onclick="' + rmFn + '(' + i + ')">✕</button>' +
-      (i===0 ? '<span class="photo-cover-tag">Cover</span>' : '') +
+      '<img src="' + _escAttr((item && item.preview) || '') + '" class="photo-thumb" loading="lazy" decoding="async" alt="Photo ' + (i + 1) + '"' + (viewFn ? ' onclick="' + viewFn + '(' + i + ')" style="cursor:zoom-in"' : '') + '>' +
+      '<button type="button" class="photo-rm" title="Remove photo" onclick="event.stopPropagation();' + rmFn + '(' + i + ')">✕</button>' +
+      (i === 0 ? '<span class="photo-cover-tag">Cover</span>' : (coverFn ? '<button type="button" class="photo-cover-btn" title="Make cover photo" onclick="event.stopPropagation();' + coverFn + '(' + i + ')">★ Cover</button>' : '')) +
     '</div>';
   }).join('');
   var addBtn = photos.length < 6
@@ -56,22 +62,41 @@ function _photoThumbsHTML(photos, rmFn, fileInputId, addLabel) {
 }
 function _addFilesToPhotos(files, photos, onDone) {
   var remaining = 6 - photos.length;
-  Array.from(files || []).slice(0, remaining).forEach(function(file) {
-    if (file.size > 5000000) { showToast('Max 5MB per image','⚠️'); return; }
-    if (!file.type.startsWith('image/')) { showToast('Only image files allowed','⚠️'); return; }
+  var picked = Array.from(files || []).slice(0, Math.max(0, remaining));
+  if (!picked.length) { if (typeof onDone === 'function') { try { onDone(0); } catch (e) {} } return; }
+  // Read every file first, then append in selection order — FileReader
+  // finishes out of order, so pushing on each onload scrambled the grid
+  // and pointed the cover preview at whichever file decoded first.
+  var results = new Array(picked.length);
+  var finished = 0;
+  picked.forEach(function(file, idx) {
+    if (file.size > 5000000) { showToast('Max 5MB per image','⚠️'); results[idx] = null; _photoReadDone(); return; }
+    if (!file.type || !file.type.startsWith('image/')) { showToast('Only image files allowed','⚠️'); results[idx] = null; _photoReadDone(); return; }
     var reader = new FileReader();
     reader.onload = function(e) {
-      photos.push({ url: null, file: file, preview: e.target.result });
-      onDone();
+      results[idx] = { url: null, file: file, preview: e.target.result };
+      _photoReadDone();
+    };
+    reader.onerror = function() {
+      showToast('Could not read that image','⚠️');
+      results[idx] = null;
+      _photoReadDone();
     };
     reader.readAsDataURL(file);
   });
+  function _photoReadDone() {
+    finished++;
+    if (finished < picked.length) return;
+    var added = 0;
+    results.forEach(function(item) { if (item) { photos.push(item); added++; } });
+    if (typeof onDone === 'function') { try { onDone(added); } catch (e) {} }
+  }
 }
 
 function renderEditAdPhotoGrid() {
   var grid = $('eaPhotoGrid');
   if (!grid) return;
-  grid.innerHTML = _photoThumbsHTML(_editAdPhotos, 'removeEditAdPhoto', 'eaImgFile', 'Add');
+  grid.innerHTML = _photoThumbsHTML(_editAdPhotos, 'removeEditAdPhoto', 'eaImgFile', 'Add', 'viewEditPhoto', 'ppSetEditCover');
 }
 
 function handleEditAdImgs(input) {
@@ -498,7 +523,78 @@ function clearImg() {
 function renderPhotoGrid() {
   var grid = $('photoGrid');
   if (!grid) return;
-  grid.innerHTML = _photoThumbsHTML(uploadPhotos, 'removePhoto', 'imgFile', 'Add Photo');
+  grid.innerHTML = _photoThumbsHTML(uploadPhotos, 'removePhoto', 'imgFile', 'Add Photo', 'viewUploadPhoto', 'ppSetCover');
+}
+
+/* ── Post/Edit photo viewer — reuses the app's fullscreen lightbox ── */
+var _lbPhotos = [];
+var _lbIndex = 0;
+function _openPhotoLightbox(photos, i) {
+  _lbPhotos = (photos || []).filter(function(p) { return p; });
+  if (!_lbPhotos.length) return;
+  _lbIndex = Math.max(0, Math.min(i || 0, _lbPhotos.length - 1));
+  _renderPhotoLightbox();
+}
+function viewUploadPhoto(i) {
+  _openPhotoLightbox(uploadPhotos.map(function(p) { return p.preview; }), i);
+}
+function viewEditPhoto(i) {
+  _openPhotoLightbox(_editAdPhotos.map(function(p) { return p.preview; }), i);
+}
+function _renderPhotoLightbox() {
+  var lb = document.getElementById('lightbox');
+  var img = document.getElementById('lbImg');
+  var dots = document.getElementById('lbDots');
+  var counter = document.getElementById('lbCounter');
+  if (!lb || !img) return;
+  img.src = _lbPhotos[_lbIndex];
+  if (counter) counter.textContent = (_lbIndex + 1) + ' / ' + _lbPhotos.length;
+  if (dots) {
+    dots.innerHTML = _lbPhotos.map(function(_, d) {
+      return '<span class="lightbox-dot' + (d === _lbIndex ? ' active' : '') + '" onclick="photoLbGoTo(' + d + ')"></span>';
+    }).join('');
+  }
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function photoLbGoTo(i) {
+  _lbIndex = Math.max(0, Math.min(i, _lbPhotos.length - 1));
+  _renderPhotoLightbox();
+}
+/* SPA lightbox controls — static ad pages ship their own copies; these
+   power the photo-grid viewer (post/edit/detail-inline) on index.html. */
+function openLightbox(photos, startIndex) {
+  if (Array.isArray(photos)) {
+    _lbPhotos = photos.filter(function(p) { return p; });
+    _lbIndex = Math.max(0, Math.min(startIndex || 0, _lbPhotos.length - 1));
+    _renderPhotoLightbox();
+    return;
+  }
+  // Back-compat: some callers pass an index only — fall back to detail photos.
+  if (typeof photos === 'number' && window._detailPhotos && window._detailPhotos.length) {
+    _openPhotoLightbox(window._detailPhotos, photos);
+  }
+}
+function closeLightbox() {
+  var lb = document.getElementById('lightbox');
+  if (lb) lb.classList.remove('open');
+  document.body.style.overflow = '';
+}
+function lbNav(dir) {
+  if (!_lbPhotos.length) return;
+  _lbIndex = (_lbIndex + dir + _lbPhotos.length) % _lbPhotos.length;
+  _renderPhotoLightbox();
+}
+function lbGoTo(i) { photoLbGoTo(i); }
+if (typeof document !== 'undefined' && document.addEventListener && !document._photoLbWired) {
+  document._photoLbWired = true;
+  document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById && document.getElementById('lightbox');
+    if (!lb || !lb.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') lbNav(-1);
+    if (e.key === 'ArrowRight') lbNav(1);
+  });
 }
 
 

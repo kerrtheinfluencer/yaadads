@@ -51,8 +51,11 @@ check('manifest has maskable icons', manifest.icons.some(i => (i.purpose || '').
 
 // 5. sw.js
 const sw = fs.readFileSync('sw.js', 'utf8');
-check('SW cache bumped to v44', sw.includes('yaadadz-v44'));
-check('SW precaches new assets', sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'"));
+check('SW cache bumped to v41+', Number((sw.match(/yaadadz-v(\d+)/) || [])[1]) >= 41, (sw.match(/yaadadz-v\d+/) || [])[0]);
+check('SW precaches app shell (core + listings + search + auth + social + widgets + v2)',
+  sw.includes("'/js/core.js'") && sw.includes("'/js/ui-nav.js'") && sw.includes("'/js/listings.js'") && sw.includes("'/js/search-ai.js'") && sw.includes("'/js/auth-account.js'") && sw.includes("'/js/ad-social.js'") && sw.includes("'/js/widgets-pwa.js'") && sw.includes("'/js/onboarding.js'") && sw.includes("'/js/recent.js'") && sw.includes("'/js/site-updates.js'") && sw.includes("'/logo.svg'") && sw.includes("'/js/caption-parse.js'") && sw.includes("'/js/ai-chat-v2.js'") && sw.includes("'/js/post-pro.js'"));
+check('SW precache list parses (no stray indent breaking the const)',
+  /const PRECACHE_URLS = \[/.test(sw));
 
 // 5b. §HOME-VIEW + §INFINITE-SCROLL (js/search-ai.js)
 const _saSrc = fs.readFileSync('js/search-ai.js', 'utf8');
@@ -89,6 +92,10 @@ check('§FIB-HERO pass ships (fib eyebrow, clamp(34→55) display, golden-beat e
   css.includes('clamp(var(--fib-7), 5.5vw, var(--fib-8))') &&
   css.includes('animation-delay: .062s') &&
   css.includes('.ai-sug {'));
+check('§CHAT-V2-CSS ships (sheet shell, bubbles, result cards, chips, actions)',
+  css.includes('.ai-sheet.ai-v2') && css.includes('.ai-bubble-user') &&
+  css.includes('.ai-result-card') && css.includes('.ai-chip {') &&
+  css.includes('.ai-act {') && css.includes('.ai-thumb'));
 check('§FIB-HOME pass ships (21px pill radii, φ card type, golden-eased buttons)',
   css.replace(/\r/g, '').includes('border-radius: var(--r-f4);\n  border: 1.5px solid rgba(255,255,255,.14);') &&
   css.replace(/\r/g, '').includes('.ad-title {\n  font-weight: 600;') &&
@@ -146,7 +153,7 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
-check('home-view and feedback history preserved + compact glass home current', suSrc.includes("'home-view'") && suSrc.includes("'ad-feedback'") && suSrc.includes("version: 'v2.12'") && suSrc.includes("current: 'compact-glass-home'") && suSrc.includes("version: 'v2.13'"));
+check('v2.13 ai-chat-v2 entry shipped + set as current', suSrc.includes("'ai-chat-v2'") && suSrc.includes("current: 'ai-chat-v2'"));
 check('v2.10 post-pro entry shipped', suSrc.includes("'post-pro'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',

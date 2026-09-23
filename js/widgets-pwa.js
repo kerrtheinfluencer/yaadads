@@ -72,7 +72,7 @@ document.addEventListener('keydown', function(e) {
    FLOATING AI CHAT (desktop widget) §FLOAT-CHAT
 ═══════════════════════════════════════════════════════════ */
 let _floatOpen = false;
-let _floatHistory = [];
+let _floatHistory = [];   /* §CHAT-V2: kept only for back-compat; the live thread lives in AiChat */
 
 function toggleFloatChat() {
   // On mobile — use the bottom sheet instead
@@ -86,92 +86,34 @@ function toggleFloatChat() {
   _floatOpen = !_floatOpen;
   document.getElementById('aiFloatChat').classList.toggle('open', _floatOpen);
   document.getElementById('aiFab').style.display = _floatOpen ? 'none' : '';
-  if (_floatOpen) setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
+  if (_floatOpen) {
+    try { AiChat.wake('float'); AiChat.syncSendBtn('float'); } catch(e) { console.error('[AI v2 float wake]', e); }
+    setTimeout(function(){ document.getElementById('floatInput')?.focus(); }, 300);
+  }
 }
 
 function floatSubmit() {
+  /* §CHAT-UNIFORM — same guards as sheetSubmit: never send blanks, always
+     echo the typed line as a user bubble first so both surfaces read as
+     one chat, then hand the query to the shared brain. */
   const inp = document.getElementById('floatInput');
-  const query = (inp?.value||'').trim();
+  const query = (inp && inp.value || '').trim();
   if (!query) return;
-  inp.value = '';
-
-  const msgs = document.getElementById('floatMsgs');
-
-  // User bubble
-  const userEl = document.createElement('div');
-  userEl.className = 'sheet-msg-user';
-  userEl.textContent = query;
-  msgs.appendChild(userEl);
-
-  // Typing indicator
-  const typing = document.createElement('div');
-  typing.className = 'sheet-typing';
-  typing.innerHTML = '<span></span><span></span><span></span>';
-  msgs.appendChild(typing);
-  msgs.scrollTop = msgs.scrollHeight;
-
-  requestAnimationFrame(function() {
-    setTimeout(function() {
-      try {
-        const result = YaadBrain.process(query, _floatHistory);
-        typing.remove();
-
-        const aiEl = document.createElement('div');
-        aiEl.className = 'sheet-msg-ai';
-        const msgText = (result.message||'').replace(/\n/g, '<br>');
-        aiEl.innerHTML = '<div class="sheet-msg-text">' + msgText + '</div>';
-
-        if (result.type === 'search' && result.results && result.results.length) {
-          const resWrap = document.createElement('div');
-          resWrap.className = 'sheet-results';
-          result.results.slice(0,4).forEach(function(ad) {
-            const cat = catById(ad.category);
-            const card = document.createElement('div');
-            card.className = 'sheet-result-card';
-            const thumb = ad.image
-              ? '<img class="src-thumb" src="'+ad.image+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-              : '<div class="src-icon">'+(cat.icon||'📦')+'</div>';
-            card.innerHTML = thumb +
-              '<div class="src-info">' +
-                '<div class="src-price">J$'+fmtN(ad.price)+'</div>' +
-                '<div class="src-title">'+escHtml(ad.title)+'</div>' +
-                '<div class="src-meta">📍 '+ad.parish+'</div>' +
-              '</div><div class="src-arrow">›</div>';
-            card.onclick = function() { toggleFloatChat(); setTimeout(function(){ openDetail(ad.id); },200); };
-            resWrap.appendChild(card);
-          });
-          if (result.allResults && result.allResults.length > 4) {
-            const more = document.createElement('button');
-            more.className = 'sheet-view-all';
-            more.textContent = 'View all ' + result.allResults.length + ' results →';
-            more.onclick = function() {
-              toggleFloatChat();
-              activeF = (result.filters?.categories?.length===1) ? result.filters.categories[0] : 'all';
-              searchQ = (result.filters?.keywords||[]).join(' ');
-              window._aiFilters = result.filters;
-              renderCats(); renderHome(); delete window._aiFilters;
-              showAiResponse(result.message, result.allResults.length);
-              scrollToResults();
-            };
-            resWrap.appendChild(more);
-          }
-          aiEl.appendChild(resWrap);
-        }
-
-        msgs.appendChild(aiEl);
-        _floatHistory.push({role:'user',text:query},{role:'ai',text:result.message});
-        if (_floatHistory.length > 10) _floatHistory = _floatHistory.slice(-10);
-      } catch(e) {
-        typing.remove();
-        const errEl = document.createElement('div');
-        errEl.className = 'sheet-msg-ai';
-        errEl.innerHTML = '<div class="sheet-msg-text">Something went wrong — try rephrasing! 🔍</div>';
-        msgs.appendChild(errEl);
-      }
-      msgs.scrollTop = msgs.scrollHeight;
-      document.getElementById('floatInput')?.focus();
-    }, 200);
-  });
+  if (inp) inp.value = '';
+  try { AiChat.syncSendBtn('float', ''); } catch(e) {}
+  try {
+    AiChat.wake('float');
+    AiChat.submit('float', query);
+  } catch (e) {
+    console.error('[AI v2 float]', e);
+    const msgs = document.getElementById('floatMsgs');
+    if (msgs) {
+      const el = document.createElement('div');
+      el.className = 'ai-msg ai-msg-ai';
+      el.innerHTML = '<div class="ai-avatar" aria-hidden="true">🤖</div><div class="ai-col"><div class="ai-bubble ai-bubble-ai"><div class="ai-text">Something went wrong — try rephrasing! 🔍</div></div></div>';
+      msgs.appendChild(el);
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -334,6 +276,13 @@ function checkUrlAdParam() {
     setTimeout(function() { goPage(pageParam); }, 800);
   }
 
+  // §CHAT-V2 — ?ask=<adId> opens the chat with that listing pinned and answers
+  // the obvious question ("is this a good deal?"). Highest-intent entry point.
+  const askParam = params.get('ask');
+  if (askParam) {
+    setTimeout(function() { if (typeof askAboutAd === 'function') askAboutAd(askParam); }, 900);
+  }
+
   // Restore search state from URL
   const q = params.get('q');
   const cat = params.get('cat');
@@ -341,7 +290,7 @@ function checkUrlAdParam() {
   if (q || cat || parish) {
     if (q) {
       searchQ = q;
-      const inp = document.getElementById('aiInput');
+      const inp = searchInput();
       if (inp) inp.value = q;
     }
     if (cat && CAT_MAP[cat]) activeF = cat;
@@ -380,7 +329,7 @@ window.addEventListener('popstate', function(e) {
     const q = params.get('q');
     if (q) {
       searchQ = q;
-      const inp = document.getElementById('aiInput');
+      const inp = searchInput();
       if (inp) inp.value = q;
       renderCats(); renderHome();
     }
@@ -442,6 +391,7 @@ window.addEventListener('resize', () => {
         const navEl    = document.querySelector('nav');
         const mobNavEl = document.getElementById('mobNav');
         const gasEl    = document.getElementById('gasBanner');
+        const waterEl  = document.getElementById('waterBanner');
         if (navEl)    navEl.classList.toggle('scrolled-transparent', isScrolled);
         if (mobNavEl) mobNavEl.classList.toggle('scrolled-transparent', isScrolled);
 
@@ -454,6 +404,7 @@ window.addEventListener('resize', () => {
           if (navEl)    navEl.classList.toggle('nav-hidden', scrollingDown);
           if (mobNavEl) mobNavEl.classList.toggle('mob-nav-compact', scrollingDown);
           if (gasEl)    gasEl.classList.toggle('gas-banner-compact', scrollingDown);
+          if (waterEl)  waterEl.classList.toggle('gas-banner-compact', scrollingDown);
           if (fab)      fab.classList.toggle('back-to-top-compact', scrollingDown);
           lastY = scrollY;
         }
@@ -461,6 +412,7 @@ window.addEventListener('resize', () => {
           if (navEl)    navEl.classList.remove('nav-hidden');
           if (mobNavEl) mobNavEl.classList.remove('mob-nav-compact');
           if (gasEl)    gasEl.classList.remove('gas-banner-compact');
+          if (waterEl)  waterEl.classList.remove('gas-banner-compact');
           if (fab)      fab.classList.remove('back-to-top-compact');
         }
 
@@ -531,7 +483,7 @@ document.addEventListener('keydown', function(e) {
     if (window.innerWidth <= 640) {
       openAiSheet();
     } else {
-      const inp = document.getElementById('aiInput');
+      const inp = searchInput();
       if (inp) { inp.focus(); inp.select(); }
     }
   }

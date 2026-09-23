@@ -11,8 +11,12 @@ Object.defineProperty(window, 'localStorage', { value: {
   getItem(k) { if (mode === 'blocked') throw Error('Storage blocked'); return testStore.get(k) || null; },
   setItem(k,v) { if (mode === 'blocked') throw Error('Storage blocked'); testStore.set(k, String(v)); }
 }});
-let posted = 0, browsed = 0;
-function openPostAd() { posted++; }
+let posted = 0, browsed = 0, CU = null;
+function openPostAd() {
+  const auth = document.getElementById('ovAuth');
+  if (!CU && auth) { auth.classList.add('open'); return; }
+  posted++;
+}
 function goPage(page) { if (page === 'home') browsed++; }
 </script><script src="/js/onboarding.js"></script><script>
 const results = [];
@@ -25,7 +29,7 @@ function start() { q('replay').focus(); click('replay'); }
 function startTourTest() { start(); click('obNext'); click('obNext'); click('obNext'); }
 function closed() { return !welcome() && !tour() && !document.body.classList.contains('ob-locked') && q('obTip').hidden; }
 function fits(el) { const r = el.getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1; }
-if (mode !== 'preview') setTimeout(function() {
+if (mode !== 'preview') setTimeout(async function() {
  try {
   if (mode === 'returning') {
     check('returning visitor is not interrupted', !welcome());
@@ -64,12 +68,30 @@ if (mode !== 'preview') setTimeout(function() {
   const su = document.createElement('div'); su.id = 'suOverlay'; su.className = 'su-overlay'; document.body.appendChild(su);
   start(); check('replay blocked while "What\'s new" modal exists', !welcome());
   su.remove(); start(); click('obSkip');
+  const auth = document.createElement('div'); auth.id = 'ovAuth'; auth.className = 'overlay'; document.body.appendChild(auth);
+  const postCTA = () => { start(); click('obNext'); click('obNext'); click('obPost'); };
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+  postCTA(); await flush();
+  check('guest posting opens login without posting', auth.classList.contains('open') && posted === 1);
+  auth.classList.remove('open'); await flush();
+  CU = {id:'test-user'}; auth.classList.add('open'); auth.classList.remove('open'); await flush();
+  check('cancelled login does not resume posting later', posted === 1);
+  CU = null; postCTA(); await flush();
+  auth.classList.add('login-error'); await flush();
+  check('failed login keeps posting pending', posted === 1);
+  CU = {id:'test-user'}; auth.classList.remove('open'); await flush();
+  check('successful login resumes posting exactly once', posted === 2);
+  auth.classList.add('open'); auth.classList.remove('open'); await flush();
+  check('subsequent auth changes do not duplicate posting', posted === 2);
+  postCTA(); check('signed-in visitor posts directly', posted === 3);
+  CU = null; auth.remove();
   // Regression: watchdog must release the scroll lock if the tour root is removed.
   startTourTest();
   q('obRoot').remove();
   setTimeout(function() {
     try { check('watchdog releases scroll lock if tour root is removed', !document.body.classList.contains('ob-locked')); }
     catch (e2) { check('watchdog unlock check errored: ' + e2, false); }
+    q('out').dataset.testComplete = 'true';
     q('out').textContent = 'ONBOARDING: ' + (results.every(r=>r.ok) ? 'PASS' : 'FAIL') + '\n' + JSON.stringify(results, null, 2);
   }, 6500);
  } catch(e) { check('no runtime errors: ' + e.stack, false); }

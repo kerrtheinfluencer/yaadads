@@ -17,6 +17,13 @@ on:
       - 'logo.svg'
       - 'gas-prices.html'
       - '.github/workflows/smoke-test.yml'
+  pull_request:
+    paths:
+      - 'js/**'
+      - 'tools/**'
+      - 'style.css'
+      - 'package.json'
+      - '.github/workflows/smoke-test.yml'
   workflow_dispatch:
 
 jobs:
@@ -120,6 +127,15 @@ jobs:
             exit 1
           fi
           echo "Supabase is reachable and responding"
+
+      - name: Run onboarding browser regression tests
+        timeout-minutes: 5
+        run: npm run test:onboarding
+
+      - name: Run AI chat regression tests (pure core + wiring)
+        run: |
+          node tools/test-chat-v2.js
+          node tools/test-chat-wiring.js
 
       - name: Check v2 onboarding + recents are wired up
         run: |

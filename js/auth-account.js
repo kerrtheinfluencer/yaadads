@@ -136,7 +136,7 @@ function compactHero() {
 function resetHeroSearch() {
   searchQ = ''; activeF = 'all'; window._aiFilters = null;
   _homeShowCount = _homePageSize;
-  const inp = document.getElementById('aiInput');
+  const inp = document.getElementById('navSearchInput');
   if (inp) inp.value = '';
   const hero = document.getElementById('heroSection');
   if (hero) hero.classList.remove('compact');
@@ -173,7 +173,7 @@ async function doLogin() {
   if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
   try {
     const user = await sbLogin(email, pass);
-    CU = { id: user.id, name: user.name, email: user.email, phone: user.phone || '', parish: user.parish || '' };
+    CU = cuFromProfile(user, { id: user.id });
     L.sess = CU;
     await loadMessages(); subscribeMessages();
     closeOverlay('ovAuth');
@@ -200,13 +200,15 @@ async function doRegister() {
   if (btn) { btn.textContent = 'Creating account…'; btn.disabled = true; }
   try {
     const user = await sbRegister(name, email, phone, parish, pass);
-    CU = { id: user.id, name, email, phone, parish };
+    CU = cuFromProfile(user, { id: user.id, name, email, phone, parish });
     L.sess = CU;
     subscribeMessages();
     closeOverlay('ovAuth');
     renderNav(); updateStats(); updateMsgBadge();
     showToast('Welcome to Yaad Adz, ' + name.split(' ')[0] + '! 🎉', '🎉');
     launchConfetti();
+    // Tie any stashed ?ref / /invite/<code> to this new account (best effort)
+    claimReferral(user.id);
     // Ask for push permission after registration
     setTimeout(requestPushPermission, 5000);
   } catch(e) {
@@ -487,16 +489,23 @@ function renderProfileCard() {
           '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Active</div>' +
         '</div>' +
         '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:rgba(255,255,255,.5)">'+soldCount+'</div>' +
+                    '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:rgba(255,255,255,.5)">'+soldCount+'</div>' +
           '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Sold</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
-    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+    '<div style="padding:18px 24px 6px">' +
+      '<div style="font-size:13px;color:rgba(255,255,255,.6);font-weight:600">Your Referral Link</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
+        '<input id="myRefLink" type="text" readonly style="flex:1;background:#000;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:8px 10px;font-size:12px;color-scheme:dark" value="' + (CU.referral_code ? escHtml(window.location.origin + '/invite/' + encodeURIComponent(CU.referral_code)) : '') + '">' +
+        '<button class="btn btn-ghost btn-sm" onclick="copyRefLink()">📋</button>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--gold);margin-top:8px">🤝 ' + (CU.total_referrals || 0) + ' referrals · ' + (CU.yaad_points || 0) + ' YP earned</div>' +
+    '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
       '<button class="btn btn-ghost btn-sm" onclick="doLogout()">🚪 Log Out</button>' +
     '</div>';
 }
-
 function renderMyAds() {
   renderProfileCard();
   // Render messages into account page inbox

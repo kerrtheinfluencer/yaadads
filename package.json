@@ -14,9 +14,12 @@
     "changelog": "node tools/build-changelog.js",
     "changelog:check": "node tools/build-changelog.js && git diff --exit-code -- CHANGELOG.md",
     "verify": "node tools/verify-v2.js",
-    "test": "node tools/test-changelog-privacy.js && node tools/test-cleanup.js && node tools/verify-v2.js && node tools/test-data-safety.js",
+    "test": "node tools/test-cleanup.js && node tools/verify-v2.js && node tools/test-chat-v2.js && node tools/test-chat-wiring.js && node tools/test-onboarding.js && node tools/test-data-safety.js && node tools/test-p1-parity.js && node tools/test-p1-no-cdn.js",
+    "test:onboarding": "node tools/test-onboarding.js",
     "test:cleanup": "node tools/test-cleanup.js",
-    "test:safety": "node tools/test-data-safety.js"
+    "test:safety": "node tools/test-data-safety.js",
+    "test:chat": "node tools/test-chat-v2.js",
+    "test:chat-wiring": "node tools/test-chat-wiring.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

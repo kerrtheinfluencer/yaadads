@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════
-   👁️ RECENTLY VIEWED + 🕐 RECENT SEARCHES  §RECENT  (v2)
+   👁️ RECENTLY VIEWED + 🕐 RECENT SEARCHES  §RECENT / §DECK  (v2)
    - Recently viewed strip above the listings grid
-   - Desktop recent-search chips under the results header
+   - Recent-search rail inside the browse deck (desktop; the AI
+     sheet carries recents on mobile)
    Storage: ya_recently_viewed (this file), ya_searches (core.js L.searches)
    ═══════════════════════════════════════════════════════════ */
 (function() {
@@ -68,8 +69,8 @@
 
     row.innerHTML = items.map(function(a) {
       const img = a.image
-        ? '<img src="' + esc(thumb(a.image)) + '" alt="" loading="lazy">'
-        : '<div style="width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:var(--surface-2);font-size:28px">📦</div>';
+        ? '<img src="' + esc(thumb(a.image)) + '" alt="" loading="lazy" decoding="async">'
+        : '<div class="recent-noimg" aria-hidden="true">📦</div>';
       return '<div class="recent-card" data-id="' + esc(a.id) + '" role="button" tabindex="0" aria-label="View ' + esc(a.title) + '">' +
         img +
         '<div class="recent-card-body">' +
@@ -79,6 +80,9 @@
     }).join('');
 
     strip.style.display = 'block';
+    // §RAIL-FADE — the strip is a sideways rail, so the edge that still hides
+    // more cards fades out (js/ui-nav.js) exactly like the category rail does.
+    if (typeof initRailFade === 'function') initRailFade(row);
     row.querySelectorAll('.recent-card').forEach(function(card) {
       const open = function() { if (typeof openDetail === 'function') openDetail(card.dataset.id); };
       card.addEventListener('click', open);
@@ -98,23 +102,48 @@
     }
   }
 
-  /* ── Recent searches row (desktop; mobile has recents in the AI sheet) ── */
+  /* ── Recent searches rail (desktop; mobile has recents in the AI sheet) ──
+     Kept deliberately quiet: the clock lives on the label instead of on every
+     chip, emails (people sign in through the search box by mistake) and
+     runaway strings never make it in, and chip text ellipsises instead of
+     stretching the row. Removal stays per-chip — ya_searches is shared with
+     the AI sheet, so this file never wipes the whole list (test-data-safety
+     guards that). */
+  const MAX_CHIPS = 5;
+  const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function searchList() {
+    let raw = [];
+    try { if (typeof L !== 'undefined' && Array.isArray(L.searches)) raw = L.searches; } catch (e) {}
+    const seen = {};
+    return raw.filter(function(s) {
+      if (typeof s !== 'string') return false;
+      const q = s.trim();
+      if (!q || q.length > 40 || LOOKS_LIKE_EMAIL.test(q)) return false;
+      const key = q.toLowerCase();
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    }).map(function(s) { return s.trim(); }).slice(0, MAX_CHIPS);
+  }
+
   function renderRecentSearches() {
     const row = document.getElementById('recentSearchRow');
     if (!row) return;
     if (window.innerWidth <= 640) { row.classList.remove('show'); return; }
-    let searches = [];
-    try { if (typeof L !== 'undefined' && L.searches) searches = L.searches; } catch (e) {}
+    const searches = searchList();
     let searching = false;
     try { searching = typeof searchQ !== 'undefined' && !!searchQ; } catch (e) {}
     if (!searches.length || searching) { row.classList.remove('show'); return; }
 
-    row.innerHTML = '<span class="rsr-label">🕐 Recent</span>' + searches.slice(0, 6).map(function(s) {
-      return '<span class="recent-search-chip" data-q="' + esc(s) + '" role="button" tabindex="0" aria-label="Search for ' + esc(s) + '">' +
-        '🕐 ' + esc(s) +
-        '<button class="rsr-x" type="button" aria-label="Remove ' + esc(s) + '">✕</button>' +
-      '</span>';
-    }).join('');
+    row.innerHTML =
+      '<span class="rsr-label"><span aria-hidden="true">🕘</span>Recent</span>' +
+      searches.map(function(s) {
+        return '<span class="recent-search-chip" data-q="' + esc(s) + '" role="button" tabindex="0" aria-label="Search for ' + esc(s) + '">' +
+          '<span class="rsr-txt">' + esc(s) + '</span>' +
+          '<button class="rsr-x" type="button" aria-label="Remove ' + esc(s) + ' from recent searches">✕</button>' +
+        '</span>';
+      }).join('');
     row.classList.add('show');
 
     row.querySelectorAll('.recent-search-chip').forEach(function(chip) {

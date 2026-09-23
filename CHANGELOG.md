@@ -5,26 +5,26 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## ✨ v2.13 — More marketplace, less empty space (Sep 17, 2026) · latest
+## 🤖 v2.13 — The AI chat got a full glow-up (Sep 21, 2026) · latest
 
-A more compact homepage with the same green-and-gold glass finish. Shorter text, golden-ratio spacing and slimmer stats bring listings closer to the top.
+Yaad Brain now chats like a proper assistant. Ask a follow-up like "the second one" or "anything cheaper?", compare two listings side by side, and get straight answers about any ad. And as always — it all runs 100% on your phone. No account, no cloud, no waiting.
 
-- Responsive headline and shorter introduction across phone, tablet and desktop
-- 13/21/34px spacing rhythm with preserved glass materials and gold accents
-- Single scrollable suggestion row with comfortable 44px touch targets
-- Slimmer stat chips without removing live counters
+- New: real follow-up chat — "the second one", "cheaper?", "only with photos" all remember the conversation
+- New: side-by-side compare grid for any two listings — price, vs median, age, views at a glance
+- New: 👍👎 on replies actually steer the next suggestions
+- New: the conversation survives closing the app — come back and pick up right where you left off
+- New: copy, retry or share any reply straight to WhatsApp
+- Fixed: the whole chat got its glass-and-gold finish — desktop side panel and floating bubble included
 
-## 💬 v2.12 — Buyer reviews & comments on listings (Sep 17, 2026)
+## 📸 v2.12 — Photos view right + smoother pull-to-refresh (Sep 19, 2026)
 
-Each listing now has a place for buyer questions and reviews, with free buyer signup or your existing account. Posting is rolling out; the section shows an availability notice until it is ready.
+Two fixes yuh asked for. Photos on the Post-Ad page now stay in the order yuh pick them, the first one is always the cover, and tapping any photo opens it fullscreen. Pull-to-refresh on mobile is calmer too — a short tug just shows the hint; only a proper pull past the line reloads the listings.
 
-- Reviews and comments sections on listing pages, including brand-new ads
-- Google or email buyer signup directly on the listing — no ad or phone number required
-- Posting requires a real signed-in session; email confirmation is respected
-- One 1–5 star review per member per ad, with own-post deletion and abuse reporting as posting becomes available
-- Reviews are member opinions, not verified purchases; existing browser-only seller ratings are not imported
-- If posting is not yet available, the reviews section shows a clear notice
-- Desktop homepage hero has less empty space; mobile and tablet spacing is unchanged
+- Fixed: picked photos kept scrambling order and the cover preview pointed at the wrong photo
+- New: tap any Post-Ad or Edit-Ad photo to view it fullscreen (swipe/arrows, dots + counter)
+- New: ★ Cover button on non-cover photos to pick your cover without re-uploading
+- Fixed: tiny overscrolls at the top of the feed no longer trigger a full reload
+- Pull-to-refresh now needs a deliberate ~110px pull, ignores sideways swipes and pinch-zoom, and never fires inside modals or while typing
 
 ## 📱 v2.11 — One listing at a time on your phone (Sep 15, 2026)
 

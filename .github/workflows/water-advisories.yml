@@ -1,0 +1,24 @@
+name: Water Advisories Scraper
+
+on:
+  schedule:
+    # Every 30 minutes. NWC updates advisories irregularly through the day;
+    # tighten to */15 if you want fresher data, at the cost of more runs.
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}   # lets you trigger a manual run from the Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run scraper
+        env:
+          SUPABASE_URL: https://cquwshpsfybvgqodbxsf.supabase.co
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scrape-water-advisories.js
