@@ -3462,6 +3462,75 @@ body.ai-sheet-open #gasBanner {
   }
 }
 
+/* ── Cash Pot banner — same component, stacked above #gasBanner.
+   Offsets were MEASURED in headless Chrome (replacing the original
+   +64/+56 estimates): both pills are 49px tall on mobile (the sub line
+   is display:none under 641px), 63.5px tall on desktop, and 42px
+   circles when compact. The three extras below produce a ~10px gap
+   in every state. ── */
+#cashpotBanner {
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 8px + 59px);
+  left: 12px;
+  right: auto;
+  z-index: 250;
+  background: rgba(255,255,255,.3);
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 14px;
+  padding: 9px 12px;
+  box-shadow: 0 10px 30px rgba(0,32,22,.12), inset 0 1px 0 rgba(255,255,255,.4);
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 180px;
+  transition: transform 0.38s var(--ease-premium), box-shadow 0.3s ease, opacity 0.3s ease,
+              max-width 0.38s var(--ease-premium), padding 0.38s var(--ease-premium),
+              border-radius 0.38s var(--ease-premium), gap 0.38s var(--ease-premium),
+              bottom 0.38s var(--ease-premium), left 0.38s var(--ease-premium);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  -webkit-tap-highlight-color: transparent;
+  animation: bannerSlide 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 2s;
+  overflow: hidden;
+  color: var(--text-1);
+}
+#cashpotBanner.gas-banner-compact {
+  max-width: 40px;
+  padding: 9px;
+  gap: 0;
+  border-radius: 50%;
+  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 52px);
+  left: 14px;
+}
+#cashpotBanner.gas-banner-compact .gas-banner-body,
+#cashpotBanner.gas-banner-arrow {
+  display: none;
+}
+#cashpotBanner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--liquid-highlight);
+  opacity: .42;
+  pointer-events: none;
+}
+body.ai-sheet-open #cashpotBanner {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(16px);
+}
+#cashpotBanner:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,200,83,0.25); }
+#cashpotBanner:active { transform: scale(0.97); }
+@media (min-width: 641px) {
+  #cashpotBanner {
+    bottom: calc(100px + 73px); right: 24px; left: auto; max-width: none;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    PULL-TO-REFRESH INDICATOR
    ═══════════════════════════════════════════════════════════════════════════ */

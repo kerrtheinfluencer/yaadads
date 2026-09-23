@@ -1366,6 +1366,7 @@ if ('serviceWorker' in navigator) {
 <script src="js/ad-feedback.js" defer></script>
 <script src="js/ad-social.js" defer></script>
 <script src="js/widgets-pwa.js" defer></script>
+<script src="js/cashpot-banner.js" defer></script>
 <script src="js/onboarding.js" defer></script>
 <script src="js/recent.js" defer></script>
 <script src="js/site-updates.js" defer></script>
@@ -1387,6 +1388,19 @@ if ('serviceWorker' in navigator) {
     <div class="gas-banner-label">Gas Price Today</div>
     <div class="gas-banner-price" id="bannerPrice">…</div>
     <div class="gas-banner-sub" id="bannerSub">87 Oct · est. pump</div>
+  </div>
+  <div class="gas-banner-arrow">›</div>
+</a>
+
+<!-- ── FLOATING CASH POT BANNER — stacked above the gas banner, same
+     component pattern. Data comes from CashPotJA's Supabase project
+     (read-only cross-project fetch), handled in js/cashpot-banner.js. ── -->
+<a href="https://kerrtheinfluencer.github.io/Cashpotresults/" id="cashpotBanner" aria-label="Latest Cash Pot result" target="_blank" rel="noopener">
+  <div class="gas-banner-icon">🎱</div>
+  <div class="gas-banner-body">
+    <div class="gas-banner-label">Cash Pot</div>
+    <div class="gas-banner-price" id="cashpotBannerNum">…</div>
+    <div class="gas-banner-sub" id="cashpotBannerSub">Loading…</div>
   </div>
   <div class="gas-banner-arrow">›</div>
 </a>
