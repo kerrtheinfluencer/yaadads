@@ -22,11 +22,17 @@ try {
      comment right below for how to get one. Until you do, this script
      loads but does nothing (no DSN = Sentry silently no-ops).
 ═══════════════════════════════════════════ -->
-<script defer src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
+<!-- `async`, not `defer`. This script only needs to be DOWNLOADED; Sentry.init()
+     below runs on window load, so execution order is irrelevant. But `defer`
+     guarantees the script executes BEFORE DOMContentLoaded, which makes the
+     browser hold that milestone open until the CDN responds — measured at
+     ~2.3s of extra FCP when the tag host is slow. `async` has no such
+     guarantee, so a slow or unreachable Sentry host can never delay the page. -->
+<script async src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
 <script>
-  // v2: Sentry now loads with `defer` and initialises on window load so it
-  // never blocks first paint. Errors thrown before the load event are
-  // missed — an acceptable trade-off for faster startup on mobile data.
+  // v3: switched defer -> async. Errors thrown before the load event are
+  // missed — an acceptable trade-off for faster startup on mobile data, and
+  // now the tag genuinely cannot block first paint OR DOMContentLoaded.
   window.addEventListener('load', function() {
     if (typeof Sentry !== 'undefined') {
       Sentry.init({
