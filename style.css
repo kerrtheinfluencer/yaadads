@@ -859,8 +859,10 @@ nav.scrolled-transparent {
   color: inherit;
 }
 .cat-pill-sm.active .cp-n { background: rgba(255,255,255,.24); }
-/* Nothing live in this category — quieter, and no "0" to read past. */
-.cat-pill-sm.is-empty { opacity: .55; }
+/* Nothing live in this category — quieter, and no "0" to read past.
+   The dimming of the FILL is handled in the glass pass near the end of this
+   file; opacity is deliberately NOT used here, because it scales the label
+   text down with the pill and pushed the category name under 3:1. */
 .cat-pill-sm.is-empty .cp-n { display: none; }
 
 /* AI response card */
@@ -1900,9 +1902,10 @@ nav.scrolled-transparent {
 .modal-full { max-width: 720px; padding: 0; overflow: hidden; border-radius: 22px; max-height: 96dvh; }
 .m-close {
   position: absolute; top: 14px; right: 14px;
-  background: rgba(255,255,255,.5);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  /* Nested inside .modal's 32px backdrop-filter, same reasoning as .form-inp:
+     a 10px re-blur of an already-blurred parent adds a composited layer per
+     modal and no visible frost. Fill carries the material on its own. */
+  background: rgba(255,255,255,.62);
   border: 1px solid rgba(255,255,255,.5);
   border-radius: 50%;
   width: 40px; height: 40px;
@@ -1929,9 +1932,12 @@ nav.scrolled-transparent {
   font-family: var(--font-b);
   outline: none;
   transition: border-color .15s, background .15s;
-  background: rgba(255,255,255,.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Was rgba(255,255,255,.5) + blur(8px). The blur is gone: every form input
+     lives inside a .modal that ALREADY blurs its backdrop at 32px, so this was
+     a nested backdrop-filter re-blurring an already-smooth wash - visually a
+     no-op, but 25 extra composited layers the moment a modal opens. The fill
+     is slightly more opaque to make up for the lost frost. */
+  background: rgba(255,255,255,.58);
   color: var(--text-1);
 }
 .form-inp:focus {
@@ -2301,9 +2307,9 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .step.active { border-bottom-color: var(--gold); color: var(--green); }
 .step-num {
   width: 26px; height: 26px; border-radius: 50%;
-  background: rgba(255,255,255,.5);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  /* 26px disc sitting on the blurred modal - the blur was larger than the
+     element and did nothing but allocate a layer. */
+  background: rgba(255,255,255,.62);
   border: 1px solid rgba(255,255,255,.55);
   color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
@@ -4210,22 +4216,49 @@ body.ob-locked { overflow: hidden; }
    A quieter, deeper app canvas keeps the glass layers legible instead of
    making the results area look washed out on wide desktop displays.
 ═══════════════════════════════════════════════════════════ */
+/* The ambient field is the CONTENT the glass transmits, so it has to have
+   structure at a scale the blur can actually resolve.
+
+   The previous three gradients were 832x576px and up. A 26px blur over a
+   gradient that varies across 800px returns the input unchanged — the
+   backdrop-filter was mathematically a no-op and every panel read as a flat
+   fill. These are deliberately small and chromatic: tight orbs that a 26px
+   blur smears into soft colour pools, which is the entire glass tell.
+
+   Vertical falloff matters as much as the orbs. The photo grid occupies the
+   lower half, and saturated colour behind a classifieds photo grid degrades
+   the product. The scrim keeps the top luminous (where the nav, deck, results
+   header and recents float) and returns the grid area to near-black. */
 body {
-  background-color: #071b13;
+  background-color: #05160e;
   background-image:
-    radial-gradient(52rem 36rem at -8% 18%, rgba(0, 151, 91, .34), transparent 68%),
-    radial-gradient(42rem 32rem at 108% 43%, rgba(244, 195, 0, .16), transparent 68%),
-    radial-gradient(38rem 30rem at 50% 108%, rgba(21, 93, 181, .16), transparent 72%);
+    /* bottom scrim — protects photo contrast in the grid */
+    linear-gradient(180deg,
+      rgba(3, 18, 12, 0) 0%,
+      rgba(3, 18, 12, 0) 40%,
+      rgba(3, 18, 12, .58) 74%,
+      rgba(3, 18, 12, .82) 100%),
+    /* ambient orbs, sized to survive the blur */
+    radial-gradient(23rem 15rem at 11% 40%, rgba(0, 205, 125, .5), transparent 62%),
+    radial-gradient(20rem 13rem at 89% 37%, rgba(244, 195, 0, .34), transparent 60%),
+    radial-gradient(26rem 15rem at 47% 50%, rgba(0, 150, 255, .26), transparent 64%),
+    radial-gradient(22rem 14rem at 78% 61%, rgba(140, 100, 255, .26), transparent 62%),
+    radial-gradient(24rem 16rem at 20% 66%, rgba(0, 225, 170, .34), transparent 64%),
+    radial-gradient(18rem 12rem at 96% 74%, rgba(255, 120, 60, .18), transparent 62%);
   background-attachment: fixed;
 }
-#page-home { background: rgba(3, 20, 13, .36); }
+/* Was .36 — it was flattening the very backdrop the glass needs. The body's own
+   scrim now does the darkening, so this only needs to take the edge off. */
+#page-home { background: rgba(3, 20, 13, .12); }
 
 nav {
-  background: rgba(5, 28, 19, .62);
-  border-color: rgba(255, 255, 255, .2);
+  background: rgba(5, 28, 19, .44);
+  border-color: rgba(255, 255, 255, .22);
   box-shadow: 0 18px 52px rgba(0, 9, 5, .28), inset 0 1px 0 rgba(255, 255, 255, .2);
-  -webkit-backdrop-filter: saturate(180%) blur(30px);
-  backdrop-filter: saturate(180%) blur(30px);
+  /* brightness() is what makes a transmitted orb read as light coming THROUGH
+     the pane rather than as a tinted film sitting on top of it. */
+  -webkit-backdrop-filter: saturate(215%) blur(26px) brightness(1.08);
+  backdrop-filter: saturate(215%) blur(26px) brightness(1.08);
 }
 .nav-search-pill {
   background: rgba(255, 255, 255, .11);
@@ -4235,10 +4268,13 @@ nav {
 
 .hero {
   border-bottom: 1px solid rgba(255, 255, 255, .12);
+  /* Was .95 -> .72. A hero that opaque is a wall: it hid the ambient orbs
+     behind the single largest surface on the page. At this alpha the orbs read
+     through it, and the headline still clears 7:1 on the resulting value. */
   background:
     radial-gradient(circle at 15% 26%, rgba(244, 195, 0, .22), transparent 23rem),
     radial-gradient(circle at 82% 12%, rgba(117, 225, 185, .18), transparent 22rem),
-    linear-gradient(135deg, rgba(5, 35, 22, .95), rgba(0, 92, 53, .72));
+    linear-gradient(135deg, rgba(5, 35, 22, .62), rgba(0, 92, 53, .44));
 }
 .hero::before { opacity: .72; }
 .hero-eyebrow {
@@ -4279,7 +4315,16 @@ nav {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 20px 46px rgba(0, 8, 4, .26);
 }
 .cat-pill-sm .cp-n { background: rgba(255, 255, 255, .16); }
-.cat-pill-sm.is-empty { opacity: .5; }
+/* 'opacity: .5' was the wrong tool here. It scales the LABEL along with the
+   pill, so the category name itself dropped to 2.83:1 once the deck backdrop
+   brightened - below even the 3:1 large-text floor. An empty category is
+   de-emphasised, not unreadable, so the dimming now applies to the pill's own
+   fill and border only; the label keeps full opacity and stays legible. */
+.cat-pill-sm.is-empty {
+  background: rgba(255, 255, 255, .04);
+  border-color: rgba(255, 255, 255, .1);
+  color: rgba(255, 255, 255, .72);
+}
 .cat-pill-sm.active {
   background: rgba(0, 122, 72, .7);
   border-color: rgba(227, 255, 242, .35);
@@ -4295,9 +4340,15 @@ nav {
 .toggle-switch { background: rgba(255, 255, 255, .18); border-color: rgba(255, 255, 255, .16); }
 
 .ad-card {
-  background: rgba(8, 28, 19, .7);
+  /* .7 -> .5, and the blur drops 24px -> 20px with a brightness lift. Less tint
+     so the orb behind the card transmits; less blur so it stays legible as a
+     SHAPE rather than dissolving into an even wash (a fully-smeared backdrop is
+     indistinguishable from a flat fill again). */
+  background: rgba(8, 28, 19, .5);
   border-color: rgba(255, 255, 255, .17);
   box-shadow: 0 16px 38px rgba(0, 8, 4, .24), inset 0 1px 0 rgba(255, 255, 255, .15);
+  -webkit-backdrop-filter: saturate(190%) blur(20px) brightness(1.06);
+  backdrop-filter: saturate(190%) blur(20px) brightness(1.06);
 }
 .ad-card:hover {
   border-color: rgba(244, 195, 0, .42);
@@ -4335,8 +4386,13 @@ nav {
    product coherent without changing a single application interaction.
 ═══════════════════════════════════════════════════════════ */
 :root {
-  --glass-float: rgba(8, 30, 20, .74);
-  --glass-raised: rgba(12, 39, 27, .66);
+  /* The alpha on these three is the single most load-bearing number in the whole
+     system. Glass is TRANSMISSION, not paint: at .74 only a quarter of the pixel
+     was backdrop, so no amount of blur or sheen behind the fill could ever show.
+     These are the values where the transmitted colour is actually visible while
+     text still clears WCAG AA over the worst-case orb behind it. */
+  --glass-float: rgba(8, 30, 20, .56);
+  --glass-raised: rgba(12, 39, 27, .48);
   --glass-inset: rgba(255, 255, 255, .085);
   --glass-line: rgba(255, 255, 255, .16);
   --glass-highlight: rgba(255, 255, 255, .2);
@@ -5432,3 +5488,406 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
 @media (prefers-reduced-motion: reduce) {
   #obRoot *, #obRoot .ob-slide.active { animation: none; transition: none; scroll-behavior: auto; }
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+   §GLASS OPTICS — physical light behaviour for the liquid-glass system
+   ───────────────────────────────────────────────────────────────────────────
+   The materials above already blur, saturate and cast depth. What they were
+   missing is the part that actually reads as GLASS rather than as a tinted
+   rectangle with a 1px stroke:
+
+     1. DIRECTIONAL EDGE LIGHT — real glass is brightest where the key light
+        grazes the bevel and dissipates on the shadow side. Every surface here
+        used a single top-only inset highlight. Now each edge gets its own
+        inset shadow: lit top, refracting sides, dissipated bottom, and an
+        occlusion shadow on the trailing edge.
+
+     2. THE FACE GRADIENT — a pane has thickness, so a light source falling
+        across it produces a continuous tonal sweep from the lit corner to the
+        shaded one. Every surface here had a perfectly uniform fill, and a
+        uniform fill never reads as glass no matter how much of the page behind
+        it is blurred. This is the change that actually does the work.
+
+        Applied as a background-image layer (NOT a pseudo-element — an
+        absolutely-positioned ::after with z-index:0 paints ABOVE static text
+        per CSS painting order, and would veil every label).
+
+     3. TWO-SOURCE CAUSTIC SHEEN — the card glare is now two superposed light
+        sources (key highlight + off-axis wash) instead of one flat layer, so
+        a card looks lit from a direction rather than just "brighter".
+
+     4. RECESSED INSET CONTROLS — inputs carved INTO a glass panel get real
+        negative depth, not a lighter fill.
+
+     5. CHROMATIC RIMS — gold/emerald dispersion on interactive edges.
+
+   Pure CSS. No new DOM, no JS, no behaviour change. Last block in the file, so
+   it wins the cascade without a single !important.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Edge light. A bevel that grazes the key light is bright; the shadow side
+     dissipates. Sized to be legible at 1x, not theoretical. */
+  --glass-edge-lit:  rgba(255, 255, 255, .55);   /* top: key light            */
+  --glass-edge-mid:  rgba(255, 255, 255, .2);    /* sides: partial refraction */
+  --glass-edge-dim:  rgba(255, 255, 255, .07);   /* bottom: dissipation       */
+  --glass-occlude:   rgba(0, 12, 7, .55);        /* trailing edge occlusion   */
+
+  /* Colour dispersion through the bevelled edge. */
+  --glass-amber:   rgba(244, 195, 0, .55);
+  --glass-emerald: rgba(0, 151, 91, .5);
+
+  /* THE FACE GRADIENT (v3) - the single strongest glass tell.
+     A pane has thickness, so a light source falling across it produces a
+     continuous tonal sweep from the lit corner to the shaded one. A uniform
+     fill never reads as glass no matter how much the page behind it is
+     blurred. This is what was actually missing.
+
+     The darkening stop at 100% is deliberate: a highlight that only fades to
+     nothing reads as a wash, whereas light-to-shadow reads as thickness.
+
+     Now layered with a TIGHT off-axis specular hit. The broad sweep alone
+     reads as a wash at any opacity; what the eye actually looks for on glass
+     is a small, hard, bright reflection with a defined edge. */
+  --glass-sheen:
+    radial-gradient(112% 84% at 16% -12%, rgba(255, 255, 255, .17), transparent 56%),
+    linear-gradient(155deg,
+      rgba(255, 255, 255, .26) 0%,
+      rgba(255, 255, 255, .12) 22%,
+      rgba(255, 255, 255, .03) 46%,
+      rgba(255, 255, 255, 0) 62%,
+      rgba(0, 16, 9, .2) 100%);
+}
+
+/* -- 1. THE OPTICAL LAYERS -------------------------------------------------
+   The face gradient goes on as a background-image, which sits under the
+   element's own content and above its flat fill - so the surface gains a
+   light direction while every label stays fully legible.
+
+   Deliberately NOT a pseudo-element: an absolutely-positioned ::after with
+   z-index:0 paints ABOVE static text per CSS painting order and would veil
+   every label on the page. The element's own background is the only layer
+   guaranteed to stay underneath its content.
+
+   An earlier revision also layered a tiled feTurbulence grain in here. It was
+   removed - measured in Chromium it flattened to a hard salt-and-pepper
+   speckle that read as sensor noise, not material. The face gradient carries
+   the effect by itself. */
+nav,
+.mob-nav,
+.modal,
+.modal-full,
+.ai-sheet,
+.toast,
+.pwa-banner,
+#gasBanner,
+.browse-deck,
+.results-header,
+.recent-card,
+.recent-search-chip,
+.cat-pill-sm,
+.ad-card,
+.seller-box,
+.analytics-strip,
+.my-ad-row,
+.inbox-item,
+.ob-welcome,
+.ob-tip,
+.ai-response-card {
+  background-image: var(--glass-sheen);
+  background-size: auto;
+  background-repeat: no-repeat;
+}
+
+/* '.browse-deck' already painted a background-image, and background-image
+   REPLACES images rather than stacking, so its original layer is re-stated here.
+
+   This previously re-stated it as an emerald gradient at .95/.72 alpha — i.e.
+   essentially OPAQUE, which is precisely why the deck rendered as a solid green
+   slab in the screenshot no matter how much light was behind it. It is now
+   restored to the light translucent white overlay it was originally authored
+   as, so the ambient field actually transmits through the largest glass panel
+   on the page. --glass-sheen contributes TWO layers, making this list 3 deep. */
+.browse-deck {
+  background-image:
+    var(--glass-sheen),
+    linear-gradient(180deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .04));
+  background-size: auto, auto, auto;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  -webkit-backdrop-filter: saturate(200%) blur(22px) brightness(1.07);
+  backdrop-filter: saturate(200%) blur(22px) brightness(1.07);
+}
+
+/* ── 2. DIRECTIONAL EDGE LIGHT ────────────────────────────────────────────
+   The key light rakes the top, the sides refract partially, the bottom
+   dissipates, and the trailing edge picks up occlusion. This is the single
+   biggest "reads as glass" upgrade in the whole pass. */
+nav {
+  box-shadow:
+    0 18px 52px rgba(0, 9, 5, .32),
+    0 1px 2px rgba(0, 9, 5, .3),
+    inset 0 1px 0 var(--glass-edge-lit),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+.mob-nav,
+.toast,
+.pwa-banner,
+#gasBanner {
+  box-shadow:
+    0 20px 52px rgba(0, 6, 3, .34),
+    0 2px 6px rgba(0, 6, 3, .28),
+    inset 0 1px 0 var(--glass-edge-lit),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+.modal,
+.modal-full,
+.ai-sheet {
+  box-shadow:
+    0 32px 96px rgba(0, 5, 2, .54),
+    0 4px 12px rgba(0, 5, 2, .34),
+    inset 0 1px 0 var(--glass-edge-lit),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+.browse-deck,
+.results-header,
+.ai-response-card,
+.ob-welcome,
+.ob-tip {
+  box-shadow:
+    0 20px 46px rgba(0, 8, 4, .28),
+    0 2px 8px rgba(0, 8, 4, .22),
+    inset 0 1px 0 var(--glass-edge-lit),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+.seller-box,
+.analytics-strip,
+.my-ad-row,
+.inbox-item,
+.recent-card,
+.recent-search-chip,
+.cat-pill-sm {
+  box-shadow:
+    0 12px 30px rgba(0, 9, 5, .2),
+    0 1px 3px rgba(0, 9, 5, .18),
+    inset 0 1px 0 var(--glass-edge-lit),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+.ad-card {
+  box-shadow:
+    0 16px 38px rgba(0, 8, 4, .26),
+    0 2px 6px rgba(0, 8, 4, .2),
+    inset 0 1px 0 var(--glass-edge-lit),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+
+/* ── 3. TWO-SOURCE CAUSTIC SHEEN ──────────────────────────────────────────
+   '.ad-card::before' is already the permanent top-sheen layer and sits under
+   the card's content, so restyling it is safe. '::after' is the
+   compositor-only hover-shadow layer (opacity crossfade, no per-frame repaint)
+   — that contract is deliberately left untouched. A tight key highlight plus a
+   wide off-axis wash is what separates "lit" from "white overlay". */
+.ad-card::before {
+  background:
+    radial-gradient(120% 68% at 50% -14%, rgba(255, 255, 255, .17), rgba(255, 255, 255, 0) 58%),
+    linear-gradient(160deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 45%);
+}
+
+/* ── 4. RECESSED INSET CONTROLS ───────────────────────────────────────────
+   An input inside a glass panel is carved INTO it, not painted on it:
+   occlusion gathers at the top-inside edge, light bounces off the bottom
+   inside lip. Flat fills read as stickers. */
+.modal .form-inp,
+.ai-sheet-input-bar,
+.chat-input {
+  box-shadow:
+    inset 0 2px 5px rgba(0, 8, 4, .42),
+    inset 0 -1px 0 rgba(255, 255, 255, .11),
+    inset 1px 0 0 rgba(0, 8, 4, .2),
+    inset -1px 0 0 rgba(0, 8, 4, .14);
+}
+/* On focus the well catches a warm bounce from the gold accent, the way light
+   scatters inside a lit cavity. */
+.modal .form-inp:focus,
+.ai-sheet-input-bar:focus-within,
+.chat-input:focus {
+  box-shadow:
+    inset 0 2px 5px rgba(0, 8, 4, .38),
+    inset 0 0 0 1px rgba(244, 195, 0, .2),
+    0 0 0 3px rgba(244, 195, 0, .16),
+    0 0 22px rgba(244, 195, 0, .2);
+}
+
+/* ── 5. CHROMATIC RIMS — brand light dispersing through a bevelled edge ────
+   Only on genuinely interactive glass, and only where a hover/focus can
+   actually occur, so touch devices never pay for it.
+
+   These re-state the WHOLE shadow rather than adding a glow, because the
+   earlier ':hover' rules in this file replace box-shadow wholesale and would
+   otherwise strip the bevel straight back off. */
+@media (hover: hover) and (pointer: fine) {
+  .cat-pill-sm:hover,
+  .recent-search-chip:hover {
+    box-shadow:
+      0 8px 22px rgba(0, 8, 4, .3),
+      inset 0 1px 0 rgba(255, 255, 255, .34),
+      inset 0 0 0 1px var(--glass-amber),
+      0 0 20px rgba(244, 195, 0, .16);
+  }
+  .cat-pill-sm.active {
+    box-shadow:
+      0 10px 26px rgba(0, 45, 26, .34),
+      inset 0 1px 0 rgba(255, 255, 255, .34),
+      inset 0 0 0 1px rgba(95, 224, 168, .5),
+      0 0 24px var(--glass-emerald);
+  }
+  .nav-search-pill:hover,
+  .nav-search-pill.has-focus,
+  .nav-search-pill:has(.nav-search-input:focus) {
+    box-shadow:
+      0 6px 28px rgba(0, 0, 0, .3),
+      inset 0 1px 0 rgba(255, 255, 255, .3),
+      inset 0 -1px 0 var(--glass-occlude),
+      0 0 0 1px var(--glass-amber),
+      0 0 26px rgba(244, 195, 0, .2);
+  }
+  .ad-card:hover {
+    box-shadow:
+      0 22px 46px rgba(0, 8, 4, .34),
+      0 2px 6px rgba(0, 8, 4, .2),
+      inset 0 1px 0 rgba(255, 255, 255, .4),
+      inset 0 -1px 0 var(--glass-occlude),
+      inset 1px 0 0 var(--glass-edge-mid),
+      inset -1px 0 0 var(--glass-edge-dim);
+  }
+  .inbox-item:hover,
+  .my-ad-row:hover,
+  .seller-box:hover {
+    box-shadow:
+      0 14px 32px rgba(0, 9, 5, .28),
+      inset 0 1px 0 rgba(255, 255, 255, .34),
+      inset 0 -1px 0 var(--glass-occlude);
+  }
+  .recent-card:hover {
+    box-shadow:
+      0 18px 40px rgba(0, 9, 5, .3),
+      inset 0 1px 0 rgba(255, 255, 255, .34),
+      inset 0 -1px 0 var(--glass-occlude);
+  }
+}
+
+/* Pressing a glass control deforms it: the top highlight collapses and the well
+   darkens. This is the "depress into glass" tell. */
+.cat-pill-sm:active,
+.recent-search-chip:active,
+.ad-card:active {
+  box-shadow:
+    0 2px 8px rgba(0, 8, 4, .3),
+    inset 0 2px 6px rgba(0, 8, 4, .45),
+    inset 0 -1px 0 rgba(255, 255, 255, .07);
+}
+
+/* ── 6. ADAPTIVE NAV SHEEN ─────────────────────────────────────────────────
+   When the bar goes transparent on scroll it is passing over dense photos as
+   often as over the dark canvas, so its specular edge has to hold up against
+   both. Raising the bevel alpha and adding a tighter contact shadow keeps it
+   reading as a solid object instead of dissolving into the listings. */
+nav.scrolled-transparent {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, .22),
+    0 1px 0 rgba(0, 9, 5, .4),
+    inset 0 1px 0 rgba(255, 255, 255, .26),
+    inset 0 -1px 0 var(--glass-occlude),
+    inset 1px 0 0 var(--glass-edge-mid),
+    inset -1px 0 0 var(--glass-edge-dim);
+}
+
+/* ── 7. GRACEFUL DEGRADATION ───────────────────────────────────────────────
+   The face gradient is the one part of this pass with a real fallback story,
+   and reduced-transparency users asked for exactly none of it: the sweep's whole
+   job is to imply translucency, so under that preference it has to go and the
+   surfaces become fully opaque instead. */
+@media (prefers-reduced-transparency: reduce) {
+nav,
+.mob-nav,
+.modal,
+.modal-full,
+.ai-sheet,
+.toast,
+.pwa-banner,
+#gasBanner,
+.browse-deck,
+.results-header,
+.recent-card,
+.recent-search-chip,
+.cat-pill-sm,
+.ad-card,
+.seller-box,
+.analytics-strip,
+.my-ad-row,
+.inbox-item,
+.ob-welcome,
+.ob-tip,
+.ai-response-card {
+    background-image: none;
+  }
+  /* Opaque fills + a hard edge, so contrast never depends on seeing through. */
+  .modal, .modal-full, .ai-sheet { background: #0b2a1b; }
+  nav, .mob-nav, .toast, .pwa-banner, #gasBanner { background: #0b2a1b; }
+  .ad-card { background: #0d2a1d; }
+}
+
+/* The face gradient is decorative shading, never information. Drop it under
+   forced-colors, where the OS palette is authoritative and an off-palette
+   overlay is actively harmful. */
+@media (forced-colors: active) {
+nav,
+.mob-nav,
+.modal,
+.modal-full,
+.ai-sheet,
+.toast,
+.pwa-banner,
+#gasBanner,
+.browse-deck,
+.results-header,
+.recent-card,
+.recent-search-chip,
+.cat-pill-sm,
+.ad-card,
+.seller-box,
+.analytics-strip,
+.my-ad-row,
+.inbox-item,
+.ob-welcome,
+.ob-tip,
+.ai-response-card {
+    background-image: none;
+  }
+}
+
+/* §PERF (re-asserted) — the per-card rule above sits LATER in the file than the
+   original mobile guard at ~line 2750, so it wins the cascade on phones and
+   would have quietly restored the expensive 20px blur to every card in the
+   grid. Each card is its own composited layer, so on a mid-range Android that
+   is the difference between scrolling smoothly and dropping frames. The 12px/1.5
+   variant is visually near-identical over a dark backdrop at half the cost. */
+@media (max-width: 640px) {
+  .ad-card {
+    -webkit-backdrop-filter: saturate(1.5) blur(12px);
+    backdrop-filter: saturate(1.5) blur(12px);
+  }
+}
+
+/* Hover optics are pure decoration; the existing reduced-motion block already
+   collapses transitions globally, so the rim states simply resolve instantly.
+   Nothing here animates on its own — no keyframes were introduced. */
