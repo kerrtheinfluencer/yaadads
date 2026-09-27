@@ -30,7 +30,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'ai-chat-v2',
+  current: 'touch-friendlier',
   items: {
     'ai-chat-v2': {
       version: 'v2.13',
@@ -179,6 +179,21 @@ var SITE_UPDATES = {
         'Rich dark-glass finish across the whole site',
         'Bolder cards, clearer contrast',
         'Easier night browsing',
+      ],
+      url: '/',
+    },
+    'touch-friendlier': {
+      version: 'v2.14',
+      icon: '👍',
+      title: 'Easier to tap, easier on the eyes',
+      body: 'A bunch of small things that add up when yuh browsing on a phone. Buttons that were a bit too small are now a comfortable tap, and the category links got real tap targets instead of being tiny slivers of text. Nothing about the layout moved — it just responds better when yuh tapping fast.',
+      date: 'Sep 26, 2026',
+      notes: [
+        'New: the grid/list view toggle is now a full 44px tap target instead of 34px',
+        'New: the "ask AI about this" link can actually be hit without aiming',
+        'New: the category shortcuts in the SEO sections are proper tap targets now, not 15px slivers',
+        'Fixed: the tab that opens AI chat no longer has a tap area wider than the word itself',
+        'Same look, same layout — just a lot less fumbling',
       ],
       url: '/',
     },

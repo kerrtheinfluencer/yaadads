@@ -153,7 +153,16 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
   suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
-check('v2.13 ai-chat-v2 entry shipped + set as current', suSrc.includes("'ai-chat-v2'") && suSrc.includes("current: 'ai-chat-v2'"));
+check('v2.13 ai-chat-v2 entry shipped', suSrc.includes("'ai-chat-v2'"));
+check('v2.14 touch-friendlier entry shipped + set as current', suSrc.includes("'touch-friendlier'") && suSrc.includes("current: 'touch-friendlier'"));
+// Pinning `current` to a hardcoded id meant this test failed every time a new
+// release shipped. The invariant worth protecting is that `current` always names
+// an entry that actually exists - otherwise the "What's new" pill points at
+// nothing and members never see the release notes.
+check('SITE_UPDATES.current names a real entry', (() => {
+  const cur = (suSrc.match(/current:\s*'([^']+)'/) || [])[1];
+  return !!cur && suSrc.includes("'" + cur + "': {");
+})());
 check('v2.10 post-pro entry shipped', suSrc.includes("'post-pro'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',

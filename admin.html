@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Local dashboard, not public content. Keeping it out of the index means no
+     search-engine result for /admin.html and no sitemap entry. -->
+<meta name="robots" content="noindex, nofollow">
+<title>Yaad Adz — Admin</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/favicon.ico">
+
+<!-- Supabase config as data attributes, mirroring the pattern js/ad-feedback.js
+     already uses (root.dataset.supabaseUrl). This is the PUBLIC anon key - it
+     already ships to every visitor inside js/core.js. The anon key is designed
+     to be public; what actually protects data is Supabase row-level security.
+     See the security note at the top of js/admin.js. -->
+<div id="adRoot"
+     data-supabase-url="https://cquwshpsfybvgqodbxsf.supabase.co"
+     data-supabase-key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw"
+     hidden></div>
+
+<style>
+  /* Scoped so the dashboard neither leaks styles into nor inherits surprises
+     from the main site stylesheet. */
+  body.adm { min-height: 100dvh; padding: 24px 16px 64px; }
+  .adm-wrap { max-width: 1080px; margin: 0 auto; }
+  .adm-gate {
+    max-width: 380px; margin: 14vh auto 0; text-align: center; padding: 28px;
+    background: var(--glass-float, rgba(8,30,20,.56));
+    border: 1px solid var(--glass-line, rgba(255,255,255,.16));
+    border-radius: 24px;
+    box-shadow: 0 24px 64px rgba(0,6,3,.4), inset 0 1px 0 var(--glass-highlight, rgba(255,255,255,.2));
+    -webkit-backdrop-filter: blur(28px) saturate(150%);
+    backdrop-filter: blur(28px) saturate(150%);
+  }
+  .adm-gate h1 { font-size: 20px; margin: 0 0 6px; }
+  .adm-gate p { font-size: 13px; margin: 0 0 20px; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-gate input {
+    width: 100%; padding: 13px 15px; margin-bottom: 12px; outline: none;
+    border-radius: var(--r-sm, 12px); font-size: 16px;
+    border: 1.5px solid var(--glass-line, rgba(255,255,255,.16));
+    background: var(--glass-inset, rgba(255,255,255,.085));
+    color: #fff; font-family: var(--font-b, system-ui, sans-serif);
+  }
+  .adm-gate input:focus { border-color: rgba(244,195,0,.7); }
+  .adm-gate button {
+    width: 100%; padding: 13px; border: none; cursor: pointer;
+    border-radius: var(--r-sm, 12px); font-size: 15px; font-weight: 700;
+    background: linear-gradient(145deg, #ffd94a, #f4c300 55%, #d6a700);
+    color: #1a1206; font-family: var(--font-b, system-ui, sans-serif);
+  }
+  .adm-err { color: #ff8a95; font-size: 13px; min-height: 18px; margin: 10px 0 0; }
+  .adm-head { display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .adm-head h1 { font-size: 22px; margin: 0; }
+  .adm-head a, .adm-head button {
+    font-size: 13px; cursor: pointer; padding: 9px 14px;
+    color: var(--muted-on-glass, rgba(255,255,255,.58)); text-decoration: none;
+    background: var(--glass-inset, rgba(255,255,255,.085));
+    border: 1px solid var(--glass-line, rgba(255,255,255,.16));
+    border-radius: 999px; font-family: var(--font-b, system-ui, sans-serif);
+  }
+  .adm-stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .adm-stat {
+    padding: 18px; border-radius: var(--r, 18px);
+    background: var(--glass-float, rgba(8,30,20,.56));
+    border: 1px solid var(--glass-line, rgba(255,255,255,.16));
+    box-shadow: 0 12px 30px rgba(0,6,3,.28), inset 0 1px 0 var(--glass-highlight, rgba(255,255,255,.2));
+  }
+  .adm-stat b { display: block; font-size: 28px; color: #ffd94a; line-height: 1.1; }
+  .adm-stat span { font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-card {
+    margin-top: 18px; padding: 18px; border-radius: var(--r, 18px);
+    background: var(--glass-raised, rgba(12,39,27,.48));
+    border: 1px solid var(--glass-line, rgba(255,255,255,.16));
+    box-shadow: 0 12px 30px rgba(0,6,3,.24);
+  }
+  .adm-card h2 { font-size: 15px; margin: 0 0 12px; color: #fff; }
+  .adm-rows { display: grid; gap: 8px; }
+  .adm-row {
+    display: flex; gap: 12px; align-items: center; justify-content: space-between;
+    padding: 12px 13px; border-radius: 12px; min-height: 44px; font-size: 14px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); color: #fff;
+    text-decoration: none;
+  }
+  .adm-row:hover { background: rgba(255,255,255,.1); }
+  .adm-row small { font-size: 12px; white-space: nowrap; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  /* Titles can be very long (one live ad is a 400-char description), so clamp
+     to one line and let the meta stay right-aligned. */
+  .adm-row > span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  }
+  .adm-note { font-size: 13px; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+</style>
+</head>
+<body class="adm">
+<div class="adm-wrap">
+  <section id="gate" class="adm-gate">
+    <h1>Yaad Adz Admin</h1>
+    <p>Enter the password to continue.</p>
+    <input id="pw" type="password" autocomplete="current-password"
+           placeholder="Password" aria-label="Admin password">
+    <button id="go" type="button">Unlock</button>
+    <div class="adm-err" id="err" role="alert" aria-live="polite"></div>
+  </section>
+  <main id="dash" hidden>
+    <div class="adm-head">
+      <h1>Yaad Adz Admin</h1>
+      <div style="display:flex;gap:10px">
+        <a href="/">Back to site</a>
+        <button id="refresh" type="button">Refresh</button>
+        <button id="lock" type="button">Lock</button>
+      </div>
+    </div>
+    <div class="adm-stats">
+      <div class="adm-stat"><b id="s-ads">–</b><span>Listings</span></div>
+      <div class="adm-stat"><b id="s-members">–</b><span>Members</span></div>
+      <div class="adm-stat"><b id="s-active">–</b><span>Active</span></div>
+      <div class="adm-stat"><b id="s-today">–</b><span>Posted today</span></div>
+    </div>
+    <section class="adm-card">
+      <h2>Newest listings</h2>
+      <div class="adm-rows" id="recent"><p class="adm-note">Loading…</p></div>
+    </section>
+    <section class="adm-card">
+      <h2>Reported listings</h2>
+      <!-- Not fetched here on purpose: ad_feedback_reports is locked down with
+           RLS revoked from the anon key, so this page cannot read it. Reviews
+           happen in the Supabase dashboard. Left as a note rather than a
+           permanently-broken counter. -->
+      <div class="adm-rows" id="reports"><p class="adm-note">Reports are private by
+        design (RLS blocks them from this page) — review them in the Supabase
+        dashboard under <em>Table editor → ad_feedback_reports</em>.</p></div>
+    </section>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/admin.js" defer></script>
+</body>
+</html>

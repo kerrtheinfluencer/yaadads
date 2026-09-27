@@ -5,7 +5,17 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 🤖 v2.13 — The AI chat got a full glow-up (Sep 21, 2026) · latest
+## 👍 v2.14 — Easier to tap, easier on the eyes (Sep 26, 2026) · latest
+
+A bunch of small things that add up when yuh browsing on a phone. Buttons that were a bit too small are now a comfortable tap, and the category links got real tap targets instead of being tiny slivers of text. Nothing about the layout moved — it just responds better when yuh tapping fast.
+
+- New: the grid/list view toggle is now a full 44px tap target instead of 34px
+- New: the "ask AI about this" link can actually be hit without aiming
+- New: the category shortcuts in the SEO sections are proper tap targets now, not 15px slivers
+- Fixed: the tab that opens AI chat no longer has a tap area wider than the word itself
+- Same look, same layout — just a lot less fumbling
+
+## 🤖 v2.13 — The AI chat got a full glow-up (Sep 21, 2026)
 
 Yaad Brain now chats like a proper assistant. Ask a follow-up like "the second one" or "anything cheaper?", compare two listings side by side, and get straight answers about any ad. And as always — it all runs 100% on your phone. No account, no cloud, no waiting.
 

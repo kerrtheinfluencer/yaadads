@@ -5,3 +5,7 @@ node_modules/
 npm-debug.log*
 dev-server.log
 dev-server.err
+# headless Chrome profiles created by the visual/CI test tools
+.chrome-admin-tmp/
+.chrome-adm-tmp/
+tmp-*.png

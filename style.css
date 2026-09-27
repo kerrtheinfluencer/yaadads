@@ -2799,7 +2799,10 @@ footer {
 .view-opt {
   -webkit-appearance: none; appearance: none;
   display: inline-flex; align-items: center; justify-content: center;
-  width: var(--fib-7); height: var(--fib-7); padding: 0;
+  /* Was var(--fib-7) = 34px. That clears the 24px WCAG 2.5.8 floor but sits
+     well under the 44px comfortable bar, and these grid/list toggles get used
+     repeatedly. 44px is where mis-taps stop. */
+  width: 44px; height: 44px; padding: 0;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-3);
@@ -3517,6 +3520,15 @@ body.ai-sheet-open #gasBanner {
   gap: 8px 20px;
   margin-top: 10px;
   font-size: 12px;
+}
+/* These render at ~15px tall - under the 24px minimum. Each sits beside only a
+   category emoji, not inside running prose, so the WCAG 2.5.8 inline exception
+   does not apply. Padding grows the hit area; the negative margin cancels the
+   visual change back out. */
+.seo-about-cats a {
+  display: inline-block;
+  padding: 6px 2px; margin: -6px -2px;
+  min-height: 24px;
 }
 @media (max-width: 600px) {
   .seo-about { padding: 16px; }
@@ -5081,8 +5093,35 @@ html { scrollbar-color: rgba(255, 255, 255, .22) transparent; }
   color: var(--gold); background: rgba(244,195,0,.14); animation: aiPulse 1.4s ease-in-out infinite;
 }
 @keyframes aiPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(244,195,0,.35); } 50% { box-shadow: 0 0 0 7px rgba(244,195,0,0); } }
+/* SEO category shortcuts. The links themselves render at ~15px tall, which is
+   under the 24px WCAG 2.5.8 minimum, and unlike prose links these are NOT
+   inline within a sentence - they are a standalone grid of tap targets. The
+   padding grows the hit area past 24px and the negative margin cancels it back
+   out, so the layout is visually identical. */
+.seo-cat-links {
+  display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px;
+}
+.seo-cat-links a {
+  display: inline-block;
+  padding: 6px 2px; margin: -6px -2px;
+  min-height: 24px;
+}
+/* Same story: alone in its own paragraph, so it is a standalone target rather
+   than a link inside a sentence. */
+.seo-browse-all {
+  display: inline-block;
+  padding: 6px 2px; margin: -6px -2px;
+  min-height: 24px;
+}
+
 .ai-hint-link {
-  background: none; border: none; padding: 0; color: rgba(244,195,0,.85);
+  /* Was `padding: 0`, which left this control 74x17 - a genuine WCAG 2.5.8
+     failure (below the 24px minimum), and this is a standalone button rather
+     than a link running inside prose, so the inline-target exemption does not
+     apply. The padding is negative-offset so the extra hit area does not shift
+     the surrounding text layout. */
+  background: none; border: none; padding: 13px 0; margin: -13px 0;
+  color: rgba(244,195,0,.85);
   font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
 }
 .ai-hint-link:hover { color: var(--gold); }
