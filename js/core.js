@@ -250,6 +250,13 @@ const L = {
    this list later is safe. */
 const ADS_HOME_COLS = 'id,title,category,parish,price,description,phone,image_url,negotiable,seller_name,seller_init,seller_id,created_at,status,views';
 
+/* §ADMIN-HIDE — rows the PUBLIC site must never render.
+   'hidden' is only ever written by the admin dashboard (admin.html → Hide),
+   which pulls a disingenuous post off the site without destroying the row.
+   'active', null (legacy rows) and 'sold' all stay visible, so this is the
+   single gate that decides "is this row public?". */
+function isPublicRow(row) { return !!row && row.status !== 'hidden'; }
+
 // Load all active ads into cache
 async function loadAds(_isRetry) {
   // ── Capture OLD ids BEFORE we replace _ads (so we can detect new arrivals) ──
@@ -305,7 +312,12 @@ async function loadAds(_isRetry) {
     if (!_ads.length) _ads = DEMO;
     _yaadLastLoad = { ok: true, count: _ads.length, fromDb: false };
   } else {
-    _ads = indexAds(data.map(dbToAd));
+    /* §ADMIN-HIDE — hidden rows never enter _ads, so every consumer of the ad
+       list (home grid, category counts, search, browse, AI chat, similar
+       listings, My Ads, the SEO/llms payloads) excludes them for free. Doing
+       it at this one boundary is deliberate: a per-view filter would have to
+       be repeated — and eventually forgotten — in a dozen call sites. */
+    _ads = indexAds(data.filter(isPublicRow).map(dbToAd));
     if (typeof rebuildAdIndex === 'function') { try { rebuildAdIndex(); } catch (e) {} }
     _yaadLastLoad = { ok: true, count: _ads.length, fromDb: true };
     console.info('[loadAds] Loaded ' + _ads.length + ' ads from Supabase');

@@ -8,4 +8,5 @@ dev-server.err
 # headless Chrome profiles created by the visual/CI test tools
 .chrome-admin-tmp/
 .chrome-adm-tmp/
+.chrome-live-tmp/
 tmp-*.png

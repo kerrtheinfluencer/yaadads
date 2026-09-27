@@ -121,6 +121,8 @@ async function init() {
   // Real-time: new ads
   _db.channel('ads-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads' }, payload => {
+      // §ADMIN-HIDE — a hidden row is not public, so it never enters _ads.
+      if (!isPublicRow(payload.new)) return;
       const incoming = dbToAd(payload.new);
       if (!_ads.find(a => a.id === incoming.id)) {
         _ads.unshift(incoming);
@@ -129,8 +131,26 @@ async function init() {
       }
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ads' }, payload => {
+      /* §ADMIN-HIDE — hide/restore from the admin dashboard arrives here as an
+         UPDATE. A row that is no longer public is dropped from the list, and a
+         row coming back to 'active' is re-inserted, so an open tab agrees with
+         the site without a reload either way. */
+      if (!isPublicRow(payload.new)) {
+        if (_ads.some(a => a.id === payload.new.id)) {
+          _ads = _ads.filter(a => a.id !== payload.new.id);
+          renderCats(); renderHome(); updateStats();
+          if (window._seoRefresh) window._seoRefresh();
+        }
+        return;
+      }
       const idx = _ads.findIndex(a => a.id === payload.new.id);
-      if (idx > -1) _ads[idx] = dbToAd(payload.new);
+      if (idx > -1) {
+        _ads[idx] = dbToAd(payload.new);
+      } else {
+        _ads.unshift(dbToAd(payload.new));
+        renderCats(); renderHome(); updateStats();
+        if (window._seoRefresh) window._seoRefresh();
+      }
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'ads' }, payload => {
       _ads = _ads.filter(a => a.id !== payload.old.id);

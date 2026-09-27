@@ -6,7 +6,12 @@
         the two drift, every listing link in the admin dashboard 404s. This is
         the check that stops that happening silently.
      2. In a real browser: the gate blocks the dashboard, a wrong password is
-        rejected, the right one unlocks it, and the page survives a dead CDN. */
+        rejected, the right one unlocks it, the page survives a dead CDN, and a
+        worst-case listing row (400-character title, wall of description) does
+        not push the dashboard past a 360px viewport.
+     3. That Hide actually hides: core.js, the realtime handlers and the page
+        generator all have to exclude status='hidden', or a "hidden" post would
+        quietly stay on the site. */
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -93,6 +98,55 @@ check('does not query RLS-locked reports table',
 check('gate unlocks via sessionStorage, not localStorage',
   /sessionStorage\.setItem/.test(adminLive) && !/localStorage\.setItem/.test(adminLive));
 
+/* ── 2b. moderation features ─────────────────────────────────────────────── */
+
+check('hide writes status=hidden (the value the public site excludes)',
+  /\{ status: ST_HIDDEN \}/.test(adminLive));
+check('restore writes status=active',
+  /\{ status: ST_ACTIVE \}/.test(adminLive));
+check('delete rides the same verified write() helper as hide/restore',
+  /op === 'delete'/.test(adminLive) && /t\.delete\(\)/.test(adminLive));
+check('every destructive action is confirm-gated (hide, restore, delete, bulk)',
+  (adminLive.match(/window\.confirm\(/g) || []).length >= 4,
+  (adminLive.match(/window\.confirm\(/g) || []).length + ' confirm() call(s)');
+check('a write that changed nothing is reported, never swallowed',
+  /no rows changed/.test(adminLive));
+check('bulk hide reports partial failures instead of claiming success',
+  /'Hid ' \+ done \+ ' of ' \+ mine\.length/.test(adminLive));
+check('list ships search + status filter + paging',
+  /id="flt"/.test(html) && /id="fltStatus"/.test(html) && /more'/.test(adminLive));
+check('hidden listings get their own stat tile',
+  /id="s-hidden"/.test(html) && /setStat\('s-hidden'/.test(adminLive));
+check('dashboard has its own status line (the gate error is hidden after unlock)',
+  /id="dash-note"/.test(html) && /function note\(/.test(adminLive));
+check('rows never render arbitrary markup (DOM API only, no innerHTML)',
+  !/\.innerHTML/.test(adminLive) && /createElement/.test(adminLive));
+
+/* §ADMIN-FIT — the reported "text bleeds off screen" bug. These are the CSS
+   guards that stop a 400-character title or a nowrap meta row from widening
+   the page; the browser pass below proves it at 360px for real. */
+check('row grid track can shrink (minmax(0,1fr)) and wraps long words anywhere',
+  /grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(html) && /overflow-wrap:\s*anywhere/.test(html));
+check('title + description snippets are clamped, not allowed to grow unbounded',
+  /-webkit-line-clamp:\s*3/.test(html) && /-webkit-line-clamp:\s*2/.test(html));
+check('body can never scroll sideways',
+  /body\.adm\s*\{[^}]*overflow-x:\s*hidden/.test(html));
+check('toolbar, rows and buttons meet the 44px tap target the site uses',
+  /min-height:\s*44px/.test(html) && /min-height:\s*46px/.test(html));
+
+/* ── 2c. the hide has to actually hide (cross-file) ─────────────────────── */
+
+const coreJs = fs.readFileSync('js/core.js', 'utf8');
+const navJs  = fs.readFileSync('js/ui-nav.js', 'utf8');
+const genJs  = fs.readFileSync('generate-pages.js', 'utf8');
+check('core.js drops hidden rows at the one load boundary',
+  /function isPublicRow\(row\)\s*\{[^}]*!==\s*'hidden'/.test(coreJs) &&
+  /indexAds\(data\.filter\(isPublicRow\)\.map\(dbToAd\)\)/.test(coreJs));
+check('realtime INSERT + UPDATE respect hidden listings',
+  /isPublicRow\(payload\.new\)/.test(navJs));
+check('generated ad pages + sitemap exclude hidden listings',
+  /filter\(ad => ad\.status !== 'hidden'\)/.test(genJs));
+
 
 /* ── 3. live browser behaviour ──────────────────────────────────────────── */
 
@@ -175,6 +229,39 @@ async function browser() {
     await ev('document.getElementById("gate").hidden === true && document.getElementById("dash").hidden === false'));
   check('unlock stored in sessionStorage only, not localStorage',
     await ev('sessionStorage.getItem("ya_admin_unlocked")==="1" && localStorage.getItem("ya_admin_unlocked")===null'));
+
+  /* §ADMIN-FIT — the reported bug: one live listing has a 400-character title
+     and a description that runs to several screens, and the old row layout
+     pushed the whole page sideways on a phone. Render that worst case through
+     the REAL row builder at 360px and measure what actually sticks out. */
+  await send('Emulation.setDeviceMetricsOverride',
+    { width: 360, height: 720, deviceScaleFactor: 1, mobile: true }, sessionId);
+  await new Promise(r => setTimeout(r, 250));
+
+  check('worst-case row renders its Hide/Restore/Delete controls at 360px',
+    (await ev('(function(){' +
+      'if(typeof window.__admRenderTest!=="function")return -1;' +
+      'var box=document.getElementById("rows");if(!box)return -2;' +
+      'var n=window.__admRenderTest({id:"a-test-1",title:"x".repeat(400),' +
+      'description:"y".repeat(600),parish:"Very Long Parish Name Indeed",price:123456789,' +
+      'status:"hidden",seller_name:"A Really Long Member Display Name",category:"vehicles",' +
+      'views:9999,created_at:"2026-09-26T12:00:00Z"});' +
+      'box.textContent="";box.appendChild(n);' +
+      'return document.querySelectorAll("#rows .adm-acts .adm-btn").length;})()')) >= 3);
+  check('nothing bleeds past the 360px viewport',
+    await ev('(function(){' +
+      'if(document.documentElement.scrollWidth>window.innerWidth+1)' +
+      'return "page scrollWidth "+document.documentElement.scrollWidth+" > "+window.innerWidth;' +
+      'var bad=[];Array.prototype.forEach.call(document.querySelectorAll("#dash *"),function(n){' +
+      'var b=n.getBoundingClientRect();' +
+      'if(b.width&&b.right>window.innerWidth+1)bad.push((n.className||n.tagName)+"@"+Math.round(b.right));});' +
+      'return bad.length?("overflow: "+bad.slice(0,3).join(", ")):true;})()'));
+  check('a hidden row renders the Hidden badge and a Restore control',
+    await ev('!!document.querySelector("#rows .adm-chip.is-hidden") && ' +
+      'Array.prototype.some.call(document.querySelectorAll("#rows .adm-acts .adm-btn"),' +
+      'function(b){return b.textContent==="Restore";})'));
+
+  await send('Emulation.clearDeviceMetricsOverride', {}, sessionId);
 
   await ev('document.getElementById("lock").click();1');
   check('Lock button re-locks the gate',

@@ -22,11 +22,26 @@
 
 <style>
   /* Scoped so the dashboard neither leaks styles into nor inherits surprises
-     from the main site stylesheet. */
-  body.adm { min-height: 100dvh; padding: 24px 16px 64px; }
+     from the main site stylesheet.
+
+     §ADMIN-FIT — the bug this block exists to prevent: live listings run to a
+     400-character title and a description several screens long, and the old row
+     (ellipsis title + `white-space: nowrap` meta) pushed the whole page
+     sideways on a phone. Every text node here is clamped, wrapped-anywhere, or
+     both, and .adm-row is a grid whose first track is `minmax(0, 1fr)` — the
+     min-width:0 that lets a long word shrink instead of overflowing its track.
+     `overflow-x: hidden` on the body is the belt to that braces: a future edit
+     that forgets a clamp can only clip, never scroll the page sideways. */
+  body.adm {
+    min-height: 100dvh; padding: 22px 14px 72px;
+    overflow-x: hidden;
+  }
+  body.adm *, body.adm *::before, body.adm *::after { box-sizing: border-box; }
   .adm-wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* ── gate ── */
   .adm-gate {
-    max-width: 380px; margin: 14vh auto 0; text-align: center; padding: 28px;
+    max-width: 380px; margin: 12vh auto 0; text-align: center; padding: 28px;
     background: var(--glass-float, rgba(8,30,20,.56));
     border: 1px solid var(--glass-line, rgba(255,255,255,.16));
     border-radius: 24px;
@@ -34,8 +49,8 @@
     -webkit-backdrop-filter: blur(28px) saturate(150%);
     backdrop-filter: blur(28px) saturate(150%);
   }
-  .adm-gate h1 { font-size: 20px; margin: 0 0 6px; }
-  .adm-gate p { font-size: 13px; margin: 0 0 20px; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-gate h1 { font-size: 20px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .adm-gate p { font-size: 13px; margin: 0 0 20px; overflow-wrap: anywhere; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
   .adm-gate input {
     width: 100%; padding: 13px 15px; margin-bottom: 12px; outline: none;
     border-radius: var(--r-sm, 12px); font-size: 16px;
@@ -45,54 +60,145 @@
   }
   .adm-gate input:focus { border-color: rgba(244,195,0,.7); }
   .adm-gate button {
-    width: 100%; padding: 13px; border: none; cursor: pointer;
+    width: 100%; min-height: 46px; padding: 13px; border: none; cursor: pointer;
     border-radius: var(--r-sm, 12px); font-size: 15px; font-weight: 700;
     background: linear-gradient(145deg, #ffd94a, #f4c300 55%, #d6a700);
     color: #1a1206; font-family: var(--font-b, system-ui, sans-serif);
   }
-  .adm-err { color: #ff8a95; font-size: 13px; min-height: 18px; margin: 10px 0 0; }
-  .adm-head { display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .adm-err { color: #ff8a95; font-size: 13px; min-height: 18px; margin: 10px 0 0; overflow-wrap: anywhere; }
+
+  /* ── header ── */
+  .adm-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  }
   .adm-head h1 { font-size: 22px; margin: 0; }
-  .adm-head a, .adm-head button {
-    font-size: 13px; cursor: pointer; padding: 9px 14px;
+  .adm-head-acts { display: flex; gap: 10px; flex-wrap: wrap; }
+  .adm-head-acts a, .adm-head-acts button {
+    display: inline-flex; align-items: center; min-height: 44px;
+    font-size: 13px; font-weight: 700; cursor: pointer; padding: 9px 15px;
     color: var(--muted-on-glass, rgba(255,255,255,.58)); text-decoration: none;
     background: var(--glass-inset, rgba(255,255,255,.085));
     border: 1px solid var(--glass-line, rgba(255,255,255,.16));
     border-radius: 999px; font-family: var(--font-b, system-ui, sans-serif);
   }
-  .adm-stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .adm-head-acts a:hover, .adm-head-acts button:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+  /* ── status line under the header (loading / result / failure) ── */
+  .adm-note {
+    font-size: 13px; margin: 0; overflow-wrap: anywhere;
+    color: var(--muted-on-glass, rgba(255,255,255,.58));
+  }
+  #dash-note { margin: 0 0 14px; padding: 0; border: 1px solid transparent; border-radius: 12px; }
+  #dash-note:not(:empty) { padding: 10px 12px; background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.10); }
+  #dash-note.is-ok { color: #ffe9a6; background: rgba(244,195,0,.10); border-color: rgba(244,195,0,.42); }
+  #dash-note.is-err { color: #ffb3bb; background: rgba(255,110,124,.10); border-color: rgba(255,110,124,.42); }
+
+  /* ── stats ── */
+  .adm-stats { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); }
   .adm-stat {
-    padding: 18px; border-radius: var(--r, 18px);
+    padding: 14px; border-radius: var(--r, 18px); min-width: 0;
     background: var(--glass-float, rgba(8,30,20,.56));
     border: 1px solid var(--glass-line, rgba(255,255,255,.16));
     box-shadow: 0 12px 30px rgba(0,6,3,.28), inset 0 1px 0 var(--glass-highlight, rgba(255,255,255,.2));
   }
-  .adm-stat b { display: block; font-size: 28px; color: #ffd94a; line-height: 1.1; }
-  .adm-stat span { font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+  .adm-stat b { display: block; font-size: clamp(20px, 6vw, 28px); color: #ffd94a; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .adm-stat span { font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; overflow-wrap: anywhere;
     color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+
+  /* ── cards ── */
   .adm-card {
-    margin-top: 18px; padding: 18px; border-radius: var(--r, 18px);
+    margin-top: 16px; padding: 16px; border-radius: var(--r, 18px);
     background: var(--glass-raised, rgba(12,39,27,.48));
     border: 1px solid var(--glass-line, rgba(255,255,255,.16));
     box-shadow: 0 12px 30px rgba(0,6,3,.24);
   }
-  .adm-card h2 { font-size: 15px; margin: 0 0 12px; color: #fff; }
+  .adm-card h2 { font-size: 15px; margin: 0 0 12px; color: #fff; overflow-wrap: anywhere; }
+  .adm-card-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .adm-card-hd h2 { margin: 0; }
+  .adm-count { font-size: 12px; overflow-wrap: anywhere; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-card p { font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-card ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55;
+    color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-card li { margin-bottom: 6px; overflow-wrap: anywhere; }
+  .adm-card em { color: #ffd94a; font-style: normal; font-weight: 700; }
+
+  /* ── toolbar ── */
+  .adm-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .adm-tools input, .adm-tools select {
+    flex: 1 1 190px; min-width: 0; min-height: 44px; padding: 10px 13px; font-size: 15px;
+    color: #fff; font-family: var(--font-b, system-ui, sans-serif);
+    background: var(--glass-inset, rgba(255,255,255,.085));
+    border: 1.5px solid var(--glass-line, rgba(255,255,255,.16));
+    border-radius: var(--r-sm, 12px); outline: none;
+  }
+  .adm-tools select { flex: 0 1 170px; }
+  .adm-tools option { color: #12140f; }
+  .adm-tools input:focus, .adm-tools select:focus { border-color: rgba(244,195,0,.7); }
+
+  /* ── listing rows ── */
   .adm-rows { display: grid; gap: 8px; }
   .adm-row {
-    display: flex; gap: 12px; align-items: center; justify-content: space-between;
-    padding: 12px 13px; border-radius: 12px; min-height: 44px; font-size: 14px;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 14px; align-items: start; overflow: hidden;
+    padding: 12px 13px; border-radius: 12px;
     background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); color: #fff;
-    text-decoration: none;
   }
   .adm-row:hover { background: rgba(255,255,255,.1); }
-  .adm-row small { font-size: 12px; white-space: nowrap; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
-  /* Titles can be very long (one live ad is a 400-char description), so clamp
-     to one line and let the meta stay right-aligned. */
-  .adm-row > span {
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  .adm-row-main { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .adm-row-title {
+    font-weight: 700; line-height: 1.35; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .adm-note { font-size: 13px; color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  .adm-row-snip {
+    font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere;
+    color: var(--muted-on-glass, rgba(255,255,255,.58));
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .adm-row-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; min-width: 0; }
+  .adm-tag {
+    max-width: 100%; overflow-wrap: anywhere;
+    font-size: 11.5px; padding: 3px 9px; border-radius: 999px;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10);
+    color: var(--muted-on-glass, rgba(255,255,255,.58));
+  }
+  .adm-id { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .adm-chip {
+    font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+    padding: 3px 10px; border-radius: 999px; border: 1px solid transparent;
+  }
+  .adm-chip.is-active { color: #ffd94a; background: rgba(244,195,0,.16); border-color: rgba(244,195,0,.42); }
+  .adm-chip.is-sold { color: #d8d8d8; background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.18); }
+  .adm-chip.is-hidden { color: #fff; background: #b8342a; border-color: #d9564b; }
+
+  /* ── row actions ── */
+  .adm-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+  .adm-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 9px 14px; cursor: pointer; white-space: nowrap;
+    font-size: 13px; font-weight: 700; text-align: center; text-decoration: none;
+    color: #fff; font-family: var(--font-b, system-ui, sans-serif);
+    background: var(--glass-inset, rgba(255,255,255,.085));
+    border: 1px solid var(--glass-line, rgba(255,255,255,.16));
+    border-radius: 999px;
+  }
+  .adm-btn:hover { background: rgba(255,255,255,.16); }
+  .adm-btn.is-good { color: #1a1206; border-color: transparent; background: linear-gradient(145deg, #ffd94a, #f4c300 55%, #d6a700); }
+  .adm-btn.is-danger { color: #ffb3bb; border-color: rgba(255,110,124,.45); background: rgba(255,110,124,.12); }
+  .adm-btn.is-danger:hover { background: rgba(255,110,124,.22); }
+  .adm-btn.is-quiet { color: var(--muted-on-glass, rgba(255,255,255,.58)); }
+  body.adm.is-busy .adm-btn { opacity: .5; pointer-events: none; }
+  .adm-more { display: flex; justify-content: center; padding-top: 4px; }
+
+  /* ── phones ── */
+  @media (max-width: 640px) {
+    .adm-head h1 { font-size: 19px; }
+    .adm-gate { margin-top: 8vh; padding: 22px; }
+    .adm-row { grid-template-columns: minmax(0, 1fr); }
+    .adm-acts { grid-column: 1; justify-content: flex-start; }
+    .adm-acts .adm-btn { flex: 1 1 auto; }
+    .adm-tools input, .adm-tools select { flex: 1 1 100%; }
+  }
 </style>
 </head>
 <body class="adm">
@@ -105,34 +211,71 @@
     <button id="go" type="button">Unlock</button>
     <div class="adm-err" id="err" role="alert" aria-live="polite"></div>
   </section>
+
   <main id="dash" hidden>
     <div class="adm-head">
       <h1>Yaad Adz Admin</h1>
-      <div style="display:flex;gap:10px">
+      <div class="adm-head-acts">
         <a href="/">Back to site</a>
         <button id="refresh" type="button">Refresh</button>
         <button id="lock" type="button">Lock</button>
       </div>
     </div>
+
+    <p id="dash-note" class="adm-note" role="status" aria-live="polite"></p>
+
     <div class="adm-stats">
       <div class="adm-stat"><b id="s-ads">–</b><span>Listings</span></div>
       <div class="adm-stat"><b id="s-members">–</b><span>Members</span></div>
-      <div class="adm-stat"><b id="s-active">–</b><span>Active</span></div>
+      <div class="adm-stat"><b id="s-active">–</b><span>Live</span></div>
+      <div class="adm-stat"><b id="s-hidden">–</b><span>Hidden</span></div>
       <div class="adm-stat"><b id="s-today">–</b><span>Posted today</span></div>
     </div>
+
     <section class="adm-card">
-      <h2>Newest listings</h2>
-      <div class="adm-rows" id="recent"><p class="adm-note">Loading…</p></div>
+      <div class="adm-card-hd">
+        <h2>Listings</h2>
+        <span id="rowcount" class="adm-count">Loading…</span>
+      </div>
+      <div class="adm-tools">
+        <input id="flt" type="search" autocomplete="off"
+               placeholder="Search title, seller, parish, category, id…"
+               aria-label="Search listings">
+        <select id="fltStatus" aria-label="Filter listings by status">
+          <option value="all">All statuses</option>
+          <option value="active">Live</option>
+          <option value="hidden">Hidden</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+      <div class="adm-rows" id="rows"><p class="adm-note">Loading…</p></div>
     </section>
+
+    <section class="adm-card">
+      <h2>What Hide does</h2>
+      <p><em>Hide</em> sets the listing's status to <em>hidden</em>. It leaves the
+        homepage, search, the category counts, the AI chat, similar listings and
+        the member's own My&nbsp;Ads list, and the next page-generation run
+        deletes its /ad/… page and sitemap entry. The row stays in the table, so
+        <em>Restore</em> puts it straight back. Use <em>Delete</em> only when the
+        post should be gone for good.</p>
+      <ul>
+        <li><em>Hide all</em> on a row hides every live listing from that same member — the fastest way to clear a spam run.</li>
+        <li>Hidden posts are invisible to members too, so the seller sees the listing disappear from My Ads. Restore it if you change your mind — nothing is erased.</li>
+        <li>Nothing here is real authentication. This page writes with the public anon key, which is only allowed to change rows because the project still carries the legacy <em>anon can update/delete ads</em> policies. If those are ever tightened, actions fail loudly instead of pretending to work.</li>
+      </ul>
+    </section>
+
     <section class="adm-card">
       <h2>Reported listings</h2>
       <!-- Not fetched here on purpose: ad_feedback_reports is locked down with
            RLS revoked from the anon key, so this page cannot read it. Reviews
            happen in the Supabase dashboard. Left as a note rather than a
            permanently-broken counter. -->
-      <div class="adm-rows" id="reports"><p class="adm-note">Reports are private by
-        design (RLS blocks them from this page) — review them in the Supabase
-        dashboard under <em>Table editor → ad_feedback_reports</em>.</p></div>
+      <p>Reports are private by design (RLS blocks them from this page) — review
+        them in the Supabase dashboard under
+        <em>Table editor → ad_feedback_reports</em>. Then hide or delete the
+        offending listing from the list above.</p>
     </section>
   </main>
 </div>
@@ -140,3 +283,4 @@
 <script src="/js/admin.js" defer></script>
 </body>
 </html>
+

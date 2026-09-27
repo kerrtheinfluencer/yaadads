@@ -1417,7 +1417,11 @@ async function main() {
 
   console.log(`📋 Found ${allRows.length} ads`);
 
-  const allAds = allRows.map(dbToAd);
+  /* §ADMIN-HIDE — listings hidden from /admin.html must lose their public page
+     and their sitemap entry, not just disappear from the app. Dropping them
+     here also feeds the stale-file sweep below, which deletes the leftover
+     /ad/<slug>.html on this run. */
+  const allAds = allRows.map(dbToAd).filter(ad => ad.status !== 'hidden');
 
   const existingFiles = new Set(
     fs.existsSync(OUT_DIR)
