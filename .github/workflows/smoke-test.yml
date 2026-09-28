@@ -132,6 +132,16 @@ jobs:
         timeout-minutes: 5
         run: npm run test:onboarding
 
+      # The stored-XSS gate. Everything the v1 chat got wrong is invisible to a
+      # regex check - a hostile member name only becomes an XSS when a real
+      # parser meets it - so this drives the real app in a headless browser with
+      # hostile data. Skips itself (exit 0) if the runner has no Chrome; the
+      # GitHub ubuntu image ships one at /usr/bin/google-chrome, and the test
+      # resolves it the same way tools/test-onboarding.js does.
+      - name: Run messaging end-to-end browser tests (stored XSS, read receipts)
+        timeout-minutes: 5
+        run: npm run test:msg-v2
+
       - name: Run AI chat regression tests (pure core + wiring)
         run: |
           node tools/test-chat-v2.js
