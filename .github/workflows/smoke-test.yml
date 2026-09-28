@@ -137,6 +137,16 @@ jobs:
           node tools/test-chat-v2.js
           node tools/test-chat-wiring.js
 
+      # The single gate that matters most. Every suite below is a Node-builtin
+      # script (no npm install needed), so this one step runs them all:
+      # cleanup, verify-v2, chat, onboarding, data-safety, p1-parity, p1-no-cdn,
+      # admin, reports and the For You ranking rules. Without it a pull request
+      # can merge with a dead code path — a ReferenceError in the inline ad
+      # view shipped for weeks because only a browser test caught it, and
+      # nothing ran that test.
+      - name: Run the full regression suite (npm test)
+        run: npm test
+
       - name: Check v2 onboarding + recents are wired up
         run: |
           grep -q 'js/onboarding.js' index.html || { echo "::error::onboarding.js is not included in index.html"; exit 1; }

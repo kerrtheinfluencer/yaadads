@@ -40,6 +40,19 @@ function openDetail(id) {
   xhr.send();
 }
 
+// ── Absolute URL for a generated ad page ──────────────────────────────────
+// The canonical origin is owned by the SEO object in js/search-ai.js
+// (SEO.base). This file used to reference a bare `BASE_URL`, which is scoped
+// to that IIFE and therefore undefined here: showAdInline() threw a
+// ReferenceError on its first line, so tapping any ad whose static page had
+// not been generated yet did nothing at all, and shareAdInline() threw too.
+// Never hardcode the origin below — SEO.base is the single source.
+function adPageUrl(slug) {
+  var base = (window.SEO && window.SEO.base) ? window.SEO.base
+            : ((location.origin && location.origin !== 'null') ? location.origin : '');
+  return base + '/ad/' + slug + '.html';
+}
+
 // ── SPA FALLBACK DETAIL — shown when /ad/<slug>.html hasn't been generated
 // yet (a brand-new ad waiting on the page generator). The old fallback bounced
 // to /?ad=… which re-checked the same missing page and reloaded forever; this
@@ -49,7 +62,7 @@ function showAdInline(ad) {
   if (!ad) return;
   var cat = catById(ad.category);
   var slug = slugify(ad);
-  var adUrl = BASE_URL + '/ad/' + slug + '.html';
+  var adUrl = adPageUrl(slug);
   var photos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
   var t = function (u) { return (typeof thumbUrl === 'function' && u) ? thumbUrl(u, 480) : u; };
   var catIcon = cat.icon || '📦';
@@ -180,7 +193,7 @@ function showAdInline(ad) {
 }
 
 function shareAdInline(slug) {
-  var url = BASE_URL + '/ad/' + slug + '.html';
+  var url = adPageUrl(slug);
   if (navigator.share) { navigator.share({ title: document.title, url: url }).catch(function () {}); return; }
   if (navigator.clipboard) { navigator.clipboard.writeText(url).catch(function () {}); }
   showToast('Link copied 🔗', '🔗');

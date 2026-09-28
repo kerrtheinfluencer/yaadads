@@ -852,7 +852,13 @@ const SEO = (() => {
     el.textContent = JSON.stringify(schema);
   }
 
-  return { injectListingsSchema, updateOGForListing, resetOG, setCanonical, serveLlmsTxt, generateLlmsTxt, injectBreadcrumb, injectFAQSchema };
+  /* `base` is exported deliberately: BASE_URL is scoped to this IIFE, but
+     js/ad-social.js used to reference a bare `BASE_URL` as if it were global.
+     That threw a ReferenceError and killed the inline ad view for every
+     listing whose static page had not been generated yet. The canonical
+     origin now travels through the SEO object — do not hardcode it anywhere
+     else (tools/test-cleanup.js enforces one source per constant). */
+  return { base: BASE_URL, injectListingsSchema, updateOGForListing, resetOG, setCanonical, serveLlmsTxt, generateLlmsTxt, injectBreadcrumb, injectFAQSchema };
 })();
 
 
