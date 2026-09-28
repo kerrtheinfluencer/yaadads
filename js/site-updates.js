@@ -18,20 +18,46 @@
      Built with DOM APIs (never innerHTML) so nothing can inject markup;
      wrapped defensively so it can never break boot.
    AI MAINTAINER NOTES (local dev) - read before editing js/*:
-   1. LOAD ORDER (index.html, all defer): core -> auth-account -> listings -> ui-nav -> search-ai -> ad-social -> widgets-pwa -> onboarding -> recent -> site-updates -> boot. boot.js calls init() LAST.
+   1. LOAD ORDER (index.html, all defer): core -> auth-account -> listings -> ui-nav -> search-ai -> ad-social -> widgets-pwa -> onboarding -> recent -> for-you -> site-updates -> boot. boot.js calls init() LAST. for-you.js must stay BEFORE boot.js - it wraps renderHome() and defaults the home sort select.
    2. SINGLE SOURCES: CFG/CATS/CAT_MAP/catById//escHtml/fmtN/ago live in core.js. Never re-add category-find or escHtml elsewhere (test: node tools/test-cleanup.js).
    3. SEARCH CACHE: loadAds sets ad._hay {title,desc,par,cat,all} + _adById via rebuildAdIndex(). scoreAd/getFiltered MUST read ad._hay - never toLowerCase in loops.
    4. PHOTO GRIDS: post+edit share _photoThumbsHTML/_addFilesToPhotos in listings.js. Keep onclick names (removePhoto/removeEditAdPhoto) + ids (imgFile/eaImgFile).
-   5. SAFE EDITS: keep public names (init/loadAds/openDetail/cardHTML/renderHome/getFiltered/scoreAd/findAd/catById). Do not touch sw.js precache, CFG creds, manifest. escHtml() all DB strings before innerHTML.
-   6. BEFORE PUSH: npm test then npm run changelog — the changelog also updates
+   5. SAFE EDITS: keep public names (init/loadAds/openDetail/cardHTML/renderHome/getFiltered/scoreAd/findAd/catById). Do not touch CFG creds, manifest. escHtml() all DB strings before innerHTML.
+   6. §FOR-YOU: getFiltered() routes sort 'foryou' into fyRank() (js/for-you.js) and passes scoreAd() in as the relevance fn, so a query always outranks personalisation. That feed's whole promise - never newest-first, never hide a listing, always explain itself - is pinned by tools/test-for-you.js and the §6c block in tools/verify-v2.js. js/for-you.js is an IIFE publishing only window.*, so it can never collide with another file's top-level let/const/var.
+   7. NEW js file? add it to PRECACHE_URLS in sw.js AND bump CACHE_VERSION, or installed PWAs keep serving the old shell forever.
+   8. BEFORE PUSH: npm test then npm run changelog — the changelog also updates
       itself (pre-commit hook + a bot commit in CI), so npm run changelog is
       only needed to see it before you push.
 *******************************************************************************/
 
 
 var SITE_UPDATES = {
-  current: 'report-listing',
+  current: 'for-you',
   items: {
+    'message-v2': {
+      version: 'v2.17',
+      icon: '✉️',
+      title: 'Messaging got rebuilt — and it actually works now',
+      cta: 'Open Messages',
+      ctaFn: "goPage('msgs')",
+      body: 'Every listing now has a real ✉️ Message button, so you can talk to a seller without leaving the ad. Inside the chat you get ✓✓ when they read your message, a card showing the price of the item you are discussing, one-tap quick replies, and a 💰 button to make an offer right in the thread. If a message fails to send, it stays in the box with a Retry instead of vanishing.',
+      date: 'Sep 26, 2026',
+      notes: [
+        'New: every listing has a ✉️ Message seller button — the chat had no way in from a listing before',
+        'New: ✓✓ Read receipts on your own messages, so you know when a seller actually saw it',
+        'New: the thread shows which item it is about, its price, and a tap back to the listing',
+        'New: one-tap quick replies — still available? best price? where do we meet? can you deliver?',
+        'New: make an offer inside the chat with the 💰 button',
+        'New: a one-line safety reminder in every chat, dismissible',
+        'Fixed: a message that fails to send no longer disappears — it stays put with a Retry',
+        'Fixed: typing is never wiped when a reply arrives mid-sentence',
+        'Fixed: messages no longer show as unread while you are reading them',
+        'Fixed: the same message could appear twice after a connection drop',
+        'Fixed: both inboxes now show the same rows, in the same order, in the same style',
+        'Fixed: seller names and listing titles are escaped everywhere they are displayed',
+      ],
+      url: '/',
+    },
     'ai-chat-v2': {
       version: 'v2.13',
       icon: '🤖',
@@ -223,6 +249,25 @@ var SITE_UPDATES = {
         'Five reasons to pick from: scam, duplicate, wrong category, already sold, or offensive',
         'Each ad is only counted once per device, so nobody can flood the queue by accident',
         'Fixed: reporting used to save to your own phone and go nowhere. It now really reaches us',
+      ],
+      url: '/',
+    },
+    'for-you': {
+      version: 'v2.18',
+      icon: '✨',
+      title: 'The feed is picked for you now — not just the newest',
+      cta: 'See your feed',
+      ctaFn: 'goHome',
+      body: 'The home feed is no longer a queue of whatever was posted last. Every listing is now ranked for you: real photos, a real description and real interest lift a post, freshness fades after the first day, and the top of the page always spreads across categories so no one seller can take it over. Every card tells you why you are seeing it, and Newest First is still one tap away in the sort box.',
+      date: 'Sep 28, 2026',
+      notes: [
+        'New: ✨ For You — the home feed ranks listings instead of just showing the newest',
+        'New: a reason on every card — "more like the Toyota you looked at", "popular this week", "just posted today"',
+        'New: the top of the feed is a mix, and one seller can no longer flood it',
+        'New: a three-week-old listing with real photos and real views can outrank a thin post from this morning',
+        'New: 🔀 Shuffle picks for a different mix, and ❔ How this works explains every rule',
+        'New: nothing is ever hidden — Newest First shows the exact same listings, and your choice is remembered',
+        'Your signals stay on your phone — what you open, save and search is never uploaded anywhere',
       ],
       url: '/',
     },

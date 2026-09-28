@@ -5,6 +5,18 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
+## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026) · latest
+
+The home feed is no longer a queue of whatever was posted last. Every listing is now ranked for you: real photos, a real description and real interest lift a post, freshness fades after the first day, and the top of the page always spreads across categories so no one seller can take it over. Every card tells you why you are seeing it, and Newest First is still one tap away in the sort box.
+
+- New: ✨ For You — the home feed ranks listings instead of just showing the newest
+- New: a reason on every card — "more like the Toyota you looked at", "popular this week", "just posted today"
+- New: the top of the feed is a mix, and one seller can no longer flood it
+- New: a three-week-old listing with real photos and real views can outrank a thin post from this morning
+- New: 🔀 Shuffle picks for a different mix, and ❔ How this works explains every rule
+- New: nothing is ever hidden — Newest First shows the exact same listings, and your choice is remembered
+- Your signals stay on your phone — what you open, save and search is never uploaded anywhere
+
 ## 🧹 v2.15 — We can take down junk posts now (Sep 27, 2026)
 
 We can now hide or delete any post that is a scam, a duplicate, or just junk. Hiding takes a post off the site straight away but keeps it, so a mistake can be undone. If a member is spamming, one tap clears everything they posted.
@@ -14,7 +26,7 @@ We can now hide or delete any post that is a scam, a duplicate, or just junk. Hi
 - One tap clears every post from the same member when someone is spamming
 - Nothing is destroyed by hiding — a mistake can always be put back
 
-## 🚩 v2.16 — Report a post — and this time we actually read them (Sep 27, 2026) · latest
+## 🚩 v2.16 — Report a post — and this time we actually read them (Sep 27, 2026)
 
 Every ad now has a "Report this listing" link at the bottom. Tap it, say why (scam, duplicate, wrong category, already sold, or offensive) and it goes straight to our moderation queue. Please use it. Reports are the fastest way to get a bad post off the site.
 
@@ -23,6 +35,23 @@ Every ad now has a "Report this listing" link at the bottom. Tap it, say why (sc
 - Five reasons to pick from: scam, duplicate, wrong category, already sold, or offensive
 - Each ad is only counted once per device, so nobody can flood the queue by accident
 - Fixed: reporting used to save to your own phone and go nowhere. It now really reaches us
+
+## ✉️ v2.17 — Messaging got rebuilt — and it actually works now (Sep 26, 2026)
+
+Every listing now has a real ✉️ Message button, so you can talk to a seller without leaving the ad. Inside the chat you get ✓✓ when they read your message, a card showing the price of the item you are discussing, one-tap quick replies, and a 💰 button to make an offer right in the thread. If a message fails to send, it stays in the box with a Retry instead of vanishing.
+
+- New: every listing has a ✉️ Message seller button — the chat had no way in from a listing before
+- New: ✓✓ Read receipts on your own messages, so you know when a seller actually saw it
+- New: the thread shows which item it is about, its price, and a tap back to the listing
+- New: one-tap quick replies — still available? best price? where do we meet? can you deliver?
+- New: make an offer inside the chat with the 💰 button
+- New: a one-line safety reminder in every chat, dismissible
+- Fixed: a message that fails to send no longer disappears — it stays put with a Retry
+- Fixed: typing is never wiped when a reply arrives mid-sentence
+- Fixed: messages no longer show as unread while you are reading them
+- Fixed: the same message could appear twice after a connection drop
+- Fixed: both inboxes now show the same rows, in the same order, in the same style
+- Fixed: seller names and listing titles are escaped everywhere they are displayed
 
 ## 👍 v2.14 — Easier to tap, easier on the eyes (Sep 26, 2026)
 

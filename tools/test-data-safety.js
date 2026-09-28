@@ -12,10 +12,11 @@ function sh(cmd) { return execSync(cmd, { stdio: ['pipe', 'pipe', 'pipe'] }).toS
 
 /* 1 ── Every localStorage key v2 WRITES must be brand new (except ya_searches,
         which recent.js writes with the same list-semantics core.js already used) */
-const V2_FILES = ['js/onboarding.js', 'js/recent.js'];
+const V2_FILES = ['js/onboarding.js', 'js/recent.js', 'js/for-you.js'];
 const EXPECTED_V2_WRITES = new Set([
   'ya_onboarded_v2', 'ya_tour_done_v2', 'ya_tip_cmdk', 'ya_tip_fav3',
   'ya_tip_gas', 'ya_tip_pwa', 'ya_tip_post', 'ya_v2_visit_count', 'ya_recently_viewed',
+  'ya_home_sort',
 ]);
 const written = new Set();
 for (const f of V2_FILES) {

@@ -111,6 +111,48 @@ check('onboarding overlay is dim-and-dismiss (click-outside wired)',
 check('site-update modal shell styled (su-overlay + modal CSS present)',
   css.includes('.su-overlay') && css.includes('.site-update-modal'));
 
+// 6c. ✨ §FOR-YOU — the ranked feed (js/for-you.js). The whole point of this
+//     feature is that it must NOT be a newest-first list, must not hide
+//     anything, and must stay explainable, so each of those promises is
+//     checked here and again behaviourally in tools/test-for-you.js.
+const fySrc = fs.readFileSync('js/for-you.js', 'utf8');
+check('for-you.js included in index.html before boot.js',
+  /<script src="js\/for-you\.js"( defer)?><\/script>/.test(html) &&
+  html.indexOf('js/for-you.js') < html.indexOf('js/boot.js'));
+check('the For You bar ships (fyBar container + explainer panel host)',
+  html.includes('id="fyBar"'));
+check('both sort selects offer ✨ For You and default to it',
+  (html.match(/<option value="foryou" selected>/g) || []).length === 2,
+  (html.match(/<option value="foryou"/g) || []).length + ' option(s)');
+check('getFiltered routes the foryou mode into the ranker',
+  _saSrc.includes("sort === 'foryou'") && _saSrc.includes('fyRank(ads'));
+check('a search query is handed to the ranker so relevance leads',
+  _saSrc.includes('relevance: terms ?'));
+check('the newest cannot win by default (freshness decays, it never sorts)',
+  fySrc.includes('function freshOf') && fySrc.includes('HALF_LIFE') && fySrc.includes('W_FRESH'));
+check('the top of the feed is a mix (round-robin + repeat penalties)',
+  fySrc.includes('function diversify') && fySrc.includes('TOP_MIX') &&
+  fySrc.includes('P_SELLER') && fySrc.includes('P_CAT'));
+check('nothing is ever hidden — the deep tail is returned untouched',
+  fySrc.includes('for (i = RANK_DEPTH; i < list.length; i++) out.push(list[i])'));
+check('members are told why (per-card reason + summary + explainer rules)',
+  fySrc.includes('window.fyReason') && fySrc.includes('window.fySummary') && fySrc.includes('HOW_RULES'));
+check('one deterministic daily shuffle, re-rollable on demand',
+  fySrc.includes('function jitterOf') && fySrc.includes('window.fyShuffle'));
+check('for-you.js writes exactly one NEW key and never removes anything',
+  /localStorage\.setItem\('ya_home_sort'/.test(fySrc) && !fySrc.includes('localStorage.removeItem'));
+check('for-you.js tells members their signals stay on the phone',
+  fySrc.indexOf('never uploaded') > -1);
+check('style.css carries §FOR-YOU bar + chip styles',
+  css.includes('.fy-bar') && css.includes('.fy-chip') && css.includes('.fy-panel') && css.includes('.fy-btn'));
+check('SW precaches for-you.js', sw.includes("'/js/for-you.js'"));
+check('the ranked feed keeps a headless test + a preview tool',
+  fs.existsSync('tools/test-for-you.js') && fs.existsSync('tools/fy-preview.js'));
+try {
+  execSync('node tools/test-for-you.js', { stdio: 'pipe' });
+  check('the For You rules hold (tools/test-for-you.js)', true);
+} catch (e) { check('the For You rules hold (tools/test-for-you.js)', false, String(e.message)); }
+
 // 6b. matchMedia guard present across app JS + no unguarded calls anywhere
 const uiNav = fs.readFileSync('js/ui-nav.js', 'utf8');
 const coreSrc2 = fs.readFileSync('js/core.js', 'utf8');

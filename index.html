@@ -546,6 +546,8 @@ if ('serviceWorker' in navigator) {
         </button>
         <div class="rb-select">
           <select class="fselect" id="homeSortSel" onchange="renderHome()" aria-label="Sort listings">
+            <!-- §FOR-YOU — the ranked feed is the default; Newest First is one tap away (js/for-you.js) -->
+            <option value="foryou" selected>✨ For You</option>
             <option value="newest">Newest First</option>
             <option value="price-lo">Price: Low → High</option>
             <option value="price-hi">Price: High → Low</option>
@@ -584,6 +586,9 @@ if ('serviceWorker' in navigator) {
 
     <!-- Referral spot (Invite friends + leaderboard preview) — rendered by js/search-ai.js renderReferralSpot() -->
     <div id="homeReferralSpot"></div>
+
+    <!-- §FOR-YOU — the ranked feed bar (js/for-you.js): why this order, 🔀 Shuffle picks, ❔ How this works -->
+    <div class="fy-bar" id="fyBar" aria-hidden="true"></div>
 
     <!-- Listings grid -->
     <div class="listings-grid" id="homeGrid">
@@ -760,6 +765,8 @@ if ('serviceWorker' in navigator) {
       <div class="section-hd">
         <h2 class="section-title" id="browseTitle">All Listings</h2>
         <select class="fselect" id="sortSel" onchange="renderBrowse()">
+          <!-- §FOR-YOU — same ranked feed, applied to whatever is being browsed -->
+          <option value="foryou" selected>✨ For You</option>
           <option value="newest">Newest First</option>
           <option value="price-lo">Price: Low → High</option>
           <option value="price-hi">Price: High → Low</option>
@@ -1379,6 +1386,7 @@ if ('serviceWorker' in navigator) {
 <script src="js/widgets-pwa.js" defer></script>
 <script src="js/onboarding.js" defer></script>
 <script src="js/recent.js" defer></script>
+<script src="js/for-you.js" defer></script>
 <script src="js/site-updates.js" defer></script>
 <script src="js/boot.js" defer></script>
 <!-- ── REFERRAL ENV BINDINGS ── -->

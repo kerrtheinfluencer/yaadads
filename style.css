@@ -973,6 +973,99 @@ nav.scrolled-transparent {
 .rb-select .fselect:hover { border-color: rgba(244,195,0,.5); }
 .rb-select .fselect:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ✨ §FOR-YOU — the ranked feed bar (js/for-you.js)
+   One glass strip between the browse deck and the grid that makes the ranking
+   legible: the mode badge, a one-line "why this order", 🔀 Shuffle picks and
+   the ❔ explainer panel. Same material and radius as the results toolbar, so
+   the two read as one deck of controls rather than two competing bars.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.fy-bar {
+  display: none;                    /* shown by js/for-you.js (.show), For You mode only */
+  margin: var(--fib-5) 0;
+  padding: var(--fib-4) var(--fib-5);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: var(--r-lg);
+  background-color: rgba(255, 255, 255, .05);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+}
+.fy-bar.show { display: block; }
+.fy-hd { display: flex; align-items: center; gap: var(--fib-4); flex-wrap: wrap; }
+.fy-badge {
+  display: inline-flex; align-items: center;
+  padding: var(--fib-3) var(--fib-5);
+  border-radius: 999px;
+  font-size: 12px; font-weight: 800; line-height: 1; white-space: nowrap;
+  color: #10281c;
+  background: linear-gradient(140deg, #ffd94a, var(--gold));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 6px 16px rgba(244, 195, 0, .16);
+}
+.fy-line { flex: 1 1 160px; min-width: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted-on-glass); }
+/* The two controls travel as one unit, so a phone wraps them to their own row
+   instead of squeezing the "why this order" line into a sliver. */
+.fy-actions { margin-left: auto; display: flex; align-items: center; gap: var(--fib-3); flex-wrap: wrap; }
+.fy-btn {
+  font: inherit; font-size: 12.5px; font-weight: 700;
+  min-height: var(--fib-7); padding: 0 var(--fib-5);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-f3);
+  background: rgba(255, 255, 255, .09);
+  color: var(--ink-on-glass);
+  cursor: pointer;
+  transition:
+    background var(--dur-gold-1) var(--ease-gold),
+    border-color var(--dur-gold-1) var(--ease-gold),
+    color var(--dur-gold-1) var(--ease-gold),
+    transform 80ms var(--ease-gold);
+}
+.fy-btn:hover { background: rgba(244, 195, 0, .14); border-color: rgba(244, 195, 0, .5); color: #ffd94a; }
+.fy-btn:active { transform: scale(.96); }
+.fy-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fy-btn-ghost { background: none; color: var(--muted-on-glass); }
+.fy-panel { margin-top: var(--fib-5); padding-top: var(--fib-5); border-top: 1px solid var(--glass-line); }
+.fy-panel[hidden] { display: none; }
+.fy-panel-h { font-size: 13px; font-weight: 800; letter-spacing: -.1px; color: var(--ink-on-glass); margin: 0 0 var(--fib-4); }
+.fy-panel ul { margin: 0; padding-left: var(--fib-6); display: grid; gap: var(--fib-3); }
+.fy-panel li { font-size: 12.5px; line-height: 1.55; color: var(--muted-on-glass); }
+.fy-panel li strong { color: var(--ink-on-glass); }
+.fy-signals { margin: var(--fib-5) 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--fib-3); }
+.fy-sig {
+  font-size: 11.5px; font-weight: 700; padding: var(--fib-2) var(--fib-4);
+  border-radius: 999px; color: var(--ink-on-glass);
+  background: var(--glass-inset); border: 1px solid var(--glass-line);
+}
+.fy-foot { margin-top: var(--fib-5); display: flex; align-items: center; gap: var(--fib-4); flex-wrap: wrap; }
+.fy-note { font-size: 11.5px; color: var(--muted-on-glass); }
+
+/* The per-card reason chip (§decorate in js/for-you.js). Only ever added in For
+   You mode, so Newest First keeps the exact card it always had. */
+.fy-chip {
+  display: inline-block; max-width: 100%;
+  margin: 0 0 var(--fib-4);
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 1.3;
+  color: #ffd94a;
+  background: rgba(244, 195, 0, .12);
+  border: 1px solid rgba(244, 195, 0, .36);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Graceful degradation, stated locally: the shared GLASS pass at the end of
+   this file drops the sheen for the older panels under reduced transparency
+   and forced colours, so this bar does the same for itself. */
+@media (prefers-reduced-transparency: reduce) {
+  .fy-bar { background-image: none; background-color: #123b27; }
+}
+@media (forced-colors: active) {
+  .fy-bar { background-image: none; }
+}
+@media (max-width: 640px) {
+  .fy-line { flex-basis: 100%; }
+  .fy-actions { margin-left: 0; }
+}
+
 /* Loading skeletons — premium glassmorphic style */
 .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
 .skeleton-card {
@@ -4479,7 +4572,7 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .empty h3 { color: #fff; }
 .empty p, .results-search-query { color: var(--muted-on-glass); }
 .empty-icon { background: var(--glass-inset); border-color: var(--glass-line); box-shadow: inset 0 1px 0 var(--glass-highlight); }
-.recent-strip, .results-header, .ai-response-card {
+.recent-strip, .results-header, .ai-response-card, .fy-bar {
   border-color: var(--glass-line);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 14px 32px rgba(0, 8, 4, .1);
 }
@@ -4502,7 +4595,7 @@ body { color: var(--ink-on-glass); }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   nav, .modal, .modal-full, .ai-sheet, .mob-nav, .toast, .pwa-banner, #gasBanner { background: #0b2a1b; }
   .browse-deck { background: #123b27; }
-  .results-header, .recent-strip, .seller-box, .analytics-strip { background: #123b27; }
+  .results-header, .recent-strip, .seller-box, .analytics-strip, .fy-bar { background: #123b27; }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -5631,6 +5724,7 @@ nav,
 .inbox-item,
 .ob-welcome,
 .ob-tip,
+.fy-bar,
 .ai-response-card {
   background-image: var(--glass-sheen);
   background-size: auto;
@@ -5694,6 +5788,7 @@ nav {
 }
 .browse-deck,
 .results-header,
+.fy-bar,
 .ai-response-card,
 .ob-welcome,
 .ob-tip {

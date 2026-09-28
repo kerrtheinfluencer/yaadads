@@ -34,8 +34,9 @@ function getFiltered(q, cat, sort) {
   let ads = [...L.ads];
   if (cat && cat !== 'all') ads = ads.filter(a => a.category === cat);
 
+  let terms = null;
   if (q && q.trim()) {
-    const terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 1);
+    terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 1);
     // Include ad if ANY term matches title, desc, parish, or category name.
     // Reads the _hay cache (lowercased once in loadAds) instead of
     // rebuilding + lowering strings per ad per keystroke.
@@ -44,10 +45,20 @@ function getFiltered(q, cat, sort) {
         .join(' ').toLowerCase();
       return terms.some(t => hay.includes(t));
     });
-    // Sort by relevance score when searching (unless user picked a sort)
-    if (!sort || sort === 'newest') {
-      return ads.sort((a,b) => scoreAd(b,terms) - scoreAd(a,terms));
-    }
+  }
+
+  /* §FOR-YOU — the ranked feed (js/for-you.js). Not a sort: quality, the
+     member's own signals, a decaying freshness score and a daily shuffle
+     decide the order, and a query is handed in so relevance always leads.
+     Falls back to the sorts below if that module did not load. */
+  if (sort === 'foryou' && typeof fyRank === 'function') {
+    return fyRank(ads, {
+      relevance: terms ? function (a) { return scoreAd(a, terms); } : null
+    });
+  }
+
+  if (terms && (!sort || sort === 'newest')) {
+    return ads.sort((a,b) => scoreAd(b,terms) - scoreAd(a,terms));
   }
 
   if (sort === 'price-lo') return ads.sort((a,b) => a.price - b.price);

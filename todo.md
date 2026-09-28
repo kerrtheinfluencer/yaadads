@@ -2,6 +2,19 @@
 
 ## ✅ Shipped in v2.x (post-v2 updates)
 
+### ✨ For You — a ranked feed instead of a queue of the newest (v2.18)
+- 🧠 **`js/for-you.js`** — the home feed now *ranks* every listing instead of showing only the newest. It is deliberately **not** another sort:
+  - **The newest cannot win by default.** Freshness is a decaying score (full strength on day one, ~half at a week, ~5% at a month) worth `W_FRESH` — never a sort key. Quality (`W_QUALITY`: photos, description, views, phone, negotiable) and affinity (`W_AFFINITY`) outweigh it, so a three-week-old listing with real photos and real views beats a thin post from this morning — proven deterministically in `tools/test-for-you.js`.
+  - **The top is always a mix.** The first `TOP_MIX` (8) slots are filled round-robin across categories, then every later pick is penalised for repeating the category (`P_CAT`), parish (`P_PARISH`) or seller (`P_SELLER`) that just appeared. A 10-ad flood from one seller can no longer own the page.
+  - **Nothing is ever hidden — only ordered.** Every public listing is returned (the tail past `RANK_DEPTH` untouched); sold posts and same-seller duplicates are demoted, never removed. Newest First still shows the exact same set.
+  - **Deterministic daily shuffle** (`jitterOf`, seeded by local date + 🔀 reroll) rotates the long tail without reshuffling cards mid-scroll; the seed is stable inside a session so `§PERF-APPEND` infinite scroll stays consistent.
+  - **Signals are local-only:** ❤️ `ya_favs` + 👁️ `ya_recently_viewed` + 🔍 `ya_searches` are read (never written) and folded into category / parish / price-band / brand / search-term affinity. The module writes exactly one new key, `ya_home_sort`, and nothing else.
+  - **Search still wins:** `getFiltered()` hands `scoreAd()` relevance into `fyRank()` with a weight larger than the whole base range, so a query always outranks personalisation.
+- 👁️ **It explains itself** — every card carries a reason chip ("❤️ Because you like Vehicles", "🔍 You searched “vitz”", "🔥 Popular this week", "📷 4 photos to check"), the bar above the grid sums up the signals in play, and **❔ How this works** spells out all five rules. `🔀 Shuffle picks` re-rolls on demand. Built with DOM APIs only (no `innerHTML`).
+- 🎛️ **Wiring** — `homeSortSel` (home) and `sortSel` (browse) both list **✨ For You** first and default to it; the choice is remembered per device, and **🆕 Show Newest First instead** is one tap inside the explainer.
+- 🧪 `tools/test-for-you.js` (27 headless checks: nothing hidden, newest can't lead, mix/no-flood, affinity, relevance, sold demotion, determinism, shuffle, zero storage writes) + `tools/fy-preview.js` (`npm run fy:preview` prints a real 44-listing feed next to newest-first) + `tools/verify-v2.js` §6c wiring/promise checks + `js/for-you.js` added to the data-safety guard's `V2_FILES`.
+- 🎨 `style.css` §FOR-YOU (bar, badge, buttons, explainer, `.fy-chip`) reuses the shared glass tokens and joins the sheen / edge-light lists; SW cache bumped to `v58` and `/js/for-you.js` pre-cached.
+
 ### ⚡ New ads load instantly + leaner ad pages (v2.5)
 - 🚀 **New ads render inline** — tapping a just-posted ad now shows the listing immediately. The old fallback bounced `/ad/<slug>.html` → `/?ad=<id>` in an infinite reload loop (re-checking the same missing page every hop) until the 2-hour generator ran. `openDetail()` now falls back to `showAdInline(ad)` — a full detail view rendered inside the app.
 - 🖼️ **Size-optimised images everywhere** — every ad image now goes through Supabase's image renderer (`/storage/v1/render/image/public/…`), verified working on this project. Featured 1280w, thumbs 144w, similar cards 360w, og/twitter/JSON-LD 1200w, lightbox 1600w. A 6-photo ad page drops from ~5.7MB → ~1MB of images.
