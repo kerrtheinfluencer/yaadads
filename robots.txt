@@ -22,7 +22,9 @@ Allow: /sitemap.html
 Allow: /sitemap.xml
 
 # Admin — never index
-Disallow: /dash-kxrr1.html
+# (dash-kxrr1.html was a second, older admin surface reading ads + messages +
+# users. It was only ever hidden from crawlers, never actually removed, and
+# admin.html replaced it in v2.14. Deleted rather than left Disallow:ed.)
 Disallow: /admin.html
 
 # Explicit AI crawler allowances — covered by the wildcard above already,

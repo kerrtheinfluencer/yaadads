@@ -5,7 +5,7 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026) · latest
+## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026)
 
 The home feed is no longer a queue of whatever was posted last. Every listing is now ranked for you: real photos, a real description and real interest lift a post, freshness fades after the first day, and the top of the page always spreads across categories so no one seller can take it over. Every card tells you why you are seeing it, and Newest First is still one tap away in the sort box.
 
@@ -16,6 +16,17 @@ The home feed is no longer a queue of whatever was posted last. Every listing is
 - New: 🔀 Shuffle picks for a different mix, and ❔ How this works explains every rule
 - New: nothing is ever hidden — Newest First shows the exact same listings, and your choice is remembered
 - Your signals stay on your phone — what you open, save and search is never uploaded anywhere
+
+## 👍 v2.19 — Easier to tap, and a quieter bug hunt (Sep 28, 2026) · latest
+
+The category buttons across the top are bigger now — a proper 44px target instead of a 34px sliver, so they are far easier to hit on a phone. We also went bug hunting and closed three real ones: a newly posted ad sometimes would not open at all, your name and listing titles in a chat are now escaped everywhere they appear (an old page could run code that a member typed into their name), and a link copied out of a chat now carries the full web address instead of a broken half-link.
+
+- New: category buttons are now a full 44px tap target on every screen size
+- Fixed: tapping a brand-new ad could do nothing at all while its page was still being generated
+- Fixed: member names, listing titles and message text in a chat are escaped everywhere they are shown
+- Fixed: a listing link copied out of a chat now shares the full yaadadz.com address
+- Removed: an old hidden admin page that was only ever kept out of search results
+- Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again
 
 ## 🧹 v2.15 — We can take down junk posts now (Sep 27, 2026)
 

@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'for-you',
+  current: 'taps-and-messages',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -268,6 +268,24 @@ var SITE_UPDATES = {
         'New: 🔀 Shuffle picks for a different mix, and ❔ How this works explains every rule',
         'New: nothing is ever hidden — Newest First shows the exact same listings, and your choice is remembered',
         'Your signals stay on your phone — what you open, save and search is never uploaded anywhere',
+      ],
+      url: '/',
+    },
+    'taps-and-messages': {
+      version: 'v2.19',
+      icon: '👍',
+      title: 'Easier to tap, and a quieter bug hunt',
+      cta: 'See it',
+      ctaFn: 'goHome',
+      body: 'The category buttons across the top are bigger now — a proper 44px target instead of a 34px sliver, so they are far easier to hit on a phone. We also went bug hunting and closed three real ones: a newly posted ad sometimes would not open at all, your name and listing titles in a chat are now escaped everywhere they appear (an old page could run code that a member typed into their name), and a link copied out of a chat now carries the full web address instead of a broken half-link.',
+      date: 'Sep 28, 2026',
+      notes: [
+        'New: category buttons are now a full 44px tap target on every screen size',
+        'Fixed: tapping a brand-new ad could do nothing at all while its page was still being generated',
+        'Fixed: member names, listing titles and message text in a chat are escaped everywhere they are shown',
+        'Fixed: a listing link copied out of a chat now shares the full yaadadz.com address',
+        'Removed: an old hidden admin page that was only ever kept out of search results',
+        'Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again',
       ],
       url: '/',
     },

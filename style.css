@@ -809,7 +809,12 @@ nav.scrolled-transparent {
   display: flex;
   align-items: center;
   gap: var(--fib-4);
-  height: var(--fib-7);
+  /* 44px, not the 34px this used to be. The category rail is the primary tap
+     surface on a phone, and v2.14 already raised the view toggle from 34px to
+     44px for exactly this reason (WCAG 2.5.8 comfortable). It went unnoticed
+     because tools/test-hero-layout.js was measuring a hero element that no
+     longer exists instead of this row. */
+  min-height: 44px;
   flex-shrink: 0;
   scroll-snap-align: start;
   padding: 0 var(--fib-5);

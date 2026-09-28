@@ -153,6 +153,33 @@ try {
   check('the For You rules hold (tools/test-for-you.js)', true);
 } catch (e) { check('the For You rules hold (tools/test-for-you.js)', false, String(e.message)); }
 
+// 6d. §NO-ORPHAN-TESTS — a test nothing runs is not a test. That is exactly how
+//     a stored-XSS fix sat uncommitted while its own release note announced it
+//     as shipped: the test that caught it was untracked and unwired. Every
+//     tools/test-*.js must now appear in the `npm test` chain, in a workflow, or
+//     in the manual list in tools/README.md — otherwise the build fails.
+(function () {
+  const readme = fs.existsSync('tools/README.md') ? fs.readFileSync('tools/README.md', 'utf8') : '';
+  const pkg = fs.readFileSync('package.json', 'utf8');
+  const workflows = fs.readdirSync('.github/workflows')
+    .filter(f => f.endsWith('.yml'))
+    .map(f => fs.readFileSync('.github/workflows/' + f, 'utf8')).join('\n');
+  const orphans = fs.readdirSync('tools')
+    .filter(f => /^test-.*\.js$/.test(f))
+    .filter(f => {
+      // A test invoked by another test counts as wired (verify-v2 shells out to
+      // test-ad-feedback.js), same as being in the chain or in a workflow.
+      const wiredInChain = pkg.indexOf('tools/' + f) > -1 || fs.readFileSync(__filename, 'utf8').indexOf(f) > -1;
+      const wiredInCi = workflows.indexOf(f) > -1;
+      const declaredManual = readme.indexOf(f) > -1;
+      return !(wiredInChain || wiredInCi || declaredManual);
+    });
+  check('no orphan tests: every tools/test-*.js is run by npm test, by CI, or declared in tools/README.md (' +
+    fs.readdirSync('tools').filter(f => /^test-.*\.js$/.test(f)).length + ' harnesses)', orphans.length === 0, orphans.join(', '));
+  check('tools/README.md documents the harnesses and who runs them',
+    readme.includes('Automated') && readme.includes('Manual') && readme.length > 1500);
+})();
+
 // 6b. matchMedia guard present across app JS + no unguarded calls anywhere
 const uiNav = fs.readFileSync('js/ui-nav.js', 'utf8');
 const coreSrc2 = fs.readFileSync('js/core.js', 'utf8');

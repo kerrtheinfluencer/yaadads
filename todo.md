@@ -92,12 +92,20 @@
 - 📨 **Push for site updates** — new `site_updates` topic added to default push subscriptions; owners announce via `node notify-site-update.js "Title" "Body" [url]` (reuses the existing `/functions/v1/send-push` webhook + `x-webhook-secret` convention)
 - SW cache bumped to `v19`; `/js/site-updates.js` pre-cached for installed PWAs
 
-## 🔜 Backlog (v2.1+)
-- [ ] Dark mode (design tokens are ready; needs audit of ~3,300 lines for hardcoded colors)
+## 🔎 Known issues (v2.19, verified 2026-09-28)
+- 🐛 **Sustained horizontal overflow at 390px** on the homepage — reproducible in `npm run test:hero` (fails at 390 only, 1440/780/768/640/320 are clean) and it still reproduces with the For You bar hidden, so it is **pre-existing and not from §FOR-YOU**. Culprit not yet isolated; the hero harness is deliberately kept out of CI until it is fixed, because a permanently red step is a step people learn to ignore.
+- ℹ️ Chat share links are now absolute (`adLink` uses `SEO.base`); anything else still building a URL from a non-global `BASE_URL` is a bug of the same family — grep for `BASE_URL` before adding a new one.
+
+## 📉 Dropped / not needed
+- ~~Rotate Supabase anon key~~ — **not needed**: the key in `js/core.js` expires 2088210574 (≈2036), and CI already warns when it gets under 30 days.
+- ~~`patch-matchmedia.js`~~ — deleted; `generate-pages.js` now emits the guarded `matchMedia` call itself, so there was nothing left to patch.
+- ~~`dash-kxrr1.html`~~ — deleted; a second admin surface reading `ads` + `messages` + `users`, only ever hidden from crawlers. `admin.html` (v2.14) replaced it.
+
+## 🔜 Backlog (unchanged)
+- [ ] Dark mode (design tokens are ready; needs an audit of ~3,300 lines for hardcoded colors)
 - [ ] Dedicated maskable icon artwork (current icons reused with padding assumption)
-- [ ] Code-split `search-ai.js` (85KB) — lazy-load the Yaad Brain scoring tables
+- [ ] Code-split `search-ai.js` (145KB) — lazy-load the Yaad Brain scoring tables
 - [ ] Saved searches + alerts (push on new matching listings)
 - [ ] "More from this parish/category" cross-links inside generated ad pages
 - [ ] Seller verification badge workflow in admin dashboard
 - [ ] i18n: full Patois toggle for UI strings
-- [ ] Rotate Supabase anon key before expiry (CI warns automatically)

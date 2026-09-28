@@ -13,8 +13,11 @@ const os = require('node:os');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const PORT = 8893;
-const CDP = 9233;
+/* Random high ports, never fixed ones. A crashed run that leaves an orphaned
+   browser on a fixed port makes the NEXT run connect to a dead target — which
+   looks like a hang and tests nothing. */
+const PORT = 8800 + Math.floor(Math.random() * 600);
+const CDP = 9600 + Math.floor(Math.random() * 600);
 /* Browser resolution mirrors tools/test-onboarding.js exactly (BROWSER_PATH →
    Windows → Linux → macOS). Without the Linux/macOS entries this file SKIPs
    itself on the GitHub runner, which is a green step that tests nothing. */

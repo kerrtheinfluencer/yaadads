@@ -1825,11 +1825,17 @@ const AiChat=(function(){
     return wrap;
   }
 
-  /* Share/export a reply — WhatsApp is where deals actually happen here. */
+  /* Share/export a reply — WhatsApp is where deals actually happen here.
+     The origin comes from SEO.base (the single source, same as every other ad
+     URL in the app). This used to read a bare BASE_URL, which is scoped to the
+     SEO IIFE, so the typeof guard silently degraded every shared link to a
+     relative "/ad/…" that means nothing once it is pasted into WhatsApp. */
   function adLink(ad){
     try{
-      return (typeof BASE_URL==='string'?BASE_URL:'')+'/ad/'+slugify(ad)+'.html';
-    }catch(e){return '';}
+      var base = (window.SEO && window.SEO.base) ? window.SEO.base
+               : ((location.origin && location.origin !== 'null') ? location.origin : '');
+      return base + '/ad/' + slugify(ad) + '.html';
+    }catch(e){return '/ad/' + slugify(ad) + '.html';}
   }
   function shareChatMessage(m){
     let text=m.text||'';
