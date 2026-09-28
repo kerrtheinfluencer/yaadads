@@ -5,8 +5,27 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+
+/* Preflight. v1 started by fetching the debugger port and died with a raw
+   "TypeError: fetch failed / ECONNREFUSED" stack when either prerequisite was
+   missing — which reads like a broken test rather than a missing browser. Say
+   exactly what to start, and skip (exit 0) when it simply is not running. */
+async function preflight() {
+  try {
+    const pages = await (await fetch('http://localhost:9233/json')).json();
+    if (!pages.find(p => p.type === 'page')) throw new Error('no page target');
+    return pages;
+  } catch (e) {
+    console.log('SKIP: no headless Chrome on :9233 and dev server on :8893.');
+    console.log('  1. node tools/dev-server.js 8893');
+    console.log('  2. chrome --headless=new --remote-debugging-port=9233 --user-data-dir=<temp> about:blank');
+    console.log('  (layout is also covered by tools/run-doctor.js, which needs neither)');
+    process.exit(0);
+  }
+}
+
 (async function () {
-  const pages = await (await fetch('http://localhost:9233/json')).json();
+  const pages = await preflight();
   const ws = new WebSocket(pages.find(p => p.type === 'page').webSocketDebuggerUrl);
   await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
   let id = 0;

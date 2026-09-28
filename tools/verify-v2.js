@@ -232,6 +232,73 @@ check('guest account inbox keeps updates thread (acctInboxList !CU branch)',
 check('history modal uses dvh so it never clips on mobile Safari',
   css.includes('100dvh') && css.includes('.site-update-modal'));
 
+/* 6g ── §MSG-V2: the v1 chat shipped seven defects that all looked fine in a
+   screenshot. Each one is now pinned, because every single one of them is the
+   kind of thing that quietly comes back on the next refactor. */
+const socSrc = fs.readFileSync('js/ad-social.js', 'utf8');
+const navSrc = fs.readFileSync('js/ui-nav.js', 'utf8');
+const msgCoreSrc = fs.readFileSync('js/core.js', 'utf8');
+
+check('§MSG-V2 member strings are escaped in the chat and both inboxes',
+  // every one of these used to be raw in innerHTML (stored XSS)
+  acctSrc.includes("escHtml(otherName || 'Member')") &&
+  acctSrc.includes("escHtml(conv.adTitle || 'Listing')") &&
+  acctSrc.includes("escHtml(otherInit || '?')") &&
+  /class="chat-name">' \+ escHtml\(/.test(acctSrc));
+
+check('§MSG-V2 no conversation key is interpolated into an inline handler',
+  !/onclick="openChatFromInbox/.test(acctSrc) && acctSrc.includes('data-conv="'));
+
+check('§MSG-V2 the chat is wired by ONE delegated listener (no inline send)',
+  acctSrc.includes('function initInboxWiring') && acctSrc.includes('t.closest(\'#chatSend\')') &&
+  !/onclick="sendMsg\(\)"/.test(acctSrc) && !/onkeydown="if\(event\.key/.test(acctSrc));
+
+check('§MSG-V2 read receipts are rendered (✓ sent / ✓✓ read)',
+  acctSrc.includes("class=\"msg-ticks") && acctSrc.includes("m.read ? '✓✓' : '✓'") &&
+  css.includes('.msg-ticks.is-read'));
+
+check('§MSG-V2 quick replies + in-chat offer ship with their markup',
+  acctSrc.includes('var CHAT_CHIPS') && acctSrc.includes('var CHAT_CHIPS_SELLER') &&
+  acctSrc.includes('function chatChipsHtml') && acctSrc.includes('data-qr="') &&
+  acctSrc.includes('function sendChatOffer') && css.includes('.chat-chip {') &&
+  css.includes('.chat-offer-row[hidden]'));
+
+check('§MSG-V2 the composer is a capped auto-growing textarea, not a bare input',
+  acctSrc.includes('<textarea class="chat-input" id="chatInput"') &&
+  acctSrc.includes('maxlength="\' + CHAT_MAX_LEN + \'"') &&
+  css.includes('resize: none'));
+
+check('§MSG-V2 a failed send restores the draft instead of eating it',
+  /catch\s*\(e\)\s*\{\s*const back = document\.getElementById\('chatInput'\);\s*if \(back\) back\.value = draft;/.test(acctSrc) &&
+  acctSrc.includes("label: 'Retry'"));
+
+check('§MSG-V2 a send cannot double-fire (single-flight guard)',
+  acctSrc.includes('var _msgSending = false;') && /if \(!box \|\| !currentConv \|\| !CU \|\| _msgSending\) return;/.test(acctSrc));
+
+check('§MSG-V2 the open thread is marked read when a message arrives',
+  navSrc.includes('const chatOpen = currentConv === key') && navSrc.includes('await sbMarkRead(key)'));
+
+check('§MSG-V2 realtime inserts are idempotent by message id',
+  navSrc.includes("messages.some(m => m.id === row.id)"));
+
+check('§MSG-V2 a listing finally has a Message button, mounted by listener',
+  socSrc.includes('detail-msg-slot') && socSrc.includes('className = \'btn btn-green detail-msg-btn\'') &&
+  !/onclick="openChat\(/.test(socSrc));
+
+check('§MSG-V2 the dead offer panel is gone (it had no markup to open)',
+  !socSrc.includes("getElementById('offerPanel')") && !msgCoreSrc.includes('offerPanel'));
+
+check('§MSG-V2 both inboxes share one row renderer',
+  (acctSrc.match(/inboxRowsHtml\(\)/g) || []).length >= 3 &&
+  acctSrc.includes('function inboxRowsHtml') && !acctSrc.includes('class="inbox-prev"'));
+
+check('§MSG-V2 the chat modal is a flex column, so no row can push it off-screen',
+  css.includes('#chatInner { display: flex') && css.includes('.chat-messages { flex: 1 1 auto'));
+
+check('§MSG-V2 message writes are validated at the boundary',
+  msgCoreSrc.includes('if (!clean) throw new Error') &&
+  msgCoreSrc.includes('clean.length > 2000') && msgCoreSrc.includes('if (!key) { console.warn'));
+
 // 6f. CHANGELOG.md generated from SITE_UPDATES (single source of truth).
 check('build-changelog tool exists', fs.existsSync('tools/build-changelog.js'));
 (function () {

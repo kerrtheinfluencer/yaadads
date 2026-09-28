@@ -111,6 +111,14 @@ function showAdInline(ad) {
     }).join('');
     similarHtml = '<div class="similar-section"><div class="similar-title">Similar listings</div><div class="similar-grid">' + cards + '</div></div>';
   }
+  /* §MSG-V2 — the in-app chat had no entry point on a listing at all: Call,
+     WhatsApp and Share were the only actions, even though the AI helper, the
+     onboarding note and the empty inbox all told members to tap "✉️ Message".
+     Mounted as a real button and wired by listener, so no member name is ever
+     interpolated into an inline handler. Guests get the sign-in prompt instead
+     (openChat already routes logged-out taps to openAuth). */
+  var msgSlot = '<div class="detail-msg-slot"></div>';
+
   var html = '<div style="padding-bottom:60px">'
     + '<button onclick="goHome()" style="display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--green);font-size:15px;font-weight:600;cursor:pointer;padding:12px 0">‹ Back</button>'
     + gallery
@@ -134,6 +142,7 @@ function showAdInline(ad) {
       + (waHref ? '<a class="btn btn-gold" href="' + waHref + '" target="_blank" rel="noopener noreferrer" style="flex:1;text-align:center">💬 WhatsApp</a>' : '')
       + '<button class="btn btn-outline" style="flex:1" onclick="shareAdInline(\'' + slug + '\')">🔗 Share</button>'
       + '</div>'
+      + msgSlot
       /* §CHAT-V2 — the highest-intent chat entry point: ask about THIS ad */
       + '<button class="btn btn-outline detail-ask-ai" type="button" style="width:100%;margin-top:8px">🤖 Ask AI about this listing</button>'
       /* §REPORT — reporting is deliberately quiet, so it is a text link under
@@ -147,6 +156,29 @@ function showAdInline(ad) {
 
   var el = document.getElementById('detailPage');
   el.innerHTML = html;
+  /* §MSG-V2 — mount the real Message button now that the markup exists. Built
+     with DOM APIs and wired by listener: a seller NAME never reaches an inline
+     handler (it is read from the ad at click time instead). */
+  var msgSlotEl = el.querySelector('.detail-msg-slot');
+  if (msgSlotEl && ad.status !== 'sold' && ad.sellerId) {
+    if (!CU) {
+      var signIn = document.createElement('button');
+      signIn.type = 'button';
+      signIn.className = 'btn btn-green detail-msg-btn';
+      signIn.textContent = '✉️ Message seller';
+      signIn.addEventListener('click', function () { openAuth('login'); });
+      msgSlotEl.appendChild(signIn);
+    } else if (CU.id !== ad.sellerId) {
+      var msgBtn = document.createElement('button');
+      msgBtn.type = 'button';
+      msgBtn.className = 'btn btn-green detail-msg-btn';
+      msgBtn.textContent = '✉️ Message seller';
+      msgBtn.addEventListener('click', function () {
+        openChat(ad.id, ad.sellerId, ad.seller || 'Seller', ad.sellerInit || initials(ad.seller || '?'));
+      });
+      msgSlotEl.appendChild(msgBtn);
+    }
+  }
   /* §REPORT — mount the real report link (js/ad-report.js) once the markup
      exists. Nothing is interpolated into an inline handler here. */
   var reportSlot = el.querySelector('.detail-report-slot');
@@ -227,7 +259,7 @@ function openProfile(sellerId) {
         '</div>' +
       '</div>' +
       (CU && CU.id !== sellerId && ads.length
-        ? '<button class="btn btn-gold btn-sm" onclick="openChat(\'' + ads[0].id + '\',\'' + sellerId + '\',\'' + escHtml(name) + '\',\'' + ini + '\')">✉️ Message</button>'
+        ? '<div class="prof-msg-slot"></div>'
         : '') +
     '</div>' +
     (ratings.length
@@ -246,6 +278,20 @@ function openProfile(sellerId) {
 
   closeOverlay('ovDetail');
   openOverlay('ovProfile');
+  /* §MSG-V2 — the profile Message button used to carry a member-authored name
+     inside an inline onclick. It is mounted and wired here instead, so the
+     seller name is read from the ad at click time. */
+  var profMsgSlot = document.querySelector('#profileInner .prof-msg-slot');
+  if (profMsgSlot) {
+    var profMsg = document.createElement('button');
+    profMsg.type = 'button';
+    profMsg.className = 'btn btn-gold btn-sm';
+    profMsg.textContent = '✉️ Message';
+    profMsg.addEventListener('click', function () {
+      openChat(ads[0].id, sellerId, ads[0].seller || 'Seller', ads[0].sellerInit || initials(name));
+    });
+    profMsgSlot.appendChild(profMsg);
+  }
   // Profile grid cards join the viewport-gated reveal system (§MOTION)
   if (typeof armCardReveals === 'function') armCardReveals(document.getElementById('profileInner'), true);
 
@@ -362,30 +408,25 @@ function renderReportLink(ad) {
 
 /* ═══════════════════════════════════════════════════════════
    MAKE AN OFFER §OFFER
+   ── v2: the offer is composed INSIDE the thread (sendChatOffer in
+   js/auth-account.js) and posts the identical "💰 Offer: J$…" message.
+   openOfferPanel()/sendOffer() were the v1 attempt and were unreachable: both
+   waited on #offerPanel / #offerAmt — markup that has never existed in
+   index.html — and no button anywhere called them, so "make an offer" shipped
+   as dead code. The message format is unchanged, so nothing downstream of it
+   changes. Both names stay as thin shims so an old inline handler can never
+   throw on markup that isn't there.
 ═══════════════════════════════════════════════════════════ */
-function openOfferPanel(adId) {
-  const panel = document.getElementById('offerPanel'); if (!panel) return;
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) setTimeout(() => document.getElementById('offerAmt')?.focus(), 100);
+function openOfferPanel() {
+  // §MSG-V2: the offer is composed inside the thread now (see §OFFER above).
+  if (typeof toggleOfferRow === 'function') return toggleOfferRow();
+  showToast('Open the chat to make an offer.', 'ℹ️');
 }
-async function sendOffer(adId, sellerId, sellerName, sellerInit) {
-  if (!CU) return openAuth('login');
-  const amt = parseFloat(document.getElementById('offerAmt')?.value);
-  if (!amt || amt <= 0) { showToast('Please enter a valid offer amount','⚠️'); return; }
-  const ad = _ads.find(a => a.id === adId);
-  const key = convKey(CU.id, sellerId, adId);
-  if (!_msgs[key]) {
-    _msgs[key] = { adId, adTitle: ad?.title||'', sellerName, sellerInit, sellerId,
-      buyerId: CU.id, buyerName: CU.name, buyerInit: initials(CU.name), messages: [] };
-  }
-  const offerText = `💰 Offer: J$${fmtN(amt)} for "${ad?.title||'this item'}"`;
-  try {
-    await sbSendMessage(key, _msgs[key], offerText);
-    document.getElementById('offerPanel')?.classList.remove('open');
-    closeOverlay('ovDetail');
-    currentConv = key; renderChat(key); openOverlay('ovChat');
-    showToast(`Offer of J$${fmtN(amt)} sent! 💰`, '💰');
-  } catch(e) { showToast('Could not send offer. Try again.','⚠️'); }
+async function sendOffer() {
+  // §MSG-V2: one offer path, in the thread it belongs to. Kept as a shim so an
+  // old inline handler can never throw on a missing #offerAmt.
+  if (typeof sendChatOffer === 'function') return sendChatOffer();
+  showToast('Open the chat to make an offer.', 'ℹ️');
 }
 
 /* ═══════════════════════════════════════════════════════════

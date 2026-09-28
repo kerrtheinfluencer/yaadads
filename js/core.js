@@ -592,23 +592,49 @@ async function loadMessages() {
     .or(`seller_id.eq.${CU.id},buyer_id.eq.${CU.id}`)
     .order('created_at', { ascending: true });
   if (error) { console.error('loadMessages:', error); return; }
-  // Rebuild _msgs cache keyed by conversation_key
-  _msgs = {};
+  // Build the server view first, then merge it over what we already hold.
+  const fresh = {};
   for (const row of (data || [])) {
     const key = row.conversation_key;
-    if (!_msgs[key]) {
-      _msgs[key] = {
+    // §MSG-V2: a row with no conversation_key is unrenderable (the key IS the
+    // identity of a thread) — v1 stored it under "undefined" and it then
+    // shadowed every other broken row in the inbox. A row with an unparseable
+    // timestamp used to become NaN, which poisoned both the sort and fmtTime.
+    if (!key) { console.warn('[loadMessages] skipped a row with no conversation_key'); continue; }
+    if (!fresh[key]) {
+      fresh[key] = {
         adId: row.ad_id, adTitle: row.ad_title,
         sellerId: row.seller_id, sellerName: row.seller_name, sellerInit: row.seller_init,
         buyerId: row.buyer_id,   buyerName: row.buyer_name,   buyerInit: row.buyer_init,
         messages: [],
       };
     }
-    _msgs[key].messages.push({
+    const parsed = Date.parse(row.created_at);
+    fresh[key].messages.push({
       id: row.id, from: row.from_user_id, text: row.text,
-      ts: new Date(row.created_at).getTime(), read: row.read,
+      ts: isNaN(parsed) ? 0 : parsed, read: !!row.read,
     });
   }
+  // §MSG-V2 — MERGE, do not replace. v1 assigned _msgs = {} and rebuilt it, so a
+  // silent refresh could delete a conversation the member was looking at: a
+  // thread opened from a listing before its first message, a send the query had
+  // not caught up with, or any row the select did not return (RLS, a partial
+  // result, a replica). The server stays authoritative for what it returns —
+  // it owns timestamps and the read flags — but it can no longer take history
+  // away. Nothing here is ever deleted server-side, so no ghost rows.
+  const merged = {};
+  Object.keys(fresh).forEach(function (k) { merged[k] = fresh[k]; });
+  Object.keys(_msgs || {}).forEach(function (k) {
+    const local = _msgs[k];
+    const server = merged[k];
+    if (!server) { merged[k] = local; return; }  // thread the select missed
+    const seen = new Set(server.messages.map(function (m) { return m.id; }));
+    local.messages.forEach(function (m) {
+      if (m.id && !seen.has(m.id)) { server.messages.push(m); seen.add(m.id); }
+    });
+    server.messages.sort(function (a, b) { return (a.ts || 0) - (b.ts || 0); });
+  });
+  _msgs = merged;
   saveMsgCache();
 }
 
@@ -663,11 +689,20 @@ async function refreshMessages() {
 }
 
 async function sbSendMessage(convKey, meta, text) {
+  // §MSG-V2: reject at the boundary instead of writing whatever reached this
+  // function. The composer caps length, but the offer path builds its own text
+  // and a programmatic caller can pass anything — an empty row or a 200KB paste
+  // both belong in nobody's inbox.
+  const clean = String(text == null ? '' : text).trim();
+  if (!CU) throw new Error('You must be signed in to send a message.');
+  if (!convKey) throw new Error('This conversation is not ready yet.');
+  if (!clean) throw new Error('Type a message first.');
+  if (clean.length > 2000) throw new Error('That message is too long (2000 characters max).');
   const row = {
     id: 'm' + Date.now() + Math.random().toString(36).slice(2, 7), // unique even for same-ms sends
     conversation_key: convKey,
     from_user_id: CU.id,
-    text,
+    text: clean,
     read: false,
     ad_id:       meta.adId,
     ad_title:    meta.adTitle,

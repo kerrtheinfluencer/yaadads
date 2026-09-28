@@ -2359,6 +2359,141 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   box-shadow: 0 4px 14px rgba(0,60,35,.3), inset 0 1px 0 rgba(255,255,255,.2);
 }
 .chat-send:hover { transform: scale(1.06); box-shadow: 0 6px 18px rgba(0,60,35,.38), inset 0 1px 0 rgba(255,255,255,.25); }
+/* The send button is disabled while there is nothing to send (or a send is in
+   flight) — it must read as disabled, not just be unclickable. */
+.chat-send:disabled { opacity: .45; transform: none; box-shadow: none; cursor: default; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §MSG-V2 — the v2 chat surface: ad context, safety line, read receipts,
+   quick replies, the in-chat offer and the auto-growing composer. Same
+   dark-green glass as the v1 chat above, so the modal never changes identity.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.chat-empty {
+  text-align: center; padding: 40px 16px; color: var(--text-3);
+  font-size: 14px; line-height: 1.6;
+}
+/* ── Ad context bar (price + status + one tap back to the listing) ── */
+.chat-adbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,.45);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,0,0,.07);
+}
+.chat-adbar-info { flex: 1; min-width: 0; }
+.chat-adbar-t {
+  font-size: 13px; font-weight: 700; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chat-adbar-m { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.chat-adbar-sold { color: #e53935; font-weight: 700; }
+.chat-adbar-btn {
+  font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap;
+  padding: 8px 12px; min-height: 36px; border-radius: 14px; cursor: pointer;
+  color: #fff; border: none;
+  background: linear-gradient(135deg, var(--green), var(--green-mid));
+  box-shadow: 0 3px 10px rgba(0,60,35,.24), inset 0 1px 0 rgba(255,255,255,.2);
+  transition: transform var(--dur-1) var(--ease-std);
+}
+.chat-adbar-btn:active { transform: scale(.97); }
+/* ── Safety line: one line, dismissible for the rest of the session ── */
+.chat-safety {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; font-size: 11.5px; line-height: 1.45;
+  color: #7a5b00; background: rgba(244,195,0,.14);
+  border-bottom: 1px solid rgba(244,195,0,.28);
+}
+.chat-safety-x {
+  margin-left: auto; font: inherit; font-size: 12px; line-height: 1;
+  width: 28px; height: 28px; flex-shrink: 0; cursor: pointer;
+  color: #7a5b00; background: transparent; border: none; border-radius: 50%;
+}
+.chat-safety-x:hover { background: rgba(244,195,0,.28); }
+/* ── Read receipts: ✓ sent, ✓✓ read (real `read` state, not a guess) ── */
+.msg-ticks {
+  font-size: 11px; margin-left: 5px; letter-spacing: -1px;
+  color: var(--text-3); opacity: .75;
+}
+.msg-out .msg-ticks { color: rgba(255,255,255,.75); }
+.msg-ticks.is-read { color: var(--green); opacity: 1; font-weight: 700; }
+.msg-out .msg-ticks.is-read { color: #c8ffe4; }
+/* ── Quick replies ── */
+.chat-chips {
+  display: flex; gap: 8px; padding: 10px 16px 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.chat-chips::-webkit-scrollbar { display: none; }
+.chat-chip {
+  font: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  padding: 9px 14px; min-height: 40px; border-radius: 16px; cursor: pointer;
+  color: var(--green); background: rgba(255,255,255,.6);
+  border: 1.5px solid rgba(0,0,0,.08);
+  transition: background var(--dur-1) var(--ease-std),
+              border-color var(--dur-1) var(--ease-std),
+              color var(--dur-1) var(--ease-std);
+}
+.chat-chip:hover { background: #fff; border-color: rgba(244,195,0,.55); color: var(--gold-dark); }
+.chat-chip:active { transform: scale(.97); }
+/* ── In-chat offer ── */
+.chat-offer-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-top: 1px solid rgba(0,0,0,.07);
+  background: rgba(255,255,255,.45);
+}
+/* [hidden] must beat the display:flex above, or the row can never close. */
+.chat-offer-row[hidden] { display: none; }
+.chat-offer-l { font-size: 12px; font-weight: 700; color: var(--text-2); flex-shrink: 0; }
+.chat-offer-cur { font-size: 13px; font-weight: 700; color: var(--text-3); flex-shrink: 0; }
+.chat-offer-in {
+  flex: 1; min-width: 0; padding: 10px 12px; font-family: var(--font-b);
+  font-size: 14px; outline: none; border-radius: 14px;
+  border: 1.5px solid rgba(0,0,0,.1); background: rgba(255,255,255,.7);
+}
+.chat-offer-in:focus { border-color: var(--green); background: #fff; }
+.chat-offer-go {
+  font: inherit; font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  padding: 10px 14px; min-height: 42px; border-radius: 14px; cursor: pointer;
+  color: #fff; border: none;
+  background: linear-gradient(135deg, var(--green), var(--green-mid));
+}
+/* ── Composer: auto-growing textarea + offer button ── */
+.chat-input-row { align-items: flex-end; }
+.chat-input {
+  resize: none; overflow-y: auto; line-height: 1.45;
+  max-height: 132px; min-height: 40px;
+  font-family: var(--font-b); font-size: 14px;
+}
+.chat-offer-btn {
+  width: 40px; height: 40px; flex-shrink: 0; font-size: 16px; cursor: pointer;
+  color: var(--text-2); background: rgba(255,255,255,.6);
+  border: 1.5px solid rgba(0,0,0,.08); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform var(--dur-1) var(--ease-std),
+              border-color var(--dur-1) var(--ease-std);
+}
+.chat-offer-btn:hover { border-color: rgba(244,195,0,.55); transform: scale(1.06); }
+.chat-offer-btn:active { transform: scale(.97); }
+/* ── Inbox unread chip (was an inline style; the two inboxes now share it) ── */
+.inbox-new {
+  background: var(--green); color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px; margin-left: 6px;
+}
+/* ── Listing detail: the in-app Message button (did not exist before v2) ── */
+.detail-msg-slot { margin-top: 8px; }
+.detail-msg-slot:empty { display: none; }
+.detail-msg-btn { width: 100%; min-height: 46px; }
+
+/* The chat modal is ONE flex column. v1 fixed the thread at a static 340px
+   (60dvh on mobile) and knew nothing about the rows above and below it; the
+   v2 ad bar, safety line, chips and offer row are all variable height, so a
+   fixed height would push the composer off the bottom of a small screen.
+   Flex + min-height:0 lets the thread absorb the difference instead. */
+#ovChat .modal-full { display: flex; flex-direction: column; max-height: 96dvh; }
+#chatInner { display: flex; flex-direction: column; min-height: 0; max-height: 96dvh; }
+.chat-header, .chat-adbar, .chat-safety, .chat-chips,
+.chat-offer-row, .chat-input-row { flex: 0 0 auto; }
+.chat-messages { flex: 1 1 auto; min-height: 140px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SELLER PROFILE
@@ -2787,8 +2922,9 @@ footer {
   .s-acts { gap: 6px; }
   .s-acts .btn-sm { padding: 8px 12px; font-size: 12px; }
 
-  /* Chat */
-  .chat-messages { height: calc(60dvh - 120px); min-height: 200px; }
+  /* Chat — §MSG-V2: the thread shrinks to make room for the ad bar, safety
+     line and quick replies, so it never eats the composer on a short screen. */
+  .chat-messages { height: calc(60dvh - 190px); min-height: 120px; }
 
   /* Seller profile */
   .prof-header { flex-direction: column; text-align: center; padding: 24px 16px; gap: 16px; }
@@ -4541,11 +4677,20 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 /* Listing detail, account areas, and messages keep the same dark-material hierarchy. */
-.detail-body, .seller-box, .analytics-strip, .chat-input-row, .chat-messages, .prof-body, .page-wrap {
+.detail-body, .seller-box, .analytics-strip, .chat-input-row, .chat-messages,
+.chat-adbar, .chat-offer-row, .chat-chips, .prof-body, .page-wrap {
   background: var(--glass-raised);
   border-color: var(--glass-line);
   color: var(--ink-on-glass);
 }
+/* §MSG-V2 — the v2 chat rows follow the same material as the thread. */
+.chat-adbar-t, .chat-offer-l, .chat-chip, .chat-offer-btn { color: var(--ink-on-glass); }
+.chat-adbar-m, .chat-offer-cur { color: var(--muted-on-glass); }
+.chat-chip, .chat-offer-btn, .chat-offer-in {
+  background: var(--glass-inset); border-color: var(--glass-line);
+}
+.chat-adbar { border-bottom-color: var(--glass-line); }
+.chat-offer-row { border-top-color: var(--glass-line); }
 .detail-body { border-top: 1px solid var(--glass-line); }
 .seller-box, .analytics-strip { box-shadow: inset 0 1px 0 var(--glass-highlight), 0 16px 34px rgba(0, 9, 5, .14); }
 .detail-title, .detail-desc, .dtag, .s-name, .s-since, .ana-lbl, .msg-time { color: var(--ink-on-glass); }

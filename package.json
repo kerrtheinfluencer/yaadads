@@ -20,6 +20,7 @@
     "test:safety": "node tools/test-data-safety.js",
     "test:chat": "node tools/test-chat-v2.js",
     "test:chat-wiring": "node tools/test-chat-wiring.js",
+    "test:msg-v2": "node tools/test-msg-v2.js",
     "test:for-you": "node tools/test-for-you.js",
     "fy:preview": "node tools/fy-preview.js"
   },

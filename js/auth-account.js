@@ -246,7 +246,32 @@ function updateMsgBadge() {
   }
 }
 
-/* ── MESSAGING — renderChat, renderInbox, sendMsg, openChat §MESSAGING ── */
+/* ── MESSAGING v2 — renderChat, renderInbox, sendMsg, openChat §MESSAGING
+   ── The v1 chat worked, but it was quietly broken in seven ways. All fixed:
+     1. STORED XSS — member names and ad titles were written into innerHTML raw
+        in the chat header and in BOTH inboxes. Every member-authored string is
+        escaped now (escHtml), like everywhere else in the app.
+     2. THE ENTRY POINT WAS MISSING — the AI helper, the onboarding note and the
+        empty inbox all tell members to "tap ✉️ Message" on a listing, but a
+        listing only ever offered Call / WhatsApp / Share. js/ad-social.js now
+        mounts a real Message button (and the dead offer panel, which had no
+        markup at all, is replaced by an in-chat offer that actually sends).
+     3. READ RECEIPTS WERE STORED BUT NEVER SHOWN — `read` was already written
+        and already drove the badge, so the truth was sitting right there.
+        Outgoing bubbles now carry ✓ sent / ✓✓ read.
+     4. MESSAGES STAYED "UNREAD" WHILE YOU READ THEM — the realtime handler
+        appended read:false and never cleared it, so the badge stayed lit over
+        an open thread. js/ui-nav.js now marks the open thread read on arrival.
+     5. A FAILED SEND ATE YOUR TEXT — sendMsg() cleared the box before the write
+        and only toasted on failure. The text is now restored, with a Retry.
+     6. A ONE-LINE <input> WITH NO CAP — now an auto-growing textarea capped at
+        2000 chars, Enter sends, Shift+Enter breaks the line.
+     7. NO QUICK REPLIES, NO AD CONTEXT — chips for the four questions every
+        buyer actually asks, plus a tappable ad bar (price/status/View listing).
+   RULE held throughout: no member-authored value is ever interpolated into an
+   inline handler. Rows, chips, buttons and the composer are wired with data-*
+   attributes and ONE delegated listener (initInboxWiring) — the same rule the
+   report client already follows. */
 
 /* Persistent "Yaad Adz updates" thread row — always visible in inboxes so
    members can re-check the full update history ANY time. Gold "New" chip
@@ -276,10 +301,78 @@ function siteUpdateRowHtml() {
    "Load earlier messages" button instead of mounting hundreds of bubbles
    at once. Everything stays in memory (fetched from Supabase), so paging
    back through history is instant and works offline from the cache. */
-var CHAT_WINDOW = 60;
-var _chatShown = {};   // conversation key -> how many messages are rendered
+var CHAT_WINDOW = 60;      // bubbles mounted per open
+var CHAT_MAX_LEN = 2000;   // hard cap on a single message
+var _chatShown = {};       // conversation key -> how many messages are rendered
 var _chatKeepPos = false;
 var _prevChatH = 0;
+var _msgSending = false;   // one write in flight, so Enter can't double-send
+var _safetyHidden = false; // the safety line is one line, once per session
+var _wiringReady = false;  // the delegated listener installs exactly once
+
+/* One-tap replies for the questions a marketplace conversation actually turns
+   on. Two lists, because the questions are not symmetric — a buyer asks about
+   price and delivery, a seller asks about offers and viewing — and they only
+   show while the thread is young (CHAT_CHIP_LIMIT), so they never sit under a
+   conversation that has already found its rhythm. A tap fills the composer and
+   focuses it: the text is never auto-sent, because a half-typed price is still
+   the member's to confirm. */
+var CHAT_CHIPS = [
+  'Hi! Is this still available?',
+  'What’s your best price?',
+  'Where can we meet?',
+  'Can you deliver?',
+];
+var CHAT_CHIPS_SELLER = [
+  'Is it still available?',
+  'What is your best offer?',
+  'When can I come see it?',
+  'Are you able to deliver?',
+];
+var CHAT_CHIP_LIMIT = 6;   // past this many messages the thread speaks for itself
+
+function chatChipsHtml(conv, isbuyer) {
+  if (conv.messages.length > CHAT_CHIP_LIMIT) return '';
+  var list = isbuyer ? CHAT_CHIPS : CHAT_CHIPS_SELLER;
+  return '<div class="chat-chips">' + list.map(function (q) {
+    return '<button class="chat-chip" type="button" data-qr="' + escHtml(q) + '">' + escHtml(q) + '</button>';
+  }).join('') + '</div>';
+}
+
+/* ONE delegated click/keydown listener for the whole messaging surface:
+   conversation rows, quick replies, the ad bar, the offer row and the composer.
+   Installed on first use, so no script-order change can leave it unbound. */
+function initInboxWiring() {
+  if (_wiringReady) return;
+  _wiringReady = true;
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var hit;
+    if ((hit = t.closest('[data-conv]')))    { openChatFromInbox(hit.getAttribute('data-conv')); return; }
+    if ((hit = t.closest('[data-qr]')))      { fillChatInput(hit.getAttribute('data-qr')); return; }
+    if ((hit = t.closest('[data-chat-ad]'))) { var adId = hit.getAttribute('data-chat-ad'); if (adId) openDetail(adId); return; }
+    if ((hit = t.closest('[data-earlier]'))) { loadEarlierMsgs(hit.getAttribute('data-earlier')); return; }
+    if (t.closest('[data-offer-toggle]'))    { toggleOfferRow(); return; }
+    if (t.closest('#chatOfferGo'))            { sendChatOffer(); return; }
+    if (t.closest('#chatSend'))               { sendMsg(); return; }
+    if (t.closest('[data-safety-hide]')) {
+      _safetyHidden = true;
+      var bar = t.closest('.chat-safety');
+      if (bar) bar.remove();
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+    var el = e.target;
+    if (!el) return;
+    if (el.id === 'chatInput') { e.preventDefault(); sendMsg(); }
+    if (el.id === 'offerAmt')  { e.preventDefault(); sendChatOffer(); }
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'chatInput') syncChatSend();
+  });
+}
 
 function dayLabel(d) {
   var now = new Date();
@@ -291,52 +384,120 @@ function dayLabel(d) {
   return d.toLocaleDateString('en-JM', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/* Ad context bar — which listing this thread is about, what it costs, whether
+   it is still live, and one tap back to it. Falls back to the stored title if
+   the listing is gone (sold and pulled, or deleted). */
+function chatAdBarHtml(conv) {
+  var ad = _ads.find(function (a) { return a.id === conv.adId; });
+  if (!ad) return '';
+  var sold = ad.status === 'sold';
+  return '<div class="chat-adbar">' +
+    '<div class="chat-adbar-info">' +
+      '<div class="chat-adbar-t">' + escHtml(ad.title || conv.adTitle || 'Listing') + '</div>' +
+      '<div class="chat-adbar-m">J$' + fmtN(ad.price) + (ad.neg ? ' · negotiable' : '') +
+        (sold ? ' · <span class="chat-adbar-sold">Sold</span>' : '') + '</div>' +
+    '</div>' +
+    '<button class="chat-adbar-btn" type="button" data-chat-ad="' + escHtml(ad.id) + '">View listing</button>' +
+  '</div>';
+}
+
+/* Grow the composer with the text and keep the send button honest (disabled
+   when there is nothing to send, or while a send is already in flight). */
+function syncChatSend() {
+  var box = document.getElementById('chatInput');
+  var btn = document.getElementById('chatSend');
+  if (box) {
+    box.style.height = 'auto';
+    box.style.height = Math.min(box.scrollHeight, 132) + 'px';
+  }
+  if (btn) btn.disabled = _msgSending || !((box && box.value) || '').trim();
+}
+
+/* A quick-reply chip drops its text into the composer and focuses it — the
+   member still edits and sends, so nothing goes out on a mis-tap. */
+function fillChatInput(text) {
+  var box = document.getElementById('chatInput');
+  if (!box || !text) return;
+  box.value = text;
+  syncChatSend();
+  box.focus();
+}
+
 function renderChat(key) {
-  const conv = _msgs[key]; if (!conv) return;
+  const conv = _msgs[key]; if (!conv || !CU) return;
+  initInboxWiring();
   const isbuyer = CU.id === conv.buyerId;
   const otherName = isbuyer ? conv.sellerName : conv.buyerName;
   const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
   const clr = avatarColor(otherName);
 
   var shown = _chatShown[key] || CHAT_WINDOW;
-  if (shown > conv.messages.length) shown = conv.messages.length;
   // _chatShown[key] === 2 means "show everything" (set by loadEarlierMsgs).
   if (_chatShown[key] === 2) shown = conv.messages.length;
+  if (shown > conv.messages.length) shown = conv.messages.length;
   var hiddenCount = conv.messages.length - shown;
   var slice = conv.messages.slice(hiddenCount);
 
   var msgsHtml = '';
   if (!conv.messages.length) {
-    msgsHtml = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:14px">Start the conversation!</div>';
+    msgsHtml = '<div class="chat-empty">Say hello 👋 — ask if it\'s still available, or make an offer.</div>';
   } else {
     if (hiddenCount > 0) {
-      msgsHtml += '<div class="chat-earlier"><button class="chat-earlier-btn" onclick="loadEarlierMsgs(\'' + key + '\')">⬆ Show full history (' + hiddenCount + ' more)</button></div>';
+      msgsHtml += '<div class="chat-earlier"><button class="chat-earlier-btn" type="button" data-earlier="' + escHtml(key) + '">⬆ Show full history (' + hiddenCount + ' more)</button></div>';
     }
     var lastDay = '';
-    slice.forEach(function(m) {
+    slice.forEach(function (m) {
       var d = new Date(m.ts);
-      var dayKey = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+      var bad = isNaN(d.getTime());
+      var dayKey = bad ? 'unknown' : d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
       if (dayKey !== lastDay) {
         lastDay = dayKey;
-        msgsHtml += '<div class="chat-day-sep"><span>' + escHtml(dayLabel(d)) + '</span></div>';
+        msgsHtml += '<div class="chat-day-sep"><span>' + escHtml(bad ? 'Earlier' : dayLabel(d)) + '</span></div>';
       }
       var out = m.from === CU.id;
-      msgsHtml += '<div class="msg ' + (out?'msg-out':'msg-in') + '">' +
-        '<div class="msg-bubble">' + escHtml(m.text||'') + '</div>' +
-        '<div class="msg-time">' + fmtTime(m.ts) + '</div></div>';
+      // Read receipts, for free: `read` on one of OUR rows is set when the other
+      // person opens the thread, so ✓ vs ✓✓ is real state, not a guess.
+      var ticks = out
+        ? '<span class="msg-ticks' + (m.read ? ' is-read' : '') + '" title="' + (m.read ? 'Read' : 'Sent') + '">' + (m.read ? '✓✓' : '✓') + '</span>'
+        : '';
+      msgsHtml += '<div class="msg ' + (out ? 'msg-out' : 'msg-in') + '">' +
+        '<div class="msg-bubble">' + escHtml(m.text || '') + '</div>' +
+        '<div class="msg-time">' + fmtTime(m.ts) + ticks + '</div></div>';
     });
   }
 
+  // The thread re-renders on every incoming message — never eat a half-typed
+  // draft just because someone replied while you were writing.
+  var draft = '';
+  var liveBox = document.getElementById('chatInput');
+  if (liveBox && currentConv === key) draft = liveBox.value;
+
   document.getElementById('chatInner').innerHTML =
     '<div class="chat-header">' +
-      '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + otherInit + '</div>' +
-      '<div class="chat-info"><div class="chat-name">' + otherName + '</div><div class="chat-ad-ref">Re: ' + (conv.adTitle||'') + '</div></div>' +
+      '<div class="s-avatar" style="background:' + clr.bg + ';color:' + clr.fg + ';width:42px;height:42px;font-size:16px">' + escHtml(otherInit || '?') + '</div>' +
+      '<div class="chat-info"><div class="chat-name">' + escHtml(otherName || 'Member') + '</div>' +
+        '<div class="chat-ad-ref">Re: ' + escHtml(conv.adTitle || 'your listing') + '</div></div>' +
     '</div>' +
+    chatAdBarHtml(conv) +
+    (_safetyHidden ? '' :
+      '<div class="chat-safety">🛡️ Meet in public · inspect before you pay · we never ask for a transfer' +
+      '<button class="chat-safety-x" type="button" data-safety-hide="1" aria-label="Hide this safety tip">✕</button></div>') +
     '<div class="chat-messages" id="chatMsgs">' + msgsHtml + '</div>' +
+    chatChipsHtml(conv, isbuyer) +
+    '<div class="chat-offer-row" id="chatOfferRow" hidden>' +
+      '<label class="chat-offer-l" for="offerAmt">Your offer</label>' +
+      '<span class="chat-offer-cur">J$</span>' +
+      '<input class="chat-offer-in" id="offerAmt" type="number" inputmode="numeric" min="1" step="100" placeholder="e.g. 85000">' +
+      '<button class="chat-offer-go" type="button" id="chatOfferGo">Send offer</button>' +
+    '</div>' +
     '<div class="chat-input-row">' +
-      '<input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\')sendMsg()">' +
-      '<button class="chat-send" onclick="sendMsg()">➤</button>' +
+      '<button class="chat-offer-btn" type="button" data-offer-toggle="1" aria-label="Make an offer">💰</button>' +
+      '<textarea class="chat-input" id="chatInput" rows="1" maxlength="' + CHAT_MAX_LEN + '" placeholder="Type a message…"></textarea>' +
+      '<button class="chat-send" id="chatSend" type="button" aria-label="Send message">➤</button>' +
     '</div>';
+
+  if (draft) { var nb = document.getElementById('chatInput'); if (nb) nb.value = draft; }
+  syncChatSend();
   setTimeout(function(){
     const el = document.getElementById('chatMsgs');
     if (!el) return;
@@ -360,56 +521,119 @@ function loadEarlierMsgs(key) {
   renderChat(key);
 }
 
+/* The conversation rows, newest first — shared by the Messages page and the
+   Account page so the two inboxes can never drift apart again (the Account
+   copy used different, entirely unstyled class names and no sorting, so the
+   same list looked different and ordered differently in the two places).
+   Every member-authored string is escaped; the conversation key rides in a
+   data-* attribute for the delegated listener, never in an inline handler. */
+function inboxRowsHtml() {
+  const rows = Object.entries(_msgs)
+    .filter(function (e) { return e[1].sellerId === CU.id || e[1].buyerId === CU.id; })
+    .sort(function (a, b) {
+      return ((b[1].messages.at(-1) || {}).ts || 0) - ((a[1].messages.at(-1) || {}).ts || 0);
+    });
+  return rows.map(function (e) {
+    const key = e[0], conv = e[1];
+    const isbuyer = CU.id === conv.buyerId;
+    const otherName = isbuyer ? conv.sellerName : conv.buyerName;
+    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
+    const last = conv.messages.at(-1);
+    const unread = conv.messages.filter(function (m) { return m.from !== CU.id && !m.read; }).length;
+    const clr = avatarColor(otherName);
+    return '<div class="inbox-item' + (unread ? ' unread' : '') + '" data-conv="' + escHtml(key) + '" role="button" tabindex="0">' +
+      '<div class="inbox-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + escHtml(otherInit || '?') + '</div>' +
+      '<div class="inbox-info">' +
+        '<div class="inbox-name">' + escHtml(otherName || 'Member') +
+          (unread ? '<span class="inbox-new">' + unread + ' new</span>' : '') + '</div>' +
+        '<div class="inbox-preview">' + escHtml(last ? last.text : 'Start a conversation…') + '</div>' +
+        '<span class="inbox-ad">📋 ' + escHtml(conv.adTitle || 'Listing') + '</span>' +
+      '</div>' +
+      '<div class="inbox-time">' + escHtml(last ? fmtTime(last.ts) : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
 function renderInbox() {
   const el = document.getElementById('inboxList');
   if (!el) return;
+  initInboxWiring();
   // Guest-safe: the What's-new history thread is public — logged-out members
   // (the common mobile case) still see it above the login prompt, exactly
   // like the logged-in inbox. Tapping opens the full history overlay.
   var _guestRow = (typeof siteUpdateRowHtml === 'function') ? siteUpdateRowHtml() : '';
   if (!CU) { el.innerHTML = _guestRow + '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
   const myConvs = Object.entries(_msgs).filter(function(e){ return e[1].sellerId===CU.id || e[1].buyerId===CU.id; });
-  myConvs.sort(function(a,b){ return (b[1].messages.at(-1)?.ts||0)-(a[1].messages.at(-1)?.ts||0); });
   const _updateRow = siteUpdateRowHtml();
   if (!myConvs.length) {
     // The updates thread is always available, so the inbox is never dead-empty.
-    el.innerHTML = _updateRow + '<div class="inbox-empty-hint">No conversations yet — open any listing and tap 💬 to message a seller.</div>';
+    el.innerHTML = _updateRow + '<div class="inbox-empty-hint">No conversations yet — open any listing and tap ✉️ Message.</div>';
     return;
   }
-  el.innerHTML = _updateRow + myConvs.map(function(e){
-    const key = e[0], conv = e[1];
-    const isbuyer = CU.id === conv.buyerId;
-    const otherName = isbuyer ? conv.sellerName : conv.buyerName;
-    const otherInit = isbuyer ? conv.sellerInit : conv.buyerInit;
-    const last = conv.messages.at(-1);
-    const unread = conv.messages.filter(function(m){ return m.from !== CU.id && !m.read; }).length;
-    const clr = avatarColor(otherName);
-    return '<div class="inbox-item' + (unread?' unread':'') + '" onclick="openChatFromInbox(\'' + key + '\')">' +
-      '<div class="inbox-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + otherInit + '</div>' +
-      '<div class="inbox-info">' +
-        '<div class="inbox-name">' + (otherName||'') + (unread?'<span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px">' + unread + ' new</span>':'') + '</div>' +
-        '<div class="inbox-preview">' + (last ? escHtml(last.text) : 'Start a conversation…') + '</div>' +
-        '<span class="inbox-ad">📋 ' + (conv.adTitle||'') + '</span>' +
-      '</div>' +
-      '<div class="inbox-time">' + (last ? fmtTime(last.ts) : '') + '</div>' +
-    '</div>';
-  }).join('');
+  el.innerHTML = _updateRow + inboxRowsHtml();
 }
 
+/* Send. Single-flight (Enter three times must not post three messages) and
+   never destructive: a failed write puts the text back in the box and offers a
+   one-tap Retry, because v1 cleared the composer up front and simply lost
+   whatever someone had typed if the network blinked. */
 async function sendMsg() {
-  const input = document.getElementById('chatInput');
-  const text = (input?.value || '').trim();
-  if (!text || !currentConv || !CU) return;
+  const box = document.getElementById('chatInput');
+  if (!box || !currentConv || !CU || _msgSending) return;
+  const text = (box.value || '').trim();
+  if (!text) return;
   const conv = _msgs[currentConv]; if (!conv) return;
-  input.value = '';
+  const draft = box.value;
+  _msgSending = true;
+  box.value = '';
+  syncChatSend();
   try {
     await sbSendMessage(currentConv, conv, text);
     renderChat(currentConv); updateMsgBadge();
-  } catch(e) { showToast('Message failed. Try again.', '⚠️'); }
+  } catch(e) {
+    const back = document.getElementById('chatInput');
+    if (back) back.value = draft;
+    syncChatSend();
+    showToast('Message failed. Try again.', '⚠️', { label: 'Retry', fn: sendMsg });
+  } finally {
+    _msgSending = false;
+    syncChatSend();
+  }
+}
+
+/* The offer composer, inside the chat. v1 had openOfferPanel()/sendOffer()
+   waiting on #offerPanel + #offerAmt — markup that has never existed in
+   index.html, so "make an offer" shipped as code no member could ever reach.
+   The same message shape is sent from the thread it belongs to. */
+function toggleOfferRow() {
+  const row = document.getElementById('chatOfferRow');
+  if (!row) return;
+  row.hidden = !row.hidden;
+  if (!row.hidden) { const a = document.getElementById('offerAmt'); if (a) a.focus(); }
+}
+
+async function sendChatOffer() {
+  if (!currentConv || !CU || _msgSending) return;
+  const amtEl = document.getElementById('offerAmt');
+  const amt = Math.round(Number(amtEl && amtEl.value));
+  if (!amt || amt <= 0) { showToast('Enter an amount first.', '⚠️'); if (amtEl) amtEl.focus(); return; }
+  const conv = _msgs[currentConv]; if (!conv) return;
+  _msgSending = true; syncChatSend();
+  const offerText = '💰 Offer: J$' + fmtN(amt) + ' for "' + (conv.adTitle || 'this item') + '"';
+  try {
+    await sbSendMessage(currentConv, conv, offerText);
+    renderChat(currentConv); updateMsgBadge();
+    showToast('Offer of J$' + fmtN(amt) + ' sent! 💰', '💰');
+  } catch(e) {
+    showToast('Could not send offer. Try again.', '⚠️');
+  } finally {
+    _msgSending = false; syncChatSend();
+  }
 }
 
 function openChat(adId, sellerId, sellerName, sellerInit) {
   if (!CU) return openAuth('login');
+  if (sellerId === CU.id) { showToast('This is your own listing.', 'ℹ️'); return; }
   const ad = _ads.find(function(a){ return a.id === adId; });
   const key = convKey(CU.id, sellerId, adId);
   if (!_msgs[key]) {
@@ -418,9 +642,13 @@ function openChat(adId, sellerId, sellerName, sellerInit) {
   }
   currentConv = key;
   _chatShown[key] = CHAT_WINDOW;
+  _msgSending = false;
   renderChat(key);
   openOverlay('ovChat');
   updateMsgBadge();
+  // Opening a thread from a listing is reading it — clear its unread state now
+  // instead of waiting for a return trip through the inbox.
+  sbMarkRead(key);
   // Silent background history refresh — re-opens show the full past even
   // if the realtime channel dropped messages while the app was open.
   if (typeof refreshMessages === 'function') {
@@ -437,10 +665,12 @@ async function openChatFromInbox(key) {
   await sbMarkRead(key);
   currentConv = key;
   _chatShown[key] = CHAT_WINDOW;
+  _msgSending = false;
   renderChat(key);
   openOverlay('ovChat');
   updateMsgBadge();
-  if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+  renderInbox();
+  if (typeof renderMyAds === 'function' && document.getElementById('page-myads')?.classList.contains('active')) renderMyAds();
   // Silent background history refresh — the full past re-reads correctly
   // even if the realtime channel dropped messages earlier in the session.
   if (typeof refreshMessages === 'function') {
@@ -448,7 +678,7 @@ async function openChatFromInbox(key) {
     refreshMessages().then(function(){
       var c = _msgs[key];
       if (c && c.messages.length > before && currentConv === key) renderChat(key);
-      if (document.getElementById('page-msgs')?.classList.contains('active')) renderInbox();
+      renderInbox();
     });
   }
 }
@@ -517,31 +747,12 @@ function renderMyAds() {
     if (!CU) {
       acctInbox.innerHTML = _acctGuestRow + '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
     } else {
-      const keys = Object.keys(_msgs);
-      const _updateRow = siteUpdateRowHtml();
-      if (!keys.length) {
-        // The updates thread is always available, so the inbox is never dead-empty.
-        acctInbox.innerHTML = _updateRow + '<div class="inbox-empty-hint">No conversations yet — open any listing and tap 💬 to message a seller.</div>';
-      } else {
-        const _msgsHtml = keys.map(function(key) {
-          const conv = _msgs[key];
-          const msgs = conv.messages || [];
-          const last = msgs[msgs.length - 1];
-          const unread = msgs.filter(function(m){ return !m.read && m.from !== CU.id; }).length;
-          const other = CU.id === conv.sellerId ? conv.buyerName : conv.sellerName;
-          const otherInit = CU.id === conv.sellerId ? conv.buyerInit : conv.sellerInit;
-          return '<div class="inbox-item' + (unread ? ' unread' : '') + '" onclick="openChatFromInbox(\'' + key + '\')">' +
-            '<div class="inbox-avatar">' + (otherInit || '?') + '</div>' +
-            '<div class="inbox-body">' +
-              '<div class="inbox-top"><span class="inbox-name">' + (other || 'User') + '</span>' +
-              '<span class="inbox-time">' + (last ? ago(last.ts) : '') + '</span></div>' +
-              '<div class="inbox-prev">' + (conv.adTitle || '') + (last ? ' · ' + last.text.slice(0, 40) : '') + '</div>' +
-            '</div>' +
-            (unread ? '<div class="inbox-badge">' + unread + '</div>' : '') +
-            '</div>';
-        }).join('');
-        acctInbox.innerHTML = _updateRow + _msgsHtml;
-      }
+      initInboxWiring();
+      // The SAME rows the Messages page renders — one shared renderer, so the
+      // two inboxes can no longer disagree on order, styling or escaping.
+      acctInbox.innerHTML = siteUpdateRowHtml() + (Object.keys(_msgs).length
+        ? inboxRowsHtml()
+        : '<div class="inbox-empty-hint">No conversations yet — open any listing and tap ✉️ Message.</div>');
     }
   }
   const el = document.getElementById('myAdsBox');

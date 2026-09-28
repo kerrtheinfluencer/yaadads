@@ -170,9 +170,11 @@ function subscribeMessages() {
   _msgChannel = _db.channel('msg-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
       const row = payload.new;
+      // A queued event can land after sign-out, and CU is read on the next line.
+      if (!row || !CU) return;
       if (row.seller_id !== CU.id && row.buyer_id !== CU.id) return;
-      if (row.from_user_id === CU.id) return;
       const key = row.conversation_key;
+      if (!key) return;
       if (!_msgs[key]) {
         _msgs[key] = {
           adId: row.ad_id, adTitle: row.ad_title,
@@ -181,13 +183,32 @@ function subscribeMessages() {
           messages: [],
         };
       }
+      // §MSG-V2 — idempotent by message id. A reconnect can replay the same
+      // INSERT, and our own send already pushed the row locally; v1 only
+      // guarded the local echo, so a replay duplicated the message in-thread.
+      if (_msgs[key].messages.some(m => m.id === row.id)) return;
+      const mine = row.from_user_id === CU.id;
+      const parsed = Date.parse(row.created_at);
       _msgs[key].messages.push({
         id: row.id, from: row.from_user_id, text: row.text,
-        ts: new Date(row.created_at).getTime(), read: false,
+        ts: isNaN(parsed) ? Date.now() : parsed, read: !!row.read,
       });
+      _msgs[key].messages.sort(function (a, b) { return (a.ts || 0) - (b.ts || 0); });
       if (typeof saveMsgCache === 'function') saveMsgCache();
+      // §MSG-V2 — the thread is on screen, so it is read. v1 appended read:false
+      // and left it there, which kept the badge lit over a conversation the
+      // member was plainly looking at, and never produced a read receipt.
+      const chatOpen = currentConv === key &&
+        !!document.getElementById('ovChat')?.classList.contains('open');
+      if (!mine && chatOpen && typeof sbMarkRead === 'function') {
+        try { await sbMarkRead(key); } catch (e) { console.warn('[msg] mark read', e); }
+      }
       updateMsgBadge();
       if (currentConv === key) renderChat(key);
+      if (typeof renderInbox === 'function') renderInbox();
+      // Our own message from ANOTHER tab is worth the render above (that tab
+      // already showed it); only someone else's is worth interrupting for.
+      if (mine) return;
       showToast('New message received 💬', '💬');
       // Fire push notification if app is in background
       const senderName = (row.from_user_id === row.seller_id ? row.seller_name : row.buyer_name) || 'Someone';
