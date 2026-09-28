@@ -9,4 +9,5 @@ dev-server.err
 .chrome-admin-tmp/
 .chrome-adm-tmp/
 .chrome-live-tmp/
+.chrome-reports-tmp/
 tmp-*.png

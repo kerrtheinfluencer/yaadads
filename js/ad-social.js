@@ -123,6 +123,10 @@ function showAdInline(ad) {
       + '</div>'
       /* §CHAT-V2 — the highest-intent chat entry point: ask about THIS ad */
       + '<button class="btn btn-outline detail-ask-ai" type="button" style="width:100%;margin-top:8px">🤖 Ask AI about this listing</button>'
+      /* §REPORT — reporting is deliberately quiet, so it is a text link under
+         the actions rather than a fourth button competing with Call/WhatsApp.
+         The button itself is built by renderReportLink() below. */
+      + '<div class="detail-report-slot"></div>'
       : '<div style="color:var(--text-2);font-size:14px">This item has been sold.</div>')
     + '</div>'
     + similarHtml
@@ -130,6 +134,12 @@ function showAdInline(ad) {
 
   var el = document.getElementById('detailPage');
   el.innerHTML = html;
+  /* §REPORT — mount the real report link (js/ad-report.js) once the markup
+     exists. Nothing is interpolated into an inline handler here. */
+  var reportSlot = el.querySelector('.detail-report-slot');
+  if (reportSlot && ad.status !== 'sold' && typeof renderReportLink === 'function') {
+    reportSlot.appendChild(renderReportLink(ad));
+  }
   var feedback = document.createElement('section');
   feedback.dataset.adId = ad.id;
   feedback.dataset.sellerId = ad.sellerId || '';
@@ -291,29 +301,50 @@ function isSellerVerified(sellerId) {
   return good.length >= 3;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
    REPORT LISTING §REPORT
-═══════════════════════════════════════════════════════════ */
-let _reportAdId = null, _reportReason = null;
-function openReport(adId) {
-  _reportAdId = adId; _reportReason = null;
-  document.querySelectorAll('.report-opt').forEach(o => o.classList.remove('selected'));
-  document.getElementById('reportSubmitBtn').disabled = true;
-  openOverlay('ovReport');
-}
-function selectReport(el, reason) {
-  _reportReason = reason;
-  document.querySelectorAll('.report-opt').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('reportSubmitBtn').disabled = false;
-}
-function submitReport() {
-  if (!_reportReason || !_reportAdId) return;
-  const reports = JSON.parse(localStorage.getItem('ya_reports')||'[]');
-  reports.push({ adId: _reportAdId, reason: _reportReason, ts: Date.now(), reporterId: CU?.id||'guest' });
-  localStorage.setItem('ya_reports', JSON.stringify(reports));
-  closeOverlay('ovReport');
-  showToast('Report submitted — we\'ll review it.', '🚩');
+
+   The real implementation now lives in js/ad-report.js, which inserts into
+   public.ad_reports so the admin dashboard can actually read the report.
+
+   What this used to do, and why it was worse than useless:
+
+     function submitReport() {
+       const reports = JSON.parse(localStorage.getItem('ya_reports')||'[]');
+       reports.push({ adId: _reportAdId, reason: _reportReason, ts: Date.now(),
+                      reporterId: CU?.id||'guest' });
+       localStorage.setItem('ya_reports', JSON.stringify(reports));
+       closeOverlay('ovReport');
+       showToast('Report submitted — we\'ll review it.', '🚩');
+     }
+
+   That saved the report on the reporter's own phone and then told them
+   someone would look at it. Nobody could: the toast was a lie, ya_reports was
+   read by nothing except a returning-user check in onboarding.js, and
+   openReport() had no callers anywhere in the repo, so the dialog was
+   unreachable in the first place. Every report this site ever collected went
+   nowhere — which is why the dashboard's report panel could only ever say
+   "reviews happen in the Supabase dashboard".
+
+   openReport / selectReport / submitReport are now globals owned by
+   js/ad-report.js, so the existing #ovReport markup keeps working unchanged.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* A quiet report link for the inline detail view. Reporting is a safety
+   valve: findable when something is wrong, invisible when it is not. Built
+   with DOM APIs and wired by listener, so an ad id is never interpolated
+   into an inline handler. */
+function renderReportLink(ad) {
+  var a = document.createElement('button');
+  a.type = 'button';
+  a.className = 'ar-link detail-report';
+  a.textContent = '🚩 Report this listing';
+  a.setAttribute('aria-label', 'Report this listing: ' + (ad.title || ''));
+  a.addEventListener('click', function () {
+    if (!window.YaadReport) { showToast('Reporting is not available right now.', '⚠️'); return; }
+    window.YaadReport.open(ad.id, { title: ad.title });
+  });
+  return a;
 }
 
 /* ═══════════════════════════════════════════════════════════

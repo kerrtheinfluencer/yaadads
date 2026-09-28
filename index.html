@@ -426,6 +426,7 @@ if ('serviceWorker' in navigator) {
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="ad-feedback.css">
+<link rel="stylesheet" href="ad-report.css">
 
 
 
@@ -870,7 +871,7 @@ if ('serviceWorker' in navigator) {
         <select class="form-inp" id="rParish"><option value="">Select your parish…</option></select>
       </div>
       <button class="btn btn-green btn-block btn-lg" onclick="doRegister()">Create Free Account</button>
-      <p style="text-align:center;font-size:12px;color:var(--text-3);margin-top:12px">By joining you agree to our <a href="#" style="color:var(--green)">Terms</a></p>
+      <p style="text-align:center;font-size:12px;color:var(--text-3);margin-top:12px">By joining you agree to our <a href="#" onclick="openInfoPage('terms');return false" style="color:var(--green)">Terms</a> and <a href="#" onclick="openInfoPage('privacy');return false" style="color:var(--green)">Privacy Policy</a></p>
     </div>
   </div>
 </div>
@@ -1149,7 +1150,8 @@ if ('serviceWorker' in navigator) {
       <div class="report-opt" onclick="selectReport(this,'sold_item')">🏷️ Already sold / unavailable</div>
       <div class="report-opt" onclick="selectReport(this,'offensive')">⚠️ Offensive content</div>
     </div>
-    <button class="btn btn-red btn-block btn-lg" onclick="submitReport()" id="reportSubmitBtn" disabled style="margin-top:4px">Submit Report</button>
+    <!-- No onclick here: js/ad-report.js attaches the listener, so a click is handled exactly once. A second inline handler would double-submit. -->
+    <button class="btn btn-red btn-block btn-lg" id="reportSubmitBtn" disabled style="margin-top:4px">Submit Report</button>
   </div>
 </div>
 
@@ -1370,6 +1372,9 @@ if ('serviceWorker' in navigator) {
 <script src="js/ai-chat-v2.js" defer></script>
 <script src="js/search-ai.js" defer></script>
 <script src="js/ad-feedback.js" defer></script>
+<!-- §REPORT must load before ad-social.js: ad-social's report button calls
+     window.YaadReport.open(), and defer preserves document order. -->
+<script src="js/ad-report.js" defer></script>
 <script src="js/ad-social.js" defer></script>
 <script src="js/widgets-pwa.js" defer></script>
 <script src="js/onboarding.js" defer></script>

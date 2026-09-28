@@ -43,6 +43,22 @@
    Every action therefore checks what the API actually did and reports
    "no rows changed" instead of claiming a success that never happened.
 
+   ── MEMBER REPORTS §REPORTS ───────────────────────────────────────────────
+   Members flag a listing with the "Report this listing" link, which posts to
+   public.ad_reports (js/ad-report.js). Those rows land in the Reports queue
+   above the Listings panel, grouped by listing so one spam ad is one row.
+
+   Before this existed the report button saved to localStorage on the
+   reporter's own phone and toasted "we'll review it" — the report never
+   reached the server and nothing read it. This panel previously said as much
+   and pointed at the Supabase table editor.
+
+   A report row existing means "still needs attention". Hide, Delete and
+   Dismiss all resolve a report by deleting its row, and the listing write
+   always happens first, so a failed hide cannot silently swallow a complaint.
+   The queue reads through the admin_ad_reports VIEW, which omits reporter_key
+   and reporter_id, so even this page cannot see who reported what.
+
    ── BEHAVIOUR ───────────────────────────────────────────────────────────────
    • Unlock lives in sessionStorage, so it dies with the tab and re-locks when
      the browser closes. Deliberate: "remember me" on a shared device is how
@@ -179,6 +195,32 @@
   var shown = PAGE_ROWS;
   var query = '';
   var busy = false;
+
+  /* ── member reports §REPORTS ───────────────────────────────────────────────
+     Reports arrive from the public site (js/ad-report.js → public.ad_reports).
+     A row existing means "still needs attention": Hide, Delete or Dismiss all
+     resolve a report by removing its row, so this list can never show work that
+     has already been done. Deleting the listing cascades and clears them too.
+
+     Read through the admin_ad_reports VIEW, not the table, so reporter_key and
+     reporter_id stay unreachable even from this page.
+
+     Trade-off, stated plainly: resolving a report destroys the record that it
+     was ever filed. That buys a queue that cannot go stale, which is the right
+     call at this size — but it means there is no history of "this seller was
+     reported 5 times last month". If that history is ever wanted, add a
+     resolved_at + resolution column here rather than re-deriving it. */
+  var REPORTS_VIEW = 'admin_ad_reports';
+  var REPORTS_LIMIT = 200;
+  var REASON_LABEL = {
+    scam: '🚫 Scam / Fraud',
+    wrong_cat: '📂 Wrong category',
+    duplicate: '🔁 Duplicate',
+    sold_item: '🏷️ Already sold',
+    offensive: '⚠️ Offensive'
+  };
+  var reports = [];      // raw report rows
+  var reportsOn = false; // false when the table has not been created yet
 
   /* ── tiny DOM kit ──────────────────────────────────────────────────────────
      Everything below builds nodes and sets textContent. No innerHTML, ever:
@@ -368,6 +410,10 @@
       var c = $('rowcount');
       if (c) c.textContent = '';
       renderList();
+      /* Still tell the Reports panel what happened. Without this it keeps its
+         initial "Loading…" markup forever, which reads as a queue that is still
+         thinking rather than one that can never load. */
+      loadReports();
       return;
     }
     note('Loading…');
@@ -379,7 +425,7 @@
         rows = r.data || [];
         shown = PAGE_ROWS;
         renderList();
-        return loadStats();
+        return Promise.all([loadStats(), loadReports()]).then(function (both) { return both[0]; });
       })
       .then(function (s) {
         if (!s.ok) { note('Listings loaded, but the counters failed: ' + s.message, 'err'); return; }
@@ -429,7 +475,10 @@
     setBusy(true); note('Hiding…');
     write('update', r.id, { status: ST_HIDDEN }).then(function () {
       r.status = ST_HIDDEN;
-      return afterChange('Hidden: ' + (r.title || '(untitled)'), 'Could not hide: ');
+      return dropReportsFor(r.id).then(function (n) {
+        return afterChange('Hidden: ' + (r.title || '(untitled)') +
+          (n ? ' — ' + n + ' report(s) cleared' : ''), 'Could not hide: ');
+      });
     }).catch(function (e) {
       note('Could not hide: ' + msgOf(e), 'err');
     }).then(function () { setBusy(false); });
@@ -455,7 +504,10 @@
     setBusy(true); note('Deleting…');
     write('delete', r.id).then(function () {
       rows = rows.filter(function (x) { return x.id !== r.id; });
-      return afterChange('Deleted: ' + (r.title || '(untitled)'), 'Could not delete: ');
+      return dropReportsFor(r.id).then(function (n) {
+        return afterChange('Deleted: ' + (r.title || '(untitled)') +
+          (n ? ' — ' + n + ' report(s) cleared' : ''), 'Could not delete: ');
+      });
     }).catch(function (e) {
       note('Could not delete: ' + msgOf(e), 'err');
     }).then(function () { setBusy(false); });
@@ -499,6 +551,261 @@
     }).then(function () { setBusy(false); });
   }
 
+  /* ── reports: load ─────────────────────────────────────────────────────── */
+  function loadReports() {
+    if (!connect()) {
+      /* No Supabase client at all (CDN blocked). Say so rather than leaving
+         "Loading…" on screen forever, which is exactly the kind of stale panel
+         that hid this whole feature for months. */
+      reportsOn = false;
+      reports = [];
+      renderReports('Could not reach Supabase (CDN blocked?) — reports cannot be read in this browser.');
+      return Promise.resolve({ ok: false, message: 'no client' });
+    }
+    return db.from(REPORTS_VIEW).select('*')
+      .order('created_at', { ascending: false })
+      .limit(REPORTS_LIMIT)
+      .then(function (r) {
+        if (r.error) {
+          /* 42P01/PGRST205 = the migration has not been run. Say exactly that
+             instead of rendering an empty queue that reads as "all clear". */
+          var missing = (r.error.code === '42P01' || r.error.code === 'PGRST205');
+          reportsOn = false;
+          reports = [];
+          renderReports(missing
+            ? 'Reporting is not switched on yet. Run supabase-migration-ad-reports.sql in the Supabase SQL Editor.'
+            : 'Could not load reports: ' + msgOf(r.error));
+          return { ok: false, missing: missing, message: msgOf(r.error) };
+        }
+        reportsOn = true;
+        reports = r.data || [];
+        renderReports('');
+        return { ok: true, count: reports.length };
+      })
+      .catch(function (e) {
+        reportsOn = false;
+        renderReports('Could not load reports: ' + msgOf(e));
+        return { ok: false, message: msgOf(e) };
+      });
+  }
+
+  /* Group by listing: one row per ad, with the reasons members picked. A spam
+     ad collects several reports and acting on the ad clears them all, so the
+     unit of work is the listing, not the report. */
+  function reportGroups() {
+    var byAd = {}, order = [];
+    reports.forEach(function (r) {
+      if (!r.ad_id) return;
+      if (!byAd[r.ad_id]) {
+        byAd[r.ad_id] = { adId: r.ad_id, rows: [], reasons: {}, count: 0, latest: r.created_at };
+        order.push(r.ad_id);
+      }
+      var g = byAd[r.ad_id];
+      g.rows.push(r);
+      g.count++;
+      g.reasons[r.reason] = (g.reasons[r.reason] || 0) + 1;
+      if (r.created_at && (!g.latest || r.created_at > g.latest)) g.latest = r.created_at;
+    });
+    return order.map(function (id) { return byAd[id]; });
+  }
+
+  function renderReports(message) {
+    var box = $('reports');
+    if (!box) return;
+    setStat('s-reports', reportsOn ? reports.length : null);
+    var count = $('reportcount');
+    box.textContent = '';
+
+    if (message) {
+      box.appendChild(el('p', 'adm-note', message));
+      if (count) count.textContent = '';
+      return;
+    }
+    if (!reportsOn) {
+      box.appendChild(el('p', 'adm-note',
+        'Reporting is not switched on yet. Run supabase-migration-ad-reports.sql in the Supabase SQL Editor, then press Refresh.'));
+      if (count) count.textContent = '';
+      return;
+    }
+    var groups = reportGroups();
+    if (count) {
+      count.textContent = groups.length
+        ? groups.length + (groups.length === 1 ? ' listing' : ' listings') + ' · ' +
+          reports.length + (reports.length === 1 ? ' report' : ' reports')
+        : 'Nothing reported';
+    }
+    if (!groups.length) {
+      box.appendChild(el('p', 'adm-note',
+        'No open reports. Members flag a listing with the "Report this listing" link on the ad — anything they send lands here.'));
+      return;
+    }
+    groups.forEach(function (g) { box.appendChild(reportRow(g)); });
+  }
+
+
+  /* ── reports: one row ─────────────────────────────────────────────────────
+     Shows the listing it is about (title, seller, price) so the call can be
+     made without opening the ad, plus what members said. All textContent. */
+  function reportRow(g) {
+    var ad = rows.filter(function (r) { return r.id === g.adId; })[0];
+    var row = el('div', 'adm-row adm-report-row');
+    row.setAttribute('data-ad-id', g.adId);
+
+    var main = el('div', 'adm-row-main');
+    main.appendChild(el('span', 'adm-row-title',
+      ad ? (ad.title || '(untitled)') : 'Listing no longer on the site'));
+
+    var meta = el('div', 'adm-row-meta');
+    if (ad) {
+      meta.appendChild(el('span', 'adm-chip is-' + statusOf(ad), ST_LABEL[statusOf(ad)] || statusOf(ad)));
+      if (ad.category) meta.appendChild(el('span', 'adm-tag', ad.category));
+      if (ad.parish) meta.appendChild(el('span', 'adm-tag', '📍 ' + ad.parish));
+      var price = money(ad.price);
+      if (price) meta.appendChild(el('span', 'adm-tag', price));
+      if (ad.seller_name) meta.appendChild(el('span', 'adm-tag', '👤 ' + ad.seller_name));
+    } else {
+      meta.appendChild(el('span', 'adm-tag', 'ad_id ' + g.adId));
+    }
+    var when = day(g.latest);
+    if (when) meta.appendChild(el('span', 'adm-tag', '🕐 reported ' + when));
+    if (g.count > 1) meta.appendChild(el('span', 'adm-tag is-hot', g.count + ' reports'));
+    main.appendChild(meta);
+
+    var why = Object.keys(g.reasons).map(function (k) {
+      return (REASON_LABEL[k] || k) + (g.reasons[k] > 1 ? ' ×' + g.reasons[k] : '');
+    }).join(' · ');
+    main.appendChild(el('span', 'adm-row-snip', why));
+
+    var notes = g.rows.map(function (r) { return r.note; }).filter(Boolean);
+    if (notes.length) main.appendChild(el('span', 'adm-row-snip', '“' + notes[0] + '”'));
+
+    row.appendChild(main);
+
+    var acts = el('div', 'adm-acts');
+    if (ad) {
+      acts.appendChild(linkBtn('View', '/ad/' + adSlug(ad) + '.html', 'Opens the public listing page'));
+      if (statusOf(ad) !== ST_HIDDEN) {
+        acts.appendChild(btn('Hide', '', function () { reportHide(g, ad); },
+          'Take the reported listing off the site and clear these reports'));
+      }
+      acts.appendChild(btn('Delete', 'is-danger', function () { reportDelete(g, ad); },
+        'Delete the reported listing — cannot be undone'));
+      var others = sellerCount(ad);
+      if (statusOf(ad) !== ST_HIDDEN && others > 1) {
+        acts.appendChild(btn('Hide all ' + others, 'is-quiet', function () { reportHideAll(g, ad); },
+          'Hide every live listing from this member, then clear these reports'));
+      }
+    }
+    acts.appendChild(btn('Dismiss', 'is-quiet', function () { reportDismiss(g); },
+      'Clear the report and leave the listing alone'));
+    row.appendChild(acts);
+    return row;
+  }
+
+  /* ── reports: actions ─────────────────────────────────────────────────────
+     Resolving a report deletes its rows. The listing write happens first, and
+     reports are only cleared once that write actually succeeded — otherwise a
+     failed hide would silently swallow the evidence that anyone complained. */
+  function clearReportRows(ids) {
+    if (!connect() || !ids.length) return Promise.resolve(0);
+    return db.from('ad_reports').delete().in('id', ids).select('id')
+      .then(function (r) {
+        if (r.error) throw r.error;
+        var n = (r.data || []).length;
+        reports = reports.filter(function (x) { return ids.indexOf(x.id) === -1; });
+        return n;
+      });
+  }
+
+  function reportIds(g) { return g.rows.map(function (r) { return r.id; }); }
+
+  /* Clear whatever is queued against one listing, without the caller having to
+     know about groups. Used when an action is taken from the Listings panel so
+     the Reports queue can never show work that has already been done. */
+  function dropReportsFor(adId) {
+    var ids = reports.filter(function (r) { return r.ad_id === adId; })
+      .map(function (r) { return r.id; });
+    if (!ids.length) return Promise.resolve(0);
+    return clearReportRows(ids).then(function (n) {
+      renderReports('');
+      return n;
+    });
+  }
+
+  function reportHide(g, ad) {
+    if (busy) return;
+    if (!window.confirm('Hide "' + (ad.title || '(untitled)') + '" and clear its ' +
+      g.count + (g.count === 1 ? ' report?' : ' reports?') + '\n\n' +
+      'The listing leaves the site. Nothing is deleted, and Restore brings it back.')) return;
+    setBusy(true); note('Hiding the reported listing…');
+    write('update', ad.id, { status: ST_HIDDEN })
+      .then(function () { ad.status = ST_HIDDEN; return clearReportRows(reportIds(g)); })
+      .then(function (n) { return afterChange('Hidden and ' + n + ' report(s) cleared.', 'Could not hide: '); })
+      .catch(function (e) { note('Could not hide: ' + msgOf(e), 'err'); })
+      .then(function () { setBusy(false); });
+  }
+
+  function reportDelete(g, ad) {
+    if (busy) return;
+    if (!window.confirm('DELETE "' + (ad.title || '(untitled)') + '" for good?\n\n' +
+      'This removes the listing from Supabase and clears its reports. Use Hide if you only want it off the site.')) return;
+    setBusy(true); note('Deleting the reported listing…');
+    write('delete', ad.id)
+      .then(function () {
+        rows = rows.filter(function (x) { return x.id !== ad.id; });
+        return clearReportRows(reportIds(g));
+      })
+      .then(function (n) { return afterChange('Deleted, ' + n + ' report(s) cleared.', 'Could not delete: '); })
+      .catch(function (e) { note('Could not delete: ' + msgOf(e), 'err'); })
+      .then(function () { setBusy(false); });
+  }
+
+  /* Hide the whole spam run, then clear only THIS listing's reports. Reports on
+     the member's other listings stay queued so those still get looked at. */
+  function reportHideAll(g, ad) {
+    if (busy) return;
+    var mine = rows.filter(function (x) {
+      return x.seller_id && x.seller_id === ad.seller_id && statusOf(x) !== ST_HIDDEN;
+    });
+    if (mine.length < 2) {
+      note('That member has only this listing — use Hide on the row instead.', 'err');
+      return;
+    }
+    if (!window.confirm('Hide all ' + mine.length + ' listings by ' +
+      (ad.seller_name || 'this member') + '?\n\nEvery one leaves the site immediately and this listing\'s reports are cleared. Reports on the other listings stay in the queue for review.')) return;
+    setBusy(true); note('Hiding ' + mine.length + ' listings…');
+    var doneCount = 0, failed = 0, lastErr = null;
+    var chain = Promise.resolve();
+    mine.forEach(function (x) {
+      chain = chain.then(function () {
+        return write('update', x.id, { status: ST_HIDDEN }).then(function () {
+          x.status = ST_HIDDEN; doneCount++;
+        }, function (e) { failed++; lastErr = e; });
+      });
+    });
+    chain.then(function () {
+      return clearReportRows(reportIds(g)).then(function (n) {
+        var word = failed
+          ? 'Hid ' + doneCount + ' of ' + mine.length + ' — ' + failed + ' failed (' + msgOf(lastErr) + '), ' + n + ' report(s) cleared'
+          : 'Hid ' + doneCount + ' listings, ' + n + ' report(s) cleared';
+        return afterChange(word, 'Bulk hide failed: ').then(function () { if (failed) note(word, 'err'); });
+      });
+    }).catch(function (e) {
+      note('Bulk hide failed: ' + msgOf(e), 'err');
+    }).then(function () { setBusy(false); });
+  }
+
+  function reportDismiss(g) {
+    if (busy) return;
+    if (!window.confirm('Clear ' + g.count + (g.count === 1 ? ' report' : ' reports') +
+      ' and leave this listing alone?')) return;
+    setBusy(true); note('Clearing the report…');
+    clearReportRows(reportIds(g))
+      .then(function (n) { return afterChange('Dismissed ' + n + ' report(s) — listing left as is.', 'Could not clear: '); })
+      .catch(function (e) { note('Could not clear the report: ' + msgOf(e), 'err'); })
+      .then(function () { setBusy(false); });
+  }
+
   /* ── wire up ────────────────────────────────────────────────────────────── */
   /* Guarded listeners: a missing node (markup drift) must never stop the gate
      from working, matching the no-CDN resilience the rest of the site keeps. */
@@ -514,11 +821,13 @@
   on('flt', 'input', function () { query = this.value.trim().toLowerCase(); shown = PAGE_ROWS; renderList(); });
   on('fltStatus', 'change', function () { shown = PAGE_ROWS; renderList(); });
 
-  /* Test hook — tools/test-admin.js renders a worst-case row (400-character
-     title, wall of description) through the REAL row builder at a 360px
-     viewport, which is how the "text bleeds off screen" bug is kept fixed.
-     It only builds a detached node: it can read nothing and change nothing. */
+  /* Test hooks — tools/test-admin.js and tools/test-reports.js render worst-case
+     rows (400-character titles, walls of text, every reason at once) through the
+     REAL builders at a 360px viewport, which is how the "text bleeds off screen"
+     bug is kept fixed. They only build detached nodes: they can read nothing
+     from the database and change nothing. */
   window.__admRenderTest = listingRow;
+  window.__admRenderReportTest = function (group) { return reportRow(group); };
 
   if (isUnlocked()) { showDash(); loadAll(); } else { pw.focus(); }
 })();

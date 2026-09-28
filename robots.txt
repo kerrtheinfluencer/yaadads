@@ -23,6 +23,7 @@ Allow: /sitemap.xml
 
 # Admin — never index
 Disallow: /dash-kxrr1.html
+Disallow: /admin.html
 
 # Explicit AI crawler allowances — covered by the wildcard above already,
 # named here for clarity so nothing about AI discoverability is ambiguous

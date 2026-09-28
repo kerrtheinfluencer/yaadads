@@ -30,7 +30,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'touch-friendlier',
+  current: 'report-listing',
   items: {
     'ai-chat-v2': {
       version: 'v2.13',
@@ -194,6 +194,35 @@ var SITE_UPDATES = {
         'New: the category shortcuts in the SEO sections are proper tap targets now, not 15px slivers',
         'Fixed: the tab that opens AI chat no longer has a tap area wider than the word itself',
         'Same look, same layout — just a lot less fumbling',
+      ],
+      url: '/',
+    },
+    'clean-posts': {
+      version: 'v2.15',
+      icon: '🧹',
+      title: 'We can take down junk posts now',
+      body: 'We can now hide or delete any post that is a scam, a duplicate, or just junk. Hiding takes a post off the site straight away but keeps it, so a mistake can be undone. If a member is spamming, one tap clears everything they posted.',
+      date: 'Sep 27, 2026',
+      notes: [
+        'Bad posts now come off the homepage, search, categories and the AI chat immediately',
+        'Hidden posts lose their own web page and their spot in Google too, not just from the app',
+        'One tap clears every post from the same member when someone is spamming',
+        'Nothing is destroyed by hiding — a mistake can always be put back',
+      ],
+      url: '/',
+    },
+    'report-listing': {
+      version: 'v2.16',
+      icon: '🚩',
+      title: 'Report a post — and this time we actually read them',
+      body: 'Every ad now has a "Report this listing" link at the bottom. Tap it, say why (scam, duplicate, wrong category, already sold, or offensive) and it goes straight to our moderation queue. Please use it. Reports are the fastest way to get a bad post off the site.',
+      date: 'Sep 27, 2026',
+      notes: [
+        'New: a Report link on every listing, in the app and on the page you share',
+        'You do not need an account to report — scams are exactly what logged-out visitors see',
+        'Five reasons to pick from: scam, duplicate, wrong category, already sold, or offensive',
+        'Each ad is only counted once per device, so nobody can flood the queue by accident',
+        'Fixed: reporting used to save to your own phone and go nowhere. It now really reaches us',
       ],
       url: '/',
     },

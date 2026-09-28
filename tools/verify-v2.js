@@ -154,7 +154,9 @@ check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
 check('v2.13 ai-chat-v2 entry shipped', suSrc.includes("'ai-chat-v2'"));
-check('v2.14 touch-friendlier entry shipped + set as current', suSrc.includes("'touch-friendlier'") && suSrc.includes("current: 'touch-friendlier'"));
+check('v2.14 touch-friendlier entry shipped', suSrc.includes("'touch-friendlier'"));
+check('v2.15 clean-posts entry shipped', suSrc.includes("'clean-posts'"));
+check('v2.16 report-listing entry shipped', suSrc.includes("'report-listing'"));
 // Pinning `current` to a hardcoded id meant this test failed every time a new
 // release shipped. The invariant worth protecting is that `current` always names
 // an entry that actually exists - otherwise the "What's new" pill points at
@@ -163,6 +165,14 @@ check('SITE_UPDATES.current names a real entry', (() => {
   const cur = (suSrc.match(/current:\s*'([^']+)'/) || [])[1];
   return !!cur && suSrc.includes("'" + cur + "': {");
 })());
+// The report pipeline and the moderation queue only work if they are wired to
+// the same table. A "Report" button that saves nowhere is worse than none: it
+// tells a member someone will look when nobody will.
+check('v2.16 report client is loaded by the app and by generated ad pages',
+  /js\/ad-report\.js/.test(fs.readFileSync('index.html', 'utf8')) &&
+  /ad-report-markup/.test(fs.readFileSync('generate-pages.js', 'utf8')) &&
+  /create table if not exists public\.ad_reports/.test(
+    fs.readFileSync('supabase-migration-ad-reports.sql', 'utf8')));
 check('v2.10 post-pro entry shipped', suSrc.includes("'post-pro'"));
 check('v2.4 update-history entry shipped', suSrc.includes("'update-history'"));
 check('every SITE_UPDATES entry has a date (history sorts newest-first)',

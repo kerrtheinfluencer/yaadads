@@ -199,6 +199,24 @@
     .adm-acts .adm-btn { flex: 1 1 auto; }
     .adm-tools input, .adm-tools select { flex: 1 1 100%; }
   }
+
+  /* ── reported listings §REPORTS ──
+     A report is a call for attention, so its row is tinted and its count is
+     louder than a normal tag — but it reuses .adm-row wholesale, which is what
+     guarantees the grid/overflow rules above keep working at 360px. */
+  .adm-report-row {
+    background: rgba(255, 138,128,.07);
+    border-color: rgba(255,138,128,.22);
+  }
+  .adm-report-row:hover { background: rgba(255,138,128,.12); }
+  .adm-tag.is-hot {
+    background: rgba(255,138,128,.16);
+    border-color: rgba(255,138,128,.34);
+    color: #ffb4ab;
+    font-weight: 700;
+  }
+  .adm-stat.is-alert b { color: #ffb4ab; }
+
 </style>
 </head>
 <body class="adm">
@@ -230,7 +248,16 @@
       <div class="adm-stat"><b id="s-active">–</b><span>Live</span></div>
       <div class="adm-stat"><b id="s-hidden">–</b><span>Hidden</span></div>
       <div class="adm-stat"><b id="s-today">–</b><span>Posted today</span></div>
+      <div class="adm-stat is-alert"><b id="s-reports">–</b><span>Reported</span></div>
     </div>
+
+    <section class="adm-card">
+      <div class="adm-card-hd">
+        <h2>Reported listings</h2>
+        <span id="reportcount" class="adm-count">Loading…</span>
+      </div>
+      <div class="adm-rows" id="reports"><p class="adm-note">Loading…</p></div>
+    </section>
 
     <section class="adm-card">
       <div class="adm-card-hd">
@@ -267,15 +294,19 @@
     </section>
 
     <section class="adm-card">
-      <h2>Reported listings</h2>
-      <!-- Not fetched here on purpose: ad_feedback_reports is locked down with
-           RLS revoked from the anon key, so this page cannot read it. Reviews
-           happen in the Supabase dashboard. Left as a note rather than a
-           permanently-broken counter. -->
-      <p>Reports are private by design (RLS blocks them from this page) — review
-        them in the Supabase dashboard under
-        <em>Table editor → ad_feedback_reports</em>. Then hide or delete the
-        offending listing from the list above.</p>
+      <h2>What the Reports queue does</h2>
+      <p>Members tap <em>Report this listing</em> on any ad and pick a reason. That
+        posts to a real table now, so it arrives here — grouped by listing, newest
+        first, carrying every reason members gave.</p>
+      <ul>
+        <li><em>Hide</em> takes the reported ad off the site and clears its reports. Reversible via the Hidden filter.</li>
+        <li><em>Delete</em> removes the ad for good. Confirm-gated.</li>
+        <li><em>Hide all N</em> clears a whole spam run from one member, then clears only <em>this</em> ad's reports — the rest stay queued for review.</li>
+        <li><em>Dismiss</em> clears the report and leaves the ad alone, for when the report itself is wrong.</li>
+        <li>A report row existing means it still needs attention. Hiding or deleting an ad from the <em>Listings</em> panel above clears its reports too, so the two panels can never disagree.</li>
+        <li>It never shows who reported what. The queue reads a view that omits the member id and the device key, so this page cannot deanonymise a reporter even by accident.</li>
+        <li>Needs <em>supabase-migration-ad-reports.sql</em> run once in the Supabase SQL Editor. Until then this panel says exactly that, rather than showing an empty queue that looks like "all clear".</li>
+      </ul>
     </section>
   </main>
 </div>

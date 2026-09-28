@@ -1073,6 +1073,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
           Share on WhatsApp
         </a>
         <button class="copy-link-btn" onclick="copyAdLink('${esc(adUrl)}', this)">🔗 Copy Link</button>
+        ${require('./tools/ad-report-markup')(ad)}
       </div>
 
       <!-- AdSense sidebar — only shown on listings with real content -->

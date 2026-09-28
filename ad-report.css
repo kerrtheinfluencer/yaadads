@@ -1,0 +1,124 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   MEMBER REPORTS ON LISTINGS §AD-REPORT
+
+   Loaded by index.html and by every generated /ad/<slug>.html page, so the
+   dialog looks the same whether a member reports from the app or from a
+   static listing page that shares no other code with it.
+
+   The app already styles #ovReport and .report-opt in style.css. Everything
+   here is either the shared status line, the app-side report link, or the
+   standalone dialog that style.css knows nothing about.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the quiet report link (app inline detail + generated ad pages) ── */
+.ar-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;               /* WCAG 2.5.5 target size */
+  padding: 10px 4px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-3, rgba(255,255,255,.58));
+  cursor: pointer;
+  transition: color .15s;
+  /* A 400-character ad title must never widen this row past the viewport. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.ar-link:hover,
+.ar-link:focus-visible { color: #e57373; }
+.ar-link:focus-visible {
+  outline: 2px solid rgba(244,195,0,.75);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.detail-report { width: 100%; justify-content: center; margin-top: 4px; }
+
+/* ── status line (shared by both hosts) ── */
+.ar-status {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 1em;
+  overflow-wrap: anywhere;
+  color: var(--text-3, rgba(255,255,255,.58));
+}
+.ar-status.is-err  { color: #ff8a80; }
+.ar-status.is-ok   { color: #7ddba0; }
+
+/* ── standalone dialog (generated ad pages only) ── */
+.ar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(3,12,8,.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.ar-overlay[hidden] { display: none; }
+
+.ar-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  /* `auto` on both axes: a long reason label on a narrow phone must scroll
+     inside the dialog rather than pushing it off-screen. */
+  padding: 22px 20px 20px;
+  border-radius: 18px;
+  color: #fff;
+  background: rgba(12,39,27,.96);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  box-sizing: border-box;
+}
+.ar-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-d, system-ui, sans-serif);
+}
+.ar-which {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,.6);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ar-options { display: flex; flex-direction: column; gap: 8px; }
+
+.ar-x {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  color: rgba(255,255,255,.65);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.ar-x:hover { color: #fff; }
+
+.ar-opt { width: 100%; text-align: left; font-family: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ar-link { transition: none; }
+}
