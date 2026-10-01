@@ -643,12 +643,16 @@
     background: rgba(0,0,0,0.96);
     z-index: 9999;
     align-items: center; justify-content: center; flex-direction: column;
+    touch-action: none; overscroll-behavior: contain;
+    transition: opacity 0.18s ease;
   }
   .lightbox.open { display: flex; }
   .lb-img {
     max-width: 95vw; max-height: 85vh;
     object-fit: contain; border-radius: 6px;
     user-select: none; display: block;
+    touch-action: none; will-change: transform; transform-origin: center center;
+    -webkit-user-drag: none;
   }
   .lb-close {
     position: absolute; top: 16px; right: 16px;
@@ -674,15 +678,21 @@
     position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
     color: rgba(255,255,255,0.65); font-size: 13px;
   }
+  /* §PHOTO-GESTURES — 8px dot inside a 44px tap target. */
   .lb-dots {
-    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 6px;
+    position: absolute; bottom: 38px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 2px;
   }
   .lb-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s;
+    position: relative; width: 44px; height: 44px; border-radius: 50%;
+    background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
-  .lb-dot.active { background: #fff; }
+  .lb-dot::before {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+    background: rgba(255,255,255,0.35); transition: background 0.2s, transform 0.2s;
+  }
+  .lb-dot.active::before { background: #fff; transform: scale(1.25); }
 
   /* ── FOOTER ── */
   footer {
@@ -1039,14 +1049,115 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key === 'ArrowRight')  lbNav(1);
   });
 
-  // Touch swipe
-  (function() {
-    var sx = 0;
+  /* §PHOTO-GESTURES — one engine owns the lightbox on touch: axis-locked
+     swipe with a flick check, drag-down-to-dismiss, pinch + double-tap zoom.
+     (The old handler only compared the first and last touch X, so a 51px
+     diagonal drift changed the photo and a slow deliberate drag did too.) */
+  (function () {
     var lb = document.getElementById('lightbox');
-    lb.addEventListener('touchstart', function(e) { sx = e.touches[0].clientX; }, { passive: true });
-    lb.addEventListener('touchend',   function(e) {
-      var dx = e.changedTouches[0].clientX - sx;
-      if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+    var img = document.getElementById('lbImg');
+    if (!lb || !img) return;
+    var SWIPE_COMMIT = 56, SWIPE_FLICK = 22, FLICK_V = 0.45, SLOP = 8,
+        DISMISS = 96, DISMISS_V = 0.6, MAX_SCALE = 4, DOUBLE_MS = 300, DOUBLE_PX = 30;
+    var scale = 1, tx = 0, ty = 0, g = null, lastTap = 0, lastX = 0, lastY = 0, eatClick = false;
+    function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
+    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+    function dist(a, b) { var dx = a.clientX - b.clientX, dy = a.clientY - b.clientY; return Math.sqrt(dx * dx + dy * dy); }
+    function paint(anim) {
+      img.style.transition = anim ? 'transform .22s cubic-bezier(.22,.61,.36,1)' : 'none';
+      if (scale > 1.001 || tx || ty) {
+        img.style.setProperty('transform',
+          'translate3d(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px,0) scale(' + scale.toFixed(3) + ')', 'important');
+      } else { img.style.removeProperty('transform'); }
+      img.classList.toggle('zoomed', scale > 1.001);
+    }
+    function clampPan() {
+      var mx = img.offsetWidth * (scale - 1) / 2, my = img.offsetHeight * (scale - 1) / 2;
+      tx = clamp(tx, -mx, mx); ty = clamp(ty, -my, my);
+    }
+    function resetZoom(anim) { scale = 1; tx = 0; ty = 0; paint(anim); }
+    function armEat() { eatClick = true; setTimeout(function () { eatClick = false; }, 400); }
+    document.addEventListener('click', function (e) {
+      if (!eatClick) return; eatClick = false; e.stopPropagation(); e.preventDefault();
+    }, true);
+    function nav(dir) { resetZoom(false); lbNav(dir); }
+    img.addEventListener('load', function () { resetZoom(false); });
+    if (typeof MutationObserver === 'function') {
+      new MutationObserver(function () { resetZoom(false); }).observe(lb, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    lb.addEventListener('touchstart', function (e) {
+      if (!e.touches || !e.touches.length) return;
+      if (e.touches.length >= 2) {
+        var a = e.touches[0], b = e.touches[1];
+        g = { mode: 'pinch', d0: dist(a, b), mx: (a.clientX + b.clientX) / 2, my: (a.clientY + b.clientY) / 2, s0: scale, x0: tx, y0: ty };
+        return;
+      }
+      var p = e.touches[0];
+      if (scale > 1.001) g = { mode: 'pan', sx: p.clientX, sy: p.clientY, x0: tx, y0: ty };
+      else g = { mode: 'tap', sx: p.clientX, sy: p.clientY, axis: null, t0: now() };
+    }, { passive: true });
+
+    lb.addEventListener('touchmove', function (e) {
+      if (!g) return;
+      if (g.mode === 'pinch') {
+        if (e.touches.length < 2) return;
+        var a = e.touches[0], b = e.touches[1];
+        scale = clamp(g.s0 * (dist(a, b) / (g.d0 || 1)), 1, MAX_SCALE);
+        tx = g.x0 + ((a.clientX + b.clientX) / 2 - g.mx);
+        ty = g.y0 + ((a.clientY + b.clientY) / 2 - g.my);
+        if (scale <= 1.001) { tx = 0; ty = 0; }
+        clampPan(); paint(false); e.preventDefault();
+        return;
+      }
+      var t = e.touches[0]; if (!t) return;
+      var dx = t.clientX - g.sx, dy = t.clientY - g.sy;
+      if (g.mode === 'pan') { tx = g.x0 + dx; ty = g.y0 + dy; clampPan(); paint(false); e.preventDefault(); return; }
+      if (!g.axis) { if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return; g.axis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y'; }
+      if (g.axis === 'x') { tx = dx; ty = 0; }
+      else { ty = Math.max(0, dy); tx = 0; lb.style.opacity = String(clamp(1 - dy / 500, 0.4, 1)); }
+      paint(false); e.preventDefault();
+    }, { passive: false });
+
+    lb.addEventListener('touchend', function (e) {
+      if (!g) return;
+      var gg = g; g = null;
+      var dt = Math.max(1, now() - (gg.t0 || now()));
+      if (gg.mode === 'pinch') {
+        if (e.touches && e.touches.length >= 1) return;
+        if (scale <= 1.05) resetZoom(true); else { clampPan(); paint(true); }
+        return;
+      }
+      if (gg.mode === 'pan') { clampPan(); paint(true); return; }
+      var t = (e.changedTouches && e.changedTouches[0]) || null;
+      var dx = t ? t.clientX - gg.sx : 0, dy = t ? t.clientY - gg.sy : 0;
+      if (gg.axis === 'x') {
+        var v = Math.abs(dx) / dt;
+        if (Math.abs(dx) >= SWIPE_COMMIT || (Math.abs(dx) >= SWIPE_FLICK && v >= FLICK_V)) { armEat(); nav(dx < 0 ? 1 : -1); }
+        else { resetZoom(true); }
+        return;
+      }
+      if (gg.axis === 'y') {
+        lb.style.opacity = '';
+        if (dy >= DISMISS || (dy >= 40 && dy / dt >= DISMISS_V)) { armEat(); resetZoom(false); closeLightbox(); }
+        else { ty = 0; paint(true); }
+        return;
+      }
+      var ts = now();
+      if (ts - lastTap < DOUBLE_MS && Math.abs(gg.sx - lastX) < DOUBLE_PX && Math.abs(gg.sy - lastY) < DOUBLE_PX) {
+        armEat(); lastTap = 0;
+        if (scale > 1.05) { resetZoom(true); return; }
+        var r = img.getBoundingClientRect();
+        scale = clamp(2.5, 1, MAX_SCALE);
+        tx = -((gg.sx - (r.left + r.width / 2)) * (scale - 1));
+        ty = -((gg.sy - (r.top + r.height / 2)) * (scale - 1));
+        clampPan(); paint(true);
+      } else { lastTap = ts; lastX = gg.sx; lastY = gg.sy; }
+    }, { passive: true });
+
+    lb.addEventListener('touchcancel', function () {
+      g = null; lb.style.opacity = ''; tx = 0; ty = 0;
+      if (scale <= 1.05) resetZoom(true); else { clampPan(); paint(true); }
     }, { passive: true });
   })();
 
@@ -1170,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function yaDebugOn() {
       try {
         if (localStorage.getItem('ya_debug') === '1') return true;
-        if (typeof location !== 'undefined' && /(?:?|&)debug=1(?:&|$)/.test(location.search || '')) return true;
+        if (typeof location !== 'undefined' && /(?:\?|&)debug=1(?:&|$)/.test(location.search || '')) return true;
       } catch (e) {}
       return false;
     }
