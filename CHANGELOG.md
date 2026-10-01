@@ -5,6 +5,17 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
+## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026) · latest
+
+Opening a listing photo full-screen on your phone feels a lot smoother now. The picture follows your finger as you drag it, a quick flick moves to the next photo, a small nudge stays put instead of jumping, and you can pull the photo down to close it. Pinch to zoom in, double-tap to zoom in, and the little dots at the bottom of a photo are finally big enough to tap. The photo viewer on a shared ad page works again too.
+
+- New: swiping between photos follows your finger instead of snapping only after you let go
+- New: a quick flick changes the photo, but a small nudge no longer flips it by accident
+- New: pinch to zoom and double-tap to zoom on any full-screen photo
+- New: drag a photo down to close the viewer
+- New: the dots under a photo are easy to tap on a phone now
+- Fixed: the photo viewer on a shared ad page works again — one bad line had stopped the page’s code from running at all
+
 ## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026)
 
 The home feed is no longer a queue of whatever was posted last. Every listing is now ranked for you: real photos, a real description and real interest lift a post, freshness fades after the first day, and the top of the page always spreads across categories so no one seller can take it over. Every card tells you why you are seeing it, and Newest First is still one tap away in the sort box.
@@ -17,7 +28,7 @@ The home feed is no longer a queue of whatever was posted last. Every listing is
 - New: nothing is ever hidden — Newest First shows the exact same listings, and your choice is remembered
 - Your signals stay on your phone — what you open, save and search is never uploaded anywhere
 
-## 👍 v2.19 — Easier to tap, and a quieter bug hunt (Sep 28, 2026) · latest
+## 👍 v2.19 — Easier to tap, and a quieter bug hunt (Sep 28, 2026)
 
 The category buttons across the top are bigger now — a proper 44px target instead of a 34px sliver, so they are far easier to hit on a phone. We also went bug hunting and closed three real ones: a newly posted ad sometimes would not open at all, your name and listing titles in a chat are now escaped everywhere they appear (an old page could run code that a member typed into their name), and a link copied out of a chat now carries the full web address instead of a broken half-link.
 

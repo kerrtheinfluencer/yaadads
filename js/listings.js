@@ -279,31 +279,42 @@ function convKey(uid1, uid2, adId) {
 /* ═══════════════════════════════════════════════════════════
    GALLERY NAV
 ═══════════════════════════════════════════════════════════ */
+/* §PHOTO-GESTURES — slide geometry, not scrollLeft/clientWidth rounding.
+   offsetLeft is the true snap position even mid-fling or on a fractional
+   device-pixel-ratio phone, so the dots never lag a photo behind. */
+function _galleryCurrent(t) {
+  let best = 0, min = Infinity;
+  for (let k = 0; k < t.children.length; k++) {
+    const d = Math.abs(t.children[k].offsetLeft - t.scrollLeft);
+    if (d < min) { min = d; best = k; }
+  }
+  return best;
+}
 function galleryGoTo(i) {
   const t = document.getElementById('galleryTrack');
-  if (t) t.scrollTo({ left: i * t.offsetWidth, behavior: 'smooth' });
+  if (!t || !t.children.length) return;
+  i = Math.max(0, Math.min(t.children.length - 1, i));
+  const slide = t.children[i];
+  if (slide) t.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
 }
-function galleryPrev() {
-  const t = document.getElementById('galleryTrack');
-  if (t) galleryGoTo(Math.max(0, Math.round(t.scrollLeft / (t.offsetWidth||1)) - 1));
-}
-function galleryNext() {
-  const t = document.getElementById('galleryTrack');
-  if (t) galleryGoTo(Math.min(t.children.length - 1, Math.round(t.scrollLeft / (t.offsetWidth||1)) + 1));
-}
+function galleryPrev() { const t = document.getElementById('galleryTrack'); if (t) galleryGoTo(_galleryCurrent(t) - 1); }
+function galleryNext() { const t = document.getElementById('galleryTrack'); if (t) galleryGoTo(_galleryCurrent(t) + 1); }
 function galleryUpdateDots() {
   const t = document.getElementById('galleryTrack');
   if (!t) return;
-  const idx = Math.round(t.scrollLeft / (t.offsetWidth || 1));
+  const idx = _galleryCurrent(t);
   const dots = t.parentElement.querySelectorAll('.gallery-dot');
   dots.forEach((d, i) => d.classList.toggle('active', i === idx));
 }
-// Sync gallery dots on swipe/scroll
+// Sync gallery dots on swipe/scroll — rAF-throttled, so it tracks the finger
+// instead of waiting on a 50ms timer (which is what made the dots feel laggy).
 document.addEventListener('scroll', function(e) {
   const t = e.target;
-  if (t && t.id === 'galleryTrack') {
-    clearTimeout(t._galleryDotTimer);
-    t._galleryDotTimer = setTimeout(galleryUpdateDots, 50);
+  if (t && t.id === 'galleryTrack' && !t._galleryRaf) {
+    t._galleryRaf = requestAnimationFrame(function() {
+      t._galleryRaf = 0;
+      galleryUpdateDots();
+    });
   }
 }, { passive: true });
 

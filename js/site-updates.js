@@ -18,7 +18,7 @@
      Built with DOM APIs (never innerHTML) so nothing can inject markup;
      wrapped defensively so it can never break boot.
    AI MAINTAINER NOTES (local dev) - read before editing js/*:
-   1. LOAD ORDER (index.html, all defer): core -> auth-account -> listings -> ui-nav -> search-ai -> ad-social -> widgets-pwa -> onboarding -> recent -> for-you -> site-updates -> boot. boot.js calls init() LAST. for-you.js must stay BEFORE boot.js - it wraps renderHome() and defaults the home sort select.
+   1. LOAD ORDER (index.html, all defer): core -> auth-account -> listings -> ui-nav -> search-ai -> ad-social -> widgets-pwa -> photo-gestures -> onboarding -> recent -> for-you -> site-updates -> boot. boot.js calls init() LAST. for-you.js must stay BEFORE boot.js - it wraps renderHome() and defaults the home sort select. photo-gestures.js (§PHOTO-GESTURES) is the single owner of the fullscreen-lightbox touch gestures - never re-add a swipe handler in widgets-pwa.js.
    2. SINGLE SOURCES: CFG/CATS/CAT_MAP/catById//escHtml/fmtN/ago live in core.js. Never re-add category-find or escHtml elsewhere (test: node tools/test-cleanup.js).
    3. SEARCH CACHE: loadAds sets ad._hay {title,desc,par,cat,all} + _adById via rebuildAdIndex(). scoreAd/getFiltered MUST read ad._hay - never toLowerCase in loops.
    4. PHOTO GRIDS: post+edit share _photoThumbsHTML/_addFilesToPhotos in listings.js. Keep onclick names (removePhoto/removeEditAdPhoto) + ids (imgFile/eaImgFile).
@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'taps-and-messages',
+  current: 'photo-touch',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -289,6 +289,25 @@ var SITE_UPDATES = {
       ],
       url: '/',
     },
+    'photo-touch': {
+      version: 'v2.20',
+      icon: '📸',
+      title: 'Photos that follow your thumb',
+      cta: 'Try it',
+      ctaFn: 'openPostAd',
+      body: 'Opening a listing photo full-screen on your phone feels a lot smoother now. The picture follows your finger as you drag it, a quick flick moves to the next photo, a small nudge stays put instead of jumping, and you can pull the photo down to close it. Pinch to zoom in, double-tap to zoom in, and the little dots at the bottom of a photo are finally big enough to tap. The photo viewer on a shared ad page works again too.',
+      date: 'Oct 1, 2026',
+      notes: [
+        'New: swiping between photos follows your finger instead of snapping only after you let go',
+        'New: a quick flick changes the photo, but a small nudge no longer flips it by accident',
+        'New: pinch to zoom and double-tap to zoom on any full-screen photo',
+        'New: drag a photo down to close the viewer',
+        'New: the dots under a photo are easy to tap on a phone now',
+        'Fixed: the photo viewer on a shared ad page works again — one bad line had stopped the page’s code from running at all',
+      ],
+      url: '/',
+    },
+
   },
 };
 

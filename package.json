@@ -21,6 +21,7 @@
     "test:chat": "node tools/test-chat-v2.js",
     "test:chat-wiring": "node tools/test-chat-wiring.js",
     "test:msg-v2": "node tools/test-msg-v2.js",
+    "test:photo": "node tools/test-photo-gestures.js",
     "test:hero": "node tools/test-hero-layout.js",
     "test:for-you": "node tools/test-for-you.js",
     "fy:preview": "node tools/fy-preview.js"

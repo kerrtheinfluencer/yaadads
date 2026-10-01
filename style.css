@@ -2126,28 +2126,37 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .gallery-track {
   display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  scroll-behavior: smooth; overscroll-behavior-x: contain;
 }
 .gallery-track::-webkit-scrollbar { display: none; }
+/* §PHOTO-GESTURES — scroll-snap-stop: always stops a hard flick from skipping
+   two or three photos at once, which is the classic "it jumped too far" tell. */
 .gallery-slide {
-  flex: 0 0 100%; scroll-snap-align: start;
+  flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always;
   height: 300px;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-2); overflow: hidden;
 }
 .gallery-slide img { width: 100%; height: 100%; object-fit: cover; }
 .gallery-slide .emoji-ph { font-size: 90px; }
+/* §PHOTO-GESTURES — 7px dot, 40px tap target. */
 .gallery-dots {
-  position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 5px;
+  position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 0;
 }
 .gallery-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: rgba(255,255,255,.4); cursor: pointer; transition: background .2s;
+  position: relative; width: 40px; height: 40px; border-radius: 50%;
+  background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.gallery-dot.active { background: #fff; }
+.gallery-dot::before {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
+  background: rgba(255,255,255,.45); transition: background .2s, transform .2s;
+}
+.gallery-dot.active::before { background: #fff; transform: scale(1.25); }
 .gallery-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   background: rgba(0,0,0,.45); border: none; border-radius: 50%;
   color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
   z-index: 3; transition: background .2s;
@@ -3365,11 +3374,11 @@ footer {
 @keyframes sendPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(.88);opacity:.7} }
 
 /* ── FULLSCREEN LIGHTBOX ── */
-.lightbox { position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+.lightbox { position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;overscroll-behavior:contain;transition:opacity .18s ease; }
 .lightbox.open { display:flex; }
 .lightbox-close { position:absolute;top:16px;right:16px;width:44px;height:44px;background:rgba(255,255,255,.12);border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;transition:background .15s; }
 .lightbox-close:hover { background:rgba(255,255,255,.25); }
-.lightbox-img { max-width:95vw;max-height:80vh;object-fit:contain;border-radius:4px;user-select:none;animation:lbIn .25s ease both; }
+.lightbox-img { max-width:95vw;max-height:80vh;object-fit:contain;border-radius:4px;user-select:none;-webkit-user-drag:none;animation:lbIn .25s ease both;touch-action:none;will-change:transform;transform-origin:center center; }
 @keyframes lbIn { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:none} }
 .lightbox-nav { position:absolute;top:50%;transform:translateY(-50%);
   width:44px;height:44px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:3; }
@@ -3377,9 +3386,12 @@ footer {
 .lightbox-prev { left:12px; }
 .lightbox-next { right:12px; }
 .lightbox-counter { position:absolute;bottom:20px;color:rgba(255,255,255,.6);font-size:14px;font-weight:600;background:rgba(0,0,0,.4);padding:4px 14px;border-radius:20px; }
-.lightbox-dots { position:absolute;bottom:56px;display:flex;gap:8px; }
-.lightbox-dot { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .2s; }
-.lightbox-dot.active { background:#fff;transform:scale(1.3); }
+/* §PHOTO-GESTURES — the 8px dot is drawn by ::before inside a 44px hit box,
+   so it is actually hittable with a thumb (the old 8px target was a coin-flip). */
+.lightbox-dots { position:absolute;bottom:48px;display:flex;gap:2px; }
+.lightbox-dot { position:relative;width:44px;height:44px;border-radius:50%;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent; }
+.lightbox-dot::before { content:'';position:absolute;top:50%;left:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:rgba(255,255,255,.35);transition:background .2s,transform .2s; }
+.lightbox-dot.active::before { background:#fff;transform:scale(1.35); }
 
 /* ── FLOATING AI CHAT (desktop) ── */
 .ai-fab { position:fixed;bottom:28px;right:28px;width:60px;height:60px;background:linear-gradient(135deg,var(--green),var(--green-mid));border:none;border-radius:50%;color:#fff;font-size:26px;cursor:pointer;z-index:290;display:none;align-items:center;justify-content:center;box-shadow:0 6px 28px rgba(0,92,53,.45);transition:transform .2s; }

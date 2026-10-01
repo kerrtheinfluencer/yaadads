@@ -142,6 +142,16 @@ jobs:
         timeout-minutes: 5
         run: npm run test:msg-v2
 
+      # Touch gestures on the photo lightbox. Drives real synthetic touch events
+      # (swipe / flick / drag-to-dismiss / pinch / double-tap) in a headless
+      # browser, and renders a generated ad page to PARSE its inline scripts —
+      # the guard for the invalid-regex SyntaxError that had killed every ad
+      # page's JavaScript (lightbox, gallery, view counter) without a single
+      # source-level check noticing.
+      - name: Run photo-gesture touch tests
+        timeout-minutes: 5
+        run: npm run test:photo
+
       - name: Run AI chat regression tests (pure core + wiring)
         run: |
           node tools/test-chat-v2.js

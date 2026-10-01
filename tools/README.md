@@ -22,6 +22,7 @@ build if a `tools/test-*.js` file appears in none of: the `npm test` chain, a
 | `test-for-you.js` | the ranked feed: nothing hidden, newest cannot lead, mix, relevance | — |
 | `test-account-referrals.js` | referral credit + link rules in `core.js` (`node:test`) | — |
 | `test-msg-v2.js` | the real app in a browser: stored XSS, read receipts, sends | Chrome |
+| `test-photo-gestures.js` | the lightbox gesture engine on touch (swipe / dismiss / pinch) + generated-page script parses | Chrome |
 | `test-changelog-privacy.js` | release notes carry no secrets | — |
 
 Run them all: `npm test` (browser suites are separate, see below).

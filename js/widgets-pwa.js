@@ -62,17 +62,12 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowRight') lbNav(1);
 });
 
-// Swipe support for lightbox
-(function() {
-  let sx=0;
-  const lb = document.getElementById('lightbox');
-  if (!lb) return;
-  lb.addEventListener('touchstart', function(e) { sx=e.touches[0].clientX; }, {passive:true});
-  lb.addEventListener('touchend', function(e) {
-    const dx = e.changedTouches[0].clientX - sx;
-    if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
-  }, {passive:true});
-})();
+// NOTE: the old first/last-touch swipe that lived here (a 50px drift on
+// touchend fired a nav, nothing followed the finger, no zoom) was replaced by
+// the §PHOTO-GESTURES engine in js/photo-gestures.js — one owner for the
+// lightbox on touch, shared by the SPA and the generated ad pages. Do not
+// re-add a swipe handler here; two engines on one element is exactly the
+// fidgetiness we set out to remove.
 
 /* ═══════════════════════════════════════════════════════════
    FLOATING AI CHAT (desktop widget) §FLOAT-CHAT

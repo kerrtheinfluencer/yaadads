@@ -204,17 +204,29 @@ function showAdInline(ad) {
   if (track && photos.length > 1) {
     var gdots = el.querySelectorAll('.gallery-dot');
     var gslides = el.querySelectorAll('.gallery-slide');
+    /* §PHOTO-GESTURES — nearest slide by offsetLeft (true snap position),
+       not scrollLeft/clientWidth rounding, so the dot never lags. */
+    function curIndex() {
+      var best = 0, min = Infinity;
+      for (var k = 0; k < gslides.length; k++) {
+        var d = Math.abs(gslides[k].offsetLeft - track.scrollLeft);
+        if (d < min) { min = d; best = k; }
+      }
+      return best;
+    }
+    function paintDots(i) { gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); }); }
     function goSlide(i) {
       i = Math.max(0, Math.min(gslides.length - 1, i));
-      track.scrollTo({ left: gslides[i].offsetLeft, behavior: 'smooth' });
-      gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
+      var s = gslides[i];
+      if (s) track.scrollTo({ left: s.offsetLeft, behavior: 'smooth' });
+      paintDots(i);
     }
-    el.querySelector('.gallery-prev').addEventListener('click', function () { goSlide(Math.round(track.scrollLeft / track.clientWidth) - 1); });
-    el.querySelector('.gallery-next').addEventListener('click', function () { goSlide(Math.round(track.scrollLeft / track.clientWidth) + 1); });
+    el.querySelector('.gallery-prev').addEventListener('click', function () { goSlide(curIndex() - 1); });
+    el.querySelector('.gallery-next').addEventListener('click', function () { goSlide(curIndex() + 1); });
     gdots.forEach(function (d) { d.addEventListener('click', function () { goSlide(+d.dataset.i); }); });
     track.addEventListener('scroll', function () {
-      var i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
-      gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
+      if (track._dotRaf) return;
+      track._dotRaf = requestAnimationFrame(function () { track._dotRaf = 0; paintDots(curIndex()); });
     }, { passive: true });
   }
 
