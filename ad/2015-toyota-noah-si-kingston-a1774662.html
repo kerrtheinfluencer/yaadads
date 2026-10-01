@@ -767,8 +767,8 @@
       
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662972548_iveyfm.jpg?width=1280&amp;quality=72" alt="2015 Toyota Noah SI" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(0)" style="cursor:zoom-in">
-        <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 6 photos · tap to expand</div>
+        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662972548_iveyfm.jpg?width=1280&amp;quality=72" alt="2015 Toyota Noah SI" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(lbIndex)" style="cursor:zoom-in">
+        <div class="gallery-zoom-hint" onclick="openLightbox(lbIndex)">🔍 6 photos · tap to expand</div>
         
       </div>
       
@@ -983,6 +983,9 @@ document.addEventListener('DOMContentLoaded', function () {
 <script>
   // ── Photos array ─────────────────────────────────────────────
   var PHOTOS = ["https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662972548_iveyfm.jpg?width=1600&quality=80","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662973735_l6e72d.jpg?width=1600&quality=80","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662974312_dskl8r.jpg?width=1600&quality=80","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662974918_rzq0re.jpg?width=1600&quality=80","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662975430_f0xbia.jpg?width=1600&quality=80","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662976191_cwfjx7.jpg?width=1600&quality=80"];
+  // The inline featured image uses a lighter 1280px crop; kept in step with the
+  // lightbox so closing fullscreen never leaves the page showing a stale photo.
+  var PHOTOS_FEAT = ["https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662972548_iveyfm.jpg?width=1280&quality=72","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662973735_l6e72d.jpg?width=1280&quality=72","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662974312_dskl8r.jpg?width=1280&quality=72","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662974918_rzq0re.jpg?width=1280&quality=72","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662975430_f0xbia.jpg?width=1280&quality=72","https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/u1772759875453/1774662976191_cwfjx7.jpg?width=1280&quality=72"];
   var lbIndex = 0;
 
   // ── Thumbnail switcher ────────────────────────────────────────
@@ -1006,6 +1009,15 @@ document.addEventListener('DOMContentLoaded', function () {
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('open');
     document.body.style.overflow = '';
+    syncFeatured();
+  }
+  // Reflect the lightbox position back into the inline gallery, so the photo
+  // you swiped to is the one the page shows once the viewer closes.
+  function syncFeatured() {
+    var img = document.getElementById('featuredImg');
+    if (img && PHOTOS_FEAT[lbIndex]) img.src = PHOTOS_FEAT[lbIndex];
+    var thumbs = document.querySelectorAll('.thumb');
+    for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === lbIndex);
   }
   function lbNav(dir) {
     lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;

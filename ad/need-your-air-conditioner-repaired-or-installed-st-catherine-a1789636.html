@@ -740,8 +740,8 @@ Assessment is required before the final cost can be determined.
       
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/472ac9a2-a032-44a9-b8b0-e0aa5d239a95/1789636250069_9xo5cg.jpg?width=1280&amp;quality=72" alt="❄️ NEED YOUR AIR CONDITIONER REPAIRED OR INSTALLED?" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(0)" style="cursor:zoom-in">
-        <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 Tap to view fullscreen</div>
+        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/472ac9a2-a032-44a9-b8b0-e0aa5d239a95/1789636250069_9xo5cg.jpg?width=1280&amp;quality=72" alt="❄️ NEED YOUR AIR CONDITIONER REPAIRED OR INSTALLED?" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(lbIndex)" style="cursor:zoom-in">
+        <div class="gallery-zoom-hint" onclick="openLightbox(lbIndex)">🔍 Tap to view fullscreen</div>
         
       </div>
       
@@ -940,6 +940,9 @@ Assessment is required before the final cost can be determined.
 <script>
   // ── Photos array ─────────────────────────────────────────────
   var PHOTOS = ["https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/472ac9a2-a032-44a9-b8b0-e0aa5d239a95/1789636250069_9xo5cg.jpg?width=1600&quality=80"];
+  // The inline featured image uses a lighter 1280px crop; kept in step with the
+  // lightbox so closing fullscreen never leaves the page showing a stale photo.
+  var PHOTOS_FEAT = ["https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/472ac9a2-a032-44a9-b8b0-e0aa5d239a95/1789636250069_9xo5cg.jpg?width=1280&quality=72"];
   var lbIndex = 0;
 
   // ── Thumbnail switcher ────────────────────────────────────────
@@ -963,6 +966,15 @@ Assessment is required before the final cost can be determined.
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('open');
     document.body.style.overflow = '';
+    syncFeatured();
+  }
+  // Reflect the lightbox position back into the inline gallery, so the photo
+  // you swiped to is the one the page shows once the viewer closes.
+  function syncFeatured() {
+    var img = document.getElementById('featuredImg');
+    if (img && PHOTOS_FEAT[lbIndex]) img.src = PHOTOS_FEAT[lbIndex];
+    var thumbs = document.querySelectorAll('.thumb');
+    for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === lbIndex);
   }
   function lbNav(dir) {
     lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
