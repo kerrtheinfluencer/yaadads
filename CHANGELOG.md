@@ -14,7 +14,9 @@ Opening a listing photo full-screen on your phone feels a lot smoother now. The 
 - New: pinch to zoom and double-tap to zoom on any full-screen photo
 - New: drag a photo down to close the viewer
 - New: the dots under a photo are easy to tap on a phone now
-- Fixed: the photo viewer on a shared ad page works again — one bad line had stopped the page’s code from running at all
+- Fixed: on a shared listing page the tap-a-photo code had stopped running, so changing the photo left the big image showing the same picture — it runs again now
+- Fixed: opening a photo full-screen from a listing page now starts on the photo you picked, instead of always the first one
+- New: closing full-screen leaves the listing page on the photo you were just looking at
 
 ## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026)
 

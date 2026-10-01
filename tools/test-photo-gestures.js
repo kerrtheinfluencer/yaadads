@@ -41,7 +41,7 @@ function check(name, ok, detail) {
   const ad = { id: 'a1', title: 'Toyota Axio', price: 1200000, neg: true, status: 'active',
     parish: 'Kingston', category: 'vehicles', seller: 'Seller', sellerId: 's1',
     phone: '8765551234', desc: 'Clean car', date: new Date().toISOString(),
-    image: img, photos: [img, img.replace('a.jpg', 'b.jpg')] };
+    image: img, photos: [img, img.replace('a.jpg', 'b.jpg'), img.replace('a.jpg', 'c.jpg')] };
   const html = buildPage(ad, [ad]);
   const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   let parseErr = 0, firstErr = '';
@@ -60,7 +60,13 @@ function check(name, ok, detail) {
     css.includes('.lightbox-dot { position:relative;width:44px;height:44px'));
   check('SPA: a gallery flick cannot skip photos (scroll-snap-stop: always)',
     css.includes('scroll-snap-stop: always'));
+
+  // Handed to the browser half of this test to load and drive.
+  fs.writeFileSync(path.join(ROOT, '_tmp-ad-test.html'), html);
 })();
+const AD_PAGE = path.join(ROOT, '_tmp-ad-test.html');
+function removeAdPage() { try { fs.unlinkSync(AD_PAGE); } catch (e) {} }
+process.on('exit', removeAdPage);
 
 /* ── 2. browser: drive real touch gestures ──────────────────────────────── */
 const CHROME = [
@@ -89,7 +95,7 @@ const TG = `window.__tg = function(type, pts) {
 }; true`;
 
 (async function () {
-  if (!CHROME) { console.log('SKIP: no Chrome/Edge found — the §PHOTO-GESTURES browser test needs one.'); return; }
+  if (!CHROME) { console.log('SKIP: no Chrome/Edge found — the §PHOTO-GESTURES browser test needs one.'); removeAdPage(); return; }
   const PORT = 8900 + Math.floor(Math.random() * 400);
   const CDP = 9700 + Math.floor(Math.random() * 400);
   const profile = path.join(os.tmpdir(), 'yaad-photo-' + Math.floor(Math.random() * 1e9));
@@ -199,11 +205,34 @@ const TG = `window.__tg = function(type, pts) {
       await evaluate('getComputedStyle(document.querySelector(".lightbox-dot")).width') === '44px');
     check('the lightbox owns the touch surface (touch-action: none)',
       await evaluate('getComputedStyle(document.getElementById("lightbox")).touchAction') === 'none');
+
+    /* ── the INLINE gallery on a real generated ad page ──────────────────
+       The user-visible path: not fullscreen, tap a thumbnail. This is what
+       went dark for every ad page while the template emitted an invalid regex
+       — the whole <script> threw, so the photo never changed. */
+    await cdp('Page.navigate', { url: 'http://localhost:' + PORT + '/_tmp-ad-test.html' });
+    await sleep(900);
+    check('the generated ad page script runs (no invalid-regex SyntaxError)',
+      await evaluate('typeof setFeatured') === 'function',
+      'typeof setFeatured=' + await evaluate('typeof setFeatured'));
+    check('tapping a thumbnail changes the inline photo', await evaluate(
+      '(function(){ var before = document.getElementById("featuredImg").getAttribute("src");' +
+      ' document.querySelectorAll(".thumb")[2].click();' +
+      ' return new Promise(function(res){ setTimeout(function(){' +
+      '  res(document.getElementById("featuredImg").getAttribute("src") !== before); }, 350); }); })()') === true);
+    check('opening fullscreen starts on the photo you picked', await evaluate(
+      'document.getElementById("featuredImg").click(); lbIndex') === 2,
+      'lbIndex=' + await evaluate('lbIndex'));
+    check('closing fullscreen syncs the inline gallery back', await evaluate(
+      '(function(){ closeLightbox(); var t = document.querySelectorAll(".thumb");' +
+      ' return document.querySelector(".thumb.active") === t[2] &&' +
+      '   document.getElementById("featuredImg").getAttribute("src").indexOf("c.jpg") > -1; })()') === true);
   } catch (e) {
     console.error('ERROR: ' + e.message);
     failed++;
   } finally {
     clearTimeout(watchdog);
+    removeAdPage();
     cleanup();
   }
 })().then(() => {

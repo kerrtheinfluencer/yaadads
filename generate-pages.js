@@ -330,8 +330,8 @@ function buildPage(ad, allAds) {
     galleryHtml = `
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="${esc(xf(photos[0],1280,72))}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(0)" style="cursor:zoom-in">
-        <div class="gallery-zoom-hint" onclick="openLightbox(0)">🔍 ${photos.length > 1 ? photos.length + ' photos · tap to expand' : 'Tap to view fullscreen'}</div>
+        <img src="${esc(xf(photos[0],1280,72))}" alt="${esc(ad.title)}" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(lbIndex)" style="cursor:zoom-in">
+        <div class="gallery-zoom-hint" onclick="openLightbox(lbIndex)">🔍 ${photos.length > 1 ? photos.length + ' photos · tap to expand' : 'Tap to view fullscreen'}</div>
         ${ad.status === 'sold' ? '<div class="sold-ribbon">SOLD</div>' : ''}
       </div>
       ${photos.length > 1 ? `
@@ -1156,6 +1156,9 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
 <script>
   // ── Photos array ─────────────────────────────────────────────
   var PHOTOS = ${JSON.stringify(photos.map(function(p){return xf(p,1600,80);}))};
+  // The inline featured image uses a lighter 1280px crop; kept in step with the
+  // lightbox so closing fullscreen never leaves the page showing a stale photo.
+  var PHOTOS_FEAT = ${JSON.stringify(photos.map(function(p){return xf(p,1280,72);}))};
   var lbIndex = 0;
 
   // ── Thumbnail switcher ────────────────────────────────────────
@@ -1179,6 +1182,15 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('open');
     document.body.style.overflow = '';
+    syncFeatured();
+  }
+  // Reflect the lightbox position back into the inline gallery, so the photo
+  // you swiped to is the one the page shows once the viewer closes.
+  function syncFeatured() {
+    var img = document.getElementById('featuredImg');
+    if (img && PHOTOS_FEAT[lbIndex]) img.src = PHOTOS_FEAT[lbIndex];
+    var thumbs = document.querySelectorAll('.thumb');
+    for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === lbIndex);
   }
   function lbNav(dir) {
     lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
