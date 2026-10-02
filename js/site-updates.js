@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'phone-fixes',
+  current: 'calmer-touch',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -324,6 +324,23 @@ var SITE_UPDATES = {
         'Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one',
         'Fixed: a listing with a single photo no longer shows empty dots and arrows in the photo viewer',
         'The phone layout check now runs on every change, so this class of bug cannot come back unnoticed',
+      ],
+      url: '/',
+    },
+'calmer-touch': {
+      version: 'v2.22',
+      icon: '🧘',
+      title: 'Calmer pulling, faster photos',
+      cta: 'See it',
+      ctaFn: 'goHome',
+      body: 'Two things you told us about. First, the app kept reloading itself when you dragged down the page — now pulling to refresh takes a real, deliberate pull, the way every other app works, and a small drag or a drag at an angle will never do it. Second, changing to another photo on a listing no longer goes blank while it loads: the photo you are looking at stays put and the next one replaces it the moment it is ready, and the photos next to it are quietly warmed up in the background so tapping one is instant.',
+      date: 'Oct 3, 2026',
+      notes: [
+        'Fixed: the page no longer reloads itself when you drag down a little, or drag down at an angle',
+        'Fixed: dragging down starting on the category row or the buttons above the listings no longer reloads the page',
+        'New: pulling to refresh now needs a long, deliberate pull — like every other app',
+        'Fixed: changing to another photo keeps the current photo on screen until the next one has loaded, instead of showing a blank frame',
+        'New: the photos next to the one you are viewing are warmed up quietly in the background, so tapping one is instant',
       ],
       url: '/',
     },

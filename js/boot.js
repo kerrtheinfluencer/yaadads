@@ -14,9 +14,14 @@ init();
   document.body.appendChild(ptrBar);
 
   var startY = 0, startX = 0, pulling = false, pulledFar = false, refreshing = false, lastRefresh = 0;
-  var PTR_ACTIVATE = 24;    // px of downward travel before the hint shows
-  var PTR_THRESHOLD = 110;  // px needed to actually trigger a refresh
-  var PTR_COOLDOWN = 8000;  // min ms between refreshes
+  /* §PTR-CALM — measured against the real app before this change: a 130px pull,
+     a 45° diagonal drag, and a drag that began on the category rail or the view
+     toggle ALL reloaded the page. A refresh must feel deliberate, not like
+     something the page did to you while you were trying to scroll. */
+  var PTR_ACTIVATE = 40;    // px of downward travel before the hint shows
+  var PTR_THRESHOLD = 170;  // px needed to actually trigger a refresh
+  var PTR_COOLDOWN = 12000; // min ms between refreshes
+  var PTR_VERTICAL = 1.4;   // vertical travel must beat sideways by this
   var ptrHideTimer = null;
 
   function resetPtr() {
@@ -35,6 +40,23 @@ init();
     var ae = document.activeElement;
     if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return false;
     return true;
+  }
+
+  /* A pull that STARTS on a horizontal rail or on the results bar is a scroll or
+     a tap, never a refresh. Those all sit at the very top of the page, which is
+     exactly where PTR is otherwise armed, so they were the easiest way to
+     trigger one by accident. The generic overflow-x walk covers any future rail
+     too, not just the ones named here. */
+  function ptrBlockedTarget(el) {
+    if (!el || !el.closest) return false;
+    if (el.closest('.cat-row, .rail-start, .rail-end, .recent-search-row, .results-header, .gallery-track')) return true;
+    var n = el;
+    while (n && n !== document.body) {
+      var ox = getComputedStyle(n).overflowX;
+      if (ox === 'auto' || ox === 'scroll') return true;
+      n = n.parentElement;
+    }
+    return false;
   }
 
   // Media-query listener so rotating/resizing doesn't leave PTR
@@ -58,15 +80,23 @@ init();
   // a stuck handler and rotating back to mobile keeps working.
 
   document.addEventListener('touchstart', function(e){
+    /* Always clear the PREVIOUS gesture first. This handler used to return early
+       (wrong viewport, an open overlay, a field focused) without resetting, which
+       could leave pulling/pulledFar set — and then a later touchend, even one
+       belonging to a tap PTR never claimed, could refresh the page. */
+    resetPtr();
     if (!ptrMatch() || !ptrEligible() || !e.touches || !e.touches.length) return;
     // Multi-touch (pinch/zoom) is never a refresh gesture.
-    if (e.touches.length > 1) { resetPtr(); return; }
+    if (e.touches.length > 1) return;
+    if (ptrBlockedTarget(e.target)) return;
     startY = e.touches[0].clientY;
     startX = e.touches[0].clientX;
-    pulling = false; pulledFar = false;
   }, {passive:true});
 
   document.addEventListener('touchmove', function(e){
+    // Rotating back to desktop used to leave a stale startY that this handler
+    // kept processing for the rest of the session.
+    if (!ptrMatch()) { resetPtr(); return; }
     if (startY === 0 || !e.touches || !e.touches.length) return;
     if (e.touches.length > 1) { resetPtr(); return; }
     var t = e.touches[0];
@@ -74,6 +104,11 @@ init();
     var dx = Math.abs(t.clientX - startX);
     // Mostly-horizontal swipe (carousels, gallery, back gesture) cancels PTR.
     if (dx > 30 && dx > Math.abs(dy) * 1.2) { resetPtr(); return; }
+    /* And the mirror image: a refresh needs a clearly VERTICAL intent. Before
+       this, a 45° diagonal pull reloaded the page, which is nobody's idea of
+       pulling to refresh. Only judged once there is real travel, so a small
+       sideways drift on an otherwise straight pull is still fine. */
+    if (dy > 20 && dx > dy / PTR_VERTICAL) { resetPtr(); return; }
     if (dy < 0) { if (!pulling) { startY = 0; startX = 0; } return; }
     if (window.scrollY !== 0 || !ptrEligible()) { if (!pulling) { startY = 0; startX = 0; } return; }
     if (dy > PTR_ACTIVATE) {

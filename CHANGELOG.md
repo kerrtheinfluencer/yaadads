@@ -5,7 +5,17 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 🐛 v2.21 — A bug sweep for phones (Oct 2, 2026) · latest
+## 🧘 v2.22 — Calmer pulling, faster photos (Oct 3, 2026) · latest
+
+Two things you told us about. First, the app kept reloading itself when you dragged down the page — now pulling to refresh takes a real, deliberate pull, the way every other app works, and a small drag or a drag at an angle will never do it. Second, changing to another photo on a listing no longer goes blank while it loads: the photo you are looking at stays put and the next one replaces it the moment it is ready, and the photos next to it are quietly warmed up in the background so tapping one is instant.
+
+- Fixed: the page no longer reloads itself when you drag down a little, or drag down at an angle
+- Fixed: dragging down starting on the category row or the buttons above the listings no longer reloads the page
+- New: pulling to refresh now needs a long, deliberate pull — like every other app
+- Fixed: changing to another photo keeps the current photo on screen until the next one has loaded, instead of showing a blank frame
+- New: the photos next to the one you are viewing are warmed up quietly in the background, so tapping one is instant
+
+## 🐛 v2.21 — A bug sweep for phones (Oct 2, 2026)
 
 We went looking for more problems and found a few worth fixing. On a phone, the bar above the listings used to push the whole page sideways, and on a smaller screen the single-picture / grid switch could sit off the edge where you could not reach it — that row now fits properly and wraps instead. On a computer, pressing the left or right arrow while viewing a photo jumped two photos at once. And a listing with just one photo no longer shows empty dots and arrows in the viewer.
 
