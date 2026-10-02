@@ -358,6 +358,47 @@
   @media (prefers-reduced-motion: reduce) {
     .gallery-main > img.gallery-pop { animation: none; }
   }
+  /* §PHOTOCOUNT — the "3 / 8" badge in the photo's bottom-left corner. The
+     count is part of the gesture rather than a label sitting next to it: the
+     digit rolls in the direction the photo just travelled and the pill gives
+     one beat of scale, so a swipe's feedback lands on the badge at the same
+     instant it lands on the photo. The number is clipped to its own em box, so
+     it can only ever roll through the pill and never float outside it, and
+     pointer-events:none keeps that corner part of the swipe surface. */
+  .gallery-count {
+    position: absolute; bottom: 12px; left: 12px; z-index: 4;
+    display: flex; align-items: center;
+    background: rgba(0,0,0,.55); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .3px;
+    font-variant-numeric: tabular-nums;
+    padding: 5px 10px; border-radius: 20px;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+  }
+  /* A fixed 2ch lane, so photo 9 → photo 10 widens nothing and cannot shove the
+     total sideways mid-swipe. overflow:hidden is what confines the roll. */
+  .gallery-count-box {
+    display: inline-block; overflow: hidden;
+    width: 2ch; height: 1.2em; line-height: 1.2em;
+    text-align: center; vertical-align: bottom;
+  }
+  .gallery-count-now { display: inline-block; }
+  /* A hair of separation for the two-digit case: the 2ch lane is exactly as wide
+     as "10", so the following space has nowhere to show. Margin rather than
+     padding on the box — padding would eat into the lane and clip the digits. */
+  .gallery-count-total { opacity: .68; margin-left: 2px; }
+  /* One keyframe per direction, so the digit always moves the way the photo
+     did: a leftward swipe drops the new number in from below, a rightward one
+     lifts it in from above. */
+  @keyframes phCountRollFwd { from { transform: translateY(115%); opacity: .3; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes phCountRollBack { from { transform: translateY(-115%); opacity: .3; } to { transform: translateY(0); opacity: 1; } }
+  .gallery-count-now.is-fwd { animation: phCountRollFwd .26s cubic-bezier(.16,1,.3,1); }
+  .gallery-count-now.is-back { animation: phCountRollBack .26s cubic-bezier(.16,1,.3,1); }
+  @keyframes phCountPulse { from { transform: scale(1); } 40% { transform: scale(1.14); } to { transform: scale(1); } }
+  .gallery-count.is-tick { animation: phCountPulse .3s cubic-bezier(.16,1,.3,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-count-now.is-fwd, .gallery-count-now.is-back, .gallery-count.is-tick { animation: none; }
+  }
   /* §PHOTOSPIN — a slow photo shows a shimmer instead of an empty frame. The
      class is only added after a 220ms delay by showFeatured()/renderLightbox(),
      so a cached or fast photo never flashes a spinner. */
@@ -806,6 +847,7 @@
       <div class="gallery-main" id="mainImg">
         <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/5b73e503-c2ae-4b58-9016-4c9f55ef6ec0/1789157545945_c2p4jd.jpg?width=1280&amp;quality=72" alt="Books" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" draggable="false" onclick="openLightbox(lbIndex)">
         <div class="gallery-zoom-hint" onclick="openLightbox(lbIndex)">🔍 Tap to view fullscreen</div>
+        
         
       </div>
       
@@ -1344,6 +1386,36 @@ document.addEventListener('DOMContentLoaded', function () {
     ghost.setAttribute('aria-hidden', 'true');
     shell.insertBefore(ghost, img.nextSibling);
 
+    /* ── §PHOTOCOUNT ───────────────────────────────────────────────────────
+       The "3 / 8" badge is written from here rather than from the photo paths
+       themselves, because this engine is the one place that knows BOTH the
+       index being landed on and the direction the visitor travelled — and the
+       roll is direction-aware. Writes are idempotent: settle() and
+       gallerySwipeSync() can both report the same photo, and the badge only
+       ever ends up right, with no second roll for a change it already showed.
+
+       "quiet" is for a swap the caller animated itself — a thumbnail tap rolls
+       (the pop is small, the count rides it), while closing fullscreen is
+       silent, because that exit transition is already the feedback and a
+       rolling number on top of it would just read as a stutter. */
+    var countNow = document.getElementById('galCountNow');
+    var countPill = document.getElementById('galCount');
+
+    function paintCount(n, dir, quiet) {
+      if (!countNow) return;
+      var next = String(n + 1);
+      if (countNow.textContent === next) return;    // already showing it: no phantom beat
+      countNow.textContent = next;
+      if (quiet || reduced) return;
+      /* Remove both first, then read layout once: that single forced reflow is
+         what restarts the animation when the same direction repeats. */
+      countNow.classList.remove('is-fwd', 'is-back');
+      if (countPill) countPill.classList.remove('is-tick');
+      void countNow.offsetWidth;
+      countNow.classList.add(dir < 0 ? 'is-back' : 'is-fwd');
+      if (countPill) countPill.classList.add('is-tick');
+    }
+
     function now() {
       return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     }
@@ -1521,9 +1593,13 @@ document.addEventListener('DOMContentLoaded', function () {
        "next.complete" fast path swaps synchronously and the ghost can be handed
        over in the same frame). */
     function settle(n) {
+      var from = idx;
       cancelFlight(false);
       idx = n;
       lbIndex = n;
+      /* §PHOTOCOUNT — the swipe is the one path that both knows where it landed
+         and which way it travelled, so the badge rolls in that direction. */
+      paintCount(n, n > from ? 1 : -1);
       showFeatured(PHOTOS_FEAT[n]);
       for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === n);
       if (thumbs[n] && thumbs[n].scrollIntoView) {
@@ -1703,7 +1779,14 @@ document.addEventListener('DOMContentLoaded', function () {
       shell.classList.remove('is-dragging');
       disarm();
       easeX(img, 0, 0);
-      if (typeof n === 'number') idx = n;
+      if (typeof n === 'number') {
+        /* §PHOTOCOUNT — the pop flag is also the count's flag: the thumbnail tap
+           rolls the number (it rides the pop), the fullscreen close does not.
+           Direction is read before idx moves, or every jump would read as a
+           forward one. */
+        paintCount(n, n > idx ? 1 : -1, !pop);
+        idx = n;
+      }
       if (!pop || reduced) return;
       img.classList.remove('gallery-pop');
       void img.offsetWidth;            // force reflow so the animation replays
