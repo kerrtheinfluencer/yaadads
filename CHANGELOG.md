@@ -5,7 +5,20 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026) · latest
+## 👉 v2.21 — Swipe the photo right on an ad (Oct 2, 2026) · latest
+
+The big photo on an ad could not be swiped at all — you had to tap it open full screen first. Now it follows your thumb: drag it sideways and the next photo slides in already loaded, so you never get a blank frame. A quick flick moves on, a small nudge stays put, dragging up still scrolls the page, and the first and last photo push back instead of running off. On a computer you get arrow buttons on hover, and if you have turned animations off in your system settings, photos change instantly with no movement at all.
+
+- New: swipe the big photo on an ad directly — the next photo slides in beside the one you are leaving
+- New: the photo you are swiping to is already loaded, so it arrives painted instead of as a blank space
+- New: a quick flick changes photo, a small nudge springs back, and the thumbnail strip follows along
+- New: arrow buttons on the photo for desktop, hidden entirely on phones
+- New: closing full screen, or tapping a thumbnail, leaves the swipe on exactly the photo you are looking at
+- New: turning on your system's reduce-motion setting gives an instant photo change with no animation
+- Fixed: dragging up the photo now scrolls the page, where before the swipe could steal the gesture
+- Fixed: the first and last photo now push back at the ends instead of sliding away
+
+## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026)
 
 Photos now follow your thumb: swiping tracks your finger, a quick flick moves to the next photo and a small nudge stays put, you can pinch or double-tap to zoom, and drag a photo down to close it. Changing photo on a listing keeps what you are looking at until the next one has loaded — with a gentle shimmer instead of a blank space when it is slow — and the photos next to it warm up quietly, so tapping one is instant. Pulling down to refresh now takes a real, deliberate pull, and swiping back up cancels it. On a phone, the bar above the listings no longer pushes the page sideways.
 

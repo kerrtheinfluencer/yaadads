@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'photo-touch',
+  current: 'gallery-swipe',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -312,6 +312,26 @@ var SITE_UPDATES = {
         'Fixed: the bar above the listings no longer scrolls the page sideways on a phone, and the single-picture / grid switch is reachable on small screens',
         'Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one',
         'Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again',
+      ],
+      url: '/',
+    },
+    'gallery-swipe': {
+      version: 'v2.21',
+      icon: '👉',
+      title: 'Swipe the photo right on an ad',
+      cta: 'Try it',
+      ctaFn: 'openPostAd',
+      body: 'The big photo on an ad could not be swiped at all — you had to tap it open full screen first. Now it follows your thumb: drag it sideways and the next photo slides in already loaded, so you never get a blank frame. A quick flick moves on, a small nudge stays put, dragging up still scrolls the page, and the first and last photo push back instead of running off. On a computer you get arrow buttons on hover, and if you have turned animations off in your system settings, photos change instantly with no movement at all.',
+      date: 'Oct 2, 2026',
+      notes: [
+        'New: swipe the big photo on an ad directly — the next photo slides in beside the one you are leaving',
+        'New: the photo you are swiping to is already loaded, so it arrives painted instead of as a blank space',
+        'New: a quick flick changes photo, a small nudge springs back, and the thumbnail strip follows along',
+        'New: arrow buttons on the photo for desktop, hidden entirely on phones',
+        'New: closing full screen, or tapping a thumbnail, leaves the swipe on exactly the photo you are looking at',
+        'New: turning on your system\'s reduce-motion setting gives an instant photo change with no animation',
+        'Fixed: dragging up the photo now scrolls the page, where before the swipe could steal the gesture',
+        'Fixed: the first and last photo now push back at the ends instead of sliding away',
       ],
       url: '/',
     },

@@ -57,6 +57,25 @@ function check(name, ok, detail) {
     html.indexOf('changedTouches[0].clientX - sx') === -1);
   check('the generated lightbox owns touch (touch-action: none)', html.includes('touch-action: none'));
 
+  /* §PHOTOSWIPE — the inline gallery is what a visitor actually lands on:
+     openDetail() navigates to /ad/<slug>.html whenever that page exists. Until
+     now that photo was the one surface you could not swipe at all. */
+  check('the generated ad page carries the §PHOTOSWIPE engine', html.includes('§PHOTOSWIPE'));
+  check('the inline gallery claims the horizontal axis only (vertical still scrolls)',
+    /touch-action:\s*pan-y/.test(html));
+  check('the swipe stacks a second photo layer to slide into view',
+    html.includes('gallery-ghost') && html.includes('is-armed'));
+  check('the swipe rides the finger rather than snapping (translateX on both layers)',
+    html.includes('translate3d(') && html.includes('gallerySwipeSync'));
+  check('a native image drag cannot hijack the swipe',
+    html.includes('draggable="false"') && html.includes("addEventListener('dragstart'"));
+  check('the desktop arrows are display:none on touch, never invisible-but-tappable',
+    html.includes('@media (hover: none) { .gallery-arrow { display: none; } }'));
+  check('the swipe respects prefers-reduced-motion',
+    html.includes("matchMedia('(prefers-reduced-motion: reduce)')"));
+  check('the thumbnail tap and the lightbox close both re-seat the swipe index',
+    /gallerySwipeSync\(idx, true\)/.test(html) && /gallerySwipeSync\(lbIndex, false\)/.test(html));
+
   const css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   check('SPA: the lightbox image owns touch and zoom',
     css.includes('touch-action:none') && css.includes('.lightbox-img {'));
@@ -95,6 +114,15 @@ const TG = `window.__tg = function(type, pts) {
   var ev = new TouchEvent(type, { bubbles: true, cancelable: true,
     touches: lifted ? [] : touches, targetTouches: lifted ? [] : touches, changedTouches: touches });
   document.getElementById('lightbox').dispatchEvent(ev);
+  return true;
+}; true`;
+
+const PS = `window.__ps = function(type, x, y) {
+  var el = document.getElementById('mainImg');
+  var ev = new PointerEvent(type, { bubbles: true, cancelable: true,
+    pointerId: 1, pointerType: 'touch', isPrimary: true,
+    button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y });
+  el.dispatchEvent(ev);
   return true;
 }; true`;
 
@@ -271,6 +299,97 @@ const TG = `window.__tg = function(type, pts) {
       await evaluate('!document.querySelector(".gallery-main").classList.contains("is-loading")') === true);
     check('the photo swapped in',
       await evaluate('document.getElementById("featuredImg").getAttribute("src")') === '/splash-750x1334.png');
+
+    /* ── §PHOTOSWIPE — swipe the ad page's own photo ─────────────────────────
+       Before this, the inline gallery had a thumbnail strip and a fullscreen
+       lightbox but no swipe of its own, so flicking between a listing's photos
+       meant tapping into fullscreen first. These drive the real engine with
+       synthetic pointer events at a 390px viewport.
+       PHOTOS_FEAT on this page is icon-192 / apple-touch-icon / splash-750. */
+    await cdp('Page.navigate', { url: 'http://localhost:' + PORT + '/_tmp-ad-test.html' });
+    await sleep(1200);
+    await evaluate(PS);
+    check('the swipe engine mounted on the inline gallery',
+      await evaluate('typeof gallerySwipeSync === "function" && !!document.querySelector(".gallery-ghost")'));
+    check('the gallery claims the horizontal axis and leaves the vertical to the page',
+      await evaluate('getComputedStyle(document.getElementById("mainImg")).touchAction') === 'pan-y');
+
+    /* Real swipes are many frames long, not one synchronous block — the pauses
+       matter: without them every gesture reads as zero elapsed time and the
+       flick-velocity branch would fire on any nudge. */
+    const swipe = async pts => {
+      await evaluate('window.__ps("pointerdown", ' + pts[0][0] + ', ' + pts[0][1] + '); true');
+      for (let i = 1; i < pts.length - 1; i++) {
+        await evaluate('window.__ps("pointermove", ' + pts[i][0] + ', ' + pts[i][1] + '); true');
+        await sleep(35);
+      }
+      const last = pts[pts.length - 1];
+      await evaluate('window.__ps("pointerup", ' + last[0] + ', ' + last[1] + '); true');
+    };
+    const src = () => evaluate('document.getElementById("featuredImg").getAttribute("src")');
+    const P0 = '/icon-192.png', P1 = '/apple-touch-icon.png', P2 = '/splash-750x1334.png';
+
+    /* A decisive left drag changes the photo, with the finger. A browser
+       synthesises its click within a few ms of the release, so fire it right
+       here — that click is what the swipe engine has to swallow. */
+    await swipe([[300, 300], [240, 301], [170, 301], [100, 301]]);
+    await evaluate('document.getElementById("featuredImg").click(); true');
+    await sleep(650);
+    check('a decisive swipe advances the inline photo', await src() === P1, 'src=' + await src());
+    check('the swipe carries the active thumbnail with it',
+      await evaluate('document.querySelectorAll(".thumb")[1].classList.contains("active")') === true);
+    check('the swipe keeps the fullscreen index in step (a tap opens the right photo)',
+      await evaluate('lbIndex') === 1, 'lbIndex=' + await evaluate('lbIndex'));
+    check('the photo settles back to rest, not stranded mid-transform',
+      await evaluate('document.getElementById("featuredImg").style.transform') === '');
+    check('the click left behind by a swipe is swallowed, not opened as fullscreen',
+      await evaluate('document.getElementById("lightbox").classList.contains("open")') === false);
+
+    /* Back the other way — proves the index really tracked, rather than the
+       second swipe restarting from photo 0. */
+    await swipe([[100, 300], [180, 301], [250, 301], [320, 301]]);
+    await sleep(650);
+    check('swiping back returns to the previous photo', await src() === P0, 'src=' + await src());
+
+    /* A nudge is not a swipe. */
+    await swipe([[300, 300], [295, 301], [290, 302]]);
+    await sleep(600);
+    check('a small drift springs back without changing the photo',
+      await src() === P0, 'src=' + await src());
+
+    /* Vertical drags belong to the page, not the gallery. */
+    await swipe([[300, 300], [303, 250], [306, 180], [308, 120]]);
+    await sleep(600);
+    check('a vertical drag scrolls the page instead of changing the photo',
+      await src() === P0, 'src=' + await src());
+
+    /* The first photo has nowhere to go — it must rubber-band, not run off. */
+    await swipe([[80, 300], [160, 301], [240, 301], [320, 301]]);
+    await sleep(650);
+    check('the first photo rubber-bands instead of running off the end',
+      await src() === P0, 'src=' + await src());
+
+    /* A tap is still a tap. */
+    await evaluate('window.__ps("pointerdown", 200, 300); window.__ps("pointerup", 200, 300); true');
+    await sleep(80);
+    await evaluate('document.getElementById("featuredImg").click(); true');
+    await sleep(150);
+    check('a tap still opens fullscreen',
+      await evaluate('document.getElementById("lightbox").classList.contains("open")') === true);
+    check('fullscreen opens on the photo the swipe left us on', await evaluate('lbIndex') === 0);
+
+    /* Closing fullscreen must re-seat the swipe engine on whatever photo the
+       visitor swiped to in there — otherwise the next inline swipe jumps from
+       a photo they left several swipes ago. */
+    await evaluate('lbNav(1); lbNav(1); true');
+    await sleep(80);
+    await evaluate('closeLightbox(); true');
+    await sleep(150);
+    check('closing fullscreen syncs the inline photo back', await src() === P2, 'src=' + await src());
+    await swipe([[300, 300], [240, 301], [170, 301], [100, 301]]);
+    await sleep(650);
+    check('a swipe from the last photo leaves it alone (no running off the end)',
+      await src() === P2, 'src=' + await src());
   } catch (e) {
     console.error('ERROR: ' + e.message);
     failed++;
