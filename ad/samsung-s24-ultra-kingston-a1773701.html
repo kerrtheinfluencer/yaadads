@@ -340,9 +340,13 @@
   .gallery-main > img {
     position: absolute; top: 0; left: 0;
     cursor: grab;
-    will-change: transform;
   }
   .gallery-main.is-dragging > img { cursor: grabbing; }
+  /* §PHOTOSWIPE — promotion is scoped to the gesture. Held permanently it keeps
+     two full-size layers on their own compositor layers for the whole life of
+     the page, which is real memory on a page most visitors never swipe at. */
+  .gallery-main.is-dragging > img,
+  .gallery-main.is-travel > img { will-change: transform; }
   /* The incoming layer. Parked one screen-width away and revealed by the
      swipe; visibility rather than opacity so it costs nothing while idle. */
   .gallery-main > img.gallery-ghost { visibility: hidden; pointer-events: none; }
@@ -1252,12 +1256,22 @@ document.addEventListener('DOMContentLoaded', function () {
      loading shimmer never appears. One ghost rather than N slides, so a
      twenty-photo listing does not build twenty nodes.
 
+     The two layers TILE the frame: the ghost rests exactly one frame-width
+     from #featuredImg, on the side the incoming photo is coming from, so at
+     every point of a drag the frame is covered edge to edge and the seam
+     between the two photos sits exactly under the finger. (They used to be
+     parked on the same side, which left the frame's trailing edge empty for
+     the whole of a drag and only filled in at the instant of release.)
+
      Rules kept deliberately:
        • the axis locks horizontal only — touch-action: pan-y hands the
          vertical back to the page, so a finger dragged up the photo scrolls
          the ad rather than being swallowed,
        • the first and last photo rubber-band instead of running off the end,
+         with resistance that hardens the further it is pulled,
        • distance OR flick velocity commits, so a short quick flick counts,
+         and the travel time is solved from that velocity so a flick keeps the
+         speed the finger left it at,
        • a tap is never a swipe, so the existing onclick="openLightbox(lbIndex)"
          still opens fullscreen — and a swipe swallows that same click so a
          committed swipe does not,
@@ -1269,20 +1283,40 @@ document.addEventListener('DOMContentLoaded', function () {
     var img = document.getElementById('featuredImg');
     if (!shell || !img || !PHOTOS_FEAT || PHOTOS_FEAT.length < 2) return;
 
-    var SLOP = 8;        // px of travel before the horizontal axis is claimed
-    var COMMIT = 48;     // px of travel that always changes photo
-    var FLICK = 16;      // px that changes photo if released fast enough
-    var FLICK_V = 0.35;  // px/ms — the "fast enough" line
-    var EDGE = 0.32;     // how much of the drag survives past the first/last
-    var SETTLE = 340;    // ms; must match the transform transition in place()
+    /* ── tuning ───────────────────────────────────────────────────────────
+       SLOP        px of travel before the horizontal axis is claimed
+       COMMIT      px of travel that always changes photo
+       FLICK       px that changes photo if released fast enough, at FLICK_V
+       EDGE        the furthest a rubber-band can ever stretch, as a fraction
+                   of the frame width
+       V_FLOOR     the slowest release still worth reading as a speed, px/ms
+       V_WINDOW    ms of gesture the release velocity is averaged over
+       MIN_WIN     ms — a window narrower than this is jitter, not a measurement
+       D_MIN/D_MAX bounds on a commit's travel time, ms
+       S_MIN/S_MAX bounds on a spring-back's, ms
+       GRACE       ms a commit will wait for a photo that is still downloading
+       BACKSTOP    ms past a transition at which transitionend stops being
+                   trusted and the hand-off is taken on the timer instead */
+    var SLOP = 8, COMMIT = 48, FLICK = 16, FLICK_V = 0.35, EDGE = 0.32;
+    var V_FLOOR = 0.25, V_WINDOW = 90, MIN_WIN = 24, V_SAMPLES = 16;
+    var D_MIN = 190, D_MAX = 520, S_MIN = 150, S_MAX = 420;
+    var GRACE = 350, BACKSTOP = 140;
+    /* EASE carries a flick: it opens at EASE_SLOPE times its own average speed,
+       which is what lets travelTime() solve the duration for the release
+       velocity. EASE_BOUNCE is for the frame edge ONLY, where a few px of
+       overshoot is the whole point of a bounce and nothing is tiling against
+       it — anywhere else an overshoot would pull the two layers apart and open
+       a seam between them. */
+    var EASE = 'cubic-bezier(.45,.6,.2,1)';
+    var EASE_BOUNCE = 'cubic-bezier(.45,1.3,.3,1)';
+    var EASE_SLOPE = 1.33;   // d(y)/d(x) of EASE at t=0 — keep in step with EASE
 
     var thumbs = document.querySelectorAll('.gallery-thumbs .thumb');
     var idx = 0;         // which photo the inline gallery is showing
     var ghostIdx = -1;   // which photo the ghost layer holds (-1 = idle)
-    var pending = -1;    // photo a committed slide is travelling toward
+    var flight = null;   // the transition currently in flight, if any
     var drag = null;
     var probing = false;   // a neighbour photo is mid-download right now
-    var settleTimer = 0;
     var eat = false;
     var reduced = false;
     try {
@@ -1299,23 +1333,106 @@ document.addEventListener('DOMContentLoaded', function () {
     function now() {
       return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     }
+    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+    function width() { return shell.offsetWidth || 1; }
 
-    /* Write a layer's position. Only ever manage the transform transition:
-       writing a bare "transition" here would silently cancel the stylesheet's
-       opacity fade on #featuredImg for the rest of the page's life. */
-    function place(el, x, anim) {
-      if (anim) el.style.transition = 'opacity .2s ease, transform ' + SETTLE + 'ms cubic-bezier(.22,.68,.28,1)';
-      else el.style.removeProperty('transition');
-      el.style.transform = x ? 'translate3d(' + x.toFixed(1) + 'px,0,0)' : '';
+    /* Where the ghost rests: exactly one frame-width from #featuredImg, on the
+       side the incoming photo is coming from (dir 1 is a leftward drag, so it
+       comes in from the right). This one line is what makes the pair tile the
+       frame at every point of a drag. */
+    function ghostRest(dir, w) { return dir * w; }
+
+    /* A layer's current X, as the browser is actually painting it — how a drag
+       takes over a slide that is still travelling without moving the photo.
+       Parsed by hand rather than with a regex: this script is emitted from a
+       template literal, where a "\(" in a pattern would collapse to "(" and
+       quietly turn the pattern into a different one. */
+    function readX(el) {
+      var t = getComputedStyle(el).transform;
+      if (!t || t === 'none') return 0;
+      var a = t.indexOf('('), b = t.lastIndexOf(')');
+      if (a < 0 || b < a) return 0;
+      var n = t.slice(a + 1, b).split(',');
+      return (n.length === 16 ? parseFloat(n[12]) : parseFloat(n[4])) || 0;
     }
 
-    /* Park the ghost on the neighbour about to be revealed. The optional "cb" runs once the
-       photo is decoded, which is how the desktop arrows can wait for a cold
-       photo instead of skipping the animation whenever one is not cached. */
+    /* Position a layer for a frame of a drag: no transform transition, so the
+       photo is under the finger rather than easing after it. The opacity fade is
+       still named explicitly — writing a bare "transition" here would silently
+       cancel the stylesheet's fade on #featuredImg for the rest of the page. */
+    function dragX(el, x) {
+      el.style.transition = 'opacity .2s ease';
+      el.style.transform = x ? 'translate3d(' + x.toFixed(2) + 'px,0,0)' : '';
+    }
+    /* Position a layer with a transition, or instantly when dur is 0. At rest the
+       transition property is dropped altogether, so a layer sitting still is
+       genuinely still and the stylesheet's own fade comes back. */
+    function easeX(el, x, dur, easing) {
+      if (dur) el.style.transition = 'opacity .2s ease, transform ' + dur + 'ms ' + (easing || EASE);
+      else el.style.removeProperty('transition');
+      el.style.transform = x ? 'translate3d(' + x.toFixed(2) + 'px,0,0)' : '';
+    }
+
+    /* Progressive edge resistance: 1:1 for the first few px, so the photo still
+       answers the finger straight away, then hardening with distance and
+       asymptotic at EDGE of the width, so it can never actually be pulled off
+       the frame. A flat fraction of the drag (the obvious version) instead feels
+       slack at the start and lets a long pull travel absurdly far. */
+    function rubber(over, w) {
+      var a = w * EDGE;
+      return a * over / (over + a);
+    }
+
+    /* Pointer samples, capped: velocity() only ever looks back V_WINDOW ms, and
+       a slow drag would otherwise collect hundreds of them. */
+    function push(d, x, t) {
+      d.samples.push({ x: x, t: t });
+      if (d.samples.length > V_SAMPLES) d.samples.shift();
+    }
+    /* Release velocity in px/ms, signed with the travel, averaged over the last
+       V_WINDOW ms of the gesture. Averaged rather than read off the last two
+       samples because one jittery frame otherwise reads as a flick — and the
+       window is widened back past MIN_WIN whenever it would be too narrow to
+       measure anything at all. */
+    function velocity(d) {
+      var s = d.samples, n = s.length, last = s[n - 1];
+      if (n < 2) return 0;
+      var first = s[n - 2];
+      for (var i = n - 2; i >= 0; i--) {
+        var dt = last.t - s[i].t;
+        if (dt > V_WINDOW) break;
+        first = s[i];
+        if (dt >= MIN_WIN) break;
+      }
+      return (last.x - first.x) / Math.max(1, last.t - first.t);
+    }
+
+    /* Turn a release into a time instead of using a constant. A flick that left
+       the finger at 1.5 px/ms should keep going at about that speed rather than
+       decelerating the moment it leaves the hand, so the transition has to last
+       long enough for its opening speed — EASE_SLOPE times its own average — to
+       still match the finger. Clamped at both ends: shorter snaps, longer crawls
+       through the tail of the curve. */
+    function travelTime(remaining, v) {
+      return clamp(EASE_SLOPE * remaining / Math.max(Math.abs(v), V_FLOOR), D_MIN, D_MAX);
+    }
+    /* Coming back has no momentum to carry, so only the distance matters — and
+       that is what springs a 4px nudge home in 150ms instead of spending the
+       third of a second a fixed duration would have. */
+    function snapTime(distance, v) {
+      return clamp(distance / Math.max(Math.abs(v), V_FLOOR), S_MIN, S_MAX);
+    }
+
+    /* Park the ghost on the neighbour about to be revealed. The optional "cb"
+       runs once the photo is decoded, which is how the desktop arrows can wait
+       for a cold photo instead of skipping the animation whenever one is not
+       cached. A ghost that has to change photo is hidden first, so a re-armed
+       gesture can never flash the previous neighbour across the frame. */
     function arm(dir, cb) {
       var want = idx + dir;
       if (want < 0 || want >= PHOTOS_FEAT.length) return false;
       if (ghostIdx === want && ghost.getAttribute('src')) return true;
+      ghost.classList.remove('is-armed');
       ghostIdx = want;
       var probe = new Image();
       probing = true;
@@ -1334,7 +1451,7 @@ document.addEventListener('DOMContentLoaded', function () {
       ghostIdx = -1;
       probing = false;
       ghost.classList.remove('is-armed');
-      place(ghost, 0, false);
+      easeX(ghost, 0, 0);
     }
     function armed() { return ghost.classList.contains('is-armed'); }
     /* True once the ghost is painted, and also while its photo is still on
@@ -1342,10 +1459,55 @@ document.addEventListener('DOMContentLoaded', function () {
        photo that is merely not-quite-cached yet should still count. */
     function coming() { return armed() || probing; }
 
+    /* ── a transition in flight ────────────────────────────────────────────
+       The hand-off to the photo swap is driven by the transition actually
+       finishing rather than by a timer guessing at it: the duration is now
+       solved from the release velocity, so there is no constant left to guess
+       with, and a transition that is interrupted or throttled would otherwise
+       strand the index and the two layers out of step. The timer is only the
+       backstop for when transitionend never arrives at all. */
+    function fly(dur, done, holds) {
+      cancelFlight(true);
+      var f = { dur: dur, done: done, holds: !!holds, over: false, timer: 0, onEnd: null };
+      flight = f;
+      shell.classList.add('is-travel');
+      function finish() {
+        if (f.over) return;
+        f.over = true;
+        if (flight === f) flight = null;
+        clearTimeout(f.timer);
+        img.removeEventListener('transitionend', f.onEnd);
+        shell.classList.remove('is-travel');
+        f.done();
+      }
+      f.onEnd = function (e) {
+        if (e.target === img && e.propertyName === 'transform') finish();
+      };
+      img.addEventListener('transitionend', f.onEnd);
+      f.timer = setTimeout(finish, dur + BACKSTOP);
+    }
+    /* Drop the in-flight transition. "land" runs its hand-off first, for when
+       the layers are about to be re-used and must not be left half-swapped;
+       false abandons it, which the caller only does when it is taking the
+       layers over itself. */
+    function cancelFlight(land) {
+      var f = flight;
+      if (!f) return;
+      flight = null;
+      f.over = true;
+      clearTimeout(f.timer);
+      img.removeEventListener('transitionend', f.onEnd);
+      shell.classList.remove('is-travel');
+      if (land) f.done();
+    }
+
     /* Land on photo "n". The photo itself is swapped by showFeatured(), which
        keeps its existing decode-before-swap behaviour — and here it is always
-       a cache hit, because the ghost just downloaded this exact URL. */
+       a cache hit (the ghost just downloaded this exact URL, so showFeatured's
+       "next.complete" fast path swaps synchronously and the ghost can be handed
+       over in the same frame). */
     function settle(n) {
+      cancelFlight(false);
       idx = n;
       lbIndex = n;
       showFeatured(PHOTOS_FEAT[n]);
@@ -1354,18 +1516,19 @@ document.addEventListener('DOMContentLoaded', function () {
         try { thumbs[n].scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
       }
       disarm();
-      place(img, 0, false);
+      easeX(img, 0, 0);
     }
 
-    /* Carry the incoming photo all the way in, then hand over to settle(). Waits
-       for the ghost if its photo is still arriving, but only briefly: past
-       GRACE the gesture snaps back rather than leaving the photo parked
-       mid-gesture waiting on a slow connection. */
-    var GRACE = 350;
-    function glide(dir) {
-      var w = shell.offsetWidth || 1, target = idx + dir;
+    /* Carry the incoming photo all the way in, then hand over to settle().
+       "state" is what the layers are doing right now — a drag passes its own, the
+       arrows pass a rest state — so a commit can be measured from a slide that
+       was already under way. Waits for the ghost if its photo is still arriving,
+       but only GRACE ms: past that the gesture springs back rather than leaving
+       the photo parked mid-slide on a slow connection. */
+    function glide(state, v) {
+      var dir = state.dir, w = state.w || width(), target = idx + dir;
       if (target < 0 || target >= PHOTOS_FEAT.length) return;
-      var gave = setTimeout(function () { spring(-w * dir); }, GRACE);
+      var gave = setTimeout(function () { springBack(state, v); }, GRACE);
       if (!arm(dir, ready)) { clearTimeout(gave); return; }
       /* arm() only calls back from a fresh decode, so a ghost that is already
          painted is started here instead — exactly one path either way. */
@@ -1373,34 +1536,30 @@ document.addEventListener('DOMContentLoaded', function () {
       function ready() {
         clearTimeout(gave);
         if (reduced) { settle(target); return; }
-        place(img, -w * dir, true);
-        place(ghost, 0, true);
-        pending = target;
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(function () {
-          settleTimer = 0; pending = -1; settle(target);
-        }, SETTLE + 30);
+        /* Both layers travel the same distance over the same time, so they stay
+           tiled for the whole slide no matter how far along it already was. */
+        var remaining = Math.abs(-dir * w - state.x);
+        var dur = travelTime(remaining, v);
+        easeX(img, -dir * w, dur);
+        easeX(ghost, 0, dur);
+        fly(dur, function () { settle(target); }, true);
       }
     }
 
-    /* Spring back onto the photo the drag started on. */
-    function spring(rest) {
-      place(img, 0, true);
-      place(ghost, rest, true);
-      if (reduced) { disarm(); return; }
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(disarm, SETTLE + 30);
-    }
-
-    /* Finish a slide that is still travelling, so a fresh drag never starts
-       from a half-moved pair of layers. */
-    function flush() {
-      if (pending < 0) return;
-      var t = pending;
-      pending = -1;
-      clearTimeout(settleTimer);
-      settleTimer = 0;
-      settle(t);
+    /* Let the photo go back to rest. Both layers start from wherever they are
+       already painted — only the target is written — so a spring can never open
+       with a jump. */
+    function springBack(state, v) {
+      var dir = state.dir, w = state.w || width();
+      if (reduced) { easeX(img, 0, 0); disarm(); return; }
+      var dur = snapTime(Math.abs(state.x), v);
+      /* A release off the end of the strip bounces: the frame's own background is
+         already showing behind a pulled photo, so a few px past rest reads as the
+         photo rebounding off the edge. Anywhere else the two layers are tiling,
+         and an overshoot there would tear a seam between them. */
+      easeX(img, 0, dur, dir ? EASE : EASE_BOUNCE);
+      easeX(ghost, dir ? ghostRest(dir, w) : 0, dur, dir ? EASE : EASE_BOUNCE);
+      fly(dur, disarm, false);
     }
 
     /* A committed swipe still fires a click on the image, and that click is
@@ -1429,33 +1588,62 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
+    /* Hand the finger control, from wherever it is now. */
+    function seat() {
+      var d = drag;
+      if (!d || !d.held) return;
+      d.held = false;
+      d.x = d.xPend; d.y = d.yPend;
+      d.t0 = now();
+      d.samples = [{ x: d.x, t: d.t0 }];
+      warm();
+    }
+
     shell.addEventListener('pointerdown', function (e) {
       if (!e.isPrimary || e.button) return;
-      flush();
-      clearTimeout(settleTimer);
-      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t0: now(), locked: false, dir: 0, w: 0 };
+      /* A slide that still has real travel left in it keeps the finger's launch:
+         the layers are mid-transition, so re-seating now would jump the photo.
+         The gesture waits it out — a few frames — and then starts from wherever
+         the finger actually is. A slide that is all but home is not worth waiting
+         for, so the drag takes it over instead. */
+      var held = !!flight && flight.holds && Math.abs(readX(img)) > SLOP * 2;
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, xPend: e.clientX, yPend: e.clientY,
+               t0: now(), locked: false, dir: 0, w: 0, base: 0, lastX: 0, held: held,
+               samples: [{ x: e.clientX, t: now() }] };
       try { shell.setPointerCapture(e.pointerId); } catch (err) {}
-      warm();
+      if (!held) warm();
     });
 
     shell.addEventListener('pointermove', function (e) {
       if (!drag || e.pointerId !== drag.id) return;
-      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.locked) {
+      if (drag.held) {
+        drag.xPend = e.clientX; drag.yPend = e.clientY;
+        if (flight) return;                 // the slide is still landing
+        seat();                             // it landed: the finger takes over
+      }
+      var d = drag, dx = e.clientX - d.x, dy = e.clientY - d.y;
+      push(d, e.clientX, now());
+      if (!d.locked) {
         if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
         /* Vertical, or mostly vertical, belongs to the page rather than to us.
-           Bail before arming anything, so a scroll never disturbs the photo. */
+           Bail before anything is armed, so a scroll never disturbs the photo. */
         if (Math.abs(dx) <= Math.abs(dy)) { drag = null; return; }
-        drag.locked = true;
-        drag.w = shell.offsetWidth || 1;
-        drag.dir = dx < 0 ? 1 : -1;
+        d.locked = true;
+        d.w = width();
+        d.dir = dx < 0 ? 1 : -1;
+        /* Taking over a slide that was already all but home: keep the layers
+           where they are actually painting, because replacing a transition
+           property snaps it to its end value — which is the jump this avoids. */
+        if (flight) { d.base = readX(img); cancelFlight(false); }
         shell.classList.add('is-dragging');
-        if (!arm(drag.dir)) drag.dir = 0;   // first/last photo: rubber-band only
+        if (!arm(d.dir)) { d.dir = 0; disarm(); }   // first/last: rubber-band only
       }
       if (e.cancelable) e.preventDefault();
-      if (!drag.dir) { place(img, dx * EDGE, false); return; }
-      place(img, dx, false);
-      place(ghost, -drag.w * drag.dir + dx, false);
+      var travel = e.clientX - d.x;
+      d.lastX = d.base + (d.dir ? travel
+                : (travel < 0 ? -1 : 1) * rubber(Math.abs(travel), d.w));
+      dragX(img, d.lastX);
+      if (d.dir) dragX(ghost, ghostRest(d.dir, d.w) + d.lastX);
     });
 
     function endDrag(e) {
@@ -1464,23 +1652,27 @@ document.addEventListener('DOMContentLoaded', function () {
       drag = null;
       shell.classList.remove('is-dragging');
       try { shell.releasePointerCapture(d.id); } catch (err) {}
-      /* No axis lock means this was a tap — leave it be, so the existing
-         onclick="openLightbox(lbIndex)" still opens fullscreen. */
-      if (!d.locked) return;
-      var dx = e ? e.clientX - d.x : 0;
-      var dt = Math.max(1, now() - d.t0);
-      var v = Math.abs(dx) / dt;
-      var far = Math.abs(dx) >= COMMIT || (Math.abs(dx) >= FLICK && v >= FLICK_V);
-      if (d.dir && far && coming()) { armEat(); glide(d.dir); return; }
-      spring(d.dir ? -d.w * d.dir : 0);
+      /* Held behind a slide that was still landing, or never past the tap
+         threshold: there is nothing to commit, and a tap must stay a tap so the
+         existing onclick="openLightbox(lbIndex)" still opens fullscreen. */
+      if (d.held || !d.locked) return;
+      if (e && e.clientX !== undefined) push(d, e.clientX, now());
+      var v = velocity(d);
+      var dx = (e && e.clientX !== undefined ? e.clientX : d.x) - d.x;
+      var far = Math.abs(dx) >= COMMIT || (Math.abs(dx) >= FLICK && Math.abs(v) >= FLICK_V);
+      var state = { dir: d.dir, x: d.lastX, w: d.w };
+      if (d.dir && far && coming()) { armEat(); glide(state, Math.abs(v)); return; }
+      springBack(state, Math.abs(v));
     }
     shell.addEventListener('pointerup', endDrag);
     shell.addEventListener('pointercancel', function (e) {
       if (!drag || (e && e.pointerId !== drag.id)) return;
-      var rest = drag.dir ? -drag.w * drag.dir : 0;
+      var d = drag;
       drag = null;
       shell.classList.remove('is-dragging');
-      spring(rest);
+      /* A cancel carries no release velocity, so the spring is handed a nominal
+         brisk one and simply puts the photo back promptly. */
+      if (!d.held && d.locked) springBack({ dir: d.dir, x: d.lastX, w: d.w }, 0.6);
     });
     /* A native image drag would hijack the pointer mid-swipe on desktop. */
     shell.addEventListener('dragstart', function (e) { e.preventDefault(); });
@@ -1490,11 +1682,13 @@ document.addEventListener('DOMContentLoaded', function () {
        is a re-seated index and no half-finished slide — otherwise the next
        swipe would carry on from a photo the visitor left several swipes ago. */
     window.gallerySwipeSync = function (n, pop) {
-      flush();
-      clearTimeout(settleTimer);
-      settleTimer = 0;
+      /* A drag in flight is abandoned rather than landed: both callers set the
+         photo themselves, so finishing a slide here would only fight them. */
+      drag = null;
+      cancelFlight(false);
+      shell.classList.remove('is-dragging');
       disarm();
-      place(img, 0, false);
+      easeX(img, 0, 0);
       if (typeof n === 'number') idx = n;
       if (!pop || reduced) return;
       img.classList.remove('gallery-pop');
@@ -1504,7 +1698,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* Desktop arrows — the same journey as a swipe, so the two paths stay
        honest. CSS drops them entirely on touch, where the swipe is the
-       control, so they can never sit invisible over a photo. */
+       control, so they can never sit invisible over a photo. A click has no
+       release velocity to carry, so it is handed a nominal brisk one —
+       otherwise travelTime() would stretch the slide out to its longest. */
+    var CLICK_V = 1.2;
     var arrows = document.createElement('div');
     arrows.className = 'gallery-arrows';
     var prev = document.createElement('button');
@@ -1519,8 +1716,8 @@ document.addEventListener('DOMContentLoaded', function () {
     arrows.appendChild(prev);
     arrows.appendChild(next);
     shell.appendChild(arrows);
-    prev.addEventListener('click', function () { glide(-1); });
-    next.addEventListener('click', function () { glide(1); });
+    prev.addEventListener('click', function () { glide({ dir: -1, x: 0, w: width() }, CLICK_V); });
+    next.addEventListener('click', function () { glide({ dir: 1, x: 0, w: width() }, CLICK_V); });
   })();
 
   // ── Push AdSense ──────────────────────────────────────────────
