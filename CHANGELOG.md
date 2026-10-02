@@ -24,6 +24,17 @@ Photos now follow your thumb: swiping tracks your finger, a quick flick moves to
 - Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one
 - Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again
 
+## 👍 v2.19 — Easier to tap, and a quieter bug hunt (Sep 28, 2026)
+
+The category buttons across the top are bigger now — a proper 44px target instead of a 34px sliver, so they are far easier to hit on a phone. We also went bug hunting and closed three real ones: a newly posted ad sometimes would not open at all, your name and listing titles in a chat are now escaped everywhere they appear (an old page could run code that a member typed into their name), and a link copied out of a chat now carries the full web address instead of a broken half-link.
+
+- New: category buttons are now a full 44px tap target on every screen size
+- Fixed: tapping a brand-new ad could do nothing at all while its page was still being generated
+- Fixed: member names, listing titles and message text in a chat are escaped everywhere they are shown
+- Fixed: a listing link copied out of a chat now shares the full yaadadz.com address
+- Removed: an old hidden admin page that was only ever kept out of search results
+- Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again
+
 ## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026)
 
 The home feed is no longer a queue of whatever was posted last. Every listing is now ranked for you: real photos, a real description and real interest lift a post, freshness fades after the first day, and the top of the page always spreads across categories so no one seller can take it over. Every card tells you why you are seeing it, and Newest First is still one tap away in the sort box.
@@ -36,26 +47,6 @@ The home feed is no longer a queue of whatever was posted last. Every listing is
 - New: nothing is ever hidden — Newest First shows the exact same listings, and your choice is remembered
 - Your signals stay on your phone — what you open, save and search is never uploaded anywhere
 
-## 👍 v2.19 — Easier to tap, and a quieter bug hunt (Sep 28, 2026)
-
-The category buttons across the top are bigger now — a proper 44px target instead of a 34px sliver, so they are far easier to hit on a phone. We also went bug hunting and closed three real ones: a newly posted ad sometimes would not open at all, your name and listing titles in a chat are now escaped everywhere they appear (an old page could run code that a member typed into their name), and a link copied out of a chat now carries the full web address instead of a broken half-link.
-
-- New: category buttons are now a full 44px tap target on every screen size
-- Fixed: tapping a brand-new ad could do nothing at all while its page was still being generated
-- Fixed: member names, listing titles and message text in a chat are escaped everywhere they are shown
-- Fixed: a listing link copied out of a chat now shares the full yaadadz.com address
-- Removed: an old hidden admin page that was only ever kept out of search results
-- Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again
-
-## 🧹 v2.15 — We can take down junk posts now (Sep 27, 2026)
-
-We can now hide or delete any post that is a scam, a duplicate, or just junk. Hiding takes a post off the site straight away but keeps it, so a mistake can be undone. If a member is spamming, one tap clears everything they posted.
-
-- Bad posts now come off the homepage, search, categories and the AI chat immediately
-- Hidden posts lose their own web page and their spot in Google too, not just from the app
-- One tap clears every post from the same member when someone is spamming
-- Nothing is destroyed by hiding — a mistake can always be put back
-
 ## 🚩 v2.16 — Report a post — and this time we actually read them (Sep 27, 2026)
 
 Every ad now has a "Report this listing" link at the bottom. Tap it, say why (scam, duplicate, wrong category, already sold, or offensive) and it goes straight to our moderation queue. Please use it. Reports are the fastest way to get a bad post off the site.
@@ -65,6 +56,15 @@ Every ad now has a "Report this listing" link at the bottom. Tap it, say why (sc
 - Five reasons to pick from: scam, duplicate, wrong category, already sold, or offensive
 - Each ad is only counted once per device, so nobody can flood the queue by accident
 - Fixed: reporting used to save to your own phone and go nowhere. It now really reaches us
+
+## 🧹 v2.15 — We can take down junk posts now (Sep 27, 2026)
+
+We can now hide or delete any post that is a scam, a duplicate, or just junk. Hiding takes a post off the site straight away but keeps it, so a mistake can be undone. If a member is spamming, one tap clears everything they posted.
+
+- Bad posts now come off the homepage, search, categories and the AI chat immediately
+- Hidden posts lose their own web page and their spot in Google too, not just from the app
+- One tap clears every post from the same member when someone is spamming
+- Nothing is destroyed by hiding — a mistake can always be put back
 
 ## ✉️ v2.17 — Messaging got rebuilt — and it actually works now (Sep 26, 2026)
 

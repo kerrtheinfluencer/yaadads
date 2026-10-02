@@ -333,10 +333,21 @@ function _updateDateNum(s) {
   var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return (+m[3]) * 10000 + (MON.indexOf(m[1]) + 1) * 100 + (+m[2]);
 }
+// Newest first, and within a single day the HIGHER version first — otherwise
+// two updates published the same date fall back to declaration order, which put
+// v2.19 below v2.18 in both this list and the generated CHANGELOG.md.
+function _updateVersionNum(v) {
+  var m = String(v || '').match(/^v?(\d+)\.(\d+)/);
+  if (!m) return 0;
+  return (+m[1]) * 10000 + (+m[2]) * 100;
+}
 function siteUpdateList() {
   var items = SITE_UPDATES.items || {};
   var out = Object.keys(items).map(function(k){ return { key: k, meta: items[k] }; });
-  out.sort(function(a, b) { return _updateDateNum(b.meta.date) - _updateDateNum(a.meta.date); });
+  out.sort(function(a, b) {
+    return (_updateDateNum(b.meta.date) - _updateDateNum(a.meta.date)) ||
+           (_updateVersionNum(b.meta.version) - _updateVersionNum(a.meta.version));
+  });
   return out;
 }
 

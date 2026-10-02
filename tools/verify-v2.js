@@ -415,6 +415,28 @@ check('no release note is dated in the future (' + datedNotes + ' dated notes)',
 check('the release-note privacy harness actually runs (not just documented)',
   pkgRaw.includes('tools/test-changelog-privacy.js'));
 
+// 12c. The RENDERED changelog must really be newest-first: by date, then by
+//      version within a single day. Several updates share dates, and a sort on
+//      date alone silently falls back to declaration order — which is how v2.19
+//      ended up listed below v2.18. Reading the rendered file (not the source)
+//      is the point: this is the order members actually see.
+const clText = fs.readFileSync('CHANGELOG.md', 'utf8');
+const heads = [...clText.matchAll(/^## .*?(v(\d+)\.(\d+)).*?\((\w{3}) (\d{1,2}), (\d{4})\)/gm)];
+let orderBreaks = [];
+let prevKey = Infinity;
+heads.forEach((h, i) => {
+  const mi = MONTHS.indexOf(h[4]);
+  const dKey = mi === -1 ? 0 : (+h[6]) * 10000 + (mi + 1) * 100 + (+h[5]);
+  const vKey = (+h[2]) * 10000 + (+h[3]) * 100;
+  const key = dKey * 100000 + vKey;
+  if (key > prevKey) orderBreaks.push('entry ' + (i + 1) + ' (' + h[1] + ', ' + h[4] + ' ' + h[5] + ') is out of order');
+  prevKey = key;
+});
+check('the rendered changelog is ordered newest-first, then by version (' + heads.length + ' entries)',
+  heads.length > 0 && orderBreaks.length === 0, orderBreaks.slice(0, 3).join(' | '));
+check('the in-app history overlay uses the same version tiebreak',
+  /_updateVersionNum\(b\.meta\.version\) - _updateVersionNum\(a\.meta\.version\)/.test(suSrc));
+
 // 13. cross-file global-scope collisions. Every <script src> file on index.html
 //     is a plain top-level script sharing ONE global scope, so if two of them
 //     declare the same top-level let/const/var the browser throws

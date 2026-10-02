@@ -64,6 +64,15 @@ function parseUpdates(src) {
     return (+dm[3]) * 10000 + (MON.indexOf(dm[1]) + 1) * 100 + (+dm[2]);
   };
 
+  /* 'v2.19' -> 21900. Used ONLY to break ties: several updates share a date
+     (a release often lands with its follow-ups the same day), and without this
+     the sort fell back to declaration order, which put v2.19 BELOW v2.18. */
+  const versionNum = (v) => {
+    const m = String(v || '').match(/^v?(\d+)\.(\d+)/);
+    if (!m) return 0;
+    return (+m[1]) * 10000 + (+m[2]) * 100;
+  };
+
   const items = entries.map((e) => ({
     id: e.id,
     version: str(e.body, 'version'),
@@ -74,7 +83,10 @@ function parseUpdates(src) {
     notes: notes(e.body),
     current: e.id === cur,
   }));
-  items.sort((a, b) => dateNum(b.date) - dateNum(a.date));
+  // Newest first; within one day, the higher version first. Both the generated
+  // file and the in-app history overlay must agree — see siteUpdateList().
+  items.sort((a, b) => (dateNum(b.date) - dateNum(a.date)) ||
+                              (versionNum(b.version) - versionNum(a.version)));
   // Member-facing text only: reject entries that look like credentials,
   // internal paths or database internals before they reach the changelog.
   for (const it of items) {
