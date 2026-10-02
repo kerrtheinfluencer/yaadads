@@ -54,13 +54,12 @@ function renderLightbox() {
 
 function lbGoTo(i) { _lbIndex = i; renderLightbox(); }
 
-// Keyboard navigation
-document.addEventListener('keydown', function(e) {
-  if (!document.getElementById('lightbox').classList.contains('open')) return;
-  if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft') lbNav(-1);
-  if (e.key === 'ArrowRight') lbNav(1);
-});
+// NOTE: this used to ALSO register the lightbox keyboard handler (Escape /
+// ArrowLeft / ArrowRight). js/listings.js already owns that, guarded by
+// document._photoLbWired — and both listeners were live at once, so a single
+// ArrowRight called lbNav() TWICE and skipped a photo on desktop. Kept the
+// single owner in listings.js (it is where _lbPhotos/_lbIndex are declared);
+// never re-add a second handler here.
 
 // NOTE: the old first/last-touch swipe that lived here (a 50px drift on
 // touchend fired a nav, nothing followed the finger, no zoom) was replaced by

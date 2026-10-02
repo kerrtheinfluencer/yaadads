@@ -206,6 +206,19 @@ const TG = `window.__tg = function(type, pts) {
     check('the lightbox owns the touch surface (touch-action: none)',
       await evaluate('getComputedStyle(document.getElementById("lightbox")).touchAction') === 'none');
 
+    /* One keypress, one photo. js/listings.js and js/widgets-pwa.js both used
+       to register a document keydown handler, so a single ArrowRight called
+       lbNav() twice and skipped a photo on desktop. */
+    await open3();
+    await evaluate('document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })); true');
+    await sleep(60);
+    check('one ArrowRight moves exactly one photo', await evaluate('_lbIndex') === 1,
+      'index=' + await evaluate('_lbIndex'));
+    await evaluate('document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); true');
+    await sleep(60);
+    check('Escape closes the lightbox',
+      await evaluate('document.getElementById("lightbox").classList.contains("open")') === false);
+
     /* ── the INLINE gallery on a real generated ad page ──────────────────
        The user-visible path: not fullscreen, tap a thumbnail. This is what
        went dark for every ad page while the template emitted an invalid regex

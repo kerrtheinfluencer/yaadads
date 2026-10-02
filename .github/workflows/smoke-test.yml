@@ -152,6 +152,16 @@ jobs:
         timeout-minutes: 5
         run: npm run test:photo
 
+      # Responsive layout gate: hero height, 44px category tap targets, the live
+      # counters, the search collapse and — the one that used to fail on every
+      # run — a sustained horizontal overflow check at 390px. The results bar's
+      # control cluster was ~379px of non-wrapping flex, so a 390px phone gained
+      # a stray sideways scroll and a 320px phone could not reach the layout
+      # switch at all. It is green now, so it belongs in the gate.
+      - name: Run responsive hero layout tests
+        timeout-minutes: 5
+        run: npm run test:hero
+
       - name: Run AI chat regression tests (pure core + wiring)
         run: |
           node tools/test-chat-v2.js

@@ -172,4 +172,9 @@ async function waitForCdp() {
     }
     console.log('PASS: responsive hero, touch targets, counters, overflow and search collapse. Screenshots in ' + os.tmpdir());
   } finally { ws.close(); }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+// The spawned Chrome + dev server are live child handles, so they keep the event
+// loop alive after the promise settles. Without an explicit cleanup() this file
+// sat until the 180s watchdog killed it — on a FAILURE that looked exactly like a
+// hang, and on a success it burned three minutes for a green run.
+})().then(() => { cleanup(); })
+  .catch(error => { console.error(error); cleanup(); process.exit(1); });

@@ -5,7 +5,17 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026) · latest
+## 🐛 v2.21 — A bug sweep for phones (Oct 2, 2026) · latest
+
+We went looking for more problems and found a few worth fixing. On a phone, the bar above the listings used to push the whole page sideways, and on a smaller screen the single-picture / grid switch could sit off the edge where you could not reach it — that row now fits properly and wraps instead. On a computer, pressing the left or right arrow while viewing a photo jumped two photos at once. And a listing with just one photo no longer shows empty dots and arrows in the viewer.
+
+- Fixed: the bar above the listings no longer scrolls the whole page sideways on a phone
+- Fixed: the single-picture / grid switch is reachable again on small screens
+- Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one
+- Fixed: a listing with a single photo no longer shows empty dots and arrows in the photo viewer
+- The phone layout check now runs on every change, so this class of bug cannot come back unnoticed
+
+## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026)
 
 Opening a listing photo full-screen on your phone feels a lot smoother now. The picture follows your finger as you drag it, a quick flick moves to the next photo, a small nudge stays put instead of jumping, and you can pull the photo down to close it. Pinch to zoom in, double-tap to zoom in, and the little dots at the bottom of a photo are finally big enough to tap. The photo viewer on a shared ad page works again too.
 

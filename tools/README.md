@@ -23,14 +23,15 @@ build if a `tools/test-*.js` file appears in none of: the `npm test` chain, a
 | `test-account-referrals.js` | referral credit + link rules in `core.js` (`node:test`) | — |
 | `test-msg-v2.js` | the real app in a browser: stored XSS, read receipts, sends | Chrome |
 | `test-photo-gestures.js` | the lightbox gesture engine on touch (swipe / dismiss / pinch) + generated-page script parses | Chrome |
+| `test-page-scripts.js` | every shipped page parses its inline script and every `script src` exists — a SyntaxError in a template is invisible to the source | — |
+| `test-hero-layout.js` | responsive layout: hero, 44px tap targets, counters, search collapse, no horizontal overflow at 390/320px | Chrome |
 | `test-changelog-privacy.js` | release notes carry no secrets | — |
 
 Run them all: `npm test` (browser suites are separate, see below).
 
-## Automated — runnable, deliberately not in `npm test`
+## Run-only, not part of `npm test`
 | Tool | Why it is not in the chain |
 |---|---|
-| `test-hero-layout.js` | Needs Chrome and ~90s. **Known failure:** it reports a *sustained* horizontal overflow at **390px** (iPhone 12/13/14 width) on the homepage. That is a real, pre-existing bug — it still reproduces with the For You bar hidden — and the culprit is not yet isolated. It is kept out of CI on purpose: a permanently red step is a step people learn to ignore. Run it with `npm run test:hero`. |
 | `test-hero-layout.js` screenshots | Land in the OS temp dir, not in the repo. |
 
 ## Manual — open the file in a browser

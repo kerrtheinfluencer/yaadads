@@ -561,9 +561,23 @@ function _renderPhotoLightbox() {
   img.src = _lbPhotos[_lbIndex];
   if (counter) counter.textContent = (_lbIndex + 1) + ' / ' + _lbPhotos.length;
   if (dots) {
-    dots.innerHTML = _lbPhotos.map(function(_, d) {
-      return '<span class="lightbox-dot' + (d === _lbIndex ? ' active' : '') + '" onclick="photoLbGoTo(' + d + ')"></span>';
-    }).join('');
+    /* Mirror renderLightbox(): hide the arrows for a single photo, and cap the
+       dots. This renderer had neither — one photo showed arrows that wrapped to
+       itself, and a dozen photos drew a 44px dot each, a row wider than the
+       screen inside a fixed overlay. */
+    var many = _lbPhotos.length > 1;
+    var lprev = document.getElementById('lbPrev'), lnext = document.getElementById('lbNext');
+    if (lprev) lprev.style.display = many ? '' : 'none';
+    if (lnext) lnext.style.display = many ? '' : 'none';
+    if (many && _lbPhotos.length <= 10) {
+      dots.innerHTML = _lbPhotos.map(function(_, d) {
+        return '<span class="lightbox-dot' + (d === _lbIndex ? ' active' : '') + '" onclick="photoLbGoTo(' + d + ')"></span>';
+      }).join('');
+      dots.style.display = 'flex';
+    } else {
+      dots.innerHTML = '';
+      dots.style.display = 'none';
+    }
   }
   lb.classList.add('open');
   document.body.style.overflow = 'hidden';

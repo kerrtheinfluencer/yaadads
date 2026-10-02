@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'photo-touch',
+  current: 'phone-fixes',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -310,6 +310,23 @@ var SITE_UPDATES = {
       url: '/',
     },
 
+'phone-fixes': {
+      version: 'v2.21',
+      icon: '🐛',
+      title: 'A bug sweep for phones',
+      cta: 'See it',
+      ctaFn: 'goHome',
+      body: 'We went looking for more problems and found a few worth fixing. On a phone, the bar above the listings used to push the whole page sideways, and on a smaller screen the single-picture / grid switch could sit off the edge where you could not reach it — that row now fits properly and wraps instead. On a computer, pressing the left or right arrow while viewing a photo jumped two photos at once. And a listing with just one photo no longer shows empty dots and arrows in the viewer.',
+      date: 'Oct 2, 2026',
+      notes: [
+        'Fixed: the bar above the listings no longer scrolls the whole page sideways on a phone',
+        'Fixed: the single-picture / grid switch is reachable again on small screens',
+        'Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one',
+        'Fixed: a listing with a single photo no longer shows empty dots and arrows in the photo viewer',
+        'The phone layout check now runs on every change, so this class of bug cannot come back unnoticed',
+      ],
+      url: '/',
+    },
   },
 };
 
