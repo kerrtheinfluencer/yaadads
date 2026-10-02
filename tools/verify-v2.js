@@ -392,6 +392,29 @@ check('CI changelog auto-update workflow ships with push permission',
   clWf.includes('contents: write') && clWf.includes("'js/site-updates.js'") && clWf.includes('git push'));
 check('npm run changelog:check available (stale-changelog guard)', pkgRaw.includes('"changelog:check"'));
 
+// 12b. A release note must never claim a date that has not happened yet. Three
+//      entries once shipped dated Oct 2/3/4 while the clock still said Oct 1 —
+//      they looked completely fine in the SOURCE (which is all anyone reviews)
+//      and only became obvious in the rendered changelog members actually read.
+//      Day-granular, so a note dated today is fine. Reuses the suSrc already read
+//      at the top of this file rather than re-reading it under a new name.
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const nowDate = new Date();
+const todayKey = nowDate.getFullYear() * 10000 + (nowDate.getMonth() + 1) * 100 + nowDate.getDate();
+const futureNotes = [];
+let datedNotes = 0;
+for (const m of suSrc.matchAll(/date:\s*'([A-Z][a-z]{2}) (\d{1,2}), (\d{4})'/g)) {
+  datedNotes++;
+  const mi = MONTHS.indexOf(m[1]);
+  if (mi === -1) { futureNotes.push('unparseable date ' + m[1] + ' ' + m[2] + ', ' + m[3]); continue; }
+  const key = (+m[3]) * 10000 + (mi + 1) * 100 + (+m[2]);
+  if (key > todayKey) futureNotes.push(m[1] + ' ' + m[2] + ', ' + m[3]);
+}
+check('no release note is dated in the future (' + datedNotes + ' dated notes)',
+  futureNotes.length === 0, futureNotes.join(' | '));
+check('the release-note privacy harness actually runs (not just documented)',
+  pkgRaw.includes('tools/test-changelog-privacy.js'));
+
 // 13. cross-file global-scope collisions. Every <script src> file on index.html
 //     is a plain top-level script sharing ONE global scope, so if two of them
 //     declare the same top-level let/const/var the browser throws

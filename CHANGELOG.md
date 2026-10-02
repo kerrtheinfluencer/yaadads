@@ -5,48 +5,24 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## ⏳ v2.23 — A spinner while photos load, and a way to cancel the pull (Oct 4, 2026) · latest
+## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026) · latest
 
-Two more things you asked for. A photo that takes a while to arrive now shows a soft moving shimmer instead of an empty frame — and if you change your mind about pulling to refresh, just swipe back up while you are pulling and it cancels, exactly like your phone does. A photo that is already cached still never flashes the spinner.
+Photos now follow your thumb: swiping tracks your finger, a quick flick moves to the next photo and a small nudge stays put, you can pinch or double-tap to zoom, and drag a photo down to close it. Changing photo on a listing keeps what you are looking at until the next one has loaded — with a gentle shimmer instead of a blank space when it is slow — and the photos next to it warm up quietly, so tapping one is instant. Pulling down to refresh now takes a real, deliberate pull, and swiping back up cancels it. On a phone, the bar above the listings no longer pushes the page sideways.
 
-- New: a photo that is slow to load shows a gentle shimmer instead of a blank space
-- New: you can cancel pull-to-refresh by swiping back up — it used to reload the page anyway
-- New: the shimmer also appears on a full-screen photo that is still arriving
-- Fixed: a photo that is already saved never flashes the loading shimmer
-- The shimmer respects your phone’s reduced-motion setting
-
-## 🧘 v2.22 — Calmer pulling, faster photos (Oct 3, 2026)
-
-Two things you told us about. First, the app kept reloading itself when you dragged down the page — now pulling to refresh takes a real, deliberate pull, the way every other app works, and a small drag or a drag at an angle will never do it. Second, changing to another photo on a listing no longer goes blank while it loads: the photo you are looking at stays put and the next one replaces it the moment it is ready, and the photos next to it are quietly warmed up in the background so tapping one is instant.
-
-- Fixed: the page no longer reloads itself when you drag down a little, or drag down at an angle
-- Fixed: dragging down starting on the category row or the buttons above the listings no longer reloads the page
-- New: pulling to refresh now needs a long, deliberate pull — like every other app
-- Fixed: changing to another photo keeps the current photo on screen until the next one has loaded, instead of showing a blank frame
-- New: the photos next to the one you are viewing are warmed up quietly in the background, so tapping one is instant
-
-## 🐛 v2.21 — A bug sweep for phones (Oct 2, 2026)
-
-We went looking for more problems and found a few worth fixing. On a phone, the bar above the listings used to push the whole page sideways, and on a smaller screen the single-picture / grid switch could sit off the edge where you could not reach it — that row now fits properly and wraps instead. On a computer, pressing the left or right arrow while viewing a photo jumped two photos at once. And a listing with just one photo no longer shows empty dots and arrows in the viewer.
-
-- Fixed: the bar above the listings no longer scrolls the whole page sideways on a phone
-- Fixed: the single-picture / grid switch is reachable again on small screens
-- Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one
-- Fixed: a listing with a single photo no longer shows empty dots and arrows in the photo viewer
-- The phone layout check now runs on every change, so this class of bug cannot come back unnoticed
-
-## 📸 v2.20 — Photos that follow your thumb (Oct 1, 2026)
-
-Opening a listing photo full-screen on your phone feels a lot smoother now. The picture follows your finger as you drag it, a quick flick moves to the next photo, a small nudge stays put instead of jumping, and you can pull the photo down to close it. Pinch to zoom in, double-tap to zoom in, and the little dots at the bottom of a photo are finally big enough to tap. The photo viewer on a shared ad page works again too.
-
-- New: swiping between photos follows your finger instead of snapping only after you let go
-- New: a quick flick changes the photo, but a small nudge no longer flips it by accident
-- New: pinch to zoom and double-tap to zoom on any full-screen photo
-- New: drag a photo down to close the viewer
+- New: swiping between photos follows your finger — a quick flick moves on, a small nudge stays put
+- New: pinch or double-tap to zoom, and drag a photo down to close the viewer
 - New: the dots under a photo are easy to tap on a phone now
-- Fixed: on a shared listing page the tap-a-photo code had stopped running, so changing the photo left the big image showing the same picture — it runs again now
-- Fixed: opening a photo full-screen from a listing page now starts on the photo you picked, instead of always the first one
-- New: closing full-screen leaves the listing page on the photo you were just looking at
+- New: a photo that is slow to load shows a gentle shimmer instead of a blank space — a photo you have already loaded never flashes it
+- New: the photos next to the one you are viewing warm up quietly, so tapping one is instant
+- New: pulling to refresh now needs a deliberate pull — never a small drag, an angled drag, or one starting on the category row
+- New: you can cancel pull-to-refresh by swiping back up — it used to reload the page anyway
+- Fixed: on a shared listing page the photo switcher had stopped running, so changing the photo left the big image unchanged
+- Fixed: a photo full-screen now opens on the one you picked, and closing leaves the page on the photo you were looking at
+- Fixed: changing photo keeps the current photo on screen until the next has loaded, instead of showing a blank frame
+- Fixed: a listing with a single photo no longer shows empty dots and arrows
+- Fixed: the bar above the listings no longer scrolls the page sideways on a phone, and the single-picture / grid switch is reachable on small screens
+- Fixed: pressing the arrow key while viewing a photo jumped two photos instead of one
+- Every test in the project now runs automatically on each change, so this class of bug cannot sit unnoticed again
 
 ## ✨ v2.18 — The feed is picked for you now — not just the newest (Sep 28, 2026)
 
