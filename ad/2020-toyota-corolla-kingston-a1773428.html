@@ -938,10 +938,36 @@ document.addEventListener('DOMContentLoaded', function () {
   var lbIndex = 0;
 
   // ── Thumbnail switcher ────────────────────────────────────────
-  function setFeatured(thumb, src, idx) {
+  /* Swap the big photo only once the NEXT one is actually decoded.
+     The old version set opacity 0 immediately and then waited 150ms before it
+     even started the download — so a tap showed a blank frame, then a long wait
+     on a cold 1280px image. Here the current photo stays on screen the whole
+     time and is replaced the moment the new one is ready, which reads as
+     instant rather than as a stall. */
+  function showFeatured(url) {
     var img = document.getElementById('featuredImg');
-    img.style.opacity = '0';
-    setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 150);
+    if (!img || !url) return;
+    if (img.getAttribute('src') === url) { img.style.opacity = '1'; return; }
+    var apply = function () { img.src = url; img.style.opacity = '1'; };
+    var next = new Image();
+    next.decoding = 'async';
+    next.onload = apply;
+    next.onerror = apply;            // a bad URL must never leave a blank frame
+    next.src = url;
+    if (next.complete) apply();
+  }
+  // Warm the neighbouring photos once the page is idle, so the tap that actually
+  // happens is a cache hit. Deliberately only the first few — warming all of a
+  // twenty-photo listing would cost more data than it saves.
+  function warmFeatured() {
+    for (var i = 0; i < Math.min(PHOTOS_FEAT.length, 3); i++) {
+      var im = new Image();
+      im.decoding = 'async';
+      im.src = PHOTOS_FEAT[i];
+    }
+  }
+  function setFeatured(thumb, src, idx) {
+    showFeatured(src);
     document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
     thumb.classList.add('active');
     lbIndex = idx;
@@ -963,8 +989,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Reflect the lightbox position back into the inline gallery, so the photo
   // you swiped to is the one the page shows once the viewer closes.
   function syncFeatured() {
-    var img = document.getElementById('featuredImg');
-    if (img && PHOTOS_FEAT[lbIndex]) img.src = PHOTOS_FEAT[lbIndex];
+    if (PHOTOS_FEAT[lbIndex]) showFeatured(PHOTOS_FEAT[lbIndex]);
     var thumbs = document.querySelectorAll('.thumb');
     for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === lbIndex);
   }
@@ -1120,6 +1145,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ── Push AdSense ──────────────────────────────────────────────
   window.addEventListener('load', function() {
+    /* §PHOTOSPEED — warm the neighbouring photos once everything else has
+       painted, so tapping a thumbnail is a cache hit instead of a cold 1280px
+       download. Deferred (not inline) so it never competes with the photo the
+       visitor actually came to see. */
+    var warm = function () { setTimeout(warmFeatured, 600); };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 3000 });
+    else warm();
     try {
       var ads = document.querySelectorAll('.adsbygoogle:not([data-adsbygoogle-status])');
       ads.forEach(function() { (adsbygoogle = window.adsbygoogle || []).push({}); });
