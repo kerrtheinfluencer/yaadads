@@ -54,6 +54,25 @@ function renderLightbox() {
 
 function lbGoTo(i) { _lbIndex = i; renderLightbox(); }
 
+/* §PHOTOSPIN — shimmer the viewer while a photo is still arriving. TWO renderers
+   write #lbImg.src (renderLightbox here and _renderPhotoLightbox in listings.js),
+   so watching the element's src attribute is the only way to cover both without
+   duplicating this. Delayed 220ms so a cached photo never flashes a spinner. */
+(function () {
+  var img = document.getElementById('lbImg');
+  var lb  = document.getElementById('lightbox');
+  if (!img || !lb || typeof MutationObserver !== 'function') return;
+  var timer = 0;
+  function stop() { clearTimeout(timer); timer = 0; lb.classList.remove('is-loading'); }
+  img.addEventListener('load', stop);
+  img.addEventListener('error', stop);
+  new MutationObserver(function () {
+    clearTimeout(timer);
+    if (img.complete && img.naturalWidth > 0) return stop();
+    timer = setTimeout(function () { lb.classList.add('is-loading'); }, 220);
+  }).observe(img, { attributes: true, attributeFilter: ['src'] });
+})();
+
 // NOTE: this used to ALSO register the lightbox keyboard handler (Escape /
 // ArrowLeft / ArrowRight). js/listings.js already owns that, guarded by
 // document._photoLbWired — and both listeners were live at once, so a single

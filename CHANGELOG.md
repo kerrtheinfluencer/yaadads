@@ -5,7 +5,17 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 🧘 v2.22 — Calmer pulling, faster photos (Oct 3, 2026) · latest
+## ⏳ v2.23 — A spinner while photos load, and a way to cancel the pull (Oct 4, 2026) · latest
+
+Two more things you asked for. A photo that takes a while to arrive now shows a soft moving shimmer instead of an empty frame — and if you change your mind about pulling to refresh, just swipe back up while you are pulling and it cancels, exactly like your phone does. A photo that is already cached still never flashes the spinner.
+
+- New: a photo that is slow to load shows a gentle shimmer instead of a blank space
+- New: you can cancel pull-to-refresh by swiping back up — it used to reload the page anyway
+- New: the shimmer also appears on a full-screen photo that is still arriving
+- Fixed: a photo that is already saved never flashes the loading shimmer
+- The shimmer respects your phone’s reduced-motion setting
+
+## 🧘 v2.22 — Calmer pulling, faster photos (Oct 3, 2026)
 
 Two things you told us about. First, the app kept reloading itself when you dragged down the page — now pulling to refresh takes a real, deliberate pull, the way every other app works, and a small drag or a drag at an angle will never do it. Second, changing to another photo on a listing no longer goes blank while it loads: the photo you are looking at stays put and the next one replaces it the moment it is ready, and the photos next to it are quietly warmed up in the background so tapping one is instant.
 

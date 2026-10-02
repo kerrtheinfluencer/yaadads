@@ -25,6 +25,7 @@ build if a `tools/test-*.js` file appears in none of: the `npm test` chain, a
 | `test-photo-gestures.js` | the lightbox gesture engine on touch (swipe / dismiss / pinch) + generated-page script parses | Chrome |
 | `test-page-scripts.js` | every shipped page parses its inline script and every `script src` exists — a SyntaxError in a template is invisible to the source | — |
 | `test-hero-layout.js` | responsive layout: hero, 44px tap targets, counters, search collapse, no horizontal overflow at 390/320px | Chrome |
+| `test-pull-refresh.js` | pull to refresh only fires on a deliberate vertical pull, and swiping back up cancels it | Chrome |
 | `test-changelog-privacy.js` | release notes carry no secrets | — |
 
 Run them all: `npm test` (browser suites are separate, see below).

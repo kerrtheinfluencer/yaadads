@@ -152,6 +152,13 @@ jobs:
         timeout-minutes: 5
         run: npm run test:photo
 
+      # Pull to refresh. The page used to reload itself on a modest drag, on a
+      # diagonal drag, and on any drag starting on a rail — and there was no way
+      # to cancel once armed. This drives real touch events and asserts both.
+      - name: Run pull-to-refresh gesture tests
+        timeout-minutes: 5
+        run: npm run test:ptr
+
       # Responsive layout gate: hero height, 44px category tap targets, the live
       # counters, the search collapse and — the one that used to fail on every
       # run — a sustained horizontal overflow check at 390px. The results bar's

@@ -37,11 +37,15 @@ function check(name, ok, detail) {
   try { buildPage = require(tmp).buildPage; }
   finally { try { fs.unlinkSync(tmp); } catch (e) {} }
 
-  const img = 'https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/object/public/ads/a.jpg';
+  /* Local files this repo really serves. The swap assertions must not depend on
+     an external host being reachable from the test machine — and with the
+     decode-then-swap behaviour, an unreachable URL means the swap waits for the
+     error, which is far too slow to assert on. */
   const ad = { id: 'a1', title: 'Toyota Axio', price: 1200000, neg: true, status: 'active',
     parish: 'Kingston', category: 'vehicles', seller: 'Seller', sellerId: 's1',
     phone: '8765551234', desc: 'Clean car', date: new Date().toISOString(),
-    image: img, photos: [img, img.replace('a.jpg', 'b.jpg'), img.replace('a.jpg', 'c.jpg')] };
+    image: '/icon-192.png',
+    photos: ['/icon-192.png', '/apple-touch-icon.png', '/splash-750x1334.png'] };
   const html = buildPage(ad, [ad]);
   const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   let parseErr = 0, firstErr = '';
@@ -239,7 +243,34 @@ const TG = `window.__tg = function(type, pts) {
     check('closing fullscreen syncs the inline gallery back', await evaluate(
       '(function(){ closeLightbox(); var t = document.querySelectorAll(".thumb");' +
       ' return document.querySelector(".thumb.active") === t[2] &&' +
-      '   document.getElementById("featuredImg").getAttribute("src").indexOf("c.jpg") > -1; })()') === true);
+      '   document.getElementById("featuredImg").getAttribute("src") === "/splash-750x1334.png"; })()') === true);
+
+    /* ── §PHOTOSPIN: a photo that is still arriving shows a shimmer ───────────
+       Driven deterministically rather than with CDP throttling. Network
+       emulation proved unreliable here — the idle warm-up had already pulled
+       the file, so the "slow" photo arrived instantly and the assertion measured
+       a cache hit. Instead the real showFeatured() runs against a stubbed Image
+       that never completes: exactly the state a slow connection produces, every
+       time. */
+    await cdp('Page.navigate', { url: 'http://localhost:' + PORT + '/_tmp-ad-test.html' });
+    await sleep(2000);
+    await evaluate('window.__realImage = window.Image;' +
+                   'window.Image = function () { return { complete: false }; }; true');
+    await evaluate('document.querySelectorAll(".thumb")[2].click(); true');
+    await sleep(500);   // past the 220ms delay
+    check('a photo that is still arriving shows a loading shimmer',
+      await evaluate('document.querySelector(".gallery-main").classList.contains("is-loading")') === true);
+    check('the old photo stays on screen while the new one loads (no blank frame)',
+      await evaluate('document.getElementById("featuredImg").getAttribute("src")') === '/icon-192.png');
+
+    /* And the mirror case: a photo that is already here must never flash one. */
+    await evaluate('window.Image = window.__realImage; true');
+    await evaluate('document.querySelectorAll(".thumb")[2].click(); true');
+    await sleep(400);
+    check('the shimmer clears once the photo arrives',
+      await evaluate('!document.querySelector(".gallery-main").classList.contains("is-loading")') === true);
+    check('the photo swapped in',
+      await evaluate('document.getElementById("featuredImg").getAttribute("src")') === '/splash-750x1334.png');
   } catch (e) {
     console.error('ERROR: ' + e.message);
     failed++;

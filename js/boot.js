@@ -109,12 +109,25 @@ init();
        pulling to refresh. Only judged once there is real travel, so a small
        sideways drift on an otherwise straight pull is still fine. */
     if (dy > 20 && dx > dy / PTR_VERTICAL) { resetPtr(); return; }
+    /* Swiping back UP cancels an armed pull. This is the standard escape hatch
+       and it was MISSING: the dy<0 branch below returns early but used to leave
+       pulling/pulledFar set, so someone could pull down past the line, drag back
+       up to change their mind, let go — and the page reloaded anyway. Returning
+       here rather than zeroing startY also lets the SAME gesture re-arm if they
+       pull down again, which is how native pull-to-refresh behaves. */
+    if (pulling && dy <= PTR_ACTIVATE) {
+      pulling = false;
+      pulledFar = false;
+      ptrBar.classList.remove('show', 'ready');
+      ptrBar.textContent = '↓ Pull to refresh';
+      return;
+    }
     if (dy < 0) { if (!pulling) { startY = 0; startX = 0; } return; }
     if (window.scrollY !== 0 || !ptrEligible()) { if (!pulling) { startY = 0; startX = 0; } return; }
     if (dy > PTR_ACTIVATE) {
       pulling = true;
       pulledFar = dy > PTR_THRESHOLD;
-      ptrBar.textContent = pulledFar ? '↑ Release to refresh' : '↓ Pull to refresh';
+      ptrBar.textContent = pulledFar ? 'Release to refresh' : '↓ Pull to refresh';
       ptrBar.classList.add('show');
       ptrBar.classList.toggle('ready', pulledFar);
       // Safety: auto-hide after 4 seconds if stuck

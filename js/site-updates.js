@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'calmer-touch',
+  current: 'photo-spinner',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -341,6 +341,23 @@ var SITE_UPDATES = {
         'New: pulling to refresh now needs a long, deliberate pull — like every other app',
         'Fixed: changing to another photo keeps the current photo on screen until the next one has loaded, instead of showing a blank frame',
         'New: the photos next to the one you are viewing are warmed up quietly in the background, so tapping one is instant',
+      ],
+      url: '/',
+    },
+'photo-spinner': {
+      version: 'v2.23',
+      icon: '⏳',
+      title: 'A spinner while photos load, and a way to cancel the pull',
+      cta: 'See it',
+      ctaFn: 'goHome',
+      body: 'Two more things you asked for. A photo that takes a while to arrive now shows a soft moving shimmer instead of an empty frame — and if you change your mind about pulling to refresh, just swipe back up while you are pulling and it cancels, exactly like your phone does. A photo that is already cached still never flashes the spinner.',
+      date: 'Oct 4, 2026',
+      notes: [
+        'New: a photo that is slow to load shows a gentle shimmer instead of a blank space',
+        'New: you can cancel pull-to-refresh by swiping back up — it used to reload the page anyway',
+        'New: the shimmer also appears on a full-screen photo that is still arriving',
+        'Fixed: a photo that is already saved never flashes the loading shimmer',
+        'The shimmer respects your phone’s reduced-motion setting',
       ],
       url: '/',
     },
