@@ -76,6 +76,24 @@ function check(name, ok, detail) {
   check('the thumbnail tap and the lightbox close both re-seat the swipe index',
     /gallerySwipeSync\(idx, true\)/.test(html) && /gallerySwipeSync\(lbIndex, false\)/.test(html));
 
+  /* §PHOTOCOUNT — the badge that follows the photo. Asserted against the
+     emitted page because the wiring is what fails silently: a badge that is
+     emitted but never written, or written without the direction-aware roll,
+     still looks perfectly right in a screenshot. */
+  check('the inline gallery ships a photo count tracker',
+    html.includes('§PHOTOCOUNT') && html.includes('id="galCountNow"'));
+  check('the count rolls the way the photo travelled (one keyframe per direction)',
+    html.includes('phCountRollFwd') && html.includes('phCountRollBack'));
+  check('the count is clipped to its own lane, so photo 9 → 10 cannot resize the pill',
+    /\.gallery-count-box \{[^}]*overflow: hidden/.test(html));
+  check('the count has a single writer and both photo-changing paths call it',
+    (html.match(/paintCount\(/g) || []).length >= 3,
+    (html.match(/paintCount\(/g) || []).length + ' occurrence(s)');
+  check('the count animation respects prefers-reduced-motion',
+    html.includes('.gallery-count-now.is-fwd, .gallery-count-now.is-back, .gallery-count.is-tick { animation: none; }'));
+  check('a one-photo ad gets no count (the CSS ships, the badge does not)',
+    !buildPage(Object.assign({}, ad, { photos: ['/icon-192.png'] }), [ad]).includes('id="galCount"'));
+
   const css = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   check('SPA: the lightbox image owns touch and zoom',
     css.includes('touch-action:none') && css.includes('.lightbox-img {'));
@@ -268,6 +286,10 @@ const PS = `window.__ps = function(type, x, y) {
     check('opening fullscreen starts on the photo you picked', await evaluate(
       'document.getElementById("featuredImg").click(); lbIndex') === 2,
       'lbIndex=' + await evaluate('lbIndex'));
+    /* §PHOTOCOUNT — the tap's jump is a roll, not a silent rewrite. */
+    check('tapping a thumbnail moves the count with it',
+      await evaluate('document.getElementById("galCount").textContent') === '3 / 3',
+      'text=' + await evaluate('document.getElementById("galCount").textContent'));
     check('closing fullscreen syncs the inline gallery back', await evaluate(
       '(function(){ closeLightbox(); var t = document.querySelectorAll(".thumb");' +
       ' return document.querySelector(".thumb.active") === t[2] &&' +
@@ -313,6 +335,9 @@ const PS = `window.__ps = function(type, x, y) {
       await evaluate('typeof gallerySwipeSync === "function" && !!document.querySelector(".gallery-ghost")'));
     check('the gallery claims the horizontal axis and leaves the vertical to the page',
       await evaluate('getComputedStyle(document.getElementById("mainImg")).touchAction') === 'pan-y');
+    check('the count starts on photo 1 of 3',
+      await evaluate('document.getElementById("galCount").textContent') === '1 / 3',
+      'text=' + await evaluate('document.getElementById("galCount").textContent'));
 
     /* Real swipes are many frames long, not one synchronous block — the pauses
        matter: without them every gesture reads as zero elapsed time and the
@@ -344,12 +369,22 @@ const PS = `window.__ps = function(type, x, y) {
       await evaluate('document.getElementById("featuredImg").style.transform') === '');
     check('the click left behind by a swipe is swallowed, not opened as fullscreen',
       await evaluate('document.getElementById("lightbox").classList.contains("open")') === false);
+    check('a swipe carries the count with it, rolled forward',
+      await evaluate('document.getElementById("galCount").textContent') === '2 / 3' &&
+      await evaluate('document.getElementById("galCountNow").classList.contains("is-fwd")'),
+      'text=' + await evaluate('document.getElementById("galCount").textContent') +
+      ' cls=' + await evaluate('document.getElementById("galCountNow").className'));
 
     /* Back the other way — proves the index really tracked, rather than the
        second swipe restarting from photo 0. */
     await swipe([[100, 300], [180, 301], [250, 301], [320, 301]]);
     await sleep(650);
     check('swiping back returns to the previous photo', await src() === P0, 'src=' + await src());
+    check('swiping back rolls the count back the other way (the classes swap, they do not stack)',
+      await evaluate('document.getElementById("galCount").textContent') === '1 / 3' &&
+      await evaluate('document.getElementById("galCountNow").classList.contains("is-back")') &&
+      await evaluate('document.getElementById("galCountNow").classList.contains("is-fwd")') === false,
+      'cls=' + await evaluate('document.getElementById("galCountNow").className'));
 
     /* A nudge is not a swipe. */
     await swipe([[300, 300], [295, 301], [290, 302]]);
@@ -386,6 +421,9 @@ const PS = `window.__ps = function(type, x, y) {
     await evaluate('closeLightbox(); true');
     await sleep(150);
     check('closing fullscreen syncs the inline photo back', await src() === P2, 'src=' + await src());
+    check('closing fullscreen leaves the count on the photo the viewer left',
+      await evaluate('document.getElementById("galCount").textContent') === '3 / 3',
+      'text=' + await evaluate('document.getElementById("galCount").textContent'));
     await swipe([[300, 300], [240, 301], [170, 301], [100, 301]]);
     await sleep(650);
     check('a swipe from the last photo leaves it alone (no running off the end)',
