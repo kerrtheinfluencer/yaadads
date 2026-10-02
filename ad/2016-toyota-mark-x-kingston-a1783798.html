@@ -355,12 +355,40 @@
     border-radius: var(--radius);
     overflow: hidden;
     aspect-ratio: 4/3;
+    /* §PHOTOSWIPE — the gallery claims the horizontal axis and hands the
+       vertical one back to the page, so a finger dragged up the photo still
+       scrolls the ad instead of being swallowed. */
+    touch-action: pan-y;
+    user-select: none; -webkit-user-select: none;
   }
   .gallery-main img {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
     transition: opacity 0.2s;
+    -webkit-user-drag: none;
+  }
+  /* §PHOTOSWIPE — the two photo layers are stacked and moved with translateX,
+     so the photo you are leaving and the one being revealed slide together
+     under the finger. Absolute layers (rather than a flex track of N slides)
+     keep #featuredImg one stable node, which is exactly what showFeatured()
+     and the lightbox sync already assume. */
+  .gallery-main > img {
+    position: absolute; top: 0; left: 0;
+    cursor: grab;
+    will-change: transform;
+  }
+  .gallery-main.is-dragging > img { cursor: grabbing; }
+  /* The incoming layer. Parked one screen-width away and revealed by the
+     swipe; visibility rather than opacity so it costs nothing while idle. */
+  .gallery-main > img.gallery-ghost { visibility: hidden; pointer-events: none; }
+  .gallery-main > img.gallery-ghost.is-armed { visibility: visible; }
+  /* A thumbnail tap swaps the photo instantly (it is already cached), so give
+     it a beat of feedback rather than leaving the tap looking like nothing. */
+  @keyframes phGalleryPop { from { transform: scale(1.035); } to { transform: scale(1); } }
+  .gallery-main > img.gallery-pop { animation: phGalleryPop .32s cubic-bezier(.16,1,.3,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-main > img.gallery-pop { animation: none; }
   }
   /* §PHOTOSPIN — a slow photo shows a shimmer instead of an empty frame. The
      class is only added after a 220ms delay by showFeatured()/renderLightbox(),
@@ -424,6 +452,39 @@
     font-weight: 800; font-size: 13px; letter-spacing: 2px;
     padding: 6px 16px;
     border-radius: 0 6px 6px 0;
+  }
+  /* §PHOTOSWIPE — arrows for pointer devices, where there is no finger to
+     swipe with. They are display:none on touch (the swipe IS the control
+     there), so they can never sit invisible over a photo waiting for a tap,
+     and the wrapper is pointer-events:none so only the buttons take clicks. */
+  .gallery-arrows { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+  .gallery-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border: none; border-radius: 50%;
+    background: rgba(0,0,0,.45); color: #fff; font-size: 20px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    pointer-events: auto; opacity: 0;
+    transition: opacity .2s ease, background .2s ease,
+                transform .2s cubic-bezier(.16,1,.3,1);
+  }
+  .gallery-arrow:hover {
+    background: rgba(0,0,0,.7);
+    transform: translateY(-50%) scale(1.08);
+  }
+  .gallery-arrow-prev { left: 12px; }
+  .gallery-arrow-next { right: 12px; }
+  /* Keyboard users reach the arrows by Tab even though they are invisible at
+     rest — so reveal and outline them on focus, not just on hover. */
+  .gallery-arrow:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--gold); outline-offset: 2px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .gallery-main:hover .gallery-arrow { opacity: 1; }
+  }
+  @media (hover: none) { .gallery-arrow { display: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-arrow { transition: background .2s ease, opacity .2s ease; }
   }
 
   /* ── RIGHT PANEL ── */
@@ -775,7 +836,7 @@
       
     <div class="gallery">
       <div class="gallery-main" id="mainImg">
-        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/da84e67c-9f8b-442f-afa9-6539c3f6a479/1783798161687_0ht293.jpg?width=1280&amp;quality=72" alt="2016 Toyota Mark X" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" onclick="openLightbox(lbIndex)" style="cursor:zoom-in">
+        <img src="https://cquwshpsfybvgqodbxsf.supabase.co/storage/v1/render/image/public/ad-images/da84e67c-9f8b-442f-afa9-6539c3f6a479/1783798161687_0ht293.jpg?width=1280&amp;quality=72" alt="2016 Toyota Mark X" id="featuredImg" loading="eager" fetchpriority="high" decoding="async" draggable="false" onclick="openLightbox(lbIndex)">
         <div class="gallery-zoom-hint" onclick="openLightbox(lbIndex)">🔍 6 photos · tap to expand</div>
         
       </div>
@@ -1048,6 +1109,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
     thumb.classList.add('active');
     lbIndex = idx;
+    /* §PHOTOSWIPE — the swipe engine keeps its own copy of the current index;
+       tell it where we jumped to, or the next swipe would continue from the
+       photo the visitor was on two swipes ago. The "true" asks for the small
+       scale-pop, since this path replaces the photo instantly. */
+    if (typeof gallerySwipeSync === 'function') gallerySwipeSync(idx, true);
   }
 
   // ── Lightbox ──────────────────────────────────────────────────
@@ -1069,6 +1135,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (PHOTOS_FEAT[lbIndex]) showFeatured(PHOTOS_FEAT[lbIndex]);
     var thumbs = document.querySelectorAll('.thumb');
     for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === lbIndex);
+    /* §PHOTOSWIPE — closing fullscreen lands on whatever photo the visitor
+       swiped to in there. Re-seat the swipe engine on it (no pop: the lightbox
+       exit is its own transition, a second one on the inline photo would just
+       look like a stutter). */
+    if (typeof gallerySwipeSync === 'function') gallerySwipeSync(lbIndex, false);
   }
   function lbNav(dir) {
     lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
@@ -1223,6 +1294,296 @@ document.addEventListener('DOMContentLoaded', function () {
       g = null; lb.style.opacity = ''; tx = 0; ty = 0;
       if (scale <= 1.05) resetZoom(true); else { clampPan(); paint(true); }
     }, { passive: true });
+  })();
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     §PHOTOSWIPE — drag the ad page's photo sideways to change photo
+     ───────────────────────────────────────────────────────────────────────
+     The big photo on an ad page was the one surface you could not swipe: it
+     had a thumbnail strip and a fullscreen lightbox, but in between, the photo
+     itself only moved if you tapped into the viewer first. So the first thing
+     anyone does with a six-photo listing — flick through the photos — was two
+     taps away, and a flick inside the viewer snapped the photo rather than
+     carrying it.
+
+     This makes the inline photo draggable. Two stacked layers move with
+     translateX: #featuredImg (the photo being left) and one reusable "ghost"
+     holding the photo coming in. The incoming photo is decoded BEFORE it is
+     ever made visible, so the swipe reveals a painted photo instead of a blank
+     frame — and because the ghost has already downloaded that exact URL, the
+     hand-off to showFeatured() at the end of the swipe is a cache hit and the
+     loading shimmer never appears. One ghost rather than N slides, so a
+     twenty-photo listing does not build twenty nodes.
+
+     Rules kept deliberately:
+       • the axis locks horizontal only — touch-action: pan-y hands the
+         vertical back to the page, so a finger dragged up the photo scrolls
+         the ad rather than being swallowed,
+       • the first and last photo rubber-band instead of running off the end,
+       • distance OR flick velocity commits, so a short quick flick counts,
+       • a tap is never a swipe, so the existing onclick="openLightbox(lbIndex)"
+         still opens fullscreen — and a swipe swallows that same click so a
+         committed swipe does not,
+       • prefers-reduced-motion drops every transition, leaving an instant
+         photo change with no motion at all.
+     ═══════════════════════════════════════════════════════════════════════ */
+  (function () {
+    var shell = document.getElementById('mainImg');
+    var img = document.getElementById('featuredImg');
+    if (!shell || !img || !PHOTOS_FEAT || PHOTOS_FEAT.length < 2) return;
+
+    var SLOP = 8;        // px of travel before the horizontal axis is claimed
+    var COMMIT = 48;     // px of travel that always changes photo
+    var FLICK = 16;      // px that changes photo if released fast enough
+    var FLICK_V = 0.35;  // px/ms — the "fast enough" line
+    var EDGE = 0.32;     // how much of the drag survives past the first/last
+    var SETTLE = 340;    // ms; must match the transform transition in place()
+
+    var thumbs = document.querySelectorAll('.gallery-thumbs .thumb');
+    var idx = 0;         // which photo the inline gallery is showing
+    var ghostIdx = -1;   // which photo the ghost layer holds (-1 = idle)
+    var pending = -1;    // photo a committed slide is travelling toward
+    var drag = null;
+    var probing = false;   // a neighbour photo is mid-download right now
+    var settleTimer = 0;
+    var eat = false;
+    var reduced = false;
+    try {
+      reduced = typeof window.matchMedia === 'function' &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {}
+
+    var ghost = document.createElement('img');
+    ghost.className = 'gallery-ghost';
+    ghost.alt = '';
+    ghost.setAttribute('aria-hidden', 'true');
+    shell.insertBefore(ghost, img.nextSibling);
+
+    function now() {
+      return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    }
+
+    /* Write a layer's position. Only ever manage the transform transition:
+       writing a bare "transition" here would silently cancel the stylesheet's
+       opacity fade on #featuredImg for the rest of the page's life. */
+    function place(el, x, anim) {
+      if (anim) el.style.transition = 'opacity .2s ease, transform ' + SETTLE + 'ms cubic-bezier(.22,.68,.28,1)';
+      else el.style.removeProperty('transition');
+      el.style.transform = x ? 'translate3d(' + x.toFixed(1) + 'px,0,0)' : '';
+    }
+
+    /* Park the ghost on the neighbour about to be revealed. The optional "cb" runs once the
+       photo is decoded, which is how the desktop arrows can wait for a cold
+       photo instead of skipping the animation whenever one is not cached. */
+    function arm(dir, cb) {
+      var want = idx + dir;
+      if (want < 0 || want >= PHOTOS_FEAT.length) return false;
+      if (ghostIdx === want && ghost.getAttribute('src')) return true;
+      ghostIdx = want;
+      var probe = new Image();
+      probing = true;
+      probe.decoding = 'async';
+      probe.onload = function () {
+        if (ghostIdx !== want) return;    // visitor flicked on before it arrived
+        probing = false;
+        ghost.src = probe.src;
+        ghost.classList.add('is-armed');
+        if (cb) cb();
+      };
+      probe.src = PHOTOS_FEAT[want];
+      return true;
+    }
+    function disarm() {
+      ghostIdx = -1;
+      probing = false;
+      ghost.classList.remove('is-armed');
+      place(ghost, 0, false);
+    }
+    function armed() { return ghost.classList.contains('is-armed'); }
+    /* True once the ghost is painted, and also while its photo is still on
+       the wire — warm() starts that download on touch-down, so a flick on a
+       photo that is merely not-quite-cached yet should still count. */
+    function coming() { return armed() || probing; }
+
+    /* Land on photo "n". The photo itself is swapped by showFeatured(), which
+       keeps its existing decode-before-swap behaviour — and here it is always
+       a cache hit, because the ghost just downloaded this exact URL. */
+    function settle(n) {
+      idx = n;
+      lbIndex = n;
+      showFeatured(PHOTOS_FEAT[n]);
+      for (var i = 0; i < thumbs.length; i++) thumbs[i].classList.toggle('active', i === n);
+      if (thumbs[n] && thumbs[n].scrollIntoView) {
+        try { thumbs[n].scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
+      }
+      disarm();
+      place(img, 0, false);
+    }
+
+    /* Carry the incoming photo all the way in, then hand over to settle(). Waits
+       for the ghost if its photo is still arriving, but only briefly: past
+       GRACE the gesture snaps back rather than leaving the photo parked
+       mid-gesture waiting on a slow connection. */
+    var GRACE = 350;
+    function glide(dir) {
+      var w = shell.offsetWidth || 1, target = idx + dir;
+      if (target < 0 || target >= PHOTOS_FEAT.length) return;
+      var gave = setTimeout(function () { spring(-w * dir); }, GRACE);
+      if (!arm(dir, ready)) { clearTimeout(gave); return; }
+      /* arm() only calls back from a fresh decode, so a ghost that is already
+         painted is started here instead — exactly one path either way. */
+      if (armed()) ready();
+      function ready() {
+        clearTimeout(gave);
+        if (reduced) { settle(target); return; }
+        place(img, -w * dir, true);
+        place(ghost, 0, true);
+        pending = target;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(function () {
+          settleTimer = 0; pending = -1; settle(target);
+        }, SETTLE + 30);
+      }
+    }
+
+    /* Spring back onto the photo the drag started on. */
+    function spring(rest) {
+      place(img, 0, true);
+      place(ghost, rest, true);
+      if (reduced) { disarm(); return; }
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(disarm, SETTLE + 30);
+    }
+
+    /* Finish a slide that is still travelling, so a fresh drag never starts
+       from a half-moved pair of layers. */
+    function flush() {
+      if (pending < 0) return;
+      var t = pending;
+      pending = -1;
+      clearTimeout(settleTimer);
+      settleTimer = 0;
+      settle(t);
+    }
+
+    /* A committed swipe still fires a click on the image, and that click is
+       wired to open the lightbox. Swallow exactly one — the same trick the
+       lightbox's own gesture engine uses for its taps. */
+    function armEat() {
+      eat = true;
+      setTimeout(function () { eat = false; }, 400);
+    }
+    document.addEventListener('click', function (e) {
+      if (!eat) return;
+      eat = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+
+    /* Fetch both neighbours on touch-down so the ghost is painted the instant
+       the drag starts, rather than a frame or two after the finger moves. */
+    function warm() {
+      for (var d = -1; d <= 1; d += 2) {
+        var n = idx + d;
+        if (n < 0 || n >= PHOTOS_FEAT.length) continue;
+        var im = new Image();
+        im.decoding = 'async';
+        im.src = PHOTOS_FEAT[n];
+      }
+    }
+
+    shell.addEventListener('pointerdown', function (e) {
+      if (!e.isPrimary || e.button) return;
+      flush();
+      clearTimeout(settleTimer);
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t0: now(), locked: false, dir: 0, w: 0 };
+      try { shell.setPointerCapture(e.pointerId); } catch (err) {}
+      warm();
+    });
+
+    shell.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.locked) {
+        if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
+        /* Vertical, or mostly vertical, belongs to the page rather than to us.
+           Bail before arming anything, so a scroll never disturbs the photo. */
+        if (Math.abs(dx) <= Math.abs(dy)) { drag = null; return; }
+        drag.locked = true;
+        drag.w = shell.offsetWidth || 1;
+        drag.dir = dx < 0 ? 1 : -1;
+        shell.classList.add('is-dragging');
+        if (!arm(drag.dir)) drag.dir = 0;   // first/last photo: rubber-band only
+      }
+      if (e.cancelable) e.preventDefault();
+      if (!drag.dir) { place(img, dx * EDGE, false); return; }
+      place(img, dx, false);
+      place(ghost, -drag.w * drag.dir + dx, false);
+    });
+
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var d = drag;
+      drag = null;
+      shell.classList.remove('is-dragging');
+      try { shell.releasePointerCapture(d.id); } catch (err) {}
+      /* No axis lock means this was a tap — leave it be, so the existing
+         onclick="openLightbox(lbIndex)" still opens fullscreen. */
+      if (!d.locked) return;
+      var dx = e ? e.clientX - d.x : 0;
+      var dt = Math.max(1, now() - d.t0);
+      var v = Math.abs(dx) / dt;
+      var far = Math.abs(dx) >= COMMIT || (Math.abs(dx) >= FLICK && v >= FLICK_V);
+      if (d.dir && far && coming()) { armEat(); glide(d.dir); return; }
+      spring(d.dir ? -d.w * d.dir : 0);
+    }
+    shell.addEventListener('pointerup', endDrag);
+    shell.addEventListener('pointercancel', function (e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var rest = drag.dir ? -drag.w * drag.dir : 0;
+      drag = null;
+      shell.classList.remove('is-dragging');
+      spring(rest);
+    });
+    /* A native image drag would hijack the pointer mid-swipe on desktop. */
+    shell.addEventListener('dragstart', function (e) { e.preventDefault(); });
+
+    /* The seam setFeatured() (thumbnail tap) and syncFeatured() (closing
+       fullscreen) call: both change the photo instantly, so all this owes them
+       is a re-seated index and no half-finished slide — otherwise the next
+       swipe would carry on from a photo the visitor left several swipes ago. */
+    window.gallerySwipeSync = function (n, pop) {
+      flush();
+      clearTimeout(settleTimer);
+      settleTimer = 0;
+      disarm();
+      place(img, 0, false);
+      if (typeof n === 'number') idx = n;
+      if (!pop || reduced) return;
+      img.classList.remove('gallery-pop');
+      void img.offsetWidth;            // force reflow so the animation replays
+      img.classList.add('gallery-pop');
+    };
+
+    /* Desktop arrows — the same journey as a swipe, so the two paths stay
+       honest. CSS drops them entirely on touch, where the swipe is the
+       control, so they can never sit invisible over a photo. */
+    var arrows = document.createElement('div');
+    arrows.className = 'gallery-arrows';
+    var prev = document.createElement('button');
+    var next = document.createElement('button');
+    prev.type = next.type = 'button';
+    prev.className = 'gallery-arrow gallery-arrow-prev';
+    next.className = 'gallery-arrow gallery-arrow-next';
+    prev.setAttribute('aria-label', 'Previous photo');
+    next.setAttribute('aria-label', 'Next photo');
+    prev.textContent = '‹';
+    next.textContent = '›';
+    arrows.appendChild(prev);
+    arrows.appendChild(next);
+    shell.appendChild(arrows);
+    prev.addEventListener('click', function () { glide(-1); });
+    next.addEventListener('click', function () { glide(1); });
   })();
 
   // ── Push AdSense ──────────────────────────────────────────────
