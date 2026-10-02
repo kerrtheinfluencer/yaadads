@@ -347,6 +347,20 @@
     display: block;
     transition: opacity 0.2s;
   }
+  /* §PHOTOSPIN — a slow photo shows a shimmer instead of an empty frame. The
+     class is only added after a 220ms delay by showFeatured()/renderLightbox(),
+     so a cached or fast photo never flashes a spinner. */
+  .gallery-main.is-loading::after,
+  .lightbox.is-loading::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.09) 50%, rgba(255,255,255,0) 70%) 0 0 / 220% 100%;
+    animation: phPhotoShimmer 1.15s linear infinite;
+  }
+  @keyframes phPhotoShimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-main.is-loading::after,
+    .lightbox.is-loading::after { animation: none; background: rgba(255,255,255,.05); }
+  }
   .gallery-zoom-hint {
     position: absolute; bottom: 12px; right: 12px;
     background: rgba(0,0,0,0.55);
@@ -958,17 +972,41 @@ document.addEventListener('DOMContentLoaded', function () {
      on a cold 1280px image. Here the current photo stays on screen the whole
      time and is replaced the moment the new one is ready, which reads as
      instant rather than as a stall. */
+  /* Arm the shimmer only while the INCOMING photo is genuinely pending, and only
+     after a beat so a cached photo never flashes one. (A first version asked the
+     DISPLAYED image whether it was complete — always true — so the shimmer never
+     appeared at all.) */
+  function startLoading(shell) {
+    if (!shell) return;
+    clearTimeout(shell._phTimer);
+    shell._phTimer = setTimeout(function () { shell.classList.add('is-loading'); }, 220);
+  }
+  function stopLoading(shell) {
+    if (!shell) return;
+    clearTimeout(shell._phTimer);
+    shell._phTimer = 0;
+    shell.classList.remove('is-loading');
+  }
   function showFeatured(url) {
     var img = document.getElementById('featuredImg');
     if (!img || !url) return;
-    if (img.getAttribute('src') === url) { img.style.opacity = '1'; return; }
-    var apply = function () { img.src = url; img.style.opacity = '1'; };
+    var shell = img.parentElement;
+    if (img.getAttribute('src') === url) { img.style.opacity = '1'; stopLoading(shell); return; }
+    var swapped = false;
     var next = new Image();
     next.decoding = 'async';
-    next.onload = apply;
-    next.onerror = apply;            // a bad URL must never leave a blank frame
+    next.onload = next.onerror = function () {
+      if (swapped) return;
+      swapped = true;
+      stopLoading(shell);
+      var fin = function () { img.style.opacity = '1'; };
+      img.addEventListener('load', fin, { once: true });
+      img.addEventListener('error', fin, { once: true });   // never spin forever
+      img.src = url;
+    };
     next.src = url;
-    if (next.complete) apply();
+    if (next.complete) { next.onload(); return; }   // already cached: no shimmer
+    startLoading(shell);
   }
   // Warm the neighbouring photos once the page is idle, so the tap that actually
   // happens is a cache hit. Deliberately only the first few — warming all of a
@@ -1014,6 +1052,11 @@ document.addEventListener('DOMContentLoaded', function () {
   function lbGoTo(i) { lbIndex = i; renderLightbox(); }
   function renderLightbox() {
     var img = document.getElementById('lbImg');
+    var lb = document.getElementById('lightbox');
+    startLoading(lb);
+    var fin = function () { stopLoading(lb); };
+    img.addEventListener('load', fin, { once: true });
+    img.addEventListener('error', fin, { once: true });
     img.src = PHOTOS[lbIndex];
 
     // Counter
