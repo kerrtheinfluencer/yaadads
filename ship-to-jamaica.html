@@ -48,7 +48,7 @@ button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font:600 15p
 .rng{color:var(--tx2);font-size:13px;margin:0 0 10px}
 table{width:100%;border-collapse:collapse;font-size:14px}td{padding:7px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right;white-space:nowrap}
 tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:rgba(244,195,0,.1);border:1px solid rgba(244,195,0,.35);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
-.dis{font-size:12px;color:var(--tx2);margin-top:12px}details{border-bottom:1px solid var(--line);padding:10px 0}summary{cursor:pointer;font-weight:600}
+.dis{font-size:12px;color:var(--tx2);margin-top:12px}.hint{font-size:12px;color:var(--tx2);margin:4px 0 0}details{border-bottom:1px solid var(--line);padding:10px 0}summary{cursor:pointer;font-weight:600}
 </style>
 </head>
 <body>
@@ -64,9 +64,10 @@ tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:r
 <div><label for="model">Make &amp; model</label><input id="model" type="text" placeholder="Honda Civic"></div>
 </div>
 <div class="row">
-<div><label for="price">Car price (USD)</label><input id="price" type="number" inputmode="decimal" placeholder="9500"></div>
+<div><label for="price">Car price (Auction/FOB) (USD) *</label><input id="price" type="number" inputmode="decimal" placeholder="9500" required></div>
 <div><label for="fees">Auction / dealer fees (USD)</label><input id="fees" type="number" inputmode="decimal" placeholder="0"></div>
 </div>
+<div><label for="cif">Total Price / CIF from seller (USD) *</label><input id="cif" type="number" inputmode="decimal" placeholder="e.g. 12500" required><p class="hint">Use the Total Price (CIF) shown on the seller's website for the most accurate estimate.</p></div>
 <div class="row">
 <div><label for="cc">Engine size (cc)</label><input id="cc" type="number" inputmode="numeric" placeholder="1800"></div>
 <div><label for="fuel">Fuel</label><select id="fuel"><option value="petrol">Petrol</option><option value="diesel">Diesel</option><option value="hybrid">Hybrid</option><option value="electric">Electric</option></select></div>
@@ -86,7 +87,7 @@ tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:r
 </div>
 
 <h2>How Jamaica car import costs work</h2>
-<p class="sub">Customs charges start from the <strong>CIF value</strong>: car price + shipping + insurance. Import duty is added first, then Special Consumption Tax (SCT), then 15% GCT is charged on the running total. An environmental levy, a customs admin fee, broker fees and port charges come on top. Import licence rules and age limits apply, so check with the Trade Board before you buy.</p>
+<p class="sub">Customs charges start from the <strong>CIF value</strong>: the higher of the seller's Total Price or your car price + shipping + insurance estimate. Import duty is added first, then Special Consumption Tax (SCT), then 15% GCT is charged on the running total. An environmental levy, a customs admin fee, broker fees and port charges come on top. Import licence rules and age limits apply, so check with the Trade Board before you buy.</p>
 
 <h2>FAQ</h2>
 <details><summary>How is the cost of importing a car to Jamaica calculated?</summary><p class="sub">Duty, SCT and GCT are compounded on the CIF value, then local fees are added. The table above shows each step for your car.</p></details>
@@ -103,14 +104,16 @@ function band(b,cc){for(var i=0;i<b.length;i++)if(cc<=b[i].maxCc)return b[i].rat
 function msg(t,e){var m=$('msg');m.textContent=t;m.className=e?'err':''}
 function fill(sel,o){sel.innerHTML=Object.keys(o).map(function(k){return '<option value="'+k+'">'+o[k]+'</option>'}).join('')}
 function calc(){
-  var price=+$('price').value,fees=+$('fees').value||0,cc=+$('cc').value,yr=+$('year').value,o=$('origin').value,b=$('body').value;
-  if(!price||price<=0){msg('Enter the car price in USD.',1);return}
+  var price=+$('price').value,fees=+$('fees').value||0,cifIn=+$('cif').value,cc=+$('cc').value,yr=+$('year').value,o=$('origin').value,b=$('body').value;
+  if(!price||price<=0){msg('Enter the car price (Auction/FOB) in USD.',1);return}
+  if(!cifIn||cifIn<=0){msg('Enter the Total Price / CIF from the seller in USD.',1);return}
   if(!cc||cc<500){msg('Enter the engine size in cc (e.g. 1800).',1);return}
-  msg('');var fr=R.freightUsd[o][b],fob=price+fees,ins=(fob+fr)*R.insurancePct,cif=fob+fr+ins;
-  var dr=band(R.dutyBands,cc),duty=cif*dr,sr=band(R.sctBands,cc),sct=(cif+duty)*sr,gct=(cif+duty+sct)*R.gctPct,env=cif*R.envLevyPct;
+  msg('');var fr=R.freightUsd[o][b],fob=price+fees,ins=(fob+fr)*R.insurancePct,cifEst=fob+fr+ins;
+  var cifUsed=Math.max(cifEst,cifIn),cifNote=cifIn>=cifEst?'seller CIF':'estimated CIF';
+  var dr=band(R.dutyBands,cc),duty=cifUsed*dr,sr=band(R.sctBands,cc),sct=(cifUsed+duty)*sr,gct=(cifUsed+duty+sct)*R.gctPct,env=cifUsed*R.envLevyPct;
   var L=R.localFeesJmd,loc=(L.customsAdminFee+L.brokerEstimate+L.portAndHandlingEstimate)/R.fxJmdPerUsd;
   var tot=fob+fr+ins+duty+sct+gct+env+loc,lo=tot-fr*R.rangePct-loc*R.rangePct,hi=tot+fr*R.rangePct*2+loc*R.rangePct;
-  var rows=[['Car price',fob],['Shipping (est.)',fr],['Insurance',ins],['CIF value',cif,1],['Import duty '+Math.round(dr*100)+'%',duty],['SCT '+Math.round(sr*100)+'%',sct],['GCT '+Math.round(R.gctPct*100)+'%',gct],['Environmental levy',env],['Customs admin, broker, port',loc]];
+  var rows=[['Car price (Auction/FOB)',fob],['Shipping (est.)',fr],['Insurance (est.)',ins],['Seller Total Price / CIF',cifIn],['CIF used for taxes ('+cifNote+')',cifUsed,1],['Import duty '+Math.round(dr*100)+'%',duty],['SCT '+Math.round(sr*100)+'%',sct],['GCT '+Math.round(R.gctPct*100)+'%',gct],['Environmental levy',env],['Customs admin, broker, port',loc]];
   $('tbl').innerHTML=rows.map(function(r){return '<tr'+(r[2]?' class="sum"':'')+'><td>'+r[0]+'</td><td>'+usd(r[1])+'</td></tr>'}).join('')+'<tr class="sum"><td>Estimated total landed cost</td><td>'+usd(tot)+'</td></tr>';
   $('tot').textContent=jmd(tot*R.fxJmdPerUsd);$('rng').textContent='≈ '+usd(tot)+'  ·  likely range '+usd(lo)+' – '+usd(hi);
   var w=[],age=new Date().getFullYear()-yr;
@@ -127,7 +130,8 @@ fetch('/shipping-rates.json').then(function(r){return r.json()}).then(function(j
   R=j;fill($('origin'),R.origins);fill($('body'),R.bodies);
   var q=new URLSearchParams(location.search);
   if(q.get('origin')&&R.origins[q.get('origin')])$('origin').value=q.get('origin');
-  if(q.get('price'))$('price').value=q.get('price');
+  if(q.get('price'))$('price').value=q.get('price');
+  if(q.get('cif'))$('cif').value=q.get('cif');
 }).catch(function(){msg('Could not load rates. Please refresh.',1)});
 </script>
 </body>
