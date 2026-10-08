@@ -101,8 +101,7 @@ jobs:
         run: |
           grep -q 'ship-to-jamaica.html' index.html || { echo "::error::ship-to-jamaica.html link missing from index.html"; exit 1; }
           grep -q 'shipwForm' index.html || { echo "::error::ship widget missing from index.html"; exit 1; }
-          test -f supabase/functions/parse-car-link/index.ts || { echo "::error::parse-car-link function missing"; exit 1; }
-          if grep -q 'PASTE_ANON_KEY' ship-to-jamaica.html; then echo "::error::ship-to-jamaica.html still has placeholder key"; exit 1; fi
+          if grep -q 'readLink\|fetchBtn\|parse-car-link\|PASTE_ANON_KEY' ship-to-jamaica.html; then echo "::error::ship-to-jamaica.html still references the removed link reader"; exit 1; fi
           echo "Ship-a-car page wired"
 
       - name: Verify the anon key is not expired

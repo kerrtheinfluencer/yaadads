@@ -501,9 +501,9 @@ if ('serviceWorker' in navigator) {
 <section class="shipw" aria-label="Car shipping cost calculator for Jamaica">
   <div class="shipw-in">
     <p class="shipw-t">🚢 Ship a car to Jamaica</p>
-    <p class="shipw-s">Paste a car link or enter the price (US$). Get the estimated total with duty &amp; fees.</p>
+    <p class="shipw-s">Enter the car price (US$). Get the estimated total with duty &amp; fees.</p>
     <form class="shipw-r" id="shipwForm" action="/ship-to-jamaica.html" method="get">
-      <input id="shipwIn" type="text" inputmode="url" placeholder="Paste link or price e.g. 9500" aria-label="Car link or price in USD" autocomplete="off">
+      <input id="shipwIn" type="text" inputmode="decimal" placeholder="Car price in USD e.g. 9500" aria-label="Car price in USD" autocomplete="off">
       <select id="shipwOrigin" name="origin" aria-label="Shipping from">
         <option value="usa_fl">USA – Florida</option>
         <option value="usa_nj">USA – NJ / NY</option>
@@ -522,8 +522,7 @@ if ('serviceWorker' in navigator) {
     e.preventDefault();
     var v=document.getElementById('shipwIn').value.trim(),o=document.getElementById('shipwOrigin').value;
     var q='?origin='+encodeURIComponent(o);
-    if(/^https?:\/\//i.test(v))q+='&url='+encodeURIComponent(v);
-    else if(parseFloat(v.replace(/[^0-9.]/g,'')))q+='&price='+parseFloat(v.replace(/[^0-9.]/g,''));
+    if(parseFloat(v.replace(/[^0-9.]/g,'')))q+='&price='+parseFloat(v.replace(/[^0-9.]/g,''));
     if(window.gtag)gtag('event','ship_widget_submit');
     location.href='/ship-to-jamaica.html'+q;
   });

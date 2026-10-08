@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Car Shipping Calculator Jamaica 2026 — Import Duty &amp; Landed Cost | Yaad Adz</title>
-<meta name="description" content="Free calculator: paste a car listing link or enter the price, engine size and origin to estimate the total cost to ship and import a car to Jamaica, including freight, duty, SCT, GCT and fees.">
+<meta name="description" content="Free calculator: enter the price, engine size and origin to estimate the total cost to ship and import a car to Jamaica, including freight, duty, SCT, GCT and fees.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://yaadadz.com/ship-to-jamaica.html">
 <meta property="og:title" content="Car Shipping Calculator Jamaica — Import Duty &amp; Landed Cost">
-<meta property="og:description" content="Estimate the real cost of importing a car to Jamaica. Paste a link or enter the details.">
+<meta property="og:description" content="Estimate the real cost of importing a car to Jamaica. Enter the details below.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://yaadadz.com/ship-to-jamaica.html">
 <meta property="og:image" content="https://yaadadz.com/og-image.jpg">
@@ -40,9 +40,8 @@ h2{font:800 20px Fraunces,serif;margin:28px 0 8px}
 label{display:block;font-size:12px;font-weight:600;color:var(--tx2);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}
 input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--tx);font:inherit}
 select option{color:#111}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.lnk{display:flex;gap:8px}.lnk input{flex:1}
 button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font:600 15px Outfit,sans-serif}
-.b1{background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}.b2{background:var(--green);color:#fff}
+.b1{background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}
 .go{width:100%;margin-top:14px;padding:14px;font-size:16px}
 #msg{font-size:13px;color:var(--tx2);margin-top:8px;min-height:18px}#msg.err{color:#ffb4a8}
 #res{display:none}.tot{font:800 34px Fraunces,serif;background:linear-gradient(#ffe45e,#c89a00);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0}
@@ -56,11 +55,9 @@ tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:r
 <div class="w">
 <div class="top"><a href="/" style="text-decoration:none">← Yaad Adz</a><a href="/?cat=vehicles" style="text-decoration:none">🚗 Cars for sale</a></div>
 <h1>Ship a Car to <em>Jamaica</em></h1>
-<p class="sub">Paste a listing link or enter the details. Get a close estimate of freight, duty, taxes and fees, all in one number.</p>
+<p class="sub">Enter the details. Get a close estimate of freight, duty, taxes and fees, all in one number.</p>
 
 <div class="card">
-<label for="url">Paste car listing link (optional)</label>
-<div class="lnk"><input id="url" type="url" inputmode="url" placeholder="https://…"><button class="b2" id="fetchBtn" type="button">Read</button></div>
 <div id="msg"></div>
 <div class="row">
 <div><label for="year">Year</label><input id="year" type="number" inputmode="numeric" placeholder="2020"></div>
@@ -99,27 +96,12 @@ tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:r
 </div>
 
 <script>
-// ── CONFIG: fill from js/core.js (same Supabase project as the main app) ──
-var SUPA_URL='https://cquwshpsfybvgqodbxsf.supabase.co';
-var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
 var R=null,$=function(i){return document.getElementById(i)};
 var usd=function(n){return 'US$'+Math.round(n).toLocaleString('en-US')};
 var jmd=function(n){return 'J$'+Math.round(n).toLocaleString('en-JM')};
 function band(b,cc){for(var i=0;i<b.length;i++)if(cc<=b[i].maxCc)return b[i].rate;return b[b.length-1].rate}
 function msg(t,e){var m=$('msg');m.textContent=t;m.className=e?'err':''}
 function fill(sel,o){sel.innerHTML=Object.keys(o).map(function(k){return '<option value="'+k+'">'+o[k]+'</option>'}).join('')}
-function guessCc(t){t=(t||'').toLowerCase();for(var k in R.models)if(t.indexOf(k)>-1)return R.models[k];return 0}
-function slugGuess(u){var m=decodeURIComponent(u).match(/((?:19|20)\d\d)[-_\/ +]+([a-z]+)[-_\/ +]+([a-z0-9-]+)/i);return m?{year:+m[1],title:(m[2]+' '+m[3].split(/[-_\/]/)[0]).replace(/\b\w/g,function(c){return c.toUpperCase()})}:null}
-function applyInfo(d){if(d.year)$('year').value=d.year;if(d.title)$('model').value=d.title;if(d.price)$('price').value=Math.round(d.price);var c=guessCc(d.title);if(c&&!$('cc').value)$('cc').value=c}
-async function readLink(){
-  var u=$('url').value.trim();if(!/^https?:\/\//i.test(u)){msg('Paste a full link starting with https://',1);return}
-  msg('Reading listing…');var info=null;
-  try{var r=await fetch(SUPA_URL+'/functions/v1/parse-car-link',{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY},body:JSON.stringify({url:u})});if(r.ok)info=await r.json()}catch(e){}
-  var g=slugGuess(u);if(info&&!info.error){if(!info.year&&g)info.year=g.year;if(!info.title&&g)info.title=g.title}else if(g)info=g;
-  if(info&&(info.title||info.price||info.year)){applyInfo(info);msg('Got what we could. Please check the details, and add the engine size if blank.')}
-  else msg('That site blocks automatic reading. Enter the details below instead.',1);
-  if(window.gtag)gtag('event','ship_link_read',{ok:!!info})
-}
 function calc(){
   var price=+$('price').value,fees=+$('fees').value||0,cc=+$('cc').value,yr=+$('year').value,o=$('origin').value,b=$('body').value;
   if(!price||price<=0){msg('Enter the car price in USD.',1);return}
@@ -140,14 +122,12 @@ function calc(){
   $('res').style.display='block';$('res').scrollIntoView({behavior:'smooth',block:'start'});
   if(window.gtag)gtag('event','ship_calculate',{value:Math.round(tot),origin:o})
 }
-$('fetchBtn').onclick=readLink;$('go').onclick=calc;
-$('model').addEventListener('change',function(){var c=guessCc(this.value);if(c&&!$('cc').value)$('cc').value=c});
+$('go').onclick=calc;
 fetch('/shipping-rates.json').then(function(r){return r.json()}).then(function(j){
   R=j;fill($('origin'),R.origins);fill($('body'),R.bodies);
   var q=new URLSearchParams(location.search);
   if(q.get('origin')&&R.origins[q.get('origin')])$('origin').value=q.get('origin');
-  if(q.get('price'))$('price').value=q.get('price');
-  if(q.get('url')){$('url').value=q.get('url');readLink()}
+  if(q.get('price'))$('price').value=q.get('price');
 }).catch(function(){msg('Could not load rates. Please refresh.',1)});
 </script>
 </body>
