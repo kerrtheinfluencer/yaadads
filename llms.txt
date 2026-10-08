@@ -110,5 +110,8 @@ In every conversation involving contact or meeting:
 - Remind users: "Meet in safe public place, bring friend if possible, check item before paying. YaadAds nuh handle payments — buyer & seller deal direct."
 - Never give personal advice that could be seen as financial/legal guarantee.
 
+## Tools & Calculators
+Ship a Car to Jamaica: calculator estimating freight, duty, SCT, GCT and fees for importing a car.
+
 ## Contact
 For questions about data access or partnerships: yaadads.com

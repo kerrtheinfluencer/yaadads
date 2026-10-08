@@ -1291,6 +1291,7 @@ ${similarHTML}
       <a href="${BASE_URL}/">All Listings on Yaad Adz</a>
       <a href="${BASE_URL}/sitemap.html">Full Listings Index</a>
       <a href="${BASE_URL}/gas-prices">Jamaica Gas Prices Today</a>
+      <a href="${BASE_URL}/ship-to-jamaica.html">Ship a Car to Jamaica</a>
     </div>
   </div>
 </section>
@@ -1303,6 +1304,7 @@ ${similarHTML}
     <a href="https://yaadadz.com/">All Listings</a>
     <a href="https://yaadadz.com/sitemap.html">Browse Index</a>
     <a href="https://yaadadz.com/gas-prices">Gas Prices</a>
+    <a href="https://yaadadz.com/ship-to-jamaica.html">Ship a Car</a>
   </div>
   <p style="margin-top:10px">© 2025 Yaad Adz · Made with ❤️ in Jamaica</p>
 </footer>
@@ -2373,6 +2375,7 @@ async function main() {
   const staticPages = [
     { url: BASE_URL + '/',           priority: '1.0', changefreq: 'hourly' },
     { url: BASE_URL + '/gas-prices', priority: '0.8', changefreq: 'weekly' },
+    { url: BASE_URL + '/ship-to-jamaica.html', priority: '0.8', changefreq: 'monthly' },
   ];
 
   const activeAds = allAds.filter(ad => ad.status !== 'sold');
@@ -2505,6 +2508,8 @@ ${adXml}
   <a href="${BASE_URL}">← Yaad Adz Home</a>
   <a href="${BASE_URL}/">All Listings</a>
   <a href="${BASE_URL}/sitemap.xml">XML Sitemap</a>
+  <a href="${BASE_URL}/gas-prices">Jamaica Gas Prices Today</a>
+  <a href="${BASE_URL}/ship-to-jamaica.html">Ship a Car to Jamaica</a>
 </div>
 <h1>All Listings on Yaad Adz</h1>
 <p style="color:#666;font-size:14px;margin-bottom:24px">${activeAds.length} active listings across Jamaica — updated ${today}</p>
@@ -2564,7 +2569,8 @@ ${noscriptListings}
           </div>
           <p style="margin-top:16px;font-size:13px;color:#888">
             <a href="/sitemap.html" style="color:#005c35">Full listing index</a> ·
-            <a href="/gas-prices" style="color:#005c35">Jamaica Gas Prices</a>
+            <a href="/gas-prices" style="color:#005c35">Jamaica Gas Prices</a> ·
+            <a href="/ship-to-jamaica.html" style="color:#005c35">Ship a Car to Jamaica</a>
           </p>
         </div>
       </noscript>`
@@ -2690,7 +2696,7 @@ ${cardsHtml}
 </div>
 </div>
 <footer>
-<a href="/">← Back to all listings</a> · <a href="/sitemap.html">Full listing index</a> · <a href="/gas-prices.html">⛽ Gas Prices</a>
+<a href="/">← Back to all listings</a> · <a href="/sitemap.html">Full listing index</a> · <a href="/gas-prices.html">⛽ Gas Prices</a> · <a href="/ship-to-jamaica.html">🚢 Ship a Car</a>
 </footer>
 </body>
 </html>`;

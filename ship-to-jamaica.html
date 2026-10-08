@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en-JM">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Car Shipping Calculator Jamaica 2026 — Import Duty &amp; Landed Cost | Yaad Adz</title>
+<meta name="description" content="Free calculator: paste a car listing link or enter the price, engine size and origin to estimate the total cost to ship and import a car to Jamaica, including freight, duty, SCT, GCT and fees.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://yaadadz.com/ship-to-jamaica.html">
+<meta property="og:title" content="Car Shipping Calculator Jamaica — Import Duty &amp; Landed Cost">
+<meta property="og:description" content="Estimate the real cost of importing a car to Jamaica. Paste a link or enter the details.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yaadadz.com/ship-to-jamaica.html">
+<meta property="og:image" content="https://yaadadz.com/og-image.jpg">
+<meta name="theme-color" content="#0c1e14">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-KE3X5BMY63');</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"WebApplication","name":"Jamaica Car Shipping & Import Cost Calculator","url":"https://yaadadz.com/ship-to-jamaica.html","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"areaServed":{"@type":"Country","name":"Jamaica"},"publisher":{"@type":"Organization","name":"Yaad Adz","url":"https://yaadadz.com"}},
+{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Yaad Adz","item":"https://yaadadz.com/"},{"@type":"ListItem","position":2,"name":"Ship a Car to Jamaica","item":"https://yaadadz.com/ship-to-jamaica.html"}]},
+{"@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"How is the cost of importing a car to Jamaica calculated?","acceptedAnswer":{"@type":"Answer","text":"Jamaican charges are based on the CIF value: the vehicle price plus shipping and insurance. Import duty is applied first, then Special Consumption Tax (SCT), then 15% GCT on the running total, plus an environmental levy, customs admin fee, broker and port charges."}},
+{"@type":"Question","name":"How old can a car be to import into Jamaica?","acceptedAnswer":{"@type":"Answer","text":"Published guidance says standard cars should generally be no more than 6 years old, and an import licence from the Trade Board is required before shipping. Always confirm current rules with the Trade Board and Jamaica Customs Agency."}},
+{"@type":"Question","name":"Is this calculator exact?","acceptedAnswer":{"@type":"Answer","text":"No. It is an estimate. Duty bands, freight and fees change, and Customs decides the final value. Use it to budget, then confirm with a licensed customs broker."}}
+]}]}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c1e14;--card:rgba(10,22,16,.52);--line:rgba(255,255,255,.12);--green:#005c35;--gold:#f4c300;--tx:#eef5f0;--tx2:#9fb5a7}
+*{box-sizing:border-box}html{overflow-x:hidden;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 Outfit,system-ui,sans-serif;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.w{max-width:760px;margin:0 auto;padding:16px}
+a{color:var(--gold)}.top{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+h1{font:800 clamp(26px,6vw,38px)/1.15 Fraunces,serif;margin:12px 0 6px}h1 em{color:var(--gold)}
+h2{font:800 20px Fraunces,serif;margin:28px 0 8px}
+.sub{color:var(--tx2);margin:0 0 16px}
+.card{background:var(--card);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:600;color:var(--tx2);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--tx);font:inherit}
+select option{color:#111}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lnk{display:flex;gap:8px}.lnk input{flex:1}
+button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font:600 15px Outfit,sans-serif}
+.b1{background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}.b2{background:var(--green);color:#fff}
+.go{width:100%;margin-top:14px;padding:14px;font-size:16px}
+#msg{font-size:13px;color:var(--tx2);margin-top:8px;min-height:18px}#msg.err{color:#ffb4a8}
+#res{display:none}.tot{font:800 34px Fraunces,serif;background:linear-gradient(#ffe45e,#c89a00);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0}
+.rng{color:var(--tx2);font-size:13px;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:7px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right;white-space:nowrap}
+tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:rgba(244,195,0,.1);border:1px solid rgba(244,195,0,.35);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
+.dis{font-size:12px;color:var(--tx2);margin-top:12px}details{border-bottom:1px solid var(--line);padding:10px 0}summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div class="w">
+<div class="top"><a href="/" style="text-decoration:none">← Yaad Adz</a><a href="/?cat=vehicles" style="text-decoration:none">🚗 Cars for sale</a></div>
+<h1>Ship a Car to <em>Jamaica</em></h1>
+<p class="sub">Paste a listing link or enter the details. Get a close estimate of freight, duty, taxes and fees, all in one number.</p>
+
+<div class="card">
+<label for="url">Paste car listing link (optional)</label>
+<div class="lnk"><input id="url" type="url" inputmode="url" placeholder="https://…"><button class="b2" id="fetchBtn" type="button">Read</button></div>
+<div id="msg"></div>
+<div class="row">
+<div><label for="year">Year</label><input id="year" type="number" inputmode="numeric" placeholder="2020"></div>
+<div><label for="model">Make &amp; model</label><input id="model" type="text" placeholder="Honda Civic"></div>
+</div>
+<div class="row">
+<div><label for="price">Car price (USD)</label><input id="price" type="number" inputmode="decimal" placeholder="9500"></div>
+<div><label for="fees">Auction / dealer fees (USD)</label><input id="fees" type="number" inputmode="decimal" placeholder="0"></div>
+</div>
+<div class="row">
+<div><label for="cc">Engine size (cc)</label><input id="cc" type="number" inputmode="numeric" placeholder="1800"></div>
+<div><label for="fuel">Fuel</label><select id="fuel"><option value="petrol">Petrol</option><option value="diesel">Diesel</option><option value="hybrid">Hybrid</option><option value="electric">Electric</option></select></div>
+</div>
+<div class="row">
+<div><label for="origin">Shipping from</label><select id="origin"></select></div>
+<div><label for="body">Vehicle type</label><select id="body"></select></div>
+</div>
+<button class="b1 go" id="go" type="button">Calculate total cost</button>
+</div>
+
+<div class="card" id="res" aria-live="polite">
+<p class="tot" id="tot"></p><p class="rng" id="rng"></p>
+<table id="tbl"></table>
+<div id="warns"></div>
+<p class="dis" id="dis"></p>
+</div>
+
+<h2>How Jamaica car import costs work</h2>
+<p class="sub">Customs charges start from the <strong>CIF value</strong>: car price + shipping + insurance. Import duty is added first, then Special Consumption Tax (SCT), then 15% GCT is charged on the running total. An environmental levy, a customs admin fee, broker fees and port charges come on top. Import licence rules and age limits apply, so check with the Trade Board before you buy.</p>
+
+<h2>FAQ</h2>
+<details><summary>How is the cost of importing a car to Jamaica calculated?</summary><p class="sub">Duty, SCT and GCT are compounded on the CIF value, then local fees are added. The table above shows each step for your car.</p></details>
+<details><summary>How old can an imported car be?</summary><p class="sub">Published guidance says standard cars should generally be 6 years old or newer, and an import licence is needed before shipping. Confirm the current rule with the Trade Board.</p></details>
+<details><summary>Is this exact?</summary><p class="sub">No. It is a budgeting estimate. Rates, freight and exchange rates change, and Customs sets the final value. Confirm with a licensed customs broker.</p></details>
+<p class="dis">Looking for a car already in Jamaica? <a href="/?cat=vehicles">Browse cars on Yaad Adz</a>.</p>
+</div>
+
+<script>
+// ── CONFIG: fill from js/core.js (same Supabase project as the main app) ──
+var SUPA_URL='https://cquwshpsfybvgqodbxsf.supabase.co';
+var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
+var R=null,$=function(i){return document.getElementById(i)};
+var usd=function(n){return 'US$'+Math.round(n).toLocaleString('en-US')};
+var jmd=function(n){return 'J$'+Math.round(n).toLocaleString('en-JM')};
+function band(b,cc){for(var i=0;i<b.length;i++)if(cc<=b[i].maxCc)return b[i].rate;return b[b.length-1].rate}
+function msg(t,e){var m=$('msg');m.textContent=t;m.className=e?'err':''}
+function fill(sel,o){sel.innerHTML=Object.keys(o).map(function(k){return '<option value="'+k+'">'+o[k]+'</option>'}).join('')}
+function guessCc(t){t=(t||'').toLowerCase();for(var k in R.models)if(t.indexOf(k)>-1)return R.models[k];return 0}
+function slugGuess(u){var m=decodeURIComponent(u).match(/((?:19|20)\d\d)[-_\/ +]+([a-z]+)[-_\/ +]+([a-z0-9-]+)/i);return m?{year:+m[1],title:(m[2]+' '+m[3].split(/[-_\/]/)[0]).replace(/\b\w/g,function(c){return c.toUpperCase()})}:null}
+function applyInfo(d){if(d.year)$('year').value=d.year;if(d.title)$('model').value=d.title;if(d.price)$('price').value=Math.round(d.price);var c=guessCc(d.title);if(c&&!$('cc').value)$('cc').value=c}
+async function readLink(){
+  var u=$('url').value.trim();if(!/^https?:\/\//i.test(u)){msg('Paste a full link starting with https://',1);return}
+  msg('Reading listing…');var info=null;
+  try{var r=await fetch(SUPA_URL+'/functions/v1/parse-car-link',{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY},body:JSON.stringify({url:u})});if(r.ok)info=await r.json()}catch(e){}
+  var g=slugGuess(u);if(info&&!info.error){if(!info.year&&g)info.year=g.year;if(!info.title&&g)info.title=g.title}else if(g)info=g;
+  if(info&&(info.title||info.price||info.year)){applyInfo(info);msg('Got what we could. Please check the details, and add the engine size if blank.')}
+  else msg('That site blocks automatic reading. Enter the details below instead.',1);
+  if(window.gtag)gtag('event','ship_link_read',{ok:!!info})
+}
+function calc(){
+  var price=+$('price').value,fees=+$('fees').value||0,cc=+$('cc').value,yr=+$('year').value,o=$('origin').value,b=$('body').value;
+  if(!price||price<=0){msg('Enter the car price in USD.',1);return}
+  if(!cc||cc<500){msg('Enter the engine size in cc (e.g. 1800).',1);return}
+  msg('');var fr=R.freightUsd[o][b],fob=price+fees,ins=(fob+fr)*R.insurancePct,cif=fob+fr+ins;
+  var dr=band(R.dutyBands,cc),duty=cif*dr,sr=band(R.sctBands,cc),sct=(cif+duty)*sr,gct=(cif+duty+sct)*R.gctPct,env=cif*R.envLevyPct;
+  var L=R.localFeesJmd,loc=(L.customsAdminFee+L.brokerEstimate+L.portAndHandlingEstimate)/R.fxJmdPerUsd;
+  var tot=fob+fr+ins+duty+sct+gct+env+loc,lo=tot-fr*R.rangePct-loc*R.rangePct,hi=tot+fr*R.rangePct*2+loc*R.rangePct;
+  var rows=[['Car price',fob],['Shipping (est.)',fr],['Insurance',ins],['CIF value',cif,1],['Import duty '+Math.round(dr*100)+'%',duty],['SCT '+Math.round(sr*100)+'%',sct],['GCT '+Math.round(R.gctPct*100)+'%',gct],['Environmental levy',env],['Customs admin, broker, port',loc]];
+  $('tbl').innerHTML=rows.map(function(r){return '<tr'+(r[2]?' class="sum"':'')+'><td>'+r[0]+'</td><td>'+usd(r[1])+'</td></tr>'}).join('')+'<tr class="sum"><td>Estimated total landed cost</td><td>'+usd(tot)+'</td></tr>';
+  $('tot').textContent=jmd(tot*R.fxJmdPerUsd);$('rng').textContent='≈ '+usd(tot)+'  ·  likely range '+usd(lo)+' – '+usd(hi);
+  var w=[],age=new Date().getFullYear()-yr;
+  if(yr&&age>R.maxVehicleAgeYears)w.push('This car is about '+age+' years old. Published guidance limits standard car imports to '+R.maxVehicleAgeYears+' years, so you may not be allowed to import it.');
+  if($('fuel').value!=='petrol'&&$('fuel').value!=='diesel')w.push('Hybrid and electric concessions are not modelled here. A broker can tell you if you qualify for lower rates.');
+  w.push('Damaged or salvage vehicles may be refused entry. Confirm before you bid.');
+  $('warns').innerHTML=w.map(function(x){return '<div class="warn">'+x+'</div>'}).join('');
+  $('dis').textContent='Estimate only, rates as of '+R.updated+' at J$'+R.fxJmdPerUsd+' per US$1. Final charges are set by Jamaica Customs. Confirm with a licensed broker before buying.';
+  $('res').style.display='block';$('res').scrollIntoView({behavior:'smooth',block:'start'});
+  if(window.gtag)gtag('event','ship_calculate',{value:Math.round(tot),origin:o})
+}
+$('fetchBtn').onclick=readLink;$('go').onclick=calc;
+$('model').addEventListener('change',function(){var c=guessCc(this.value);if(c&&!$('cc').value)$('cc').value=c});
+fetch('/shipping-rates.json').then(function(r){return r.json()}).then(function(j){
+  R=j;fill($('origin'),R.origins);fill($('body'),R.bodies);
+  var q=new URLSearchParams(location.search);
+  if(q.get('origin')&&R.origins[q.get('origin')])$('origin').value=q.get('origin');
+  if(q.get('price'))$('price').value=q.get('price');
+  if(q.get('url')){$('url').value=q.get('url');readLink()}
+}).catch(function(){msg('Could not load rates. Please refresh.',1)});
+</script>
+</body>
+</html>

@@ -444,9 +444,15 @@ if ('serviceWorker' in navigator) {
 <!-- ACTIVITY TICKER -->
 <!-- NAV -->
 <nav>
-  <div class="nav-logo" onclick="goHome()" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
+  <!-- §HOME-RESET — a real link, not a bare <div onclick>. "Home" has to work
+       even when the JS never arrives, has to be reachable by keyboard, and has
+       to be openable in a new tab like every other home affordance on the site
+       (the ad pages and the category pages all use <a href="/">). goHome(event)
+       keeps the in-app fast path and prevents the reload; a handler that throws
+       can never cancel the link, so the fallback is a plain navigation home. -->
+  <a class="nav-logo" href="/" aria-label="Yaad Adz — back to home" onclick="goHome(event)" style="display:flex;align-items:center;gap:0;cursor:pointer;text-decoration:none;">
     <img src="/logo.svg" alt="Yaad Adz" fetchpriority="high" style="height:38px;width:auto;display:block;">
-  </div>
+  </a>
   <div class="nav-spacer"></div>
   <div class="nav-actions" id="navActions">
     <!-- Rendered by JS -->
@@ -479,6 +485,50 @@ if ('serviceWorker' in navigator) {
   </div>
 
 
+<!-- ═══ SHIP-A-CAR WIDGET (insert between </div> closing .hero and <div class="results-area">) ═══ -->
+<style>
+.shipw{max-width:960px;margin:16px auto 0;padding:0 16px}
+.shipw-in{background:rgba(10,22,16,.52);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px 16px}
+.shipw-t{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#fff;margin:0 0 4px}
+.shipw-s{font-size:12px;color:#9fb5a7;margin:0 0 10px}
+.shipw-r{display:flex;gap:8px;flex-wrap:wrap}
+.shipw-r input{flex:1 1 180px;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:14px}
+.shipw-r select{flex:0 1 150px;padding:11px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:14px}
+.shipw-r select option{color:#111}
+.shipw-r button{flex:0 0 auto;padding:11px 16px;border:0;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer;background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}
+</style>
+<section class="shipw" aria-label="Car shipping cost calculator for Jamaica">
+  <div class="shipw-in">
+    <p class="shipw-t">🚢 Ship a car to Jamaica</p>
+    <p class="shipw-s">Paste a car link or enter the price (US$). Get the estimated total with duty &amp; fees.</p>
+    <form class="shipw-r" id="shipwForm" action="/ship-to-jamaica.html" method="get">
+      <input id="shipwIn" type="text" inputmode="url" placeholder="Paste link or price e.g. 9500" aria-label="Car link or price in USD" autocomplete="off">
+      <select id="shipwOrigin" name="origin" aria-label="Shipping from">
+        <option value="usa_fl">USA – Florida</option>
+        <option value="usa_nj">USA – NJ / NY</option>
+        <option value="canada">Canada</option>
+        <option value="uk">UK</option>
+        <option value="japan">Japan</option>
+      </select>
+      <button type="submit">Estimate</button>
+    </form>
+  </div>
+</section>
+<script>
+(function(){
+  var f=document.getElementById('shipwForm');if(!f)return;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=document.getElementById('shipwIn').value.trim(),o=document.getElementById('shipwOrigin').value;
+    var q='?origin='+encodeURIComponent(o);
+    if(/^https?:\/\//i.test(v))q+='&url='+encodeURIComponent(v);
+    else if(parseFloat(v.replace(/[^0-9.]/g,'')))q+='&price='+parseFloat(v.replace(/[^0-9.]/g,''));
+    if(window.gtag)gtag('event','ship_widget_submit');
+    location.href='/ship-to-jamaica.html'+q;
+  });
+})();
+</script>
+<!-- ═══ END SHIP-A-CAR WIDGET ═══ -->
 <!-- RESULTS AREA (categories + AI response + listings, all unified) -->
   <div class="results-area">
 
@@ -586,6 +636,9 @@ if ('serviceWorker' in navigator) {
 
     <!-- Referral spot (Invite friends + leaderboard preview) — rendered by js/search-ai.js renderReferralSpot() -->
     <div id="homeReferralSpot"></div>
+
+    <!-- §SHIP-CALC — BF landed-cost widget (js/ship-calc.js renders here) -->
+    <div id="shipCalcSpot"></div>
 
     <!-- §FOR-YOU — the ranked feed bar (js/for-you.js): why this order, 🔀 Shuffle picks, ❔ How this works -->
     <div class="fy-bar" id="fyBar" aria-hidden="true"></div>
@@ -1065,6 +1118,7 @@ if ('serviceWorker' in navigator) {
       <span>👗 <a href="/?cat=fashion">Fashion</a></span>
       <span>🥭 <a href="/?cat=food">Food &amp; Farm</a></span>
       <span>🎵 <a href="/?cat=music">Music</a></span>
+      <span>🚢 <a href="/ship-to-jamaica.html">Ship a Car to Jamaica</a></span>
     </div>
     <!-- Static link to HTML sitemap — Google follows this to discover all ad pages -->
     <p style="margin-top:12px;font-size:12px">
@@ -1106,7 +1160,8 @@ if ('serviceWorker' in navigator) {
     <a href="/?q=phone+for+sale" style="color:var(--text-3);margin:0 6px">Phones</a>·
     <a href="/?q=land+for+sale" style="color:var(--text-3);margin:0 6px">Land for Sale</a>·
     <a href="/?q=jobs+in+Jamaica" style="color:var(--text-3);margin:0 6px">Jobs</a>·
-    <a href="/?q=laptop+for+sale" style="color:var(--text-3);margin:0 6px">Laptops</a>
+    <a href="/?q=laptop+for+sale" style="color:var(--text-3);margin:0 6px">Laptops</a>·
+    <a href="/ship-to-jamaica.html" style="color:var(--text-3);margin:0 6px">Ship a Car to Jamaica</a>·
   </div>
   <p style="margin-top:12px;font-size:12px">© 2025 Yaad Adz · Free Classifieds Jamaica · Made with ❤️ in Jamaica</p>
 </footer>
@@ -1389,6 +1444,8 @@ if ('serviceWorker' in navigator) {
 <script src="js/recent.js" defer></script>
 <script src="js/for-you.js" defer></script>
 <script src="js/site-updates.js" defer></script>
+<script src="js/broadcasts.js" defer></script>
+<script src="js/ship-calc.js" defer></script>
 <script src="js/boot.js" defer></script>
 <!-- ── REFERRAL ENV BINDINGS ── -->
 <script>

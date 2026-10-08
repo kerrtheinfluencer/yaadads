@@ -1,0 +1,42 @@
+{
+  "_notice": "ESTIMATES ONLY. Duty/SCT bands are taken from public articles and may be out of date; freight numbers are placeholders. Verify with Jamaica Customs Agency / a licensed broker and replace freight with real shipper quotes.",
+  "updated": "2026-10-08",
+  "fxJmdPerUsd": 158,
+  "insurancePct": 0.015,
+  "gctPct": 0.15,
+  "envLevyPct": 0.005,
+  "dutyBands": [
+    { "maxCc": 2000, "rate": 0.20 },
+    { "maxCc": 99999, "rate": 0.40 }
+  ],
+  "sctBands": [
+    { "maxCc": 99999, "rate": 0.20 }
+  ],
+  "localFeesJmd": {
+    "customsAdminFee": 66125,
+    "brokerEstimate": 50000,
+    "portAndHandlingEstimate": 60000
+  },
+  "maxVehicleAgeYears": 6,
+  "rangePct": 0.1,
+  "origins": {
+    "usa_fl": "USA – Florida (Miami / Jacksonville)",
+    "usa_nj": "USA – New Jersey / New York",
+    "canada": "Canada (Toronto / Halifax)",
+    "uk": "United Kingdom",
+    "japan": "Japan (Yokohama)"
+  },
+  "bodies": { "sedan": "Car / Hatchback", "suv": "SUV / Crossover", "pickup": "Pickup / Van" },
+  "freightUsd": {
+    "usa_fl": { "sedan": 1100, "suv": 1400, "pickup": 1600 },
+    "usa_nj": { "sedan": 1400, "suv": 1700, "pickup": 1900 },
+    "canada": { "sedan": 1800, "suv": 2100, "pickup": 2500 },
+    "uk": { "sedan": 2000, "suv": 2400, "pickup": 2800 },
+    "japan": { "sedan": 2200, "suv": 2600, "pickup": 3000 }
+  },
+  "models": {
+    "civic": 1800, "corolla": 1800, "camry": 2500, "rav4": 2500, "cr-v": 1500,
+    "fit": 1300, "note": 1200, "vitz": 1000, "axio": 1500, "tiida": 1500,
+    "hilux": 2400, "wish": 1800, "accord": 2400, "rogue": 2500, "elantra": 2000
+  }
+}

@@ -16,6 +16,8 @@ on:
       - 'manifest.json'
       - 'logo.svg'
       - 'gas-prices.html'
+      - 'ship-to-jamaica.html'
+      - 'shipping-rates.json'
       - '.github/workflows/smoke-test.yml'
   pull_request:
     paths:
@@ -88,6 +90,20 @@ jobs:
         run: |
           test -f style.css
           test -f offline.html
+          test -f ship-to-jamaica.html
+          test -f shipping-rates.json
+
+      - name: Check shipping rates JSON is valid
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('shipping-rates.json'))"
+
+      - name: Check ship-to-jamaica page is wired
+        run: |
+          grep -q 'ship-to-jamaica.html' index.html || { echo "::error::ship-to-jamaica.html link missing from index.html"; exit 1; }
+          grep -q 'shipwForm' index.html || { echo "::error::ship widget missing from index.html"; exit 1; }
+          test -f supabase/functions/parse-car-link/index.ts || { echo "::error::parse-car-link function missing"; exit 1; }
+          if grep -q 'PASTE_ANON_KEY' ship-to-jamaica.html; then echo "::error::ship-to-jamaica.html still has placeholder key"; exit 1; fi
+          echo "Ship-a-car page wired"
 
       - name: Verify the anon key is not expired
         run: |
@@ -168,6 +184,16 @@ jobs:
       - name: Run responsive hero layout tests
         timeout-minutes: 5
         run: npm run test:hero
+
+      # "Press Home, get home." The logo cleared two variables and then called
+      # goPage('home'), which returns early when the home page is already active
+      # — so after a category tap, a search or a ?parish= deep link the button
+      # visibly did nothing. This drives the real app at 390px and asserts the
+      # feed is rebuilt, the AI/parish filter is cleared, the page scrolls back
+      # to the top, and the logo is a real <a href="/"> that never reloads.
+      - name: Run home-navigation / logo reset tests
+        timeout-minutes: 5
+        run: npm run test:home
 
       - name: Run AI chat regression tests (pure core + wiring)
         run: |

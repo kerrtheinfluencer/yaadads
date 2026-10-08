@@ -5,7 +5,28 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 👉 v2.21 — Swipe the photo right on an ad (Oct 2, 2026) · latest
+## 🚢 v2.23 — Paste a BeForward link, see the full landed price (Oct 8, 2026) · latest
+
+Shopping a car from BeForward? Paste or drop the link into the new calculator right on the home page and it reads the listing, then prices the whole journey: ocean freight and insurance, the Jamaica duty stack in the right compounding order, plus broker, port and transport — one full shipping price and one full local price in Jamaican dollars, with every line editable.
+
+- New: paste, type or drag a BeForward link onto the home screen and the widget reads the car, price, engine and fuel
+- New: full shipping price (vehicle price, ocean freight Japan to Kingston, insurance) in US dollars and Jamaican dollars
+- New: full local estimate with duty, SCT, GCT, env levy and customs admin fee compounded the way Jamaica Customs assesses them
+- New: engine bands that match the dealer rate sheet — petrol, diesel, hybrid and electric, plus a mode for auto parts
+- New: every fee, rate and freight option is editable, with a copyable breakdown to send your broker
+- Fixed wording: anything the link reader cannot fetch falls back to manual entry instead of an error
+
+## 📣 v2.22 — We can send you a notice now (Oct 3, 2026)
+
+When we have something worth telling everyone — a market reopening, how something on the site works now, a heads-up before anything changes — it now lands at the very top of your Messages inbox as a 📣 Notice from Yaad Adz, with a gold New chip until you open it. Tap it whenever you like to catch up: every notice we have sent is kept in one place, and nothing quietly disappears. Nobody can reply to a notice, so one will never sit there unanswered in your list.
+
+- New: notices from Yaad Adz sit pinned at the top of your Messages inbox, above your conversations
+- New: a gold New chip, and a dot on the Messages tab, until you have read the newest notice
+- New: tap a notice to read it together with everything we sent before it
+- New: some notices go to a single parish, so you may see one that a friend in another parish does not
+- New: whether you have read a notice is remembered on your own device, so a notice you have read will not nag you again on that phone
+
+## 👉 v2.21 — Swipe the photo right on an ad (Oct 2, 2026)
 
 The big photo on an ad could not be swiped at all — you had to tap it open full screen first. Now it follows your thumb: drag it sideways and the next photo slides in already loaded, so you never get a blank frame. A quick flick moves on, a small nudge stays put, dragging up still scrolls the page, and the first and last photo push back instead of running off. On a computer you get arrow buttons on hover, and if you have turned animations off in your system settings, photos change instantly with no movement at all.
 
