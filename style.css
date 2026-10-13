@@ -1175,6 +1175,12 @@ nav.scrolled-transparent {
     0 0 0 0.5px rgba(255, 255, 255, 0.1) inset,
     0 1px 0 rgba(255, 255, 255, 0.12) inset;
   cursor: pointer;
+  /* Grid items default to min-width:auto, which refuses to shrink below the
+     card's min-content width. In the mobile 2-up grid that let a long seller
+     name / "Verified" pill force the two 1fr tracks past 100%, pushing the
+     second column off-screen. min-width:0 lets the card shrink to its track;
+     long text still ellipsises via .ad-seller-name-text / .ad-seller-sub. */
+  min-width: 0;
   /* Transform-only hover lift. The elevated shadow lives on ::after and
      crossfades via opacity (see below), so hovering never repaints
      shadows frame-by-frame. */
@@ -2814,7 +2820,7 @@ footer {
 @media (min-width: 641px) and (max-width: 768px) {
   nav { padding: 0 16px; gap: 10px; }
   .nav-actions .btn-outline { display: none; }
-  .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .listings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .hero { padding: 48px 24px 56px; }
   .results-area { padding: 0 16px 48px; }
   .modal { max-width: calc(100vw - 32px); }
@@ -2880,7 +2886,7 @@ footer {
   .cat-pill-sm { height: 44px; padding: 0 var(--fib-6); font-size: 13px; }
 
   /* Grid */
-  .listings-grid { grid-template-columns: repeat(2, 1fr); gap: var(--fib-4); }
+  .listings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--fib-4); }
   .ad-card { border-radius: var(--r-f4); }
   .ad-card-img { aspect-ratio: auto; height: var(--fib-10); } /* 144px */
   .ad-card-img::after { height: 40px; }
@@ -3008,7 +3014,7 @@ footer {
 
 /* ── SMALL PHONES (≤390px) ── */
 @media (max-width: 390px) {
-  .listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .listings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .ad-card { border-radius: var(--r-f3); }
   .ad-card-img { height: 130px; }
   .ad-card-body { padding: 8px 10px 10px; }
@@ -3106,7 +3112,7 @@ footer {
    grid when the visitor explicitly chose Grid. */
 @media (max-width: 340px) {
   html.home-grid .listings-grid {
-    grid-template-columns: repeat(2, 1fr); gap: var(--fib-4);
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--fib-4);
   }
 }
 
