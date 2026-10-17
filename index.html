@@ -260,7 +260,7 @@ if ('serviceWorker' in navigator) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cquwshpsfybvgqodbxsf.supabase.co">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Outfit:wght@300;400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Sora:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript>
         <div style="grid-column:1/-1;padding:32px;text-align:center;color:#333;font-family:sans-serif">
           <h2 style="margin-bottom:8px;font-size:20px">Jamaica's Free Classifieds — Yaad Adz</h2>
@@ -468,11 +468,19 @@ if ('serviceWorker' in navigator) {
   <!-- HERO with AI search -->
   <div class="hero">
     <div class="hero-content">
-      <div class="hero-eyebrow">✨ Jamaica's free marketplace</div>
+      <div class="hero-eyebrow">👋 Wah gwaan, Jamaica</div>
       <h1>Find <em>Anything</em> in Jamaica</h1>
       <p class="hero-sub">Buy and sell across all 14 parishes. Search or ask AI.</p>
 
-
+      <!-- §V3 hero search capsule (phones). Submits through the same handler as the
+           header search, so behaviour is unchanged; the AI button opens YaadBrain. -->
+      <form class="v3-hero-search" id="v3HeroSearch" role="search" autocomplete="off" onsubmit="v3HeroSearch(event)">
+        <svg class="v3-hs-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="v3HeroInput" type="search" enterkeyhint="search" placeholder="Search or ask YaadBrain" aria-label="Search Yaad Adz listings" autocomplete="off" spellcheck="false">
+        <button type="button" class="v3-hs-ai" onclick="openAiSheet()" aria-label="Ask YaadBrain">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg>
+        </button>
+      </form>
 
       <!-- Reset button (shown after search) -->
       <button class="hero-reset" onclick="resetHeroSearch()">← Back to all listings</button>
@@ -502,8 +510,8 @@ if ('serviceWorker' in navigator) {
 .shipw-r button{flex:0 0 auto;padding:11px 16px;border:0;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer;background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}
 </style>
 <section class="shipw" aria-label="Car shipping cost calculator for Jamaica">
-  <div class="shipw-in">
-    <p class="shipw-t">🚢 Ship a car to Jamaica</p>
+  <details class="shipw-in">
+    <summary class="shipw-t">🚢 Ship a car to Jamaica <span class="shipw-chev" aria-hidden="true"></span></summary>
     <p class="shipw-s">Enter the car price (US$). Get the estimated total with duty &amp; fees.</p>
     <form class="shipw-r" id="shipwForm" action="/ship-to-jamaica.html" method="get">
       <input id="shipwIn" type="text" inputmode="decimal" placeholder="Car price in USD e.g. 9500" aria-label="Car price in USD" autocomplete="off">
@@ -516,7 +524,7 @@ if ('serviceWorker' in navigator) {
       </select>
       <button type="submit">Estimate</button>
     </form>
-  </div>
+  </details>
 </section>
 <script>
 (function(){
@@ -530,6 +538,17 @@ if ('serviceWorker' in navigator) {
     location.href='/ship-to-jamaica.html'+q;
   });
 })();
+</script>
+<script>
+/* §V3 hero search capsule → same path as the header search (handleNavSearch). */
+function v3HeroSearch(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  var h=document.getElementById('v3HeroInput'),n=document.getElementById('navSearchInput');
+  if(!h)return;var q=h.value.trim();if(!q){h.focus();return;}
+  if(n)n.value=q;
+  if(typeof handleNavSearch==='function')handleNavSearch();
+  h.blur();
+}
 </script>
 <!-- ═══ END SHIP-A-CAR WIDGET ═══ -->
 <!-- RESULTS AREA (categories + AI response + listings, all unified) -->

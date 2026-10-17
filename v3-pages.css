@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   YAAD ADZ v3.0 — "LAGOON" LIQUID GLASS · SHARED AD PAGES
+   ───────────────────────────────────────────────────────────────────────────
+   Loaded last by every generated /ad/*.html page (see generate-pages.js).
+   The home app uses v3-glass.css; these pages have their own class names, so
+   they get this matching layer. Rollback: remove the one <link> from the
+   generator template and let the workflow regenerate the pages.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --v3-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --v3-gold: #ffd27a;
+  --v3-gold-grad: linear-gradient(145deg, #fff0b8 0%, #ffd45c 52%, #f4c300 100%);
+  --v3-fill: linear-gradient(145deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .06) 55%, rgba(255, 255, 255, .13));
+  --v3-tint: rgba(6, 34, 30, .34);
+  --v3-rim: inset 0 1px 1px rgba(255, 255, 255, .6), inset 0 -1px 2px rgba(255, 255, 255, .12), inset 0 0 22px rgba(255, 255, 255, .06);
+  --v3-shadow: 0 18px 40px rgba(2, 20, 18, .34);
+  --v3-font: 'Sora', 'Outfit', system-ui, sans-serif;
+}
+
+/* sunset-lagoon backdrop */
+body {
+  background-color: #06231f;
+  background-image:
+    linear-gradient(180deg, rgba(3, 22, 18, 0) 0%, rgba(3, 22, 18, 0) 34%, rgba(3, 22, 18, .6) 70%, rgba(3, 22, 18, .86) 100%),
+    radial-gradient(11rem 11rem at 84% 7%, rgba(255, 238, 190, .85), rgba(255, 190, 110, .45) 45%, rgba(255, 150, 80, 0) 72%),
+    radial-gradient(26rem 18rem at 92% 8%, rgba(255, 160, 90, .45), transparent 66%),
+    radial-gradient(23rem 15rem at 6% 34%, rgba(0, 205, 140, .3), transparent 62%),
+    radial-gradient(26rem 16rem at 62% 44%, rgba(46, 132, 224, .24), transparent 66%),
+    linear-gradient(180deg, #123f5c 0%, #0c5f60 40%, #053a2a 100%);
+  background-attachment: fixed;
+}
+
+/* shared glass */
+.gallery-main, .gallery-placeholder, .price-card, .contact-box, .section-card, .wa-share-box, .sim-card,
+.nav-back, .nav-post, .float-contact, .ad-feedback {
+  background: var(--v3-fill), var(--v3-tint);
+  border: 0;
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: var(--v3-rim), var(--v3-shadow);
+}
+
+/* ── header: floating capsules, no bar ── */
+nav, nav#topNav {
+  background: none; border: 0; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  height: 46px; padding: 0; margin-top: 18px;
+  width: min(calc(100% - 36px), 960px);
+}
+body.pwa-mode nav { height: calc(46px + env(safe-area-inset-top, 0px)); }
+.nav-back {
+  height: 46px; padding: 0 18px 0 12px; border-radius: 999px;
+  color: #fff; font-weight: 600; justify-self: start;
+  transition: transform .4s var(--v3-spring);
+}
+.nav-back-chevron { color: var(--v3-gold); margin-left: 0; }
+.nav-back-label { color: #fff; font-size: 15px; font-weight: 600; }
+.nav-back:active { transform: scale(.95); opacity: 1; }
+.nav-center { text-shadow: 0 1px 12px rgba(0, 30, 30, .5); }
+.nav-center-price { color: var(--v3-gold); font-family: var(--v3-font); }
+.nav-post {
+  height: 46px; padding: 0 20px; border-radius: 999px; display: flex; align-items: center;
+  background: var(--v3-gold-grad); color: #1a1405; font-weight: 700; font-size: 14px;
+  box-shadow: 0 10px 26px rgba(244, 195, 0, .34), inset 0 1px 1px rgba(255, 255, 255, .7);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  transition: transform .4s var(--v3-spring);
+}
+.nav-post:active { transform: scale(.95); opacity: 1; }
+
+.breadcrumb a, .breadcrumb span { color: rgba(255, 255, 255, .86); }
+
+/* ── gallery: photo framed inside the glass ── */
+.gallery-main, .gallery-placeholder { border-radius: 34px; padding: 10px; }
+.gallery-main > img, .gallery-main img { border-radius: 26px; }
+.gallery-placeholder { overflow: hidden; }
+.gallery-count, .gallery-zoom-hint {
+  background: var(--v3-fill), rgba(6, 34, 30, .5);
+  -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .24); border-radius: 999px; color: #fff;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .3);
+}
+.gallery-arrow {
+  background: var(--v3-fill), rgba(6, 34, 30, .5); border: 0; color: #fff; border-radius: 50%;
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: var(--v3-rim);
+}
+.gallery-thumbs { gap: 10px; }
+.gallery-thumbs .thumb { border-radius: 20px; border: 2px solid transparent; transition: transform .4s var(--v3-spring), border-color .25s ease; }
+.gallery-thumbs .thumb:hover { transform: translateY(-2px); }
+.gallery-thumbs .thumb.active { border-color: var(--v3-gold); box-shadow: 0 0 0 3px rgba(255, 212, 92, .22); }
+
+/* ── price panel ── */
+.price-card, .contact-box, .section-card, .wa-share-box { border-radius: 34px; }
+.price-card { padding: 22px 20px; }
+.price-main {
+  font-family: var(--v3-font); font-weight: 700; letter-spacing: -.03em;
+  color: var(--v3-gold); font-size: 32px;
+}
+.price-neg { color: rgba(255, 255, 255, .84); }
+.ad-title-panel { font-family: var(--v3-font); font-weight: 600; font-size: 19px; letter-spacing: -.01em; }
+.meta-tag {
+  background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px; padding: 6px 14px; font-size: 13px; color: #fff;
+}
+.status-badge { border-radius: 999px; padding: 5px 12px; }
+.status-badge.active { background: rgba(79, 192, 139, .22); color: #8ff0bf; }
+.section-card h2 { font-family: var(--v3-font); font-weight: 600; letter-spacing: -.02em; }
+.desc-text { color: rgba(255, 255, 255, .92); }
+.seller-row {
+  padding: 12px; border-radius: 24px;
+  background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .14);
+}
+.seller-avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, .22); }
+.seller-sub { color: rgba(255, 255, 255, .84); }
+
+/* ── contact: capsule buttons ── */
+.cta-btn, .float-contact-btn, .wa-share-btn, .copy-link-btn, .see-more-btn {
+  border-radius: 999px; border: 0;
+  transition: transform .4s var(--v3-spring), filter .25s ease;
+}
+.cta-btn { padding: 15px 18px; }
+.cta-btn:active, .float-contact-btn:active { transform: scale(.95); }
+.cta-call, .float-btn-call {
+  background: var(--v3-fill), rgba(6, 34, 30, .4); color: #fff;
+  box-shadow: var(--v3-rim);
+}
+.cta-wa, .float-btn-wa {
+  background: var(--v3-gold-grad); color: #1a1405;
+  box-shadow: 0 10px 26px rgba(244, 195, 0, .34), inset 0 1px 1px rgba(255, 255, 255, .7);
+}
+.cta-btn::before, .float-contact-btn::before { display: none; }
+.float-contact { border-radius: 999px; padding: 8px 10px 8px 20px; }
+.float-contact-price { font-family: var(--v3-font); font-weight: 700; color: var(--v3-gold); }
+.float-contact-title { color: rgba(255, 255, 255, .8); }
+.float-contact-btn { padding: 0 20px; height: 52px; }
+
+/* ── similar listings ── */
+.similar-heading { font-family: var(--v3-font); font-weight: 600; letter-spacing: -.02em; }
+.sim-card { border-radius: 30px; padding: 8px; }
+.sim-img { border-radius: 22px; overflow: hidden; }
+.sim-price { font-family: var(--v3-font); font-weight: 700; color: var(--v3-gold); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-back, .nav-post, .cta-btn, .float-contact-btn, .gallery-thumbs .thumb { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .gallery-main, .price-card, .contact-box, .section-card, .sim-card, .float-contact, .nav-back { background: #0d2a1d; }
+}
+@media (forced-colors: active) {
+  body { background-image: none; }
+}
+
+/* title + price fade in over the page when you scroll: give them their own glass
+   capsule now that the header bar is gone, or the text collides with the content */
+.nav-center.visible {
+  align-self: center; justify-self: center; max-width: 100%;
+  padding: 4px 18px; border-radius: 999px;
+  background: var(--v3-fill), rgba(6, 34, 30, .5);
+  -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: var(--v3-rim);
+}
+.breadcrumb span[style] { color: #fff !important; }
+/* the reviews block comes from ad-feedback.css, which loads after this file */
+body .ad-feedback {
+  background: var(--v3-fill), var(--v3-tint); border: 0; border-radius: 34px;
+  box-shadow: var(--v3-rim), var(--v3-shadow);
+  -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%);
+}
+.meta-tag.view-count-tag, .view-count-tag { color: rgba(255, 255, 255, .88); }
