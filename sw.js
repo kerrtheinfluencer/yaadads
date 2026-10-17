@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v64'; // bump this any time style.css or js/*.js changes — otherwise
+const CACHE_VERSION  = 'yaadadz-v65'; // bump this any time style.css or js/*.js changes — otherwise
                                       // Cache-First below will keep serving the OLD file forever,
                                       // no matter how many times the actual file is updated on GitHub.
 const STATIC_CACHE   = CACHE_VERSION + '-static';
@@ -27,6 +27,7 @@ const PRECACHE_URLS = [
   '/js/ad-social.js',
   '/js/ad-report.js',
   '/ad-report.css',
+  '/v3-glass.css',
   '/js/widgets-pwa.js',
   '/js/photo-gestures.js',
   '/js/onboarding.js',
@@ -45,7 +46,8 @@ const PRECACHE_URLS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(PRECACHE_URLS).catch(() => {}))
+      // per-URL add: one missing file must not abort the whole precache
+      .then(cache => Promise.allSettled(PRECACHE_URLS.map(u => cache.add(u))))
       .then(() => self.skipWaiting())
   );
 });

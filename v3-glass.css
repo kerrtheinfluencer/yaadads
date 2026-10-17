@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   YAAD ADZ v3.0 — "LAGOON" LIQUID GLASS
+   ───────────────────────────────────────────────────────────────────────────
+   A pure-CSS layer loaded AFTER style.css (see the <link> in index.html).
+   It restyles materials, shapes and motion only — no markup is required for
+   it to work and no application behaviour is touched.
+
+   ROLLBACK: delete the one <link rel="stylesheet" href="v3-glass.css"> line
+   in index.html (and bump CACHE_VERSION in sw.js). Nothing else depends on it.
+
+   Design language (from the approved Lagoon mockups)
+     · sunset-lagoon backdrop — sky, low sun, mountain silhouettes
+     · capsule shapes — chips, search, buttons are fully round
+     · rim light — a bright top-left edge that fades to the bottom-right
+     · spring physics — controls lift on hover and compress on press
+     · one gold accent (the brand gold), used sparingly for price and action
+
+   Safety rails kept from the existing system
+     · per-card backdrop blur stays at the 12px mobile budget (§PERF)
+     · prefers-reduced-motion  → no movement
+     · prefers-reduced-transparency → opaque surfaces, no sheen
+     · forced-colors → every decorative layer is dropped
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --v3-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --v3-settle: cubic-bezier(.16, 1, .3, 1);
+  --v3-gold-a: #fff0b8;
+  --v3-gold-b: #ffd45c;
+  --v3-gold-c: #f4c300;
+  --v3-gold-grad: linear-gradient(145deg, #fff0b8 0%, #ffd45c 52%, #f4c300 100%);
+  --v3-gold-glow: 0 10px 26px rgba(244, 195, 0, .34);
+  --v3-rim-lit: rgba(255, 255, 255, .62);
+  --v3-rim-dim: rgba(255, 255, 255, .12);
+  --v3-fill: linear-gradient(145deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .06) 55%, rgba(255, 255, 255, .13));
+  --v3-tint: rgba(6, 34, 30, .34);
+  --v3-shadow: 0 18px 40px rgba(2, 20, 18, .34);
+  /* Shared rim-light stack: lit top edge, soft inner glow, occluded bottom. */
+  --v3-rim:
+    inset 0 1px 1px var(--v3-rim-lit),
+    inset 0 -1px 2px var(--v3-rim-dim),
+    inset 0 0 22px rgba(255, 255, 255, .06);
+}
+
+/* ── 1. THE LAGOON BACKDROP ────────────────────────────────────────────────
+   Same structure as the layer it replaces (scrim over colour pools over a
+   base ramp), re-coloured from forest-green to dusk sky → lagoon → deep
+   green. The bottom scrim is kept on purpose: it protects photo contrast in
+   the listing grid, which is the product. */
+body {
+  background-color: #06231f;
+  background-image:
+    linear-gradient(180deg,
+      rgba(3, 22, 18, 0) 0%,
+      rgba(3, 22, 18, 0) 34%,
+      rgba(3, 22, 18, .6) 70%,
+      rgba(3, 22, 18, .86) 100%),
+    radial-gradient(24rem 16rem at 90% 6%, rgba(255, 186, 110, .46), transparent 64%),
+    radial-gradient(23rem 15rem at 6% 34%, rgba(0, 205, 140, .32), transparent 62%),
+    radial-gradient(26rem 16rem at 62% 44%, rgba(46, 132, 224, .26), transparent 66%),
+    radial-gradient(22rem 14rem at 80% 64%, rgba(140, 100, 255, .2), transparent 62%),
+    linear-gradient(180deg, #123f5c 0%, #0c5f60 40%, #053a2a 100%);
+  background-attachment: fixed;
+}
+
+/* ── 2. HERO — THE SUNSET SCENE ────────────────────────────────────────────
+   The hero becomes the lagoon scene: a low sun, two mountain ridgelines and a
+   sky ramp, drawn as background layers (no pseudo-elements — .hero::before and
+   ::after are already in use) so it costs nothing at scroll time. */
+.hero {
+  background-image:
+    radial-gradient(circle at 88% 18%, rgba(255, 232, 170, .8) 0, rgba(255, 190, 110, .45) 5.5rem, rgba(255, 150, 80, 0) 14rem),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 430 150' preserveAspectRatio='none'%3E%3Cpath d='M0 120 L70 82 L130 108 L205 62 L280 110 L350 78 L430 105 L430 150 L0 150Z' fill='%2306402f'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 430 150' preserveAspectRatio='none'%3E%3Cpath d='M0 95 L50 55 L95 80 L160 18 L225 78 L285 40 L350 75 L400 50 L430 70 L430 150 L0 150Z' fill='%230a5a45' fill-opacity='.72'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(18, 63, 92, .78) 0%, rgba(12, 106, 99, .66) 58%, rgba(5, 58, 42, .82) 100%);
+  background-size: auto, 100% 30%, 100% 44%, auto;
+  background-position: 0 0, bottom, bottom, 0 0;
+  background-repeat: no-repeat;
+  border-bottom-color: rgba(255, 255, 255, .16);
+}
+.hero h1 { text-shadow: 0 2px 22px rgba(0, 30, 30, .45); }
+.hero-sub { text-shadow: 0 1px 12px rgba(0, 30, 30, .4); }
+
+.hero-eyebrow {
+  border-radius: 999px;
+  background: var(--v3-fill), rgba(60, 40, 0, .22);
+  border-color: rgba(255, 222, 93, .4);
+  box-shadow: var(--v3-rim);
+}
+.hero-stats > div {
+  border-radius: 24px;
+  border-color: rgba(255, 255, 255, .2);
+  background: var(--v3-fill), var(--v3-tint);
+  box-shadow: var(--v3-rim);
+}
+
+/* ── 3. CAPSULE CONTROLS ───────────────────────────────────────────────────
+   Search pill, category chips and the sort / filter controls share one shape
+   and one rim. The active chip is the single gold accent in the row. */
+.nav-search-pill {
+  border-radius: 999px;
+  background: var(--v3-fill), var(--v3-tint);
+  border-color: rgba(255, 255, 255, .26);
+  box-shadow: var(--v3-rim);
+  transition: transform .4s var(--v3-spring), box-shadow .3s ease, border-color .3s ease;
+}
+.nav-search-pill:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, .4); }
+.nav-search-pill:active { transform: scale(.97); }
+
+.cat-pill-sm {
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .24);
+  box-shadow: var(--v3-rim);
+  transition: transform .4s var(--v3-spring), background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.cat-pill-sm:hover { transform: translateY(-2px); background-color: rgba(255, 255, 255, .16); }
+.cat-pill-sm.active,
+.cat-pill-sm.active:hover {
+  background-color: transparent;
+  background-image: var(--v3-gold-grad);
+  background-size: auto;
+  border-color: rgba(255, 245, 200, .7);
+  color: #1a1405;
+  box-shadow: var(--v3-gold-glow), inset 0 1px 1px rgba(255, 255, 255, .7);
+}
+.cat-pill-sm.active .cp-name { color: #1a1405; font-weight: 700; }
+.cat-pill-sm.active .cp-n { background: rgba(26, 20, 5, .18); color: #1a1405; }
+
+.fchip, .fy-chip, .recent-search-chip {
+  border-radius: 999px;
+  box-shadow: var(--v3-rim);
+}
+
+/* ── 4. CARDS ──────────────────────────────────────────────────────────────
+   Photo sits inside the glass with an 8px margin and a nested corner radius
+   (outer 30 → inner 23), the way iOS 26 cards are built. Backdrop blur is NOT
+   raised here — the 12px mobile budget in style.css (§PERF) still applies. */
+.ad-card {
+  border-radius: 30px;
+  padding: 8px;
+  box-shadow: var(--v3-rim), var(--v3-shadow);
+  transition: transform .45s var(--v3-spring), box-shadow .3s ease;
+}
+.ad-card .ad-card-img { border-radius: 23px; overflow: hidden; }
+.ad-card .ad-card-body { padding-left: 10px; padding-right: 10px; }
+@media (hover: hover) {
+  .ad-card:hover { transform: translateY(-4px); }
+}
+.ad-card:active { transform: scale(.985); }
+
+.ad-price {
+  color: #ffd45c;
+  text-shadow: 0 0 18px rgba(244, 195, 0, .28);
+  letter-spacing: -.01em;
+}
+.neg-pill { border-radius: 999px; }
+
+.ad-card .ad-cat-tag,
+.ad-card .fresh-badge,
+.ad-card .trending-badge,
+.ad-card .photo-count-badge,
+.ad-card .sold-tag {
+  border-radius: 999px;
+  background: rgba(6, 34, 30, .62);
+  border: 1px solid rgba(255, 255, 255, .22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+  color: #fff;
+}
+.ad-card .fresh-badge,
+.ad-card .trending-badge { color: #ffe08a; }
+
+.ad-card .fav-btn {
+  background: rgba(6, 34, 30, .56);
+  border: 1px solid rgba(255, 255, 255, .26);
+  box-shadow: var(--v3-rim);
+  transition: transform .4s var(--v3-spring);
+}
+.ad-card .fav-btn:hover { transform: scale(1.1); }
+.ad-card .fav-btn:active { transform: scale(.88); }
+
+.ad-seller-avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, .18); }
+.ad-seller-verified {
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+/* ── 5. PANELS ─────────────────────────────────────────────────────────────
+   The raised sections (browse deck, results header, For You bar, recents) get
+   rounder corners and the shared rim. Fills are left to style.css — they were
+   already tuned for contrast. */
+.browse-deck, .results-header, .fy-bar, .ai-response-card, .seller-box, .analytics-strip {
+  border-radius: 30px;
+}
+.recent-card { border-radius: 24px; }
+.fy-bar, .browse-deck, .results-header {
+  box-shadow: var(--v3-rim), 0 20px 46px rgba(0, 8, 4, .3);
+}
+
+/* ── 6. BUTTONS ────────────────────────────────────────────────────────────
+   Capsule buttons with the brand gold as a lit gradient. */
+.btn, .load-more-btn, .sheet-btn-primary, .sheet-view-all, .pwa-install-btn {
+  border-radius: 999px;
+  transition: transform .4s var(--v3-spring), box-shadow .3s ease, filter .25s ease, background .25s ease;
+}
+.btn:hover, .load-more-btn:hover { transform: translateY(-2px); }
+.btn:active, .load-more-btn:active, .sheet-btn-primary:active, .sheet-view-all:active, .pwa-install-btn:active { transform: scale(.96); }
+.btn-ico { border-radius: 50%; }
+.btn-gold,
+.btn-gold:hover {
+  background-image: var(--v3-gold-grad);
+  background-color: transparent;
+  color: #1a1405;
+  box-shadow: var(--v3-gold-glow), inset 0 1px 1px rgba(255, 255, 255, .7);
+}
+.btn-gold:hover { filter: brightness(1.05) saturate(1.05); }
+
+/* ── 7. DIALOGS & SHEETS ───────────────────────────────────────────────────
+   Bigger radius and the same rim; the fills stay on style.css's tuned values. */
+.modal { border-radius: 34px; }
+.ai-sheet { border-top-left-radius: 34px; border-top-right-radius: 34px; }
+.modal .form-inp, .form-inp, .ai-sheet-input-bar, .chat-input {
+  border-radius: 18px;
+  box-shadow: var(--v3-rim);
+}
+.ai-sheet-input-bar { border-radius: 999px; }
+
+/* ── 8. THE TAB BAR — FLOATING CAPSULE WITH A SLIDING GLASS PILL ───────────
+   Emoji glyphs are swapped for stroke icons drawn as CSS masks (so they take
+   the item's text colour). The account icon is left alone while signed in —
+   ui-nav.js writes the member's initials into it with an inline style, and
+   :not([style]) keeps that working exactly as before.
+
+   The selection pill is .mob-nav::before. It slides to the active item using
+   :has() with a spring ease; browsers without :has() fall back to a static
+   pill drawn on the active item itself. */
+.mob-nav {
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, .2);
+  background-color: rgba(8, 34, 34, .5);
+  background-image: var(--v3-fill);
+  box-shadow: var(--v3-rim), 0 20px 50px rgba(0, 12, 10, .42);
+  --i: 0;
+}
+.mob-nav-item { position: relative; z-index: 1; }
+.mob-nav-item.active { color: #fff; }
+.mob-nav-item.active .mn-label { font-weight: 700; }
+.mob-nav-item.active .mob-nav-icon { transform: none; }
+
+/* icon swap: hide the glyph, paint a stroke icon with the item's own colour */
+.mob-nav-icon {
+  font-size: 0 !important;
+  line-height: 0;
+  width: 22px;
+  height: 22px;
+  background-color: currentColor;
+  -webkit-mask: var(--v3-ico) center / contain no-repeat;
+  mask: var(--v3-ico) center / contain no-repeat;
+}
+#mnHome .mob-nav-icon   { --v3-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11 12 4l8 7v9H4z'/%3E%3C/svg%3E"); }
+#mnSearch .mob-nav-icon { --v3-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E"); }
+#mnMsgs .mob-nav-icon   { --v3-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z'/%3E%3C/svg%3E"); }
+#mnAccount .mob-nav-icon:not([style]) { --v3-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21a8 8 0 0 1 16 0'/%3E%3C/svg%3E"); }
+/* signed in: the initials avatar returns to its original, un-masked look */
+#mnAccount .mob-nav-icon[style] {
+  -webkit-mask: none;
+  mask: none;
+  background-color: transparent;
+  font-size: 10px !important;
+  line-height: normal;
+}
+
+@supports selector(:has(*)) {
+  .mob-nav::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 6px;
+    width: calc((100% - 12px) / 5);
+    border-radius: 999px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .12));
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, .7), inset 0 -1px 2px rgba(255, 255, 255, .2), 0 6px 16px rgba(2, 20, 18, .25);
+    transform: translateX(calc(var(--i) * 100%));
+    transition: transform .5s var(--v3-spring), opacity .25s ease, top .45s var(--v3-settle), bottom .45s var(--v3-settle);
+    pointer-events: none;
+  }
+  .mob-nav.mob-nav-compact::before { top: 4px; bottom: 4px; }
+  .mob-nav:has(#mnHome.active)    { --i: 0; }
+  .mob-nav:has(#mnSearch.active)  { --i: 1; }
+  .mob-nav:has(#mnMsgs.active)    { --i: 3; }
+  .mob-nav:has(#mnAccount.active) { --i: 4; }
+  /* no tab selected (e.g. browse view) → no pill, rather than a wrong one */
+  .mob-nav:not(:has(.mob-nav-item.active))::before { opacity: 0; }
+}
+@supports not selector(:has(*)) {
+  .mob-nav-item.active {
+    border-radius: 999px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .1));
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, .6);
+  }
+}
+
+/* the Post button: a raised, lit gold lens that sits proud of the capsule */
+.mob-nav-post {
+  background: var(--v3-gold-grad);
+  border: 1px solid rgba(255, 250, 220, .75);
+  color: #1a1405;
+  font-weight: 700;
+  box-shadow: var(--v3-gold-glow), inset 0 1px 1px rgba(255, 255, 255, .8);
+  margin-top: -14px;
+  transition: transform .4s var(--v3-spring), box-shadow .3s ease;
+}
+.mob-nav.mob-nav-compact .mob-nav-post { margin-top: 0; }
+.mob-nav-item:active .mob-nav-post { transform: scale(.9); }
+
+/* ── 9. FLOATING EXTRAS ────────────────────────────────────────────────────
+   Back-to-top and the gas chip join the same capsule family. */
+.back-to-top { box-shadow: var(--v3-rim), 0 10px 26px rgba(0, 12, 10, .4); transition: transform .4s var(--v3-spring); }
+.back-to-top:active { transform: scale(.9); }
+.toast, .pwa-banner { border-radius: 24px; }
+
+/* ── 10. TEXT SELECTION & FOCUS ───────────────────────────────────────────
+   Keyboard focus is always visible and uses the brand gold. */
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid rgba(255, 212, 92, .95);
+  outline-offset: 2px;
+}
+
+/* ── 11. ACCESSIBILITY FALLBACKS ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .mob-nav::before,
+  .mob-nav-post,
+  .ad-card,
+  .ad-card .fav-btn,
+  .cat-pill-sm,
+  .nav-search-pill,
+  .btn, .load-more-btn {
+    transition: none !important;
+  }
+  .ad-card:hover, .cat-pill-sm:hover, .nav-search-pill:hover, .btn:hover { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .mob-nav { background-color: #0b2a1b; background-image: none; }
+  .mob-nav::before { background: rgba(255, 255, 255, .22); }
+  .hero { background-image: linear-gradient(180deg, #123f5c, #053a2a); }
+  .ad-card { background-color: #0d2a1d; }
+  .nav-search-pill, .hero-stats > div, .hero-eyebrow { background-image: none; }
+}
+@media (forced-colors: active) {
+  .mob-nav, .nav-search-pill, .hero, .hero-stats > div, .hero-eyebrow, .btn-gold, .cat-pill-sm.active {
+    background-image: none;
+  }
+  .mob-nav-icon { background-color: CanvasText; }
+  .mob-nav::before { display: none; }
+}
+
+/* ── 12. POLISH PASS ───────────────────────────────────────────────────────
+   The ship-cost widget carries its own inline <style> (loaded after this file),
+   so these selectors are one class deeper to win without !important. */
+.shipw .shipw-in {
+  border-radius: 30px;
+  background: var(--v3-fill), var(--v3-tint);
+  border-color: rgba(255, 255, 255, .22);
+  box-shadow: var(--v3-rim), var(--v3-shadow);
+}
+.shipw .shipw-r input,
+.shipw .shipw-r select {
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, .24);
+  background: rgba(255, 255, 255, .1);
+  padding-left: 16px;
+}
+.shipw .shipw-r button {
+  border-radius: 999px;
+  background: var(--v3-gold-grad);
+  box-shadow: var(--v3-gold-glow), inset 0 1px 1px rgba(255, 255, 255, .7);
+  transition: transform .4s var(--v3-spring);
+}
+.shipw .shipw-r button:active { transform: scale(.95); }
+.shipw .shipw-s { color: rgba(255, 255, 255, .86); }
+
+/* keep the header capsule inside the viewport */
+.nav, .site-nav, header.nav { max-width: 100%; box-sizing: border-box; }
+
+/* the detail page's "Back" button is styled inline (green on teal); an
+   attribute selector + !important is the only way to override inline colour. */
+button[onclick="goHome()"] { color: #fff !important; }
