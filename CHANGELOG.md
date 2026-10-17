@@ -5,7 +5,20 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 👉 v2.21 — Swipe the photo right on an ad (Oct 2, 2026) · latest
+## 🌅 v3.0 — Yaad Adz v3 — the Lagoon look (Oct 17, 2026) · latest
+
+Yaad Adz has a brand-new look. A sunset-lagoon backdrop sits behind everything, buttons and search are fully round glass capsules that lift when you hover and squish when you press, and every listing now sits inside a frosted glass card with the photo framed inside it. The bottom bar has new line icons and a glass highlight that slides to the tab you are on. Gold is now used only for prices and the main action, so the things that matter stand out. Nothing about how the app works has changed.
+
+- New: sunset-lagoon backdrop and a sunset scene behind the home page heading
+- New: round glass search bar, category chips and buttons with a soft lit edge
+- New: listing cards are frosted glass with the photo framed inside, and round badges on the photo
+- New: the bottom bar has crisp line icons and a glass highlight that slides between tabs
+- New: the Post button is a raised gold lens in the middle of the bar
+- New: the Ship a car calculator on the home page matches the new glass style
+- New: gold is kept for prices and the main button only
+- Kept: if your phone is set to reduce motion or transparency, the new look switches those effects off
+
+## 👉 v2.21 — Swipe the photo right on an ad (Oct 2, 2026)
 
 The big photo on an ad could not be swiped at all — you had to tap it open full screen first. Now it follows your thumb: drag it sideways and the next photo slides in already loaded, so you never get a blank frame. A quick flick moves on, a small nudge stays put, dragging up still scrolls the page, and the first and last photo push back instead of running off. On a computer you get arrow buttons on hover, and if you have turned animations off in your system settings, photos change instantly with no movement at all.
 

@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'gallery-swipe',
+  current: 'v3-lagoon-glass',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -332,6 +332,26 @@ var SITE_UPDATES = {
         'New: turning on your system\'s reduce-motion setting gives an instant photo change with no animation',
         'Fixed: dragging up the photo now scrolls the page, where before the swipe could steal the gesture',
         'Fixed: the first and last photo now push back at the ends instead of sliding away',
+      ],
+      url: '/',
+    },
+    'v3-lagoon-glass': {
+      version: 'v3.0',
+      icon: '🌅',
+      title: 'Yaad Adz v3 — the Lagoon look',
+      cta: 'Take a look',
+      ctaFn: 'goHome',
+      body: 'Yaad Adz has a brand-new look. A sunset-lagoon backdrop sits behind everything, buttons and search are fully round glass capsules that lift when you hover and squish when you press, and every listing now sits inside a frosted glass card with the photo framed inside it. The bottom bar has new line icons and a glass highlight that slides to the tab you are on. Gold is now used only for prices and the main action, so the things that matter stand out. Nothing about how the app works has changed.',
+      date: 'Oct 17, 2026',
+      notes: [
+        'New: sunset-lagoon backdrop and a sunset scene behind the home page heading',
+        'New: round glass search bar, category chips and buttons with a soft lit edge',
+        'New: listing cards are frosted glass with the photo framed inside, and round badges on the photo',
+        'New: the bottom bar has crisp line icons and a glass highlight that slides between tabs',
+        'New: the Post button is a raised gold lens in the middle of the bar',
+        'New: the Ship a car calculator on the home page matches the new glass style',
+        'New: gold is kept for prices and the main button only',
+        'Kept: if your phone is set to reduce motion or transparency, the new look switches those effects off',
       ],
       url: '/',
     },
