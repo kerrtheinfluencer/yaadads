@@ -901,10 +901,41 @@ function v3HeroSearch(e){
 
 <!-- ─── MESSAGES PAGE ─── -->
 <div id="page-msgs" class="page">
-  <div class="page-wrap">
-    <div class="page-h">Messages</div>
-    <div class="page-sub">Your conversations with buyers and sellers</div>
-    <div class="inbox-list" id="inboxList"></div>
+  <div class="v3s">
+    <div class="v3s-top">
+      <h1 class="v3s-h1">Chats</h1>
+      <button type="button" class="v3d-circ v3s-gold" onclick="openAiSheet()" aria-label="Ask Yaad Brain">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+      </button>
+    </div>
+    <label class="v3s-search">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="v3ChatSearch" placeholder="Search chats" aria-label="Search chats" autocomplete="off">
+    </label>
+    <div class="v3s-chips" id="v3ChatChips" role="group" aria-label="Filter chats">
+      <button type="button" class="v3s-chip on" data-f="all" aria-pressed="true">All</button>
+      <button type="button" class="v3s-chip" data-f="buying" aria-pressed="false">Buying</button>
+      <button type="button" class="v3s-chip" data-f="selling" aria-pressed="false">Selling</button>
+    </div>
+    <div class="inbox-list v3s-card" id="inboxList"></div>
+    <p class="v3s-none" id="v3ChatNone" hidden>No chats match.</p>
+  </div>
+</div>
+
+<!-- ─── SAVED PAGE (Lagoon board O — built by js/v3-screens.js) ─── -->
+<div id="page-saved" class="page">
+  <div class="v3s">
+    <div class="v3s-top">
+      <h1 class="v3s-h1">Saved</h1>
+      <button type="button" class="v3s-edit" id="v3SavedEdit" aria-pressed="false">Edit</button>
+    </div>
+    <div class="v3s-seg" id="v3SavedSeg" role="tablist" aria-label="Saved items">
+      <span class="v3s-seg-pill" aria-hidden="true"></span>
+      <button type="button" role="tab" class="on" data-tab="listings" aria-selected="true">Listings</button>
+      <button type="button" role="tab" data-tab="searches" aria-selected="false">Searches</button>
+      <button type="button" role="tab" data-tab="sellers" aria-selected="false">Sellers</button>
+    </div>
+    <div id="v3SavedBody" aria-live="polite"></div>
   </div>
 </div>
 
@@ -1490,6 +1521,7 @@ function v3HeroSearch(e){
 <script src="js/recent.js" defer></script>
 <script src="js/for-you.js" defer></script>
 <script src="js/v3-home.js" defer></script>
+<script src="js/v3-screens.js" defer></script>
 <script src="js/site-updates.js" defer></script>
 <script src="js/broadcasts.js" defer></script>
 <script src="js/ship-calc.js" defer></script>

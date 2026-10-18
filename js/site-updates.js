@@ -353,6 +353,8 @@ var SITE_UPDATES = {
         'New: listing pages open on a full-width photo with round glass Back, Share and Save buttons and a "1 / 5 photos" counter',
         'New: price, title, place and three quick facts sit together in one glass panel under the photo',
         'New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll',
+        'New: Chats has a search box and All, Buying and Selling filters, with unread chats marked by a gold dot',
+        'New: Saved is its own screen with Listings, Searches and Sellers tabs, and an Edit button to remove things',
         'New: tap More on the home screen to open Browse — big Vehicles and Property tiles, every category, and a row of parishes',
         'New: search results show as clean rows with a square photo, gold price and heart, plus a chip you can tap to clear the search',
         'New: shared ad pages now match — a full-width photo, round glass Back, Share and Save buttons, one glass sheet with the price, facts, description and seller, and a floating Call and WhatsApp bar',

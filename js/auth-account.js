@@ -541,7 +541,7 @@ function inboxRowsHtml() {
     const last = conv.messages.at(-1);
     const unread = conv.messages.filter(function (m) { return m.from !== CU.id && !m.read; }).length;
     const clr = avatarColor(otherName);
-    return '<div class="inbox-item' + (unread ? ' unread' : '') + '" data-conv="' + escHtml(key) + '" role="button" tabindex="0">' +
+    return '<div class="inbox-item' + (unread ? ' unread' : '') + '" data-conv="' + escHtml(key) + '" data-role="' + (isbuyer ? 'buying' : 'selling') + '" role="button" tabindex="0">' +
       '<div class="inbox-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + escHtml(otherInit || '?') + '</div>' +
       '<div class="inbox-info">' +
         '<div class="inbox-name">' + escHtml(otherName || 'Member') +
