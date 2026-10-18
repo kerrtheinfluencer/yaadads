@@ -125,7 +125,8 @@ async function waitForCdp() {
         // hero redesign (.ai-suggestions no longer exists anywhere). The category
         // rail is the real 44px tap-target row, so that is what gets measured.
         const row = document.querySelector('#catRow');
-        const pill = row && row.querySelector('.cat-pill-sm');
+        // v3: the collapsed phone rail shows four categories + More, so measure the first VISIBLE pill
+        const pill = row && Array.from(row.querySelectorAll('.cat-pill-sm')).find(function (el) { return el.offsetParent !== null; });
         const rect = hero.getBoundingClientRect();
         const cards = document.querySelectorAll('.listings-grid .ad-card');
         return { width: innerWidth, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
