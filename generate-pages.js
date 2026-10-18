@@ -1187,8 +1187,16 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
     <div class="nav-center-title">${esc(ad.title)}</div>
     <div class="nav-center-price">${price}</div>
   </div>
-  <!-- Right: Post Ad -->
-  <a class="nav-post" href="${BASE_URL}/#post">+ Post Ad</a>
+  <!-- Right: round glass Share + Save (board K) and Post Ad (desktop) -->
+  <div class="nav-right">
+    <button type="button" class="v3-circ v3-share" id="v3Share" aria-label="Share this listing" data-url="${esc(adUrl)}">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
+    </button>
+    <button type="button" class="v3-circ v3-save" id="v3Save" aria-label="Save listing" aria-pressed="false" data-id="${esc(String(ad.id))}">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 7.8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.3 3.3 4.2 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>
+    </button>
+    <a class="nav-post" href="${BASE_URL}/#post">+ Post Ad</a>
+  </div>
 </nav>
 
 <div class="breadcrumb">
@@ -1208,22 +1216,6 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
     <div class="ad-body">
       ${galleryHtml}
 
-      <div class="section-card">
-        <h2>Description</h2>
-        <p class="desc-text">${esc(ad.desc || 'No description provided.')}</p>
-      </div>
-
-      <div class="section-card">
-        <h2>Seller</h2>
-        <div class="seller-row">
-          <div class="seller-avatar">${esc(ad.sellerInit || (ad.seller||'?').charAt(0))}</div>
-          <div>
-            <div class="seller-name">${esc(ad.seller || 'Anonymous')}</div>
-            <div class="seller-sub">Yaad Adz Member · ${esc(ad.parish)}</div>
-          </div>
-        </div>
-      </div>
-
       ${require('./tools/ad-feedback-markup')(ad)}
 
       <!-- AdSense in-content — only shown on listings with real content -->
@@ -1239,16 +1231,25 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
 
     <!-- RIGHT: Price + Contact -->
     <div class="ad-panel">
-      <div class="price-card">
-        <div class="price-main">${price}</div>
-        ${ad.neg ? '<div class="price-neg">Price is negotiable</div>' : ''}
-        <div class="ad-title-panel">${esc(ad.title)}</div>
-        <div class="ad-meta-tags">
-          <span class="meta-tag">📍 ${esc(ad.parish)}</span>
-          <span class="meta-tag">${catIcon} ${catName}</span>
-          <span class="meta-tag">🕐 ${ago(ad.date)}</span>
-          <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">${ad.views || 0}</span> views</span>
-          ${soldBadge}
+      <div class="price-card v3-sheet">
+        ${ad.status === 'sold' ? soldBadge : ''}
+        <div class="price-main">${price}${ad.neg ? ' <span class="price-neg-pill">negotiable</span>' : ''}</div>
+        ${ad.neg ? '<div class="price-neg sr-only-neg">Price is negotiable</div>' : ''}
+        <h1 class="ad-title-panel">${esc(ad.title)}</h1>
+        <div class="v3-loc"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg> ${esc(ad.parish)} · ${ago(ad.date)}</div>
+        <div class="v3-specs">
+          <div class="v3-spec"><span class="v3-spec-k">Category</span><span class="v3-spec-v">${catName}</span></div>
+          <div class="v3-spec"><span class="v3-spec-k">Posted</span><span class="v3-spec-v">${ago(ad.date)}</span></div>
+          <div class="v3-spec"><span class="v3-spec-k">Views</span><span class="v3-spec-v"><span id="viewCountEl">${ad.views || 0}</span></span></div>
+        </div>
+        <h2 class="v3-h">About this item</h2>
+        <p class="desc-text">${esc(ad.desc || 'No description provided.')}</p>
+        <div class="seller-row">
+          <div class="seller-avatar">${esc(ad.sellerInit || (ad.seller||'?').charAt(0))}</div>
+          <div class="seller-info">
+            <div class="seller-name">${esc(ad.seller || 'Anonymous')}</div>
+            <div class="seller-sub">Yaad Adz member · ${esc(ad.parish)}</div>
+          </div>
         </div>
       </div>
 
@@ -1319,8 +1320,8 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
     <div class="float-contact-title">${esc(ad.title)}</div>
   </div>
   <div class="float-btns">
-    ${ad.phone ? `<a class="float-contact-btn float-btn-call" href="tel:${esc(ad.phone)}">📞 Call</a>` : ''}
-    ${waLink   ? `<a class="float-contact-btn float-btn-wa"   href="${waLink}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
+    ${ad.phone ? `<a class="float-contact-btn float-btn-call" href="tel:${esc(ad.phone)}" aria-label="Call seller"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15 15 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.6a1 1 0 01-.25 1z"/></svg><span class="fc-t">Call</span></a>` : ''}
+    ${waLink   ? `<a class="float-contact-btn float-btn-wa"   href="${waLink}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-3.9-4.8-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg><span class="fc-t">Message on WhatsApp</span></a>` : ''}
   </div>
 </div>` : ''}
 
@@ -2210,6 +2211,31 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
     window.addEventListener('scroll', requestScrollTick, { passive: true });
     window.addEventListener('resize', requestScrollTick, { passive: true });
     onScroll(); // run once on load
+  })();
+
+  // ── Share + Save (round glass buttons) ───────────────────────
+  (function() {
+    var sh = document.getElementById('v3Share');
+    var sv = document.getElementById('v3Save');
+    function favs() { try { return JSON.parse(localStorage.getItem('ya_favs') || '[]'); } catch (e) { return []; } }
+    if (sh) sh.addEventListener('click', function() {
+      var url = sh.getAttribute('data-url') || location.href;
+      if (navigator.share) { navigator.share({ title: document.title, url: url }).catch(function() {}); return; }
+      if (navigator.clipboard) navigator.clipboard.writeText(url).catch(function() {});
+      sh.classList.add('done'); setTimeout(function() { sh.classList.remove('done'); }, 1400);
+    });
+    if (sv) {
+      var id = sv.getAttribute('data-id');
+      function paint() { var on = favs().indexOf(id) > -1; sv.classList.toggle('on', on); sv.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+      paint();
+      sv.addEventListener('click', function() {
+        var f = favs(), i = f.indexOf(id);
+        if (i > -1) f.splice(i, 1); else f.push(id);
+        try { localStorage.setItem('ya_favs', JSON.stringify(f)); } catch (e) {}
+        paint();
+        sv.classList.remove('pop'); void sv.offsetWidth; sv.classList.add('pop');
+      });
+    }
   })();
 
   // ── View counter ─────────────────────────────────────────────

@@ -168,30 +168,109 @@ body .ad-feedback {
 .meta-tag.view-count-tag, .view-count-tag { color: rgba(255, 255, 255, .88); }
 
 
-/* ═══ PHASE 2 — listing page on phones (board K) ═══
-   The price panel jumps up under the photo, like the in-app detail page:
-   photo → price/title/spec tiles → contact → description → seller → reviews. */
-@media (max-width: 700px) {
-  .ad-layout, .ad-body, .ad-panel { display: contents; }
-  .ad-layout > * , .ad-body > *, .ad-panel > * { min-width: 0; }
-  .page-wrap { display: flex; flex-direction: column; gap: 14px; }
-  /* children of .page-wrap are the display:contents descendants, ordered here */
-  .gallery { order: 1; }
-  .price-card { order: 3; }
-  .contact-box { order: 4; }
-  .wa-share-box { order: 6; }
-  .section-card { order: 5; }
-  .ad-feedback { order: 7; }
-  .ad-slot-wrap { order: 9; }
-
-  .ad-meta-tags { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 14px; }
-  .ad-meta-tags .meta-tag { border-radius: 20px; padding: 11px 14px; font-size: 13.5px; font-weight: 600; justify-content: flex-start; }
-  .ad-meta-tags .status-badge { grid-column: 1 / -1; justify-self: start; }
-  .price-card { margin-top: 2px; }
-  .breadcrumb { display: none; }
-  .gallery { margin-top: 14px; }
-  .ad-meta-tags .meta-tag.view-count-tag, .ad-meta-tags .meta-tag.view-count-tag * { color: #fff !important; opacity: 1 !important; }
-  .gallery-main { border-radius: 0 0 34px 34px; margin: 0 -16px; padding: 0 0 10px; }
-  .gallery-main > img, .gallery-main img { border-radius: 0 0 26px 26px; }
-  .page-wrap { padding-top: 0; }
+/* ═══ PHASE 2 — LISTING PAGE (board K) ═══
+   One glass sheet (price, title, place, facts, description, seller) over a
+   full-bleed photo, round glass Back / Share / Save, and a floating capsule
+   contact bar. Markup comes from generate-pages.js (.v3-sheet, .v3-circ…). */
+.nav-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
+.v3-circ {
+  position: relative; width: 46px; height: 46px; flex: none; padding: 0; border: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; text-decoration: none;
+  background: var(--v3-fill), rgba(6, 34, 30, .42);
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06); backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: var(--v3-rim), 0 10px 24px rgba(2, 20, 18, .34);
+  transition: transform .4s var(--v3-spring);
 }
+.v3-circ:active { transform: scale(.92); }
+.v3-save.on { color: #ff6b81; } .v3-save.on svg { fill: currentColor; }
+.v3-save.pop svg { animation: v3Pop .5s var(--v3-spring); }
+.v3-share.done { color: var(--v3-gold); }
+@keyframes v3Pop { 0% { transform: scale(.6); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+/* the sheet */
+.price-card.v3-sheet { padding: 20px 18px 18px; border: 0; border-radius: 34px; }
+.price-card.v3-sheet::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.75), rgba(255,255,255,0) 36%, rgba(255,255,255,0) 64%, rgba(255,255,255,.4));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask-composite: exclude;
+}
+.v3-sheet .price-main { font-size: 31px; line-height: 1.1; }
+.price-neg-pill { font: 600 12px/1 var(--font-b, system-ui); letter-spacing: 0; color: var(--v3-gold); vertical-align: middle;
+  background: rgba(255,210,122,.14); border: 1px solid rgba(255,210,122,.3); border-radius: 999px; padding: 5px 10px; margin-left: 4px; }
+.sr-only-neg { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+h1.ad-title-panel { margin: 4px 0 0; font-size: 19px; font-weight: 700; line-height: 1.3; color: #fff; }
+.v3-loc { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 14px; color: rgba(255,255,255,.88); }
+.v3-loc svg { color: var(--v3-gold); flex: none; }
+.v3-specs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.v3-spec { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 10px 12px; border-radius: 20px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
+.v3-spec-k { font-size: 12px; color: rgba(255,255,255,.8); }
+.v3-spec-v { font-size: 15px; font-weight: 700; color: #fff; overflow-wrap: anywhere; line-height: 1.25; }
+.v3-h { font-family: var(--v3-font); font-size: 15px; font-weight: 600; margin: 0 0 6px; color: #fff; }
+.v3-sheet .desc-text { font-size: 14.5px; line-height: 1.55; color: rgba(255,255,255,.92); margin: 0 0 14px; }
+.v3-sheet .seller-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 24px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
+.v3-sheet .seller-row::after { content: "›"; margin-left: auto; padding-right: 4px; font-size: 28px; line-height: 1; color: var(--v3-gold); }
+.v3-sheet .seller-info { min-width: 0; }
+.v3-sheet .seller-avatar { width: 48px; height: 48px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #fff0b8, #ffd27a); color: #3a2400; font-family: var(--v3-font); font-weight: 700; font-size: 18px; box-shadow: none; }
+
+@media (max-width: 700px) {
+  /* header → three round glass buttons floating on the photo */
+  nav#topNav, body.pwa-mode nav#topNav {
+    position: absolute; top: 0; left: 0; right: 0; width: auto; height: auto; margin: 0; z-index: 30;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav-back { width: 48px; height: 48px; padding: 0; justify-content: center; border-radius: 50%; }
+  .nav-back-label, .nav-center, .nav-center.visible, .nav-post, .breadcrumb { display: none; }
+  .nav-back-chevron { margin: 0; color: #fff; font-size: 30px; font-weight: 300; line-height: 1; transform: translateX(-1px); }
+  .v3-circ { width: 48px; height: 48px; }
+
+  /* photo: full bleed */
+  .page-wrap { padding: 0 0 calc(110px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; }
+  .ad-layout, .ad-body, .ad-panel { display: contents; }
+  .gallery { order: 1; margin: 0; }
+  .gallery .gallery-main, .gallery.gallery-placeholder {
+    height: 420px; aspect-ratio: auto; padding: 0; margin: 0; border-radius: 0; background: #06231f;
+    box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  .gallery.gallery-placeholder { display: flex; align-items: center; justify-content: center; }
+  .gallery .gallery-main::before { top: auto; height: 150px; background: linear-gradient(to top, rgba(5,40,32,.9), rgba(5,40,32,0)); }
+  .gallery .gallery-main > img, .gallery .gallery-main img { border-radius: 0; height: 100%; }
+  .gallery-thumbs, .gallery-zoom-hint { display: none; }
+  .gallery-count { left: 16px; right: auto; top: auto; bottom: 140px; }
+  .gallery-count-total::after { content: " photos"; }
+
+  /* sheet overlaps the photo (card top = 296px of the 420px photo, as in the board) */
+  .price-card.v3-sheet { order: 2; margin: -124px 12px 0; z-index: 2; }
+  .price-card:not(.v3-sheet) { order: 2; margin: 14px 12px 0; }
+  .section-card { order: 3; margin: 14px 12px 0; }
+  .contact-box:not(.sold-msg) { display: none; }
+  .contact-box.sold-msg { order: 3; margin: 14px 12px 0; }
+  .wa-share-box { order: 4; margin: 14px 12px 0; }
+  .ad-feedback { order: 5; margin: 14px 12px 0; }
+  .ad-slot-wrap { order: 9; margin: 14px 12px 0; }
+  .similar-section { padding: 0 12px 48px; }
+
+  /* floating capsule: Call circle + gold primary, always on screen */
+  .float-contact, .float-contact.visible {
+    left: 12px; right: 12px; bottom: max(14px, env(safe-area-inset-bottom, 14px)); max-width: 640px;
+    height: 74px; padding: 0 10px; border-radius: 999px; transform: none; pointer-events: auto;
+  }
+  .float-contact-info { display: none; }
+  .float-btns { flex: 1; min-width: 0; gap: 10px; }
+  .float-contact-btn { height: 54px; padding: 0; gap: 9px; }
+  .float-btn-call { width: 54px; flex: none; border-radius: 50%; }
+  .float-btn-call .fc-t { display: none; }
+  .float-btn-wa { flex: 1; font-size: 16px; font-weight: 700; color: #1a1405; white-space: nowrap; }
+  body.has-float-bar { padding-bottom: 0; }
+}
+@media (max-width: 360px) {
+  .v3-sheet .price-main { font-size: 27px; }
+  .v3-specs { gap: 6px; } .v3-spec { padding: 9px 9px; } .v3-spec-v { font-size: 14px; }
+  .float-btn-wa { font-size: 14.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .v3-circ, .v3-save.pop svg { transition: none; animation: none; } }
+@media (prefers-reduced-transparency: reduce) { .v3-circ, .price-card.v3-sheet { background: #0d2a1d; -webkit-backdrop-filter: none; backdrop-filter: none; } }

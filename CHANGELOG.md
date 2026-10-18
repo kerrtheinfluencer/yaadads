@@ -18,7 +18,7 @@ The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greet
 - New: listing pages open on a full-width photo with round glass Back, Share and Save buttons and a "1 / 5 photos" counter
 - New: price, title, place and three quick facts sit together in one glass panel under the photo
 - New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll
-- New: shared ad pages have the same glass look, with the price panel right under the photos on phones
+- New: shared ad pages now match — a full-width photo, round glass Back, Share and Save buttons, one glass sheet with the price, facts, description and seller, and a floating Call and WhatsApp bar
 - Changed: the Ship a car calculator now sits at the bottom of the home page and opens when you tap it
 - Kept: if your phone is set to reduce motion or transparency, the new look switches those effects off
 
