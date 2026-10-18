@@ -482,7 +482,7 @@ if ('serviceWorker' in navigator) {
             <option>Clarendon</option><option>St. Catherine</option>
           </select>
         </label>
-        <button type="button" class="v3-bell v3-glass-cap" id="v3Bell" onclick="goPage('msgs')" aria-label="Notifications and messages">
+        <button type="button" class="v3-bell v3-glass-cap" id="v3Bell" onclick="goPage('notifs')" aria-label="Notifications">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
           <span class="v3-bell-dot" id="v3BellDot" hidden></span>
         </button>
@@ -876,20 +876,38 @@ function v3HeroSearch(e){
   </div>
 </div>
 
-<!-- ─── ACCOUNT PAGE ─── -->
+<!-- ─── ACCOUNT PAGE (Lagoon "Me", board P) ─── -->
 <div id="page-myads" class="page">
-  <div class="page-wrap">
+  <div class="page-wrap v3s v3me">
+    <div class="v3s-top">
+      <h1 class="v3s-h1">Me</h1>
+      <button type="button" class="v3d-circ v3s-gear" onclick="openEditProfile()" aria-label="Edit profile and settings">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      </button>
+    </div>
     <!-- Profile Card -->
     <div id="profileCard"></div>
-    <!-- Messages -->
-    <div style="margin-top:28px">
+    <div class="v3s-card v3me-install" id="v3InstallCard" hidden>
+      <span class="v3me-install-t"><b>Install Yaad Adz</b><span>Add it to your home screen</span></span>
+      <button type="button" class="v3me-gold" onclick="pwaTriggerInstall()">Install</button>
+    </div>
+    <div class="v3s-card v3s-rows v3me-menu" id="v3MeMenu">
+      <button type="button" class="v3s-row" data-me="ads"><span class="v3s-ric">📋</span><span class="v3s-rmid"><b>My ads</b></span><span class="v3s-chev" aria-hidden="true">›</span></button>
+      <button type="button" class="v3s-row" data-me="searches"><span class="v3s-ric">🔔</span><span class="v3s-rmid"><b>Saved searches</b></span><span class="v3s-chev" aria-hidden="true">›</span></button>
+      <button type="button" class="v3s-row" data-me="notifs"><span class="v3s-ric">📣</span><span class="v3s-rmid"><b>Notifications</b></span><span class="v3s-chev" aria-hidden="true">›</span></button>
+      <a class="v3s-row" href="/gas-prices"><span class="v3s-ric">⛽</span><span class="v3s-rmid"><b>Gas prices</b></span><span class="v3s-chev" aria-hidden="true">›</span></a>
+      <button type="button" class="v3s-row" data-me="help"><span class="v3s-ric">💬</span><span class="v3s-rmid"><b>Help &amp; support</b></span><span class="v3s-chev" aria-hidden="true">›</span></button>
+      <button type="button" class="v3s-row v3me-out" data-me="out"><span class="v3s-ric">🚪</span><span class="v3s-rmid"><b>Sign out</b></span></button>
+    </div>
+    <!-- Messages (desktop only — phones use the Chats tab) -->
+    <div class="v3me-msgs" style="margin-top:28px">
       <div class="section-hd" style="margin-bottom:16px">
         <h2 class="section-title">Messages</h2>
       </div>
       <div id="acctInboxList" class="inbox-list"></div>
     </div>
     <!-- My Listings -->
-    <div style="margin-top:32px">
+    <div id="v3MyAds" style="margin-top:32px">
       <div class="section-hd" style="margin-bottom:16px">
         <h2 class="section-title">My Listings</h2>
         <span style="display:flex;gap:8px"><button class="btn btn-gold btn-sm" onclick="openPostAd()">+ Post Ad</button></span>
@@ -939,6 +957,22 @@ function v3HeroSearch(e){
   </div>
 </div>
 
+<!-- ─── NOTIFICATIONS PAGE (Lagoon board U — built by js/v3-screens.js) ─── -->
+<div id="page-notifs" class="page">
+  <div class="v3s">
+    <div class="v3s-top">
+      <span class="v3n-title">
+        <button type="button" class="v3d-circ v3n-back" onclick="goHome()" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <h1 class="v3s-h1 v3n-h1">Notifications</h1>
+      </span>
+      <button type="button" class="v3n-mark" id="v3NotifMark" hidden>Mark all read</button>
+    </div>
+    <div id="v3NotifBody" aria-live="polite"></div>
+  </div>
+</div>
+
 <!-- ─── AD DETAIL PAGE ─── -->
 <div id="page-detail" class="page">
   <div id="detailPage"></div>
@@ -975,17 +1009,14 @@ function v3HeroSearch(e){
 <!-- AUTH MODAL -->
 <div class="overlay" id="ovAuth">
   <div class="modal">
-    <button class="m-close" onclick="closeOverlay('ovAuth')">✕</button>
+    <button class="m-close" onclick="closeOverlay('ovAuth')" aria-label="Close">✕</button>
+    <button type="button" class="v3a-skip" onclick="closeOverlay('ovAuth')">Skip</button>
     <div class="m-logo" style="display:flex;justify-content:center;margin-bottom:8px;">
       <img src="/logo.svg" alt="Yaad Adz" style="height:56px;width:auto;">
     </div>
+    <h1 class="v3a-h" id="v3aH">Welcome back</h1>
+    <p class="v3a-sub" id="v3aSub">Sign in to buy, sell and chat</p>
     <div id="authAlert" class="alert-box alert-err"></div>
-
-    <button class="btn btn-block btn-lg" onclick="signInWithGoogle()" style="background:#fff;color:#1f1f1f;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.73A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.19.29-1.73V4.94H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.06l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
-      Continue with Google
-    </button>
-    <div class="divider">or use email</div>
 
     <div class="tab-switch">
       <button class="tab-btn active" id="tLogin" onclick="authTab('login')">Log In</button>
@@ -1010,6 +1041,14 @@ function v3HeroSearch(e){
       <button class="btn btn-green btn-block btn-lg" onclick="doRegister()">Create Free Account</button>
       <p style="text-align:center;font-size:12px;color:var(--text-3);margin-top:12px">By joining you agree to our <a href="#" onclick="openInfoPage('terms');return false" style="color:var(--green)">Terms</a> and <a href="#" onclick="openInfoPage('privacy');return false" style="color:var(--green)">Privacy Policy</a></p>
     </div>
+    <div class="divider v3a-or">or</div>
+    <button class="btn btn-block btn-lg" onclick="signInWithGoogle()" style="background:#fff;color:#1f1f1f;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.73A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.19.29-1.73V4.94H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.06l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+    
+
+    <p class="v3a-switch" id="v3aSwitch">New here? <a href="#" onclick="authTab('register');return false">Create an account</a></p>
   </div>
 </div>
 
