@@ -166,3 +166,32 @@ body .ad-feedback {
   -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%);
 }
 .meta-tag.view-count-tag, .view-count-tag { color: rgba(255, 255, 255, .88); }
+
+
+/* ═══ PHASE 2 — listing page on phones (board K) ═══
+   The price panel jumps up under the photo, like the in-app detail page:
+   photo → price/title/spec tiles → contact → description → seller → reviews. */
+@media (max-width: 700px) {
+  .ad-layout, .ad-body, .ad-panel { display: contents; }
+  .ad-layout > * , .ad-body > *, .ad-panel > * { min-width: 0; }
+  .page-wrap { display: flex; flex-direction: column; gap: 14px; }
+  /* children of .page-wrap are the display:contents descendants, ordered here */
+  .gallery { order: 1; }
+  .price-card { order: 3; }
+  .contact-box { order: 4; }
+  .wa-share-box { order: 6; }
+  .section-card { order: 5; }
+  .ad-feedback { order: 7; }
+  .ad-slot-wrap { order: 9; }
+
+  .ad-meta-tags { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 14px; }
+  .ad-meta-tags .meta-tag { border-radius: 20px; padding: 11px 14px; font-size: 13.5px; font-weight: 600; justify-content: flex-start; }
+  .ad-meta-tags .status-badge { grid-column: 1 / -1; justify-self: start; }
+  .price-card { margin-top: 2px; }
+  .breadcrumb { display: none; }
+  .gallery { margin-top: 14px; }
+  .ad-meta-tags .meta-tag.view-count-tag, .ad-meta-tags .meta-tag.view-count-tag * { color: #fff !important; opacity: 1 !important; }
+  .gallery-main { border-radius: 0 0 34px 34px; margin: 0 -16px; padding: 0 0 10px; }
+  .gallery-main > img, .gallery-main img { border-radius: 0 0 26px 26px; }
+  .page-wrap { padding-top: 0; }
+}
