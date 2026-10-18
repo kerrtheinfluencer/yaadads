@@ -697,43 +697,32 @@ function renderProfileCard() {
   const myAds = _ads.filter(a => a.sellerId === CU.id);
   const activeCount = myAds.filter(a => a.status !== 'sold').length;
   const soldCount = myAds.filter(a => a.status === 'sold').length;
+  const favCount = (typeof L !== 'undefined' && L.favs) ? L.favs.length : 0;
+  const sub = [CU.email, CU.parish].filter(Boolean).map(escHtml).join(' · ');
   el.innerHTML =
-    '<div style="background:var(--nav-bg);border-radius:var(--r-lg);overflow:hidden">' +
-      '<div style="padding:28px 24px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">' +
-        '<div class="s-avatar" style="background:'+clr.bg+';color:'+clr.fg+';width:64px;height:64px;font-size:24px;flex-shrink:0">'+ini+'</div>' +
-        '<div style="flex:1;min-width:160px">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:#fff">'+escHtml(CU.name)+'</div>' +
-          '<div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:2px">'+escHtml(CU.email)+'</div>' +
-          (CU.phone ? '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:1px">📱 '+escHtml(CU.phone)+'</div>' : '') +
-          (CU.parish ? '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:1px">📍 '+escHtml(CU.parish)+'</div>' : '') +
+    '<div class="v3p-card">' +
+      '<div class="v3p-id">' +
+        '<div class="v3p-av" style="background:'+clr.bg+';color:'+clr.fg+'">'+escHtml(ini)+'</div>' +
+        '<div class="v3p-who">' +
+          '<span class="v3p-name">'+escHtml(CU.name)+'</span>' +
+          '<span class="v3p-sub">'+sub+'</span>' +
+          (CU.phone ? '<span class="v3p-sub">📱 '+escHtml(CU.phone)+'</span>' : '') +
         '</div>' +
-        '<button class="btn btn-outline btn-sm" onclick="openEditProfile()">✏️ Edit Profile</button>' +
+        '<button class="v3p-edit" type="button" onclick="openEditProfile()">Edit</button>' +
       '</div>' +
-      '<div style="display:flex;gap:0;border-top:1px solid rgba(255,255,255,.08)">' +
-        '<div style="flex:1;text-align:center;padding:14px 0">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--gold)">'+myAds.length+'</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Total Ads</div>' +
-        '</div>' +
-        '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
-          '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:#4ade80">'+activeCount+'</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Active</div>' +
-        '</div>' +
-        '<div style="flex:1;text-align:center;padding:14px 0;border-left:1px solid rgba(255,255,255,.08)">' +
-                    '<div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:rgba(255,255,255,.5)">'+soldCount+'</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Sold</div>' +
-        '</div>' +
+      '<div class="v3p-stats">' +
+        '<div><span class="v3p-n">'+activeCount+'</span><span class="v3p-l">Active ads</span></div>' +
+        '<div><span class="v3p-n">'+soldCount+'</span><span class="v3p-l">Sold</span></div>' +
+        '<div><span class="v3p-n">'+favCount+'</span><span class="v3p-l">Saved</span></div>' +
       '</div>' +
     '</div>' +
-    '<div style="padding:18px 24px 6px">' +
-      '<div style="font-size:13px;color:rgba(255,255,255,.6);font-weight:600">Your Referral Link</div>' +
-      '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
-        '<input id="myRefLink" type="text" readonly style="flex:1;background:#000;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:8px 10px;font-size:12px;color-scheme:dark" value="' + (CU.referral_code ? escHtml(window.location.origin + '/invite/' + encodeURIComponent(CU.referral_code)) : '') + '">' +
-        '<button class="btn btn-ghost btn-sm" onclick="copyRefLink()">📋</button>' +
+    '<div class="v3p-ref">' +
+      '<div class="v3p-ref-t">Your referral link</div>' +
+      '<div class="v3p-ref-row">' +
+        '<input id="myRefLink" type="text" readonly aria-label="Your referral link" value="' + (CU.referral_code ? escHtml(window.location.origin + '/invite/' + encodeURIComponent(CU.referral_code)) : '') + '">' +
+        '<button class="v3p-copy" type="button" onclick="copyRefLink()" aria-label="Copy referral link">📋</button>' +
       '</div>' +
-      '<div style="font-size:12px;color:var(--gold);margin-top:8px">🤝 ' + (CU.total_referrals || 0) + ' referrals · ' + (CU.yaad_points || 0) + ' YP earned</div>' +
-    '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
-      '<button class="btn btn-ghost btn-sm" onclick="doLogout()">🚪 Log Out</button>' +
+      '<div class="v3p-ref-s">🤝 ' + (CU.total_referrals || 0) + ' referrals · ' + (CU.yaad_points || 0) + ' YP earned</div>' +
     '</div>';
 }
 function renderMyAds() {
