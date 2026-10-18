@@ -1056,7 +1056,10 @@ function v3HeroSearch(e){
 <div class="overlay" id="ovPost">
   <div class="modal modal-wide">
     <button class="m-close" onclick="closeOverlay('ovPost')">✕</button>
-    <h2 style="font-family:var(--font-d);font-weight:800;font-size:24px;margin-bottom:4px">Post a Free Ad</h2>
+    <div class="v3pp-head">
+      <h2 style="font-family:var(--font-d);font-weight:800;font-size:24px;margin-bottom:4px">Post a Free Ad</h2>
+      <span class="v3pp-step" id="v3ppStep" aria-live="polite">Step 1 of 3 · Details</span>
+    </div>
     <p class="m-sub">Reach thousands of buyers across Jamaica — always free</p>
     <div id="postAlert" class="alert-box alert-err"></div>
     <div id="ppDraftHost"></div>
@@ -1072,7 +1075,7 @@ function v3HeroSearch(e){
       <div id="ppSmartPanel"></div>
       <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
       <div class="form-row">
-        <div class="form-grp"><label class="form-lbl">Category *</label><select class="form-inp" id="aCat"></select></div>
+        <div class="form-grp v3pp-cat"><label class="form-lbl" for="aCat">Category *</label><select class="form-inp" id="aCat"></select><div class="v3pp-chips" id="v3ppCats" role="group" aria-label="Category"></div></div>
         <div class="form-grp"><label class="form-lbl">Parish *</label><select class="form-inp" id="aParish"><option value="">Select…</option></select></div>
       </div>
       <div class="form-row">
