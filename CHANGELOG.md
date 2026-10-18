@@ -18,6 +18,9 @@ The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greet
 - New: listing pages open on a full-width photo with round glass Back, Share and Save buttons and a "1 / 5 photos" counter
 - New: price, title, place and three quick facts sit together in one glass panel under the photo
 - New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll
+- New: the Me tab is a glass profile with your name, Active, Sold and Saved counts, and a tidy menu for My ads, Saved searches, Notifications, Gas prices, Help and Sign out
+- New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts
+- New: sign-in is a full-screen glass page with Welcome back, a gold Log In button, Google below, and Skip to look around first
 - New: Chats has a search box and All, Buying and Selling filters, with unread chats marked by a gold dot
 - New: Saved is its own screen with Listings, Searches and Sellers tabs, and an Edit button to remove things
 - New: tap More on the home screen to open Browse — big Vehicles and Property tiles, every category, and a row of parishes
