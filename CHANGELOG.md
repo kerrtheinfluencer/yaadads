@@ -7,7 +7,7 @@
 
 ## 🌅 v3.0 — Yaad Adz v3 — a whole new look (Oct 17, 2026) · latest
 
-The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Nothing about how the app works has changed.
+The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Listing pages now open on a big photo with a glass info panel and a floating contact bar. Nothing about how the app works has changed.
 
 - New: the home screen opens on a sunset scene with a greeting and one large glass search bar
 - New: pick a parish at the top to see only listings from there
@@ -15,7 +15,10 @@ The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greet
 - New: categories are round icon buttons — four up front and a More button for the rest
 - New: listing cards are frosted glass with the photo framed inside and a clear gold price
 - New: the bottom bar is Home, Saved, Chats and Me, with Post as a separate gold button
-- New: shared ad pages have the same glass look, with round buttons for Call and WhatsApp
+- New: listing pages open on a full-width photo with round glass Back, Share and Save buttons and a "1 / 5 photos" counter
+- New: price, title, place and three quick facts sit together in one glass panel under the photo
+- New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll
+- New: shared ad pages have the same glass look, with the price panel right under the photos on phones
 - Changed: the Ship a car calculator now sits at the bottom of the home page and opens when you tap it
 - Kept: if your phone is set to reduce motion or transparency, the new look switches those effects off
 

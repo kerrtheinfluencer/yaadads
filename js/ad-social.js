@@ -92,7 +92,7 @@ function showAdInline(ad) {
       + '<div class="gallery-track">' + slides + '</div>'
       + dots
       + (photos.length > 1 ? '<button class="gallery-nav gallery-prev">‹</button><button class="gallery-nav gallery-next">›</button>' : '')
-      + (photos.length > 1 ? '<div class="detail-photo-count" style="position:absolute;top:12px;right:12px">📷 ' + photos.length + '</div>' : '')
+      + (photos.length > 1 ? '<div class="v3d-count" aria-live="polite"><span class="v3d-count-n">1</span> / ' + photos.length + ' photos</div>' : '')
       + '</div>';
   } else {
     gallery = '<div class="detail-img" style="font-size:80px">' + catIcon + '</div>';
@@ -119,39 +119,63 @@ function showAdInline(ad) {
      (openChat already routes logged-out taps to openAuth). */
   var msgSlot = '<div class="detail-msg-slot"></div>';
 
-  var html = '<div style="padding-bottom:60px">'
-    + '<button onclick="goHome()" style="display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--green);font-size:15px;font-weight:600;cursor:pointer;padding:12px 0">‹ Back</button>'
-    + gallery
-    + '<div class="detail-body">'
-    + '<div class="detail-price">' + price + (ad.neg ? ' <span style="font-size:13px;font-weight:400;color:var(--text-3)">(negotiable)</span>' : '') + '</div>'
-    + '<div class="detail-title">' + escHtml(ad.title) + '</div>'
-    + '<div class="detail-tags">'
-    + '<span class="dtag">📍 ' + escHtml(ad.parish) + '</span>'
-    + '<span class="dtag">' + catIcon + ' ' + (cat.name || 'Other') + '</span>'
-    + '<span class="dtag">🕐 ' + ago(ad.date) + '</span>'
-    + '<span class="dtag">👁 ' + (ad.views || 0) + ' views</span>'
-    + (ad.status === 'sold' ? '<span class="dtag" style="color:#e53935">● Sold</span>' : '')
+  /* §V3-DETAIL — Lagoon listing page: full-bleed photo with floating glass
+     controls, one glass info panel (price, title, place, spec tiles, about),
+     seller card, and a floating capsule contact bar. Every existing hook
+     (.detail-msg-slot, .detail-ask-ai, .detail-report-slot, .detail-body for
+     reviews, .gallery-*) is kept so wiring below is unchanged. */
+  var heart = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 7.8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.3 3.3 4.2 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>';
+  var shareIc = '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>';
+  var phoneIc = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15 15 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.6a1 1 0 01-.25 1z"/></svg>';
+  var waIc = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-3.9-4.8-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>';
+  var verified = (typeof isSellerVerified === 'function' && ad.sellerId && isSellerVerified(ad.sellerId));
+  var faved = (typeof isFav === 'function' && isFav(ad.id));
+  var isSold = ad.status === 'sold';
+  var spec = function (ic, k, v) { return '<div class="v3d-spec"><span class="v3d-spec-ic" aria-hidden="true">' + ic + '</span><span class="v3d-spec-k">' + k + '</span><span class="v3d-spec-v">' + v + '</span></div>'; };
+
+  var html = '<div class="v3d">'
+    + '<div class="v3d-hero">'
+    +   gallery
+    +   '<div class="v3d-bar">'
+    +     '<button type="button" class="v3d-circ v3d-back" onclick="goHome()" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>'
+    +     '<span class="v3d-bar-r">'
+    +       '<button type="button" class="v3d-circ v3d-share" aria-label="Share this listing" onclick="shareAdInline(\'' + slug + '\')">' + shareIc + '</button>'
+    +       '<button type="button" class="v3d-circ v3d-save' + (faved ? ' on' : '') + '" aria-label="Save listing" aria-pressed="' + (faved ? 'true' : 'false') + '">' + heart + '</button>'
+    +     '</span>'
+    +   '</div>'
     + '</div>'
-    + '<p class="detail-desc">' + escHtml(ad.desc || 'No description provided.').replace(/\n/g, '<br>') + '</p>'
-    + '<div class="seller-box">'
-    + '<div class="s-avatar" style="background:' + avatarColor(ad.seller || '?').bg + ';color:' + avatarColor(ad.seller || '?').fg + '">' + escHtml(ad.sellerInit || (ad.seller || '?').charAt(0)) + '</div>'
-    + '<div class="s-info"><div style="font-weight:700">' + escHtml(ad.seller || 'Anonymous') + '</div><div style="font-size:13px;color:var(--text-2)">Yaad Adz Member · ' + escHtml(ad.parish) + '</div></div>'
+    + '<div class="detail-body v3d-panel">'
+    +   (isSold ? '<span class="v3d-sold">Sold</span>' : '')
+    +   '<div class="detail-price">' + price + (ad.neg ? ' <span class="v3d-neg">negotiable</span>' : '') + '</div>'
+    +   '<div class="detail-title">' + escHtml(ad.title) + '</div>'
+    +   '<div class="v3d-loc"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 119.5 9 2.5 2.5 0 0112 11.5z"/></svg> ' + escHtml(ad.parish) + ' · ' + ago(ad.date) + '</div>'
+    +   '<div class="v3d-specs">'
+    +     spec(catIcon, 'Category', escHtml(cat.name || 'Other'))
+    +     spec('🕐', 'Posted', escHtml(ago(ad.date)))
+    +     spec('👁', 'Views', String(ad.views || 0))
+    +   '</div>'
+    +   '<h2 class="v3d-h">About this item</h2>'
+    +   '<p class="detail-desc">' + escHtml(ad.desc || 'No description provided.').replace(/\n/g, '<br>') + '</p>'
     + '</div>'
-    + (ad.status !== 'sold' ? '<div class="detail-btns">'
-      + (ad.phone ? '<a class="btn btn-green" href="tel:' + escHtml(ad.phone) + '" style="flex:1;text-align:center">📞 Call</a>' : '')
-      + (waHref ? '<a class="btn btn-gold" href="' + waHref + '" target="_blank" rel="noopener noreferrer" style="flex:1;text-align:center">💬 WhatsApp</a>' : '')
-      + '<button class="btn btn-outline" style="flex:1" onclick="shareAdInline(\'' + slug + '\')">🔗 Share</button>'
-      + '</div>'
-      + msgSlot
-      /* §CHAT-V2 — the highest-intent chat entry point: ask about THIS ad */
-      + '<button class="btn btn-outline detail-ask-ai" type="button" style="width:100%;margin-top:8px">🤖 Ask AI about this listing</button>'
-      /* §REPORT — reporting is deliberately quiet, so it is a text link under
-         the actions rather than a fourth button competing with Call/WhatsApp.
-         The button itself is built by renderReportLink() below. */
-      + '<div class="detail-report-slot"></div>'
-      : '<div style="color:var(--text-2);font-size:14px">This item has been sold.</div>')
+    + '<div class="v3d-seller">'
+    +   '<div class="s-avatar" style="background:' + avatarColor(ad.seller || '?').bg + ';color:' + avatarColor(ad.seller || '?').fg + '">' + escHtml(ad.sellerInit || (ad.seller || '?').charAt(0)) + '</div>'
+    +   '<div class="s-info"><div class="v3d-sname">' + escHtml(ad.seller || 'Anonymous') + (verified ? ' <span class="v3d-ver" title="Verified seller">✓</span>' : '') + '</div><div class="v3d-ssub">Yaad Adz member · ' + escHtml(ad.parish) + '</div></div>'
+    +   (ad.sellerId ? '<button type="button" class="v3d-sview" data-seller="1">View</button>' : '')
     + '</div>'
+    + (!isSold
+      ? '<div class="v3d-extras">'
+        + '<button class="btn btn-outline detail-ask-ai" type="button">🤖 Ask AI about this listing</button>'
+        + '<div class="detail-report-slot"></div>'
+        + '</div>'
+      : '<div class="v3d-soldnote">This item has been sold.</div>')
     + similarHtml
+    + (!isSold
+      ? '<div class="v3d-cta" role="group" aria-label="Contact seller">'
+        + (ad.phone ? '<a class="v3d-circ v3d-call" href="tel:' + escHtml(ad.phone) + '" aria-label="Call seller">' + phoneIc + '</a>' : '')
+        + (waHref ? '<a class="v3d-circ v3d-wa" href="' + waHref + '" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp seller">' + waIc + '</a>' : '')
+        + msgSlot
+        + '</div>'
+      : '')
     + '</div>';
 
   var el = document.getElementById('detailPage');
@@ -164,15 +188,15 @@ function showAdInline(ad) {
     if (!CU) {
       var signIn = document.createElement('button');
       signIn.type = 'button';
-      signIn.className = 'btn btn-green detail-msg-btn';
-      signIn.textContent = '✉️ Message seller';
+      signIn.className = 'btn btn-gold detail-msg-btn';
+      signIn.textContent = 'Message seller';
       signIn.addEventListener('click', function () { openAuth('login'); });
       msgSlotEl.appendChild(signIn);
     } else if (CU.id !== ad.sellerId) {
       var msgBtn = document.createElement('button');
       msgBtn.type = 'button';
-      msgBtn.className = 'btn btn-green detail-msg-btn';
-      msgBtn.textContent = '✉️ Message seller';
+      msgBtn.className = 'btn btn-gold detail-msg-btn';
+      msgBtn.textContent = 'Message seller';
       msgBtn.addEventListener('click', function () {
         openChat(ad.id, ad.sellerId, ad.seller || 'Seller', ad.sellerInit || initials(ad.seller || '?'));
       });
@@ -200,6 +224,18 @@ function showAdInline(ad) {
     if (typeof askAboutAd === 'function') askAboutAd(ad.id);
   });
 
+  /* §V3-DETAIL — save heart + seller profile link (no seller text in handlers) */
+  var saveBtn = el.querySelector('.v3d-save');
+  if (saveBtn) saveBtn.addEventListener('click', function () {
+    if (typeof togFav === 'function') togFav(ad.id);
+    var on = typeof isFav === 'function' && isFav(ad.id);
+    saveBtn.classList.toggle('on', on);
+    saveBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    saveBtn.classList.remove('pop'); void saveBtn.offsetWidth; saveBtn.classList.add('pop');
+  });
+  var sviewBtn = el.querySelector('.v3d-sview');
+  if (sviewBtn) sviewBtn.addEventListener('click', function () { openProfile(ad.sellerId); });
+
   var track = el.querySelector('.gallery-track');
   if (track && photos.length > 1) {
     var gdots = el.querySelectorAll('.gallery-dot');
@@ -214,7 +250,11 @@ function showAdInline(ad) {
       }
       return best;
     }
-    function paintDots(i) { gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); }); }
+    var countN = el.querySelector('.v3d-count-n');
+    function paintDots(i) {
+      gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
+      if (countN) countN.textContent = String(i + 1);
+    }
     function goSlide(i) {
       i = Math.max(0, Math.min(gslides.length - 1, i));
       var s = gslides[i];

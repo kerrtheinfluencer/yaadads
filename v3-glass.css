@@ -929,3 +929,144 @@ button[onclick="goHome()"] { color: #fff !important; }
   #page-home .hero:not(.searched) { padding-left: 14px; padding-right: 14px; }
   #page-home .hero:not(.searched) h1.v3-greet { font-size: 34px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   15. PHASE 2 — LISTING DETAIL (board K): full-bleed photo, floating glass
+   controls, one glass info panel, seller card, floating capsule contact bar
+   ═══════════════════════════════════════════════════════════════════════════ */
+body:has(#page-detail.active) nav,
+body:has(#page-detail.active) .mob-nav,
+body:has(#page-detail.active) #gasBanner,
+body:has(#page-detail.active) .back-to-top { display: none !important; }
+body:has(#page-detail.active) { padding-top: 0; }
+
+.v3d { max-width: 760px; margin: 0 auto; padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+
+/* hero photo */
+.v3d-hero { position: relative; }
+.v3d-hero .gallery-wrap { background: #06231f; border-radius: 0 0 34px 34px; overflow: hidden; }
+.v3d-hero .gallery-slide { height: min(58vh, 460px); }
+.v3d-hero .detail-img { height: min(46vh, 380px); border-radius: 0 0 34px 34px;
+  background: linear-gradient(145deg, rgba(255,255,255,.2), rgba(255,255,255,.05)), #0d3b33; }
+.v3d-hero .gallery-nav, .v3d-hero .gallery-dots { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .v3d-hero .gallery-nav { display: flex; }
+}
+.v3d-bar { position: absolute; z-index: 3; left: 16px; right: 16px; top: calc(14px + env(safe-area-inset-top, 0px));
+  display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+.v3d-bar > * { pointer-events: auto; }
+.v3d-bar-r { display: flex; gap: 10px; }
+
+/* glass circle button (back / share / save / call / whatsapp) */
+.v3d-circ {
+  position: relative; width: 46px; height: 46px; flex: none; border: 0; border-radius: 50%; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; text-decoration: none;
+  background: var(--v3-fill, linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.06))), rgba(6, 34, 30, .42);
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 2px rgba(255,255,255,.12), 0 10px 24px rgba(2,20,18,.34);
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+}
+.v3d-circ:active { transform: scale(.92); }
+.v3d-save.on { color: #ff6b81; }
+.v3d-save.on svg { fill: currentColor; }
+.v3d-save.pop svg { animation: v3dPop .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes v3dPop { 0% { transform: scale(.6); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+.v3d-count { position: absolute; z-index: 3; right: 16px; bottom: 16px; padding: 7px 14px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; color: #fff; letter-spacing: .01em;
+  background: rgba(6, 34, 30, .5); -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.3); }
+
+/* info panel */
+.v3d-panel.detail-body {
+  position: relative; z-index: 2; margin: -26px 14px 0; padding: 22px 20px 20px; border: 0; border-radius: 34px;
+  background: linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.06) 55%, rgba(255,255,255,.13)), rgba(6, 34, 30, .46);
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 2px rgba(255,255,255,.12), 0 18px 40px rgba(2,20,18,.34);
+}
+.v3d-panel .detail-price { font-family: var(--v3-font, 'Sora', sans-serif); font-size: 31px; font-weight: 700; letter-spacing: -.03em;
+  color: #ffd27a; margin: 0 0 6px; line-height: 1.1; }
+.v3d-neg { font: 600 12px/1 var(--font-b, system-ui); color: #ffd27a; background: rgba(255,210,122,.14);
+  border: 1px solid rgba(255,210,122,.3); border-radius: 999px; padding: 5px 10px; vertical-align: middle; letter-spacing: 0; }
+.v3d-panel .detail-title { font-family: var(--v3-font, 'Sora', sans-serif); font-size: 19px; font-weight: 600; letter-spacing: -.01em;
+  line-height: 1.3; color: #fff; margin: 0 0 8px; }
+.v3d-loc { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(255,255,255,.82); margin-bottom: 16px; }
+.v3d-loc svg { color: #ffd27a; flex: none; }
+.v3d-sold { display: inline-block; margin-bottom: 10px; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  color: #ffb4b4; background: rgba(229,57,53,.2); border: 1px solid rgba(255,140,140,.3); }
+.v3d-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+.v3d-spec { display: flex; flex-direction: column; gap: 2px; padding: 12px 10px; min-width: 0; border-radius: 22px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 1px rgba(255,255,255,.25); }
+.v3d-spec-ic { font-size: 18px; line-height: 1; margin-bottom: 4px; }
+.v3d-spec-k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.66); }
+.v3d-spec-v { font-size: 14px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v3d-h { font-family: var(--v3-font, 'Sora', sans-serif); font-size: 15px; font-weight: 600; margin: 0 0 8px; color: #fff; }
+.v3d-panel .detail-desc { font-size: 15px; line-height: 1.7; color: rgba(255,255,255,.9); margin: 0 0 4px; }
+
+/* reviews mounted inside the panel */
+.v3d-panel .ad-feedback { margin-top: 18px; }
+
+/* seller card */
+.v3d-seller { display: flex; align-items: center; gap: 14px; margin: 14px 14px 0; padding: 14px 16px; border-radius: 30px;
+  background: linear-gradient(145deg, rgba(255,255,255,.2), rgba(255,255,255,.05)), rgba(6, 34, 30, .4);
+  -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.55), 0 14px 32px rgba(2,20,18,.28); }
+.v3d-seller .s-avatar { width: 52px; height: 52px; flex: none; box-shadow: 0 0 0 2px rgba(255,255,255,.25); }
+.v3d-seller .s-info { flex: 1; min-width: 0; }
+.v3d-sname { font-weight: 700; font-size: 16px; color: #fff; }
+.v3d-ver { display: inline-flex; width: 17px; height: 17px; margin-left: 4px; border-radius: 50%; align-items: center; justify-content: center;
+  font-size: 11px; background: #4fc08b; color: #04281b; vertical-align: 1px; }
+.v3d-ssub { font-size: 13px; color: rgba(255,255,255,.78); margin-top: 2px; }
+.v3d-sview { border: 0; cursor: pointer; padding: 10px 18px; border-radius: 999px; font: 600 14px var(--font-b, system-ui); color: #fff;
+  background: rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.4); transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+.v3d-sview:active { transform: scale(.94); }
+
+.v3d-extras { display: flex; flex-direction: column; gap: 8px; margin: 14px 14px 0; }
+.v3d-extras .btn { width: 100%; border-radius: 999px; }
+.v3d-soldnote { margin: 14px 14px 0; text-align: center; color: rgba(255,255,255,.8); font-size: 14px; }
+.v3d .similar-section { margin: 18px 14px 0; padding: 18px 16px; border: 0; border-radius: 30px;
+  background: linear-gradient(145deg, rgba(255,255,255,.18), rgba(255,255,255,.04)), rgba(6, 34, 30, .4);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.5); }
+.v3d .similar-title { font-family: var(--v3-font, 'Sora', sans-serif); color: #fff; }
+.v3d .sim-card { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14) !important; border-radius: 22px !important; color: #fff; }
+.v3d .sim-card [style*="--green"] { color: #ffd27a !important; }
+
+/* floating capsule contact bar */
+.v3d-cta { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 28px), 560px);
+  display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 999px;
+  background: linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.05)), rgba(6, 34, 30, .5);
+  -webkit-backdrop-filter: blur(24px) saturate(190%) brightness(1.06); backdrop-filter: blur(24px) saturate(190%) brightness(1.06);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 2px rgba(255,255,255,.12), 0 18px 40px rgba(2,20,18,.45);
+  animation: v3dCtaIn .6s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes v3dCtaIn { from { opacity: 0; transform: translate(-50%, 24px) scale(.96); } }
+.v3d-cta .v3d-circ { width: 52px; height: 52px; box-shadow: inset 0 1px 1px rgba(255,255,255,.5), none; background: rgba(255,255,255,.13); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.v3d-cta .detail-msg-slot { flex: 1; margin: 0; min-width: 0; }
+.v3d-cta .detail-msg-btn, .v3d-cta .detail-msg-slot .btn {
+  width: 100%; height: 52px; min-height: 52px; border: 0; border-radius: 999px; font: 700 16px var(--font-b, system-ui);
+  color: #1a1405; background: linear-gradient(145deg, #fff0b8 0%, #ffd45c 52%, #f4c300 100%);
+  box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7);
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+.v3d-cta .detail-msg-btn:active { transform: scale(.96); }
+/* no in-app chat available (demo / own ad): WhatsApp becomes the gold action */
+.v3d-cta:not(:has(.detail-msg-btn)) .v3d-wa { flex: 1; width: auto; border-radius: 999px; color: #1a1405;
+  background: linear-gradient(145deg, #fff0b8 0%, #ffd45c 52%, #f4c300 100%); box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7); }
+
+@media (min-width: 641px) {
+  .v3d-hero .gallery-wrap, .v3d-hero .detail-img { border-radius: 0 0 34px 34px; }
+  .v3d-cta { bottom: 24px; }
+}
+@media (max-width: 360px) {
+  .v3d-panel .detail-price { font-size: 27px; }
+  .v3d-specs { gap: 6px; }
+  .v3d-spec { padding: 10px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v3d-cta, .v3d-save.pop svg { animation: none; }
+  .v3d-circ, .v3d-sview, .v3d-cta .detail-msg-btn { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .v3d-circ, .v3d-panel.detail-body, .v3d-seller, .v3d-cta, .v3d .similar-section { background: #0d2a1d; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
