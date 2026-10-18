@@ -355,6 +355,7 @@ var SITE_UPDATES = {
         'New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll',
         'New: the Me tab is a glass profile with your name, Active, Sold and Saved counts, and a tidy menu for My ads, Saved searches, Notifications, Gas prices, Help and Sign out',
         'New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts',
+        'New: Post an ad is a full-screen glass flow with a three-step progress bar, tap-to-pick category chips, rounded photo tiles, a Negotiable switch and a floating Next / Publish bar',
         'New: sign-in is a full-screen glass page with Welcome back, a gold Log In button, Google below, and Skip to look around first',
         'New: Chats has a search box and All, Buying and Selling filters, with unread chats marked by a gold dot',
         'New: Saved is its own screen with Listings, Searches and Sellers tabs, and an Edit button to remove things',

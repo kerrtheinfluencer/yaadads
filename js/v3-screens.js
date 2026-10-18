@@ -359,8 +359,60 @@
     };
   }
 
+
+  /* ───────────────────────── Post an ad (board M) ─────────────────────────
+     The 3-step wizard keeps every id and function it had. Added here: the
+     "Step N of 3" line, and a category chip rail that mirrors the #aCat
+     <select> (which stays in the page as the source of truth). */
+  var STEP_NAMES = { 1: 'Details', 2: 'Photo & contact', 3: 'Preview' };
+  function syncPostStep(n) {
+    var el = $('v3ppStep'); if (!el) return;
+    var step = n || (typeof currentPostStep !== 'undefined' ? currentPostStep : 1);
+    el.textContent = 'Step ' + step + ' of 3 · ' + (STEP_NAMES[step] || '');
+  }
+  function buildPostCats() {
+    var rail = $('v3ppCats'), sel = $('aCat');
+    if (!rail || !sel || typeof CATS === 'undefined') return;
+    if (!rail.firstChild) {
+      rail.innerHTML = CATS.map(function (c) {
+        return '<button type="button" class="v3pp-chip" data-cat="' + esc(c.id) + '" aria-pressed="false">' + esc(c.name) + '</button>';
+      }).join('');
+    }
+    syncPostCats();
+  }
+  function syncPostCats() {
+    var rail = $('v3ppCats'), sel = $('aCat'); if (!rail || !sel) return;
+    rail.querySelectorAll('.v3pp-chip').forEach(function (b) {
+      var on = b.getAttribute('data-cat') === sel.value;
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#v3ppCats .v3pp-chip');
+    if (b) {
+      var sel = $('aCat'); if (!sel) return;
+      sel.value = b.getAttribute('data-cat');
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      syncPostCats(); return;
+    }
+    if (e.target.closest && e.target.closest('#ovPost')) setTimeout(syncPostCats, 0);
+  });
+  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'aCat') syncPostCats(); });
+  if (typeof window.setStep === 'function') {
+    var origSetStep = window.setStep;
+    window.setStep = function (n) { var out = origSetStep.apply(this, arguments); safe(function () { syncPostStep(n); syncPostCats(); }); return out; };
+  }
+  if (typeof window.openPostAd === 'function') {
+    var origOpenPost = window.openPostAd;
+    window.openPostAd = function () {
+      var out = origOpenPost.apply(this, arguments);
+      safe(function () { buildPostCats(); syncPostStep(1); setTimeout(syncPostCats, 60); });
+      return out;
+    };
+  }
+
   /* ── boot ── */
-  function init() { bindChats(); }
+  function init() { bindChats(); safe(buildPostCats); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.addEventListener('load', function () { setTimeout(init, 400); });
 })();
