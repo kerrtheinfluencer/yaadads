@@ -852,21 +852,26 @@ function v3HeroSearch(e){
   </div>
 </div>
 
-<!-- ─── BROWSE PAGE ─── -->
+<!-- ─── BROWSE PAGE (Lagoon hub — built by js/v3-home.js) ─── -->
 <div id="page-browse" class="page">
-  <div class="wrap">
-    <div class="section">
-      <div class="section-hd">
-        <h2 class="section-title" id="browseTitle">All Listings</h2>
-        <select class="fselect" id="sortSel" onchange="renderBrowse()">
-          <!-- §FOR-YOU — same ranked feed, applied to whatever is being browsed -->
-          <option value="foryou" selected>✨ For You</option>
-          <option value="newest">Newest First</option>
-          <option value="price-lo">Price: Low → High</option>
-          <option value="price-hi">Price: High → Low</option>
-        </select>
-      </div>
-      <div class="listings-grid" id="browseGrid"></div>
+  <div class="v3b">
+    <div class="v3b-top">
+      <button type="button" class="v3d-circ v3b-back" onclick="goHome()" aria-label="Back to home">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h1 class="v3b-h1">Browse</h1>
+    </div>
+    <form class="v3b-search" id="v3bSearch" role="search">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="v3bInput" placeholder="Search Yaad Adz" aria-label="Search Yaad Adz" enterkeyhint="search" autocomplete="off">
+    </form>
+    <div class="v3b-feature" id="v3bFeature"></div>
+    <div class="v3b-grid" id="v3bGrid"></div>
+    <h2 class="v3b-sub">Browse by parish</h2>
+    <div class="v3b-parishes" id="v3bParishes"></div>
+    <div class="v3b-links">
+      <a class="v3b-link" href="/gas-prices">⛽ Gas prices</a>
+      <a class="v3b-link" href="/ship-to-jamaica.html">🚢 Ship a car</a>
     </div>
   </div>
 </div>
