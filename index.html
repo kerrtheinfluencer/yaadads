@@ -468,8 +468,27 @@ if ('serviceWorker' in navigator) {
   <!-- HERO with AI search -->
   <div class="hero">
     <div class="hero-content">
-      <div class="hero-eyebrow">👋 Wah gwaan, Jamaica</div>
-      <h1>Find <em>Anything</em> in Jamaica</h1>
+      <!-- §V3 home top row: parish picker (a real <select> under the capsule) + notifications -->
+      <div class="v3-top">
+        <label class="v3-loc v3-glass-cap" id="v3Loc">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <span id="v3LocLabel">All Jamaica</span>
+          <svg class="v3-loc-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          <select id="v3LocSel" aria-label="Show listings from">
+            <option value="">All Jamaica</option>
+            <option>Kingston</option><option>St. Andrew</option><option>St. Thomas</option><option>Portland</option>
+            <option>St. Mary</option><option>St. Ann</option><option>Trelawny</option><option>St. James</option>
+            <option>Hanover</option><option>Westmoreland</option><option>St. Elizabeth</option><option>Manchester</option>
+            <option>Clarendon</option><option>St. Catherine</option>
+          </select>
+        </label>
+        <button type="button" class="v3-bell v3-glass-cap" id="v3Bell" onclick="goPage('msgs')" aria-label="Notifications and messages">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+          <span class="v3-bell-dot" id="v3BellDot" hidden></span>
+        </button>
+      </div>
+      <div class="v3-brand"><img src="/logo.svg" alt="Yaad Adz" width="96" height="34" decoding="async"></div>
+      <h1 class="v3-greet"><span class="v3-g1">Wah gwaan,</span> <em id="v3GreetName">Jamaica.</em><span class="v3-sr"> Find anything in Jamaica — free classifieds</span></h1>
       <p class="hero-sub">Buy and sell across all 14 parishes. Search or ask AI.</p>
 
       <!-- §V3 hero search capsule (phones). Submits through the same handler as the
@@ -497,60 +516,6 @@ if ('serviceWorker' in navigator) {
   </div>
 
 
-<!-- ═══ SHIP-A-CAR WIDGET (insert between </div> closing .hero and <div class="results-area">) ═══ -->
-<style>
-.shipw{max-width:960px;margin:16px auto 0;padding:0 16px}
-.shipw-in{background:rgba(10,22,16,.52);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px 16px}
-.shipw-t{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#fff;margin:0 0 4px}
-.shipw-s{font-size:12px;color:#9fb5a7;margin:0 0 10px}
-.shipw-r{display:flex;gap:8px;flex-wrap:wrap}
-.shipw-r input{flex:1 1 180px;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:14px}
-.shipw-r select{flex:0 1 150px;padding:11px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:14px}
-.shipw-r select option{color:#111}
-.shipw-r button{flex:0 0 auto;padding:11px 16px;border:0;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer;background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}
-</style>
-<section class="shipw" aria-label="Car shipping cost calculator for Jamaica">
-  <details class="shipw-in">
-    <summary class="shipw-t">🚢 Ship a car to Jamaica <span class="shipw-chev" aria-hidden="true"></span></summary>
-    <p class="shipw-s">Enter the car price (US$). Get the estimated total with duty &amp; fees.</p>
-    <form class="shipw-r" id="shipwForm" action="/ship-to-jamaica.html" method="get">
-      <input id="shipwIn" type="text" inputmode="decimal" placeholder="Car price in USD e.g. 9500" aria-label="Car price in USD" autocomplete="off">
-      <select id="shipwOrigin" name="origin" aria-label="Shipping from">
-        <option value="usa_fl">USA – Florida</option>
-        <option value="usa_nj">USA – NJ / NY</option>
-        <option value="canada">Canada</option>
-        <option value="uk">UK</option>
-        <option value="japan">Japan</option>
-      </select>
-      <button type="submit">Estimate</button>
-    </form>
-  </details>
-</section>
-<script>
-(function(){
-  var f=document.getElementById('shipwForm');if(!f)return;
-  f.addEventListener('submit',function(e){
-    e.preventDefault();
-    var v=document.getElementById('shipwIn').value.trim(),o=document.getElementById('shipwOrigin').value;
-    var q='?origin='+encodeURIComponent(o);
-    if(parseFloat(v.replace(/[^0-9.]/g,'')))q+='&price='+parseFloat(v.replace(/[^0-9.]/g,''));
-    if(window.gtag)gtag('event','ship_widget_submit');
-    location.href='/ship-to-jamaica.html'+q;
-  });
-})();
-</script>
-<script>
-/* §V3 hero search capsule → same path as the header search (handleNavSearch). */
-function v3HeroSearch(e){
-  if(e&&e.preventDefault)e.preventDefault();
-  var h=document.getElementById('v3HeroInput'),n=document.getElementById('navSearchInput');
-  if(!h)return;var q=h.value.trim();if(!q){h.focus();return;}
-  if(n)n.value=q;
-  if(typeof handleNavSearch==='function')handleNavSearch();
-  h.blur();
-}
-</script>
-<!-- ═══ END SHIP-A-CAR WIDGET ═══ -->
 <!-- RESULTS AREA (categories + AI response + listings, all unified) -->
   <div class="results-area">
 
@@ -830,6 +795,60 @@ function v3HeroSearch(e){
         </div>
       </noscript>
     </div>
+<!-- ═══ SHIP-A-CAR WIDGET (insert between </div> closing .hero and <div class="results-area">) ═══ -->
+<style>
+.shipw{max-width:960px;margin:16px auto 0;padding:0 16px}
+.shipw-in{background:rgba(10,22,16,.52);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px 16px}
+.shipw-t{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#fff;margin:0 0 4px}
+.shipw-s{font-size:12px;color:#9fb5a7;margin:0 0 10px}
+.shipw-r{display:flex;gap:8px;flex-wrap:wrap}
+.shipw-r input{flex:1 1 180px;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:14px}
+.shipw-r select{flex:0 1 150px;padding:11px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:14px}
+.shipw-r select option{color:#111}
+.shipw-r button{flex:0 0 auto;padding:11px 16px;border:0;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer;background:linear-gradient(#ffe45e,#c89a00);color:#2a2100}
+</style>
+<section class="shipw" aria-label="Car shipping cost calculator for Jamaica">
+  <details class="shipw-in">
+    <summary class="shipw-t">🚢 Ship a car to Jamaica <span class="shipw-chev" aria-hidden="true"></span></summary>
+    <p class="shipw-s">Enter the car price (US$). Get the estimated total with duty &amp; fees.</p>
+    <form class="shipw-r" id="shipwForm" action="/ship-to-jamaica.html" method="get">
+      <input id="shipwIn" type="text" inputmode="decimal" placeholder="Car price in USD e.g. 9500" aria-label="Car price in USD" autocomplete="off">
+      <select id="shipwOrigin" name="origin" aria-label="Shipping from">
+        <option value="usa_fl">USA – Florida</option>
+        <option value="usa_nj">USA – NJ / NY</option>
+        <option value="canada">Canada</option>
+        <option value="uk">UK</option>
+        <option value="japan">Japan</option>
+      </select>
+      <button type="submit">Estimate</button>
+    </form>
+  </details>
+</section>
+<script>
+(function(){
+  var f=document.getElementById('shipwForm');if(!f)return;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=document.getElementById('shipwIn').value.trim(),o=document.getElementById('shipwOrigin').value;
+    var q='?origin='+encodeURIComponent(o);
+    if(parseFloat(v.replace(/[^0-9.]/g,'')))q+='&price='+parseFloat(v.replace(/[^0-9.]/g,''));
+    if(window.gtag)gtag('event','ship_widget_submit');
+    location.href='/ship-to-jamaica.html'+q;
+  });
+})();
+</script>
+<script>
+/* §V3 hero search capsule → same path as the header search (handleNavSearch). */
+function v3HeroSearch(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  var h=document.getElementById('v3HeroInput'),n=document.getElementById('navSearchInput');
+  if(!h)return;var q=h.value.trim();if(!q){h.focus();return;}
+  if(n)n.value=q;
+  if(typeof handleNavSearch==='function')handleNavSearch();
+  h.blur();
+}
+</script>
+<!-- ═══ END SHIP-A-CAR WIDGET ═══ -->
   </div>
 </div>
 
@@ -894,10 +913,10 @@ function v3HeroSearch(e){
   <button class="mob-nav-item active" id="mnHome" onclick="goHome()">
     <span class="mob-nav-icon">🏠</span><span class="mn-label">Home</span>
   </button>
-  <button class="mob-nav-item" id="mnSearch" onclick="openAiSheet()">
-    <span class="mob-nav-icon">🤖</span><span class="mn-label">Search</span>
+  <button class="mob-nav-item" id="mnSaved" onclick="v3ShowSaved()">
+    <span class="mob-nav-icon">🤍</span><span class="mn-label">Saved</span>
   </button>
-  <button class="mob-nav-item" onclick="openPostAd()">
+  <button class="mob-nav-item" onclick="openPostAd()" aria-label="Post an ad">
     <div class="mob-nav-post">＋</div>
   </button>
   <button class="mob-nav-item" id="mnMsgs" onclick="goPage('msgs')">
@@ -905,11 +924,11 @@ function v3HeroSearch(e){
       <span class="mob-nav-icon">💬</span>
       <span class="unread-badge" id="mobMsgBadge"></span>
     </div>
-    <span class="mn-label">Messages</span>
+    <span class="mn-label">Chats</span>
   </button>
   <button class="mob-nav-item" id="mnAccount" onclick="handleAccountTab()">
     <span class="mob-nav-icon" id="mobAccountIcon">👤</span>
-    <span class="mn-label" id="mobAccountLabel">Account</span>
+    <span class="mn-label" id="mobAccountLabel">Me</span>
   </button>
 </div>
 
@@ -1465,6 +1484,7 @@ function v3HeroSearch(e){
 <script src="js/onboarding.js" defer></script>
 <script src="js/recent.js" defer></script>
 <script src="js/for-you.js" defer></script>
+<script src="js/v3-home.js" defer></script>
 <script src="js/site-updates.js" defer></script>
 <script src="js/broadcasts.js" defer></script>
 <script src="js/ship-calc.js" defer></script>

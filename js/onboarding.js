@@ -315,7 +315,7 @@ const OB = (function() {
   // Steps whose target can't be found are skipped automatically.
   const TOUR_STEPS = [
     {
-      sel: () => isMobile() ? '#mnSearch' : '#navSearchPill',
+      sel: () => isMobile() ? '#v3HeroSearch' : '#navSearchPill',
       icon: '🔍',
       title: 'Search anything',
       text: isMobile()
