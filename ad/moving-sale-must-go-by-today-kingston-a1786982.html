@@ -844,8 +844,16 @@ What&#39;s included:
     <div class="nav-center-title">🚨 MOVING SALE — MUST GO BY TODAY! 🚨</div>
     <div class="nav-center-price">J$70,000</div>
   </div>
-  <!-- Right: Post Ad -->
-  <a class="nav-post" href="https://yaadadz.com/#post">+ Post Ad</a>
+  <!-- Right: round glass Share + Save (board K) and Post Ad (desktop) -->
+  <div class="nav-right">
+    <button type="button" class="v3-circ v3-share" id="v3Share" aria-label="Share this listing" data-url="https://yaadadz.com/ad/moving-sale-must-go-by-today-kingston-a1786982.html">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
+    </button>
+    <button type="button" class="v3-circ v3-save" id="v3Save" aria-label="Save listing" aria-pressed="false" data-id="a1786982008362">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 7.8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.3 3.3 4.2 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>
+    </button>
+    <a class="nav-post" href="https://yaadadz.com/#post">+ Post Ad</a>
+  </div>
 </nav>
 
 <div class="breadcrumb">
@@ -877,31 +885,6 @@ What&#39;s included:
       </div>
     </div>
 
-      <div class="section-card">
-        <h2>Description</h2>
-        <p class="desc-text">Moving out and everything must go by tomorrow — this is a steal for anyone furnishing a home or starting fresh.
-What&#39;s included:
-🛏️ Queen Size All Nite Pillow Top Bed (mattress + base, no headboard)
-🍳 Whirlpool 4-Burner Electric Ignition Gas Stove
-🔥 30 lb Gas Cylinder (ready to use)
-💰 J$70,000 for all 3 — or buy separately
-✅ All in great condition
-✅ Ready for pickup TODAY or TOMORROW MORNING
-✅ First to message with &quot;STILL AVAILABLE&quot; gets it — cash on pickup
-📍 Pickup only</p>
-      </div>
-
-      <div class="section-card">
-        <h2>Seller</h2>
-        <div class="seller-row">
-          <div class="seller-avatar">BD</div>
-          <div>
-            <div class="seller-name">Briana Davis</div>
-            <div class="seller-sub">Yaad Adz Member · Kingston</div>
-          </div>
-        </div>
-      </div>
-
       <link rel="stylesheet" href="/ad-feedback.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="/js/ad-feedback.js" defer></script>
@@ -922,16 +905,34 @@ What&#39;s included:
 
     <!-- RIGHT: Price + Contact -->
     <div class="ad-panel">
-      <div class="price-card">
-        <div class="price-main">J$70,000</div>
-        <div class="price-neg">Price is negotiable</div>
-        <div class="ad-title-panel">🚨 MOVING SALE — MUST GO BY TODAY! 🚨</div>
-        <div class="ad-meta-tags">
-          <span class="meta-tag">📍 Kingston</span>
-          <span class="meta-tag">🛋️ Furniture</span>
-          <span class="meta-tag">🕐 2 months ago</span>
-          <span class="meta-tag view-count-tag">👁 <span id="viewCountEl">17</span> views</span>
-          <span class="status-badge active">● Available</span>
+      <div class="price-card v3-sheet">
+        
+        <div class="price-main">J$70,000 <span class="price-neg-pill">negotiable</span></div>
+        <div class="price-neg sr-only-neg">Price is negotiable</div>
+        <h1 class="ad-title-panel">🚨 MOVING SALE — MUST GO BY TODAY! 🚨</h1>
+        <div class="v3-loc"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg> Kingston · 2 months ago</div>
+        <div class="v3-specs">
+          <div class="v3-spec"><span class="v3-spec-k">Category</span><span class="v3-spec-v">Furniture</span></div>
+          <div class="v3-spec"><span class="v3-spec-k">Posted</span><span class="v3-spec-v">2 months ago</span></div>
+          <div class="v3-spec"><span class="v3-spec-k">Views</span><span class="v3-spec-v"><span id="viewCountEl">17</span></span></div>
+        </div>
+        <h2 class="v3-h">About this item</h2>
+        <p class="desc-text">Moving out and everything must go by tomorrow — this is a steal for anyone furnishing a home or starting fresh.
+What&#39;s included:
+🛏️ Queen Size All Nite Pillow Top Bed (mattress + base, no headboard)
+🍳 Whirlpool 4-Burner Electric Ignition Gas Stove
+🔥 30 lb Gas Cylinder (ready to use)
+💰 J$70,000 for all 3 — or buy separately
+✅ All in great condition
+✅ Ready for pickup TODAY or TOMORROW MORNING
+✅ First to message with &quot;STILL AVAILABLE&quot; gets it — cash on pickup
+📍 Pickup only</p>
+        <div class="seller-row">
+          <div class="seller-avatar">BD</div>
+          <div class="seller-info">
+            <div class="seller-name">Briana Davis</div>
+            <div class="seller-sub">Yaad Adz member · Kingston</div>
+          </div>
         </div>
       </div>
 
@@ -1945,6 +1946,31 @@ What&#39;s included:
     window.addEventListener('scroll', requestScrollTick, { passive: true });
     window.addEventListener('resize', requestScrollTick, { passive: true });
     onScroll(); // run once on load
+  })();
+
+  // ── Share + Save (round glass buttons) ───────────────────────
+  (function() {
+    var sh = document.getElementById('v3Share');
+    var sv = document.getElementById('v3Save');
+    function favs() { try { return JSON.parse(localStorage.getItem('ya_favs') || '[]'); } catch (e) { return []; } }
+    if (sh) sh.addEventListener('click', function() {
+      var url = sh.getAttribute('data-url') || location.href;
+      if (navigator.share) { navigator.share({ title: document.title, url: url }).catch(function() {}); return; }
+      if (navigator.clipboard) navigator.clipboard.writeText(url).catch(function() {});
+      sh.classList.add('done'); setTimeout(function() { sh.classList.remove('done'); }, 1400);
+    });
+    if (sv) {
+      var id = sv.getAttribute('data-id');
+      function paint() { var on = favs().indexOf(id) > -1; sv.classList.toggle('on', on); sv.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+      paint();
+      sv.addEventListener('click', function() {
+        var f = favs(), i = f.indexOf(id);
+        if (i > -1) f.splice(i, 1); else f.push(id);
+        try { localStorage.setItem('ya_favs', JSON.stringify(f)); } catch (e) {}
+        paint();
+        sv.classList.remove('pop'); void sv.offsetWidth; sv.classList.add('pop');
+      });
+    }
   })();
 
   // ── View counter ─────────────────────────────────────────────

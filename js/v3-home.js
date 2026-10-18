@@ -78,6 +78,17 @@
     };
   }
 
+  /* ── keep the chips + result-row layout in step with every home render
+     (typed search, AI search, category tap all end in renderHome) ── */
+  if (typeof window.renderHome === 'function') {
+    var origRenderHome = window.renderHome;
+    window.renderHome = function () {
+      var out = origRenderHome.apply(this, arguments);
+      safe(syncFilterChips);
+      return out;
+    };
+  }
+
   /* ── 3. Home clears the Saved view ── */
   if (typeof window.goHome === 'function') {
     var origGoHome = window.goHome;
@@ -148,6 +159,10 @@
         chips += '<button type="button" class="v3-fchip" data-clear="cat">' + String(c.name || 'Category').replace(/[<>&"]/g, '') + ' <span aria-hidden="true">✕</span></button>';
       }
     });
+    var q = '';
+    safe(function () { if (typeof searchQ !== 'undefined' && searchQ) q = String(searchQ); });
+    document.body.classList.toggle('v3-rows', !!q);
+    if (q) chips += '<button type="button" class="v3-fchip" data-clear="query">🔍 ' + q.replace(/[<>&"]/g, '').slice(0, 40) + ' <span aria-hidden="true">✕</span></button>';
     if (state.saved) chips += '<button type="button" class="v3-fchip" data-clear="saved">♥ Saved listings <span aria-hidden="true">✕</span></button>';
     if (state.parish) chips += '<button type="button" class="v3-fchip" data-clear="parish">📍 ' + state.parish.replace(/[<>&"]/g, '') + ' <span aria-hidden="true">✕</span></button>';
     box.innerHTML = chips;
@@ -158,6 +173,11 @@
     if (!b) return;
     if (b.getAttribute('data-clear') === 'cat') {
       if (typeof window.catFilter === 'function') window.catFilter('all');
+      syncFilterChips();
+      return;
+    }
+    if (b.getAttribute('data-clear') === 'query') {
+      if (typeof window.goHome === 'function') window.goHome();
       syncFilterChips();
       return;
     }
@@ -179,16 +199,9 @@
     var b = document.createElement('button');
     b.type = 'button';
     b.className = 'v3-more';
-    b.setAttribute('aria-expanded', 'false');
-    b.setAttribute('aria-label', 'More categories');
+        b.setAttribute('aria-label', 'Browse all categories');
     b.innerHTML = '<span class="cp-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/></svg></span><span class="cp-name">More</span>';
-    b.addEventListener('click', function () {
-      var deck = document.querySelector('.browse-deck');
-      if (!deck) return;
-      var open = deck.classList.toggle('v3-cats-open');
-      b.setAttribute('aria-expanded', open ? 'true' : 'false');
-      b.querySelector('.cp-name').textContent = open ? 'Less' : 'More';
-    });
+    b.addEventListener('click', function () { if (typeof goPage === 'function') goPage('browse'); });
     row.appendChild(b);
   }
   if (typeof window.renderCats === 'function') {
@@ -230,10 +243,91 @@
     };
   }
 
+
+  /* ── 7. Browse hub (board S) + search result rows (board J) ── */
+  var ICONS = {
+    vehicles: '<path d="M5 16V11l2-5h10l2 5v5M3 16h18M7 19v-3M17 19v-3"/>',
+    property: '<path d="M4 11 12 4l8 7v9H4zM10 20v-6h4v6"/>',
+    electronics: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    fashion: '<path d="M8 3 3 7l3 3 2-1v12h8V9l2 1 3-3-5-4a4 4 0 0 1-8 0z"/>',
+    furniture: '<path d="M3 12h18v6H3zM5 12V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M6 18v2M18 18v2"/>',
+    jobs: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
+    services: '<path d="M14 6a4 4 0 0 0-5 5L3 17l4 4 6-6a4 4 0 0 0 5-5l-3 3-3-3z"/>',
+    food: '<path d="M12 21v-9M12 12c0-4 3-7 8-7 0 5-3 8-8 7zM12 15c0-3-2-5-6-5 0 4 2 6 6 5z"/>',
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    sports: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6c3 3 3 9.8 0 12.8M18.4 5.6c-3 3-3 9.8 0 12.8"/>',
+    kids: '<circle cx="12" cy="13" r="7"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="6.5" r="2.5"/><path d="M9.5 14.5c1.4 1.4 3.6 1.4 5 0"/>',
+    other: '<path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>',
+    all: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>'
+  };
+  var BLURB = { vehicles: 'Cars, bikes, parts', property: 'Rent, buy, land' };
+  function svgIcon(id, size, stroke) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="' + stroke + '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[id] || ICONS.other) + '</svg>';
+  }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  function buildBrowse() {
+    var feat = $('v3bFeature'), grid = $('v3bGrid'), par = $('v3bParishes');
+    if (!feat || typeof CATS === 'undefined') return;
+    var big = CATS.filter(function (c) { return c.id === 'vehicles' || c.id === 'property'; });
+    var rest = CATS.filter(function (c) { return c.id !== 'vehicles' && c.id !== 'property'; });
+    feat.innerHTML = big.map(function (c, i) {
+      return '<button type="button" class="v3b-big" data-cat="' + esc(c.id) + '">' + svgIcon(c.id, 34, i ? '#9af0c4' : '#ffd27a') +
+        '<span class="v3b-big-t"><b>' + esc(c.name) + '</b><span>' + esc(BLURB[c.id] || '') + '</span></span></button>';
+    }).join('');
+    grid.innerHTML = '<button type="button" class="v3b-tile v3b-all" data-cat="all">' + svgIcon('all', 24, 'currentColor') + 'All listings</button>' +
+      rest.map(function (c) {
+        return '<button type="button" class="v3b-tile" data-cat="' + esc(c.id) + '">' + svgIcon(c.id, 24, 'currentColor') + esc(c.name) + '</button>';
+      }).join('');
+    if (par && typeof PARISHES !== 'undefined') {
+      par.innerHTML = PARISHES.map(function (p) {
+        return '<button type="button" class="v3b-chip' + (state.parish === p ? ' on' : '') + '" data-parish="' + esc(p) + '">' + esc(p) + '</button>';
+      }).join('');
+    }
+  }
+  var origRenderBrowse = window.renderBrowse;
+  window.renderBrowse = function () { safe(buildBrowse); };
+
+  function leaveBrowse(fn) {
+    if (typeof window.goHome === 'function') window.goHome();
+    safe(fn);
+    setTimeout(function () {
+      var el = $('v3Filters') && !$('v3Filters').hidden ? $('v3Filters') : $('homeGrid');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('#page-browse [data-cat], #page-browse [data-parish]');
+    if (!t) return;
+    if (t.hasAttribute('data-cat')) {
+      var id = t.getAttribute('data-cat');
+      leaveBrowse(function () { if (id !== 'all' && typeof window.catFilter === 'function') window.catFilter(id); });
+    } else {
+      var p = t.getAttribute('data-parish');
+      leaveBrowse(function () {
+        state.parish = p;
+        safe(function () { localStorage.setItem(PARISH_KEY, p); });
+        refresh(false);
+      });
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'v3bSearch') return;
+    e.preventDefault();
+    var q = ($('v3bInput').value || '').trim();
+    if (!q) { $('v3bInput').focus(); return; }
+    var n = $('navSearchInput'); if (n) n.value = q;
+    if (typeof window.goHome === 'function') window.goHome();
+    if (n) n.value = q;
+    if (typeof handleNavSearch === 'function') handleNavSearch();
+    $('v3bInput').blur(); $('v3bInput').value = '';
+  });
+
   /* ── boot ── */
   function init() {
     bindLocation();
     syncFilterChips();
+    safe(buildBrowse);
     greet();
     syncBell();
     safe(ensureMore);
