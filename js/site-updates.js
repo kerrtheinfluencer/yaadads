@@ -355,6 +355,7 @@ var SITE_UPDATES = {
         'New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll',
         'New: the Me tab is a glass profile with your name, Active, Sold and Saved counts, and a tidy menu for My ads, Saved searches, Notifications, Gas prices, Help and Sign out',
         'New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts',
+        'New: Yaad Brain chat is a glass sheet with a gold orb, scrolling suggestion chips, gold bubbles for your messages, glass answer bubbles and listing cards, and a rounded message bar with a gold send button',
         'New: the Ship a Car to Jamaica calculator matches the new look — rounded glass fields, a gold Calculate button, a big gold landed-cost total with a clear breakdown, and glass FAQ cards',
         'New: the Gas Prices page now matches the new look — glass fuel cards with a big gold price and pump estimate, gold tank-size and tab switches, a glass station map and a rounded Report a price form',
         'New: Post an ad is a full-screen glass flow with a three-step progress bar, tap-to-pick category chips, rounded photo tiles, a Negotiable switch and a floating Next / Publish bar',
