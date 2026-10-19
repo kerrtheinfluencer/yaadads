@@ -355,6 +355,7 @@ var SITE_UPDATES = {
         'New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll',
         'New: the Me tab is a glass profile with your name, Active, Sold and Saved counts, and a tidy menu for My ads, Saved searches, Notifications, Gas prices, Help and Sign out',
         'New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts',
+        'Changed: tapping the search bar on the home screen opens Browse instead of the keyboard, and the AI star beside it now floats, glows and sparkles when you press it',
         'Changed: What’s new now lives in Notifications instead of Chats, and it opens as a calm sheet — the newest update first, a short summary, and older updates folded into one-line rows you can tap open',
         'Fixed: the app no longer throws errors when it opens with a weak or blocked connection, and the Browse page now loads reliably',
         'Improved: on tablets and computers, Post Ad is gold, Log in and Join Free are clearer, the AI button is a gold orb, footer links are easier to read and Browse uses the wider screen',

@@ -209,6 +209,7 @@
     window.renderCats = function () {
       var out = origRenderCats.apply(this, arguments);
       safe(ensureMore);
+    safe(setupHeroSearch);
       return out;
     };
   }
@@ -321,6 +322,57 @@
     if (typeof handleNavSearch === 'function') handleNavSearch();
     $('v3bInput').blur(); $('v3bInput').value = '';
   });
+
+
+  /* ── hero search: a tap opens Browse (like "All"); the AI orb floats and reacts ── */
+  function setupHeroSearch() {
+    var form = $('v3HeroSearch'), input = $('v3HeroInput');
+    if (!form || !input || form.getAttribute('data-v3')) return;
+    form.setAttribute('data-v3', '1');
+    input.readOnly = true;                       // no keyboard on the home screen
+    input.setAttribute('inputmode', 'none');
+    input.setAttribute('placeholder', 'Search Yaad Adz');
+    form.classList.add('v3-hs-tap');
+    form.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.v3-hs-ai')) return;
+      if (typeof goPage === 'function') goPage('browse');
+    });
+    input.addEventListener('focus', function () { input.blur(); });
+
+    var ai = form.querySelector('.v3-hs-ai');
+    if (!ai || ai.querySelector('.v3-orb')) return;
+    var orb = document.createElement('span');
+    orb.className = 'v3-orb';
+    orb.innerHTML = '<span class="v3-orb-glow" aria-hidden="true"></span>';
+    while (ai.firstChild) orb.appendChild(ai.firstChild);
+    ai.appendChild(orb);
+    // tilt toward the finger while it is down on the orb
+    ai.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'mouse' && !(e.buttons & 1) && e.type !== 'pointermove') return;
+      var r = ai.getBoundingClientRect();
+      var dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+      var dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+      orb.style.setProperty('--tx', (Math.max(-1, Math.min(1, dx)) * 4).toFixed(1) + 'px');
+      orb.style.setProperty('--ty', (Math.max(-1, Math.min(1, dy)) * 4).toFixed(1) + 'px');
+    });
+    function rest() { orb.style.removeProperty('--tx'); orb.style.removeProperty('--ty'); }
+    ai.addEventListener('pointerleave', rest);
+    ai.addEventListener('pointerup', rest);
+    ai.addEventListener('pointercancel', rest);
+    // a small burst of sparkles when it is pressed
+    ai.addEventListener('pointerdown', function () {
+      if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      for (var i = 0; i < 5; i++) {
+        var sp = document.createElement('i');
+        sp.className = 'v3-spark';
+        var a = (Math.PI * 2 * i) / 5 + Math.random() * .6, d = 20 + Math.random() * 12;
+        sp.style.setProperty('--sx', (Math.cos(a) * d).toFixed(1) + 'px');
+        sp.style.setProperty('--sy', (Math.sin(a) * d).toFixed(1) + 'px');
+        ai.appendChild(sp);
+        setTimeout(function (n) { return function () { n.remove(); }; }(sp), 700);
+      }
+    });
+  }
 
   /* ── boot ── */
   function init() {
