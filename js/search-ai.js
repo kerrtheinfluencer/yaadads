@@ -472,6 +472,10 @@ function attachCardPrefetch(grid, from) {
 }
 
 function renderBrowse() {
+  /* The Lagoon Browse page is a category hub (js/v3-home.js replaces this
+     function). If that file is missing, the old list markup is gone too, so
+     do nothing instead of throwing on null. */
+  if (!document.getElementById('browseGrid')) return;
   const sort = document.getElementById('sortSel')?.value || 'newest';
   const ads = getFiltered(searchQ, activeF, sort);
   const t = searchQ ? `"${searchQ}"` : activeF==='all' ? 'All Listings' : (catById(activeF).name||'Listings');

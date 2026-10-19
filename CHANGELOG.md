@@ -20,6 +20,7 @@ The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greet
 - New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll
 - New: the Me tab is a glass profile with your name, Active, Sold and Saved counts, and a tidy menu for My ads, Saved searches, Notifications, Gas prices, Help and Sign out
 - New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts
+- Fixed: the app no longer throws errors when it opens with a weak or blocked connection, and the Browse page now loads reliably
 - Improved: on tablets and computers, Post Ad is gold, Log in and Join Free are clearer, the AI button is a gold orb, footer links are easier to read and Browse uses the wider screen
 - New: Yaad Brain chat is a glass sheet with a gold orb, scrolling suggestion chips, gold bubbles for your messages, glass answer bubbles and listing cards, and a rounded message bar with a gold send button
 - New: the Ship a Car to Jamaica calculator matches the new look — rounded glass fields, a gold Calculate button, a big gold landed-cost total with a clear breakdown, and glass FAQ cards

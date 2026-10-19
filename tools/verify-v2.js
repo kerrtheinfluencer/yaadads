@@ -25,7 +25,7 @@ check('home view toggle ships (single + grid buttons wired to setHomeView)',
   html.includes('id="homeViewBtn"') && html.includes("setHomeView('single'") && html.includes("setHomeView('grid'"));
 check('saved home view stamped before first paint (inline ya_home_view script)',
   html.indexOf('ya_home_view') > -1 && html.indexOf('ya_home_view') < html.indexOf('<body'));
-check('logo.svg referenced 3 times', (html.match(/src="\/logo\.svg"/g) || []).length === 3);
+check('logo.svg referenced 4 times (nav, home brand, auth, footer)', (html.match(/src="\/logo\.svg"/g) || []).length === 4);
 check('manifest linked', html.includes('rel="manifest"'));
 check('member stat starts as a neutral placeholder, not zero',
   /id="uStat"[^>]*>—<\/div>/.test(html));
@@ -121,8 +121,8 @@ check('for-you.js included in index.html before boot.js',
   html.indexOf('js/for-you.js') < html.indexOf('js/boot.js'));
 check('the For You bar ships (fyBar container + explainer panel host)',
   html.includes('id="fyBar"'));
-check('both sort selects offer ✨ For You and default to it',
-  (html.match(/<option value="foryou" selected>/g) || []).length === 2,
+check('the home sort select offers ✨ For You and defaults to it (Browse is a hub now, no sort box)',
+  (html.match(/<option value="foryou" selected>/g) || []).length === 1,
   (html.match(/<option value="foryou"/g) || []).length + ' option(s)');
 check('getFiltered routes the foryou mode into the ranker',
   _saSrc.includes("sort === 'foryou'") && _saSrc.includes('fyRank(ads'));
@@ -309,7 +309,7 @@ check('§MSG-V2 realtime inserts are idempotent by message id',
   navSrc.includes("messages.some(m => m.id === row.id)"));
 
 check('§MSG-V2 a listing finally has a Message button, mounted by listener',
-  socSrc.includes('detail-msg-slot') && socSrc.includes('className = \'btn btn-green detail-msg-btn\'') &&
+  socSrc.includes('detail-msg-slot') && socSrc.includes('className = \'btn btn-gold detail-msg-btn\'') &&
   !/onclick="openChat\(/.test(socSrc));
 
 check('§MSG-V2 the dead offer panel is gone (it had no markup to open)',
@@ -452,6 +452,7 @@ check('the in-app history overlay uses the same version tiebreak',
 const loadedScripts = [...html.matchAll(/<script src="(js\/[^"]+)"[^>]*>\s*<\/script>/g)].map(m => m[1]);
 const declOwners = new Map();
 for (const file of loadedScripts) {
+  if (!fs.existsSync(file)) { check('index.html script exists: ' + file, false, 'referenced but not in the repo'); continue; }
   const src = fs.readFileSync(file, 'utf8');
   let inBlockComment = false;
   for (const line of src.split(/\r?\n/)) {

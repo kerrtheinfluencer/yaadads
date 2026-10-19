@@ -285,7 +285,6 @@
       }).join('');
     }
   }
-  var origRenderBrowse = window.renderBrowse;
   window.renderBrowse = function () { safe(buildBrowse); };
 
   function leaveBrowse(fn) {

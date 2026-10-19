@@ -118,8 +118,8 @@ async function init() {
     SEO.serveLlmsTxt(_ads);
   };
 
-  // Real-time: new ads
-  _db.channel('ads-changes')
+  // Real-time: new ads (skipped when the Supabase script is blocked/offline and _db is null)
+  if (_db) _db.channel('ads-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads' }, payload => {
       // §ADMIN-HIDE — a hidden row is not public, so it never enters _ads.
       if (!isPublicRow(payload.new)) return;
@@ -240,6 +240,8 @@ function updateStats() {
   // Count the public profiles directly instead of depending on a custom RPC.
   // The previous `get_user_count` RPC is not deployed in production, which
   // left the hero permanently showing “0 members” for new visitors.
+  // If the Supabase script was blocked or offline, _db is null — keep the cached count.
+  if (!_db) return;
   _db.from('profiles').select('id', { count: 'exact', head: true })
     .then(({ count, error }) => {
       if (error || typeof count !== 'number') {

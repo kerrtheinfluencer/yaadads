@@ -189,7 +189,7 @@ body {
    The raised sections (browse deck, results header, For You bar, recents) get
    rounder corners and the shared rim. Fills are left to style.css — they were
    already tuned for contrast. */
-.browse-deck, .results-header, .fy-bar, .ai-response-card, .seller-box, .analytics-strip {
+.browse-deck, .results-header, .fy-bar, .ai-response-card {
   border-radius: 30px;
 }
 .recent-card { border-radius: 24px; }
@@ -199,13 +199,12 @@ body {
 
 /* ── 6. BUTTONS ────────────────────────────────────────────────────────────
    Capsule buttons with the brand gold as a lit gradient. */
-.btn, .load-more-btn, .sheet-btn-primary, .sheet-view-all, .pwa-install-btn {
+.btn, .load-more-btn, .pwa-install-btn {
   border-radius: 999px;
   transition: transform .4s var(--v3-spring), box-shadow .3s ease, filter .25s ease, background .25s ease;
 }
 .btn:hover, .load-more-btn:hover { transform: translateY(-2px); }
-.btn:active, .load-more-btn:active, .sheet-btn-primary:active, .sheet-view-all:active, .pwa-install-btn:active { transform: scale(.96); }
-.btn-ico { border-radius: 50%; }
+.btn:active, .load-more-btn:active, .pwa-install-btn:active { transform: scale(.96); }
 .btn-gold,
 .btn-gold:hover {
   background-image: var(--v3-gold-grad);
@@ -381,7 +380,7 @@ body {
 .shipw .shipw-s { color: rgba(255, 255, 255, .86); }
 
 /* keep the header capsule inside the viewport */
-.nav, .site-nav, header.nav { max-width: 100%; box-sizing: border-box; }
+.nav, header.nav { max-width: 100%; box-sizing: border-box; }
 
 /* the detail page's "Back" button is styled inline (green on teal); an
    attribute selector + !important is the only way to override inline colour. */
@@ -761,19 +760,16 @@ button[onclick="goHome()"] { color: #fff !important; }
   .browse-deck { margin: 0; padding: 0; }
   .browse-deck .recent-search-row { padding-left: 0; padding-right: 0; }
   .browse-deck .cat-row { display: flex; justify-content: space-between; gap: 0; padding: 16px 2px 4px; overflow: visible; -webkit-mask-image: none; mask-image: none; animation: v3-rise .7s .18s ease both; }
-  .browse-deck:not(.v3-cats-open) .cat-row .cat-pill-sm { display: none; }
-  .browse-deck:not(.v3-cats-open) .cat-row .cat-pill-sm[onclick="catFilter('vehicles')"],
-  .browse-deck:not(.v3-cats-open) .cat-row .cat-pill-sm[onclick="catFilter('property')"],
-  .browse-deck:not(.v3-cats-open) .cat-row .cat-pill-sm[onclick="catFilter('electronics')"],
-  .browse-deck:not(.v3-cats-open) .cat-row .cat-pill-sm[onclick="catFilter('jobs')"] { display: flex; }
+  .browse-deck .cat-row .cat-pill-sm { display: none; }
+  .browse-deck .cat-row .cat-pill-sm[onclick="catFilter('vehicles')"],
+  .browse-deck .cat-row .cat-pill-sm[onclick="catFilter('property')"],
+  .browse-deck .cat-row .cat-pill-sm[onclick="catFilter('electronics')"],
+  .browse-deck .cat-row .cat-pill-sm[onclick="catFilter('jobs')"] { display: flex; }
   .cat-row .cat-pill-sm[onclick="catFilter('vehicles')"] { order: 1; }
   .cat-row .cat-pill-sm[onclick="catFilter('property')"] { order: 2; }
   .cat-row .cat-pill-sm[onclick="catFilter('electronics')"] { order: 3; }
   .cat-row .cat-pill-sm[onclick="catFilter('jobs')"] { order: 4; }
   .cat-row .v3-more { order: 99; }
-  .browse-deck.v3-cats-open .cat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 0; justify-items: center; }
-  .browse-deck.v3-cats-open .cat-row .cat-pill-sm, .browse-deck.v3-cats-open .cat-row .v3-more { order: 0; }
-  .browse-deck.v3-cats-open .cat-row .cat-pill-sm[onclick="catFilter('all')"] { order: -1; }
 
   .cat-row .cat-pill-sm, .cat-row .v3-more { flex: 0 0 auto; width: 64px; padding: 0; gap: 7px; flex-direction: column; align-items: center; background: none; border: 0; box-shadow: none; color: #fff; font: inherit; cursor: pointer; }
   .cat-row .v3-more { display: flex; }
@@ -881,7 +877,7 @@ button[onclick="goHome()"] { color: #fff !important; }
   .results-header .hs-switch { grid-column: 1; grid-row: 2; justify-self: start; }
   .results-header .rb-select { grid-column: 2; grid-row: 2; }
 
-  .fy-bar .fy-line, .fy-bar .fy-sub { display: none; }
+  .fy-bar .fy-line { display: none; }
   .fy-bar .fy-hd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .fy-bar .fy-actions { display: flex; gap: 8px; margin-left: auto; }
   .fy-bar .fy-btn { height: 36px; padding: 0 14px; border-radius: 999px; font-size: 13px; }
@@ -1582,17 +1578,15 @@ body.v3-rows #fyBar, body.v3-rows .fy-bar { display: none !important; }
   .seo-about-inner, .seo-about-inner strong { color: rgba(255,255,255,.88); }
   .seo-about-inner a, .seo-about-cats a { color: #ffd27a; }
   .seo-about-inner a:hover, .seo-about-cats a:hover { color: #fff; }
-  footer p, footer .footer-tagline, .footer-parishes, .footer-parishes a { color: rgba(255,255,255,.82); }
-  .footer-parishes strong { color: #fff; }
+  footer p { color: rgba(255,255,255,.82); }
 
   /* sub-screens use the width: browse becomes a roomier grid */
   .v3b { max-width: 860px; }
   .v3b .v3b-grid { grid-template-columns: repeat(5, 1fr); }
 
   /* Chats/Me empty states */
-  #page-msgs h2, #page-msgs h3, #page-msgs .empty-title, #page-msgs .empty-state h3 { font-family: var(--v3-font, 'Sora', sans-serif); color: #fff; font-weight: 600; }
-  #page-msgs .empty-state p, #page-msgs .empty-sub { color: rgba(255,255,255,.85); }
-  #page-msgs .empty-state .btn, #page-msgs .btn-green { color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); border: 0; border-radius: 999px; min-height: 48px; padding: 0 28px; font-weight: 700; box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7); }
+  #page-msgs h2, #page-msgs h3 { font-family: var(--v3-font, 'Sora', sans-serif); color: #fff; font-weight: 600; }
+  #page-msgs .btn-green { color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); border: 0; border-radius: 999px; min-height: 48px; padding: 0 28px; font-weight: 700; box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7); }
 
   /* gas pill: brighter label text */
   #gasBanner .gas-banner-label, #gasBanner .gas-banner-sub { color: rgba(255,255,255,.85); }
