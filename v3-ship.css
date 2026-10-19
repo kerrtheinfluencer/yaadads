@@ -1,0 +1,72 @@
+/* ═══ Lagoon Liquid Glass — Ship a Car page (Phase 8, board R) ═══
+   Loaded after the page's own <style>. Remove the <link> to roll back. */
+:root {
+  --v3-fill: linear-gradient(145deg, rgba(255,255,255,.26), rgba(255,255,255,.06) 55%, rgba(255,255,255,.14));
+  --v3-tint: rgba(6,34,30,.34);
+  --v3-rim: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 2px rgba(255,255,255,.12), inset 0 0 22px rgba(255,255,255,.06);
+  --v3-shadow: 0 18px 40px rgba(2,20,18,.34);
+  --v3-font: 'Sora','Outfit',system-ui,sans-serif;
+  --v3-gold: #ffd27a;
+  --v3-spring: cubic-bezier(.34,1.56,.64,1);
+  --tx2: rgba(255,255,255,.84);
+}
+html { background: #06231f; }
+body {
+  background-color: #06231f;
+  background-image:
+    linear-gradient(180deg, rgba(3,22,18,0) 0%, rgba(3,22,18,0) 34%, rgba(3,22,18,.6) 70%, rgba(3,22,18,.86) 100%),
+    radial-gradient(11rem 11rem at 84% 7%, rgba(255,238,190,.85), rgba(255,190,110,.45) 45%, rgba(255,150,80,0) 72%),
+    radial-gradient(26rem 18rem at 92% 8%, rgba(255,160,90,.45), transparent 66%),
+    radial-gradient(23rem 15rem at 6% 34%, rgba(0,205,140,.3), transparent 62%),
+    linear-gradient(180deg, #123f5c 0%, #0c5f60 40%, #053a2a 100%);
+  background-attachment: fixed;
+}
+.w { padding: 18px; }
+.top { padding: 0 0 6px; gap: 10px; }
+.top a { display: inline-flex; align-items: center; height: 46px; padding: 0 18px; border-radius: 999px; color: #fff; font-weight: 600; font-size: 14px;
+  background: var(--v3-fill), var(--v3-tint); -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); box-shadow: var(--v3-rim), 0 10px 24px rgba(2,20,18,.3);
+  transition: transform .4s var(--v3-spring); }
+.top a:active { transform: scale(.95); }
+h1 { font-family: var(--v3-font); font-weight: 700; letter-spacing: -.5px; color: #fff; margin: 22px 0 8px; }
+h1 em { color: var(--v3-gold); font-style: normal; }
+h2 { font-family: var(--v3-font); font-weight: 600; font-size: 20px; color: #fff; margin: 28px 0 8px; }
+.sub, .hint, .dis, .rng, #msg { color: rgba(255,255,255,.85); }
+
+.card { background: var(--v3-fill), var(--v3-tint); border: 0; border-radius: 32px; padding: 22px;
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06); backdrop-filter: blur(22px) saturate(190%) brightness(1.06); box-shadow: var(--v3-rim), var(--v3-shadow); }
+label { color: #fff; font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; padding-left: 4px; margin: 14px 0 6px; }
+input, select { min-height: 52px; padding: 0 18px; border: 0; border-radius: 20px; color: #fff; font-size: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,.2), rgba(255,255,255,.05)), rgba(6,34,30,.3);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.1); }
+select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(145deg, rgba(255,255,255,.2), rgba(255,255,255,.05)),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 0 0, right 18px center; background-color: rgba(6,34,30,.3); padding-right: 42px; }
+input::placeholder { color: rgba(255,255,255,.62); }
+input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,210,122,.45), inset 0 1px 1px rgba(255,255,255,.5); }
+select option { color: #111; }
+.row { gap: 12px; }
+@media (max-width: 420px) { .row { grid-template-columns: 1fr; gap: 0; } }
+
+.b1, .go { border-radius: 999px; min-height: 56px; font-family: var(--v3-font); font-weight: 700; color: #1a1405;
+  background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7);
+  transition: transform .4s var(--v3-spring); }
+.b1:active { transform: scale(.97); }
+#msg.err { color: #ffd0c8; }
+
+/* result: big gold total + glass rows */
+.tot { font-family: var(--v3-font); font-weight: 700; font-size: 38px; letter-spacing: -1px; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); -webkit-background-clip: text; background-clip: text; color: transparent; }
+td { border-color: rgba(255,255,255,.16); padding: 10px 0; color: #fff; }
+tr.sum td { border-bottom-width: 1px; color: var(--v3-gold); }
+.jv { color: rgba(255,255,255,.75); }
+.warn { border-radius: 22px; background: rgba(255,210,122,.14); border: 0; box-shadow: inset 0 0 0 1px rgba(255,210,122,.4); color: #fff; padding: 12px 16px; }
+
+/* FAQ */
+details { border: 0; padding: 0; margin-bottom: 10px; border-radius: 26px; overflow: hidden; background: var(--v3-fill), var(--v3-tint);
+  -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); box-shadow: var(--v3-rim); }
+summary { padding: 16px 20px; color: #fff; min-height: 52px; }
+details .sub { padding: 0 20px 16px; margin: 0; }
+a { color: var(--v3-gold); }
+.top a, .b1 { text-decoration: none; }
+input:focus-visible, select:focus-visible, .b1:focus-visible, summary:focus-visible, .top a:focus-visible { outline: 3px solid rgba(255,210,122,.7); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (prefers-reduced-transparency: reduce) { .card, details, .top a { background: #123b27; -webkit-backdrop-filter: none; backdrop-filter: none; } }
