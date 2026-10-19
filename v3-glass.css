@@ -1561,3 +1561,43 @@ body.v3-rows #fyBar, body.v3-rows .fy-bar { display: none !important; }
 .ai-sheet.ai-v2 .ai-sheet-sugs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 8px 18px 10px; }
 .ai-sheet.ai-v2 .ai-sheet-sugs::-webkit-scrollbar { display: none; }
 .ai-sheet.ai-v2 .sheet-sug { flex: none; white-space: nowrap; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   21. PHASE 10 — DESKTOP POLISH (≥641px) — contrast, gold accents, tablet
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 641px) {
+  /* header actions: gold primary, white glass secondary */
+  nav .nav-actions .btn { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; font-weight: 700; transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+  nav .nav-actions .btn:active { transform: scale(.95); }
+  nav .nav-actions .btn-gold, nav .nav-actions .nav-post-btn { color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); box-shadow: 0 8px 20px rgba(244,195,0,.3), inset 0 1px 1px rgba(255,255,255,.7); }
+  nav .nav-actions .btn-outline, nav .nav-actions .btn-green { color: #fff; background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
+  nav .nav-actions .btn-outline:hover { color: #ffd27a; }
+
+  /* floating AI button: gold orb like the in-sheet one */
+  .ai-fab { width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, #fff0b8, #ffd45c 45%, #f4c300 80%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.8), 0 14px 30px rgba(244,195,0,.35); }
+  .ai-fab::after { box-shadow: 0 0 0 2px rgba(255,210,122,.6); }
+
+  /* footer & about copy: readable on the dark lagoon */
+  .seo-about-inner, .seo-about-inner strong { color: rgba(255,255,255,.88); }
+  .seo-about-inner a, .seo-about-cats a { color: #ffd27a; }
+  .seo-about-inner a:hover, .seo-about-cats a:hover { color: #fff; }
+  footer p, footer .footer-tagline, .footer-parishes, .footer-parishes a { color: rgba(255,255,255,.82); }
+  .footer-parishes strong { color: #fff; }
+
+  /* sub-screens use the width: browse becomes a roomier grid */
+  .v3b { max-width: 860px; }
+  .v3b .v3b-grid { grid-template-columns: repeat(5, 1fr); }
+
+  /* Chats/Me empty states */
+  #page-msgs h2, #page-msgs h3, #page-msgs .empty-title, #page-msgs .empty-state h3 { font-family: var(--v3-font, 'Sora', sans-serif); color: #fff; font-weight: 600; }
+  #page-msgs .empty-state p, #page-msgs .empty-sub { color: rgba(255,255,255,.85); }
+  #page-msgs .empty-state .btn, #page-msgs .btn-green { color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); border: 0; border-radius: 999px; min-height: 48px; padding: 0 28px; font-weight: 700; box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7); }
+
+  /* gas pill: brighter label text */
+  #gasBanner .gas-banner-label, #gasBanner .gas-banner-sub { color: rgba(255,255,255,.85); }
+}
+/* tablet: keep the 4-up grid from squeezing cards */
+@media (min-width: 641px) and (max-width: 1000px) {
+  .v3b .v3b-grid { grid-template-columns: repeat(4, 1fr); }
+}
