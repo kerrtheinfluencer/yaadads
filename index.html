@@ -496,9 +496,6 @@ if ('serviceWorker' in navigator) {
       <form class="v3-hero-search" id="v3HeroSearch" role="search" autocomplete="off" onsubmit="v3HeroSearch(event)">
         <svg class="v3-hs-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="v3HeroInput" type="search" enterkeyhint="search" placeholder="Search or ask YaadBrain" aria-label="Search Yaad Adz listings" autocomplete="off" spellcheck="false">
-        <button type="button" class="v3-hs-ai" onclick="openAiSheet()" aria-label="Ask YaadBrain">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg>
-        </button>
       </form>
 
       <!-- Reset button (shown after search) -->
@@ -1573,6 +1570,13 @@ function v3HeroSearch(e){
     bumperEndpoint:          "{{ BUMPER_ENDPOINT }}".trim(),
   };
 </script>
+
+<!-- ── FLOATING AI ORB (phones): sits opposite the gas pill, opens Yaad Brain ── -->
+<button type="button" class="v3-ai-float" id="v3AiOrb" onclick="openAiSheet()" aria-label="Ask Yaad Brain">
+  <span class="v3-orb"><span class="v3-orb-glow" aria-hidden="true"></span>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/><path d="M19 15l.9 2.4 2.4.9-2.4.9L19 21.6l-.9-2.4-2.4-.9 2.4-.9z" opacity=".8"/></svg>
+  </span>
+</button>
 
 <!-- ── FLOATING GAS PRICE BANNER ── -->
 <a href="/gas-prices.html" id="gasBanner" aria-label="Jamaica gas prices today">

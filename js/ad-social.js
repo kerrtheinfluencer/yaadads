@@ -65,6 +65,7 @@ function showAdInline(ad) {
   var adUrl = adPageUrl(slug);
   var photos = (ad.photos && ad.photos.length) ? ad.photos : (ad.image ? [ad.image] : []);
   var t = function (u) { return (typeof thumbUrl === 'function' && u) ? thumbUrl(u, 480) : u; };
+  var tHero = function (u) { return (typeof thumbUrl === 'function' && u) ? thumbUrl(u, 1000) : u; };
   var catIcon = cat.icon || '📦';
   var price = 'J$' + fmtN(ad.price);
   var waNum = (ad.phone || '').replace(/\D/g, '');
@@ -80,7 +81,7 @@ function showAdInline(ad) {
   var gallery;
   if (photos.length) {
     var slides = photos.map(function (p, i) {
-      return '<div class="gallery-slide"><img src="' + t(p) + '" alt="' + escHtml(ad.title) + '" ' + (i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' decoding="async"></div>';
+      return '<div class="gallery-slide"><img src="' + tHero(p) + '" alt="' + escHtml(ad.title) + '" ' + (i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' decoding="async"></div>';
     }).join('');
     var dots = '';
     if (photos.length > 1) {
@@ -134,6 +135,7 @@ function showAdInline(ad) {
   var spec = function (ic, k, v) { return '<div class="v3d-spec"><span class="v3d-spec-ic" aria-hidden="true">' + ic + '</span><span class="v3d-spec-k">' + k + '</span><span class="v3d-spec-v">' + v + '</span></div>'; };
 
   var html = '<div class="v3d">'
+    + (photos.length ? '<div class="v3d-bg" aria-hidden="true"></div>' : '')
     + '<div class="v3d-hero">'
     +   gallery
     +   '<div class="v3d-bar">'
@@ -236,6 +238,15 @@ function showAdInline(ad) {
   var sviewBtn = el.querySelector('.v3d-sview');
   if (sviewBtn) sviewBtn.addEventListener('click', function () { openProfile(ad.sellerId); });
 
+  /* The photo doubles as a blurred backdrop for the whole page, so the glass
+     panels pick up its colours while scrolling. It follows the visible slide. */
+  var bgEl = el.querySelector('.v3d-bg');
+  function setBg(i) {
+    if (!bgEl || !photos[i]) return;
+    bgEl.style.backgroundImage = 'url("' + String(t(photos[i])).replace(/["\\\n\r]/g, '') + '")';
+  }
+  setBg(0);
+
   var track = el.querySelector('.gallery-track');
   if (track && photos.length > 1) {
     var gdots = el.querySelectorAll('.gallery-dot');
@@ -254,6 +265,7 @@ function showAdInline(ad) {
     function paintDots(i) {
       gdots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
       if (countN) countN.textContent = String(i + 1);
+      setBg(i);
     }
     function goSlide(i) {
       i = Math.max(0, Math.min(gslides.length - 1, i));

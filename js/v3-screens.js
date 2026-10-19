@@ -259,6 +259,12 @@
     items.sort(function (a, b) { return b.ts - a.ts; });
     return items;
   }
+  function ago(ts) {
+    var m = Math.max(0, Math.round((Date.now() - ts) / 60000));
+    if (m < 1) return 'now'; if (m < 60) return m + 'm';
+    var h = Math.round(m / 60); if (h < 24) return h + 'h';
+    var d = Math.round(h / 24); return d < 7 ? d + 'd' : Math.round(d / 7) + 'w';
+  }
   function renderNotifs() {
     var body = $('v3NotifBody'); if (!body) return;
     var items = notifItems(), html = '';
@@ -282,7 +288,8 @@
         return '<div class="v3s-row v3n-row' + (i.unread ? ' unread' : '') + '"' + attrs + ' role="button" tabindex="0">' +
           '<span class="v3n-ic v3n-' + i.kind + '">' + NI[i.ic] + '</span>' +
           '<span class="v3s-rmid"><b>' + esc(i.title) + '</b><span>' + esc(i.text) + '</span></span>' +
-          (i.unread ? '<span class="v3n-dot" aria-label="Unread"></span>' : '') + '</div>';
+          '<span class="v3n-side">' + (i.ts ? '<time>' + ago(i.ts) + '</time>' : '') +
+          (i.unread ? '<span class="v3n-dot" aria-label="Unread"></span>' : '') + '</span></div>';
       }).join('') + '</div>';
     }
     html += group('Today', today) + group('Earlier', earlier);

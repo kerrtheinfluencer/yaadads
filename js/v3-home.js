@@ -210,6 +210,7 @@
       var out = origRenderCats.apply(this, arguments);
       safe(ensureMore);
     safe(setupHeroSearch);
+    safe(setupAiFloat);
       return out;
     };
   }
@@ -358,44 +359,49 @@
     input.setAttribute('placeholder', 'Search Yaad Adz');
     form.classList.add('v3-hs-tap');
     form.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('.v3-hs-ai')) return;
       openBrowseSearch();
     });
     input.addEventListener('focus', function () { input.blur(); });
+  }
 
-    var ai = form.querySelector('.v3-hs-ai');
-    if (!ai || ai.querySelector('.v3-orb')) return;
-    var orb = document.createElement('span');
-    orb.className = 'v3-orb';
-    orb.innerHTML = '<span class="v3-orb-glow" aria-hidden="true"></span>';
-    while (ai.firstChild) orb.appendChild(ai.firstChild);
-    ai.appendChild(orb);
-    // tilt toward the finger while it is down on the orb
+  /* The floating AI orb: bobs and glows on its own, tilts toward a pressing finger,
+     throws a few sparkles when pressed, and shrinks with the gas pill on scroll. */
+  function setupAiFloat() {
+    var ai = $('v3AiOrb');
+    if (!ai || ai.getAttribute('data-v3')) return;
+    ai.setAttribute('data-v3', '1');
+    var orb = ai.querySelector('.v3-orb');
     ai.addEventListener('pointermove', function (e) {
-      if (e.pointerType === 'mouse' && !(e.buttons & 1) && e.type !== 'pointermove') return;
+      if (e.pointerType === 'mouse' && !(e.buttons & 1)) return;
       var r = ai.getBoundingClientRect();
       var dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
       var dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-      orb.style.setProperty('--tx', (Math.max(-1, Math.min(1, dx)) * 4).toFixed(1) + 'px');
-      orb.style.setProperty('--ty', (Math.max(-1, Math.min(1, dy)) * 4).toFixed(1) + 'px');
+      orb.style.setProperty('--tx', (Math.max(-1, Math.min(1, dx)) * 5).toFixed(1) + 'px');
+      orb.style.setProperty('--ty', (Math.max(-1, Math.min(1, dy)) * 5).toFixed(1) + 'px');
     });
     function rest() { orb.style.removeProperty('--tx'); orb.style.removeProperty('--ty'); }
     ai.addEventListener('pointerleave', rest);
     ai.addEventListener('pointerup', rest);
     ai.addEventListener('pointercancel', rest);
-    // a small burst of sparkles when it is pressed
     ai.addEventListener('pointerdown', function () {
       if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      for (var i = 0; i < 5; i++) {
+      for (var i = 0; i < 6; i++) {
         var sp = document.createElement('i');
         sp.className = 'v3-spark';
-        var a = (Math.PI * 2 * i) / 5 + Math.random() * .6, d = 20 + Math.random() * 12;
+        var a = (Math.PI * 2 * i) / 6 + Math.random() * .6, d = 30 + Math.random() * 16;
         sp.style.setProperty('--sx', (Math.cos(a) * d).toFixed(1) + 'px');
         sp.style.setProperty('--sy', (Math.sin(a) * d).toFixed(1) + 'px');
         ai.appendChild(sp);
         setTimeout(function (n) { return function () { n.remove(); }; }(sp), 700);
       }
     });
+    // shrink together with the gas pill when the page scrolls down
+    var gas = $('gasBanner');
+    if (gas && window.MutationObserver) {
+      var sync = function () { ai.classList.toggle('is-compact', gas.classList.contains('gas-banner-compact')); };
+      new MutationObserver(sync).observe(gas, { attributes: true, attributeFilter: ['class'] });
+      sync();
+    }
   }
 
   /* ── boot ── */
