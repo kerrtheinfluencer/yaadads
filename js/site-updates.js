@@ -355,6 +355,7 @@ var SITE_UPDATES = {
         'New: a floating bar keeps Call, WhatsApp and a gold Message seller button in reach while you scroll',
         'New: the Me tab is a glass profile with your name, Active, Sold and Saved counts, and a tidy menu for My ads, Saved searches, Notifications, Gas prices, Help and Sign out',
         'New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts',
+        'Changed: What’s new now lives in Notifications instead of Chats, and it opens as a calm sheet — the newest update first, a short summary, and older updates folded into one-line rows you can tap open',
         'Fixed: the app no longer throws errors when it opens with a weak or blocked connection, and the Browse page now loads reliably',
         'Improved: on tablets and computers, Post Ad is gold, Log in and Join Free are clearer, the AI button is a gold orb, footer links are easier to read and Browse uses the wider screen',
         'New: Yaad Brain chat is a glass sheet with a gold orb, scrolling suggestion chips, gold bubbles for your messages, glass answer bubbles and listing cards, and a rounded message bar with a gold send button',
@@ -458,92 +459,111 @@ function openSiteUpdate() {
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-label', 'What\'s new — all updates');
 
-    // ── Modal header: "What's new · N updates" ──
+    // ── Header: title, count, close ──
     const all = siteUpdateList();
     const hd = document.createElement('div');
     hd.className = 'site-update-modal-hd';
-    const hdIcon = document.createElement('div');
-    hdIcon.className = 'site-update-modal-hd-icon';
-    hdIcon.textContent = '🗞️';
-    hd.appendChild(hdIcon);
     const hdTitle = document.createElement('div');
     hdTitle.className = 'site-update-modal-hd-title';
-    hdTitle.textContent = 'What\'s new';
+    hdTitle.textContent = 'What’s new';
     hd.appendChild(hdTitle);
     const hdCount = document.createElement('div');
     hdCount.className = 'site-update-modal-hd-count';
     hdCount.textContent = all.length + ' update' + (all.length === 1 ? '' : 's');
     hd.appendChild(hdCount);
+    const hdClose = document.createElement('button');
+    hdClose.type = 'button';
+    hdClose.className = 'su-close';
+    hdClose.setAttribute('aria-label', 'Close');
+    hdClose.addEventListener('click', function () { closeSiteUpdate(); refreshInboxAndBadge(); });
+    hd.appendChild(hdClose);
     modal.appendChild(hd);
 
-    // ── Full history list (newest first) ──
+    // ── Calm layout: the newest update is open with a short list of changes;
+    //    every older one is a single quiet row that opens on tap. ──
+    const SHOW_NOTES = 0;   // changes stay folded until asked for
     const list = document.createElement('div');
     list.className = 'site-update-list';
 
-    all.forEach(function(it) {
-      const entry = document.createElement('div');
-      entry.className = 'site-update-entry' + (it.key === SITE_UPDATES.current ? ' is-latest' : '');
-
-      const hdr = document.createElement('div');
-      hdr.className = 'site-update-entry-hd';
-
-      const icon = document.createElement('div');
-      icon.className = 'site-update-entry-icon';
-      icon.textContent = it.meta.icon || '✨';
-      hdr.appendChild(icon);
-
-      const title = document.createElement('div');
-      title.className = 'site-update-entry-title';
-      title.textContent = it.meta.title || '';
-      hdr.appendChild(title);
-
-      if (it.key === SITE_UPDATES.current) {
-        const latest = document.createElement('span');
-        latest.className = 'su-new-chip';
-        latest.textContent = 'New';
-        hdr.appendChild(latest);
-      }
-      if (it.meta.version) {
-        const ver = document.createElement('span');
-        ver.className = 'site-update-ver';
-        ver.textContent = it.meta.version;
-        hdr.appendChild(ver);
-      }
-      const dateEl = document.createElement('span');
-      dateEl.className = 'site-update-date';
-      dateEl.textContent = it.meta.date || '';
-      hdr.appendChild(dateEl);
-
-      entry.appendChild(hdr);
-
-      if (it.meta.body) {
+    function fillDetail(box, meta, isLatest) {
+      if (meta.body) {
         const body = document.createElement('p');
         body.className = 'site-update-body';
-        body.textContent = it.meta.body;
-        entry.appendChild(body);
+        body.textContent = meta.body;
+        box.appendChild(body);
       }
-      if (it.meta.notes && it.meta.notes.length) {
+      const notes = meta.notes || [];
+      if (notes.length) {
         const ul = document.createElement('ul');
         ul.className = 'site-update-notes';
-        it.meta.notes.forEach(function(n) {
+        notes.forEach(function (n, i) {
           const li = document.createElement('li');
           li.textContent = n;
+          if (i >= SHOW_NOTES) li.hidden = true;
           ul.appendChild(li);
         });
-        entry.appendChild(ul);
+        box.appendChild(ul);
+        if (notes.length > SHOW_NOTES) {
+          const more = document.createElement('button');
+          more.type = 'button';
+          more.className = 'su-more';
+          more.textContent = 'Show all ' + notes.length + ' changes';
+          more.setAttribute('aria-expanded', 'false');
+          more.addEventListener('click', function () {
+            const open = more.getAttribute('aria-expanded') === 'true';
+            box.classList.toggle('is-expanded', !open);
+            ul.querySelectorAll('li').forEach(function (li, i) { if (i >= SHOW_NOTES) li.hidden = open; });
+            more.setAttribute('aria-expanded', open ? 'false' : 'true');
+            more.textContent = open ? 'Show all ' + notes.length + ' changes' : 'Show fewer';
+          });
+          box.appendChild(more);
+        }
       }
-      if (it.meta.cta && it.meta.ctaFn && typeof window[it.meta.ctaFn] === 'function') {
+      if (isLatest && meta.cta && meta.ctaFn && typeof window[meta.ctaFn] === 'function') {
         const ctaBtn = document.createElement('button');
         ctaBtn.type = 'button';
-        ctaBtn.className = 'site-update-btn site-update-btn-primary site-update-cta';
-        ctaBtn.style.marginTop = '12px';
-        ctaBtn.textContent = it.meta.cta;
+        ctaBtn.className = 'su-cta';
+        ctaBtn.textContent = meta.cta;
         ctaBtn.addEventListener('click', function () {
           closeSiteUpdate();
-          try { window[it.meta.ctaFn](); } catch (e) {}
+          try { window[meta.ctaFn](); } catch (e) {}
         });
-        entry.appendChild(ctaBtn);
+        box.appendChild(ctaBtn);
       }
+    }
+
+    all.forEach(function (it) {
+      const isLatest = it.key === SITE_UPDATES.current;
+      const entry = document.createElement('div');
+      entry.className = 'site-update-entry' + (isLatest ? ' is-latest' : ' is-folded');
+
+      const head = document.createElement(isLatest ? 'div' : 'button');
+      if (!isLatest) { head.type = 'button'; head.setAttribute('aria-expanded', 'false'); }
+      head.className = 'site-update-entry-hd';
+
+      const title = document.createElement('span');
+      title.className = 'site-update-entry-title';
+      title.textContent = it.meta.title || '';
+      head.appendChild(title);
+      const sub = document.createElement('span');
+      sub.className = 'site-update-date';
+      sub.textContent = [it.meta.version, (it.meta.date || '').split(',')[0]].filter(Boolean).join(' · ');
+      head.appendChild(sub);
+      entry.appendChild(head);
+
+      const detail = document.createElement('div');
+      detail.className = 'su-detail';
+      fillDetail(detail, it.meta, isLatest);
+      if (!isLatest) {
+        detail.hidden = true;
+        head.addEventListener('click', function () {
+          const open = !detail.hidden;
+          detail.hidden = open;
+          entry.classList.toggle('is-open', !open);
+          head.setAttribute('aria-expanded', open ? 'false' : 'true');
+        });
+      }
+      entry.appendChild(detail);
       list.appendChild(entry);
     });
 
@@ -556,7 +576,7 @@ function openSiteUpdate() {
     const gotIt = document.createElement('button');
     gotIt.type = 'button';
     gotIt.className = 'site-update-btn site-update-btn-primary';
-    gotIt.textContent = 'Got it';
+    gotIt.textContent = 'Done';
     gotIt.addEventListener('click', function () { closeSiteUpdate(); refreshInboxAndBadge(); });
     actions.appendChild(gotIt);
 

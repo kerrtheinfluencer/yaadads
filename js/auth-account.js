@@ -231,17 +231,14 @@ function updateMsgBadge() {
   const count = typeof unreadCount === 'function' ? unreadCount() : 0;
   // Mobile bottom nav badge
   const badge = document.getElementById('mobMsgBadge');
-  const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
   if (badge) {
     if (count > 0) { badge.textContent = count; badge.classList.add('show'); badge.classList.remove('is-update'); }
-    else if (updUnread) { badge.textContent = '!'; badge.classList.add('show', 'is-update'); }
     else { badge.textContent = ''; badge.classList.remove('show', 'is-update'); }
   }
   // Desktop nav badge
   const navBadge = document.getElementById('navMsgBadge');
   if (navBadge) {
     if (count > 0) { navBadge.textContent = count > 9 ? '9+' : count; navBadge.style.display = ''; navBadge.classList.remove('is-update'); }
-    else if (updUnread) { navBadge.textContent = '!'; navBadge.style.display = ''; navBadge.classList.add('is-update'); }
     else { navBadge.style.display = 'none'; navBadge.classList.remove('is-update'); }
   }
 }
@@ -272,30 +269,6 @@ function updateMsgBadge() {
    inline handler. Rows, chips, buttons and the composer are wired with data-*
    attributes and ONE delegated listener (initInboxWiring) — the same rule the
    report client already follows. */
-
-/* Persistent "Yaad Adz updates" thread row — always visible in inboxes so
-   members can re-check the full update history ANY time. Gold "New" chip
-   (+ pill dot) while the newest update is unread; History chip once read. */
-function siteUpdateRowHtml() {
-  const meta = (typeof siteUpdateMeta === 'function' && siteUpdateMeta()) || null;
-  if (!meta) return '';
-  const updUnread = typeof siteUpdateUnread === 'function' && siteUpdateUnread();
-  const body = meta.body || '';
-  const preview = body.length > 90 ? body.slice(0, 89) + '…' : body;
-  const name = 'What’s new' + (meta.version ? ' · ' + escHtml(meta.version) : '');
-  const chip = updUnread ? '<span class="su-new-chip">New</span>'
-                         : '<span class="su-open-chip">History</span>';
-  const time = updUnread ? 'now' : (meta.date ? escHtml(meta.date.split(',')[0]) : '');
-  return '<div class="inbox-item site-update-inbox' + (updUnread ? ' unread' : '') + '" onclick="openSiteUpdate()">' +
-    '<div class="inbox-avatar su-avatar">' + escHtml(meta.icon || '🗞️') + '</div>' +
-    '<div class="inbox-info">' +
-      '<div class="inbox-name">' + name + chip + '</div>' +
-      '<div class="inbox-preview">' + escHtml(preview) + '</div>' +
-      '<span class="inbox-ad">🗞️ Yaad Adz updates · tap for full history</span>' +
-    '</div>' +
-    '<div class="inbox-time">' + time + '</div>' +
-  '</div>';
-}
 
 /* Chat history window — long threads render the most recent slice with a
    "Load earlier messages" button instead of mounting hundreds of bubbles
@@ -561,10 +534,10 @@ function renderInbox() {
   // Guest-safe: the What's-new history thread is public — logged-out members
   // (the common mobile case) still see it above the login prompt, exactly
   // like the logged-in inbox. Tapping opens the full history overlay.
-  var _guestRow = (typeof siteUpdateRowHtml === 'function') ? siteUpdateRowHtml() : '';
+  var _guestRow = '';   // the changelog lives in Notifications, not in Chats
   if (!CU) { el.innerHTML = _guestRow + '<div class="empty"><div class="empty-icon">💬</div><h3>Messages</h3><p>Log in to view your conversations.</p><button class="btn btn-green" onclick="openAuth(\'login\')">Log In</button></div>'; return; }
   const myConvs = Object.entries(_msgs).filter(function(e){ return e[1].sellerId===CU.id || e[1].buyerId===CU.id; });
-  const _updateRow = siteUpdateRowHtml();
+  const _updateRow = '';
   if (!myConvs.length) {
     // The updates thread is always available, so the inbox is never dead-empty.
     el.innerHTML = _updateRow + '<div class="inbox-empty-hint">No conversations yet — open any listing and tap ✉️ Message.</div>';
@@ -732,14 +705,14 @@ function renderMyAds() {
   if (acctInbox) {
     // Guest-safe: keep the What's-new history thread visible even logged out
     // (mobile Account tab) — same parity as the Messages page inbox above.
-    var _acctGuestRow = (typeof siteUpdateRowHtml === 'function') ? siteUpdateRowHtml() : '';
+    var _acctGuestRow = '';
     if (!CU) {
       acctInbox.innerHTML = _acctGuestRow + '<div class="empty"><div class="empty-icon">💬</div><p>Log in to view messages.</p></div>';
     } else {
       initInboxWiring();
       // The SAME rows the Messages page renders — one shared renderer, so the
       // two inboxes can no longer disagree on order, styling or escaping.
-      acctInbox.innerHTML = siteUpdateRowHtml() + (Object.keys(_msgs).length
+      acctInbox.innerHTML = (Object.keys(_msgs).length
         ? inboxRowsHtml()
         : '<div class="inbox-empty-hint">No conversations yet — open any listing and tap ✉️ Message.</div>');
     }

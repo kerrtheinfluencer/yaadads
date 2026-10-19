@@ -218,8 +218,8 @@ check('onboarding click-outside-to-dismiss wired', obSrc.includes("getElementByI
 
 // 6d. v2.4 updates-history: full history thread + every entry dated
 const suSrc = fs.readFileSync('js/site-updates.js', 'utf8');
-check('SITE_UPDATES history thread built (siteUpdateList + persistent row helper)',
-  suSrc.includes('siteUpdateList') && fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
+check('SITE_UPDATES history built (siteUpdateList + popup; the changelog lives in Notifications, not Chats)',
+  suSrc.includes('siteUpdateList') && suSrc.includes('function openSiteUpdate') && !fs.readFileSync('js/auth-account.js', 'utf8').includes('siteUpdateRowHtml'));
 check('v2.5 fast-new-ads entry shipped', suSrc.includes("'fast-new-ads'"));
 check('v2.6 code-cleanup entry shipped', suSrc.includes("'code-cleanup'"));
 check('v2.13 ai-chat-v2 entry shipped', suSrc.includes("'ai-chat-v2'"));
