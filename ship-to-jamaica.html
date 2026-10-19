@@ -50,6 +50,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:7px 0;border
 tr.sum td{font-weight:700;border-bottom:2px solid var(--line)}.warn{background:rgba(244,195,0,.1);border:1px solid rgba(244,195,0,.35);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
 .dis{font-size:12px;color:var(--tx2);margin-top:12px}.hint{font-size:12px;color:var(--tx2);margin:4px 0 0}details{border-bottom:1px solid var(--line);padding:10px 0}summary{cursor:pointer;font-weight:600}
 </style>
+<link rel="stylesheet" href="/v3-ship.css">
 </head>
 <body>
 <div class="w">
@@ -131,7 +132,8 @@ fetch('/shipping-rates.json').then(function(r){return r.json()}).then(function(j
   var q=new URLSearchParams(location.search);
   if(q.get('origin')&&R.origins[q.get('origin')])$('origin').value=q.get('origin');
   if(q.get('price'))$('price').value=q.get('price');
-  if(q.get('cif'))$('cif').value=q.get('cif');
+  if(q.get('cif'))$('cif').value=q.get('cif');
+
 }).catch(function(){msg('Could not load rates. Please refresh.',1)});
 </script>
 </body>
