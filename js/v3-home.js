@@ -324,6 +324,30 @@
   });
 
 
+
+  /* Open Browse with its search box ready to type in. iOS only raises the keyboard
+     for a focus() made inside the tap itself, and the page is not visible until the
+     next frame — so a hidden proxy input takes focus now and hands it over once
+     Browse is on screen. */
+  function openBrowseSearch() {
+    var proxy = null;
+    safe(function () {
+      proxy = document.createElement('input');
+      proxy.setAttribute('aria-hidden', 'true'); proxy.tabIndex = -1;
+      proxy.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0';
+      document.body.appendChild(proxy);
+      proxy.focus();
+    });
+    if (typeof goPage === 'function') goPage('browse');
+    function handOver() {
+      var real = $('v3bInput');
+      if (real) { try { real.focus(); } catch (e) {} }
+      if (proxy) { proxy.remove(); proxy = null; }
+    }
+    if (window.requestAnimationFrame) requestAnimationFrame(function () { requestAnimationFrame(handOver); });
+    else setTimeout(handOver, 60);
+  }
+
   /* ── hero search: a tap opens Browse (like "All"); the AI orb floats and reacts ── */
   function setupHeroSearch() {
     var form = $('v3HeroSearch'), input = $('v3HeroInput');
@@ -335,7 +359,7 @@
     form.classList.add('v3-hs-tap');
     form.addEventListener('click', function (e) {
       if (e.target.closest && e.target.closest('.v3-hs-ai')) return;
-      if (typeof goPage === 'function') goPage('browse');
+      openBrowseSearch();
     });
     input.addEventListener('focus', function () { input.blur(); });
 
