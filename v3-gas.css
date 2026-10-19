@@ -1,0 +1,119 @@
+/* ═══ Lagoon Liquid Glass — Gas Prices page (Phase 7, board Q) ═══
+   Loaded after the page's own <style>. Remove the <link> to roll back. */
+:root {
+  --v3-fill: linear-gradient(145deg, rgba(255,255,255,.26), rgba(255,255,255,.06) 55%, rgba(255,255,255,.14));
+  --v3-tint: rgba(6, 34, 30, .34);
+  --v3-rim: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 2px rgba(255,255,255,.12), inset 0 0 22px rgba(255,255,255,.06);
+  --v3-shadow: 0 18px 40px rgba(2,20,18,.34);
+  --v3-font: 'Sora', 'Outfit', system-ui, sans-serif;
+  --v3-gold: #ffd27a;
+  --v3-spring: cubic-bezier(.34,1.56,.64,1);
+}
+body {
+  color: #fff;
+  background-color: #06231f;
+  background-image:
+    linear-gradient(180deg, rgba(3,22,18,0) 0%, rgba(3,22,18,0) 34%, rgba(3,22,18,.6) 70%, rgba(3,22,18,.86) 100%),
+    radial-gradient(11rem 11rem at 84% 7%, rgba(255,238,190,.85), rgba(255,190,110,.45) 45%, rgba(255,150,80,0) 72%),
+    radial-gradient(26rem 18rem at 92% 8%, rgba(255,160,90,.45), transparent 66%),
+    radial-gradient(23rem 15rem at 6% 34%, rgba(0,205,140,.3), transparent 62%),
+    linear-gradient(180deg, #123f5c 0%, #0c5f60 40%, #053a2a 100%);
+  background-attachment: fixed;
+}
+.section-title, .report-title, .hero h1, .fuel-price { font-family: var(--v3-font); }
+.section-title { color: #fff; font-size: 22px; }
+.section-sub { color: rgba(255,255,255,.82); }
+.scroll-progress { background: linear-gradient(90deg, #fff0b8, #ffd27a); }
+
+/* nav → floating capsule */
+nav { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  height: 46px; padding: 0; margin: 18px auto 0; width: min(calc(100% - 36px), 1160px); top: 12px; border-radius: 0; }
+.nav-logo { height: 46px; padding: 0 18px; border-radius: 999px; background: var(--v3-fill), var(--v3-tint);
+  -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); box-shadow: var(--v3-rim), var(--v3-shadow); }
+.nav-logo em { color: var(--v3-gold); }
+.nav-link { height: 46px; padding: 0 18px; border-radius: 999px; display: inline-flex; align-items: center; color: #fff;
+  background: var(--v3-fill), var(--v3-tint); -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); box-shadow: var(--v3-rim); }
+@media (max-width: 640px) { nav { top: 8px; width: calc(100% - 36px); margin: 18px auto 0; border-radius: 0; } .nav-link:not([style]) { display: none; } .nav-logo span { display: none; } }
+
+/* hero */
+.hero { background: none; margin-top: 0; padding: 40px 18px 36px; }
+.hero::before { display: none; }
+.hero-eyebrow { background: var(--v3-fill), var(--v3-tint); border: 0; color: var(--v3-gold); box-shadow: var(--v3-rim);
+  -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); }
+.hero h1 { color: #fff; font-weight: 700; letter-spacing: -.5px; }
+.hero h1 em { color: var(--v3-gold); font-style: normal; }
+.hero-sub { color: rgba(255,255,255,.88); }
+.last-updated, .hero-share-btn { color: #fff; border: 0; background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
+.hero-share-btn { border-radius: 999px; min-height: 48px; padding: 0 22px; transition: transform .4s var(--v3-spring); }
+.hero-share-btn:active { transform: scale(.96); }
+
+/* glass cards (map card stays without backdrop-filter: Leaflet/WebKit bug) */
+.price-card, .chart-card, .report-card, .takeaway-card, .calc-card, .table-card, .insight-card {
+  background: var(--v3-fill), var(--v3-tint); border: 0; color: #fff; border-radius: 32px;
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06); backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: var(--v3-rim), var(--v3-shadow);
+}
+.price-card::before { height: 0; }
+.price-card::after, .chart-card::after, .insight-card::after, .table-card::after, .calc-card::after { opacity: 0; }
+.price-card:hover, .chart-card:hover, .insight-card:hover { transform: translateY(-3px); }
+.map-card { background: rgba(8,40,36,.82); border: 0; border-radius: 32px; overflow: hidden; box-shadow: var(--v3-rim), var(--v3-shadow); }
+#stationMap { border-radius: 0; }
+
+/* price card contents */
+.fuel-icon { display: inline-flex; width: 52px; height: 52px; align-items: center; justify-content: center; font-size: 26px; border-radius: 50%;
+  background: rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.5); }
+.fuel-name, .fuel-ex, .fuel-tank, .fuel-pump, .fuel-tank strong, .fuel-ex strong { color: rgba(255,255,255,.85); }
+.fuel-price { color: #fff; font-size: 40px; font-weight: 700; }
+.fuel-price .currency { color: var(--v3-gold); }
+.fuel-pump strong { color: var(--v3-gold); }
+.price-card div[style*="text-3"] { color: rgba(255,255,255,.75) !important; }
+.change-badge { border-radius: 999px; background: rgba(255,255,255,.16); color: #fff; }
+.change-badge.up { background: rgba(255,120,120,.28); color: #ffd6d6; }
+.change-badge.down { background: rgba(110,231,160,.28); color: #c9ffe0; }
+
+/* toggles & tabs → glass capsule with gold active */
+.tank-toggle, .price-tabs, .chart-toggle { background: var(--v3-fill), var(--v3-tint); border: 0; padding: 4px; box-shadow: var(--v3-rim);
+  -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); }
+.tank-btn, .price-tab, .chart-tab { color: #fff; min-height: 40px; padding: 0 16px; transition: transform .4s var(--v3-spring), background .2s; }
+.tank-btn:active, .price-tab:active, .chart-tab:active { transform: scale(.94); }
+.tank-btn.active, .price-tab.active, .chart-tab.active { background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); color: #1a1405; font-weight: 700; }
+
+/* map overlay controls, station panels */
+.map-locate-btn { background: var(--v3-fill), rgba(6,34,30,.7); color: #fff; box-shadow: var(--v3-rim), 0 8px 20px rgba(2,20,18,.4); width: 48px; height: 48px; }
+.map-status-bar, .cheapest-panel { color: rgba(255,255,255,.82); border-color: rgba(255,255,255,.14); }
+.cheapest-header, .cr-name { color: #fff; } .cheapest-note, .cr-meta, .cheapest-empty, .cheapest-close { color: rgba(255,255,255,.75); }
+.cheapest-row { border-color: rgba(255,255,255,.14); }
+.cr-rank { background: rgba(255,210,122,.22); color: var(--v3-gold); } .cr-price { color: var(--v3-gold); }
+.cheapest-fuel-pill { background: rgba(255,255,255,.12); color: #fff; border: 0; }
+.cheapest-fuel-pill.active { background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); color: #1a1405; }
+
+/* report form */
+.report-card { padding: 22px; }
+.selected-station { background: rgba(255,255,255,.12); border: 0; border-radius: 22px; color: #fff; }
+.report-form label { color: #fff; font-weight: 600; }
+.report-form input:not([type=hidden]), .report-form select, .map-overlay-search input {
+  min-height: 52px; border: 0; border-radius: 20px; padding: 0 16px; color: #fff; font-size: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,.2), rgba(255,255,255,.05)), rgba(6,34,30,.3);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.1);
+}
+.report-form select option { color: #111; }
+.report-form input::placeholder, .map-overlay-search input::placeholder { color: rgba(255,255,255,.65); }
+.report-form input:focus, .report-form select:focus, .map-overlay-search input:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,210,122,.45), inset 0 1px 1px rgba(255,255,255,.5); }
+.report-submit { min-height: 54px; border-radius: 999px; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); color: #1a1405; font-weight: 700; font-size: 16px;
+  box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7); transition: transform .4s var(--v3-spring); }
+.report-submit:hover { background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); }
+.report-submit:active { transform: scale(.97); }
+.report-submit:disabled { background: rgba(255,255,255,.16); color: rgba(255,255,255,.8); box-shadow: none; }
+.report-note, .last-report { color: rgba(255,255,255,.85); }
+.station-search-results { background: rgba(8,40,36,.96); color: #fff; border-radius: 20px; }
+
+.takeaway-card { border-radius: 32px; } .takeaway-text { color: #fff; }
+footer { border-radius: 32px 32px 0 0; }
+.hero-share-btn:focus-visible, .tank-btn:focus-visible, .price-tab:focus-visible, .chart-tab:focus-visible, .report-submit:focus-visible { outline: 3px solid rgba(255,210,122,.7); outline-offset: 2px; }
+@media (max-width: 640px) { .wrap { padding: 0 18px; } .price-card { padding: 22px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (prefers-reduced-transparency: reduce) { .price-card, .chart-card, .report-card, .takeaway-card, .nav-logo, .nav-link { background: #123b27; -webkit-backdrop-filter: none; backdrop-filter: none; } }
+html { background: #06231f; }
+.ss-text, .ss-body, .ss-icon { color: rgba(255,255,255,.92); }
+#stationMap { background: #0b4a45; }
+.nav-link[style*="gold"] { color: var(--v3-gold) !important; }
