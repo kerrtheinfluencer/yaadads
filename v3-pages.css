@@ -274,3 +274,21 @@ h1.ad-title-panel { margin: 4px 0 0; font-size: 19px; font-weight: 700; line-hei
 }
 @media (prefers-reduced-motion: reduce) { .v3-circ, .v3-save.pop svg { transition: none; animation: none; } }
 @media (prefers-reduced-transparency: reduce) { .v3-circ, .price-card.v3-sheet { background: #0d2a1d; -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* ── whole photo visible + the photo as a blurred page backdrop ── */
+.v3-ad-bg { position: fixed; inset: -50px; z-index: -1; pointer-events: none; background-size: cover; background-position: center;
+  background-color: #0d3b33; filter: blur(34px) saturate(1.4) brightness(.62); transform: translateZ(0); transition: background-image .3s ease; }
+.v3-ad-bg::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(5,40,30,.1) 0%, rgba(5,40,30,.35) 45%, rgba(3,26,20,.7) 100%); }
+body.has-ad-bg { background-image: none; }
+.gallery-main > img, .gallery-main img { object-fit: contain; }
+.gallery-main { background: transparent; }
+@media (max-width: 700px) {
+  .gallery .gallery-main, .gallery.gallery-placeholder { background: transparent; }
+  .gallery .gallery-main { height: auto; aspect-ratio: 4 / 3; max-height: 58vh; }
+  .gallery .gallery-main > img, .gallery .gallery-main img { height: 100%; }
+  .gallery .gallery-main::before { display: none; }
+  .gallery-count { bottom: 14px; }
+  .price-card.v3-sheet { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .v3-ad-bg { transition: none; } }

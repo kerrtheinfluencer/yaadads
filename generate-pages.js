@@ -1173,6 +1173,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
 </style>
 <!-- §V3 — Lagoon Liquid Glass layer for ad pages (loads last; delete this line to roll back) -->
 <link rel="stylesheet" href="/v3-pages.css">
+<script src="/js/v3-ad-bg.js" defer></script>
 </head>
 <body>
 

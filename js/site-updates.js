@@ -357,6 +357,7 @@ var SITE_UPDATES = {
         'New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts',
         'Changed: tapping the search bar on the home screen opens Browse with its search box ready to type in, and the AI star is now a floating glass orb on the right of the screen, opposite the gas price, that bobs, glows and sparkles when you press it',
         'Changed: Notifications is more compact — slimmer rows with a time on each one, so more fit on screen',
+        'Fixed: shared listing pages now show the whole photo too, and its colours softly fill the page behind the glass as you scroll',
         'Fixed: listing photos now show in full instead of being cropped, and the photo softly blurs into the background of the page as you scroll',
         'Changed: What’s new now lives in Notifications instead of Chats, and it opens as a calm sheet — the newest update first, a short summary, and older updates folded into one-line rows you can tap open',
         'Fixed: the app no longer throws errors when it opens with a weak or blocked connection, and the Browse page now loads reliably',
