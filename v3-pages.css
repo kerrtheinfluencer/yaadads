@@ -296,7 +296,7 @@ body.has-ad-bg { background-image: none; }
 /* ── depth: photo recedes while scrolling, backdrop sharpens (--p is 0 → 1, set by js/v3-ad-bg.js) ── */
 @media (max-width: 700px) {
   .gallery .gallery-main { transform-origin: 50% 0; will-change: transform, opacity, filter;
-    transform: scale(calc(1 - var(--p, 0) * .14)) translateY(calc(var(--p, 0) * -18px));
-    opacity: calc(1 - var(--p, 0) * .5); filter: blur(calc(var(--p, 0) * 5px)); }
+    transform: translateY(calc(var(--p, 0) * 170px)) scale(calc(1 - var(--p, 0) * .1));
+    opacity: calc(1 - var(--p, 0) * .3); filter: blur(calc(var(--p, 0) * 2px)); position: relative; z-index: 0; }
 }
-.v3-ad-bg { filter: blur(calc(22px - var(--p, 0) * 13px)) saturate(1.5) brightness(calc(.7 + var(--p, 0) * .2)); transition: background-image .3s ease; }
+.v3-ad-bg { filter: blur(calc(12px - var(--p, 0) * 5px)) saturate(1.5) brightness(calc(.7 + var(--p, 0) * .2)); transition: background-image .3s ease; }
