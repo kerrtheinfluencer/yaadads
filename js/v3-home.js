@@ -413,13 +413,28 @@
         setTimeout(function (n) { return function () { n.remove(); }; }(sp), 700);
       }
     });
-    // shrink together with the gas pill when the page scrolls down
-    var gas = $('gasBanner');
+    // On scroll the gas pill and this orb fold into ONE button: the gas pill glides across and
+    // tucks into the orb (which wears a little pump badge). Tap it to open them both again.
+    var gas = $('gasBanner'), pinned = false, pinTimer = 0;
+    function sync() {
+      if (!gas) return;
+      var min = gas.classList.contains('gas-banner-compact') && !pinned;
+      if (min === ai.classList.contains('is-min')) return;
+      ai.classList.toggle('is-min', min);
+      gas.classList.toggle('v3-merge', min);
+      if (min) { ai.classList.remove('is-gulp'); void ai.offsetWidth; ai.classList.add('is-gulp'); }
+    }
     if (gas && window.MutationObserver) {
-      var sync = function () { ai.classList.toggle('is-compact', gas.classList.contains('gas-banner-compact')); };
       new MutationObserver(sync).observe(gas, { attributes: true, attributeFilter: ['class'] });
       sync();
     }
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('#v3AiOrb') || !ai.classList.contains('is-min')) return;
+      e.preventDefault(); e.stopImmediatePropagation();     // first tap only unfolds
+      pinned = true; sync();
+      clearTimeout(pinTimer);
+      pinTimer = setTimeout(function () { pinned = false; sync(); }, 5000);
+    }, true);
   }
 
   /* ── boot ── */
