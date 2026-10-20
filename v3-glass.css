@@ -1740,3 +1740,11 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
 #page-notifs .v3s-top { margin-bottom: 4px; }
 .v3n-mark { height: 34px; padding: 0 14px; border-radius: 999px; font-weight: 600; color: #ffe9a8; background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
 .v3n-push-t span { display: block; }
+
+/* ── listing depth: photo recedes while scrolling, backdrop sharpens (--p set by js/v3-home.js) ── */
+@media (max-width: 640px) {
+  .v3d-hero { transform-origin: 50% 0; will-change: transform, opacity, filter;
+    transform: scale(calc(1 - var(--p, 0) * .14)) translateY(calc(var(--p, 0) * -18px));
+    opacity: calc(1 - var(--p, 0) * .5); filter: blur(calc(var(--p, 0) * 5px)); }
+}
+.v3d-bg { filter: blur(calc(22px - var(--p, 0) * 13px)) saturate(1.5) brightness(calc(.7 + var(--p, 0) * .2)); }

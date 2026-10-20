@@ -211,6 +211,7 @@
       safe(ensureMore);
     safe(setupHeroSearch);
     safe(setupAiFloat);
+    safe(setupListingDepth);
       return out;
     };
   }
@@ -366,6 +367,23 @@
 
   /* The floating AI orb: bobs and glows on its own, tilts toward a pressing finger,
      throws a few sparkles when pressed, and shrinks with the gas pill on scroll. */
+  /* depth on the listing page: the photo recedes as you scroll, the backdrop sharpens */
+  function setupListingDepth() {
+    if (window.__v3Depth) return; window.__v3Depth = true;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var hero = document.querySelector('#page-detail.active .v3d-hero');
+      if (!hero) { document.body.style.removeProperty('--p'); return; }
+      var h = hero.offsetHeight || 300;
+      var p = Math.max(0, Math.min(1, (window.pageYOffset || 0) / (h * 0.85)));
+      document.body.style.setProperty('--p', p.toFixed(3));
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+  }
+
   function setupAiFloat() {
     var ai = $('v3AiOrb');
     if (!ai || ai.getAttribute('data-v3')) return;
