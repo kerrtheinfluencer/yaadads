@@ -1858,8 +1858,10 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
 .v3-orb-badge { display: none; }
 @media (max-width: 640px) {
   #gasBanner { transition: translate .55s cubic-bezier(.34,1.3,.64,1), scale .55s cubic-bezier(.34,1.3,.64,1), opacity .35s ease, max-width .3s, padding .3s; }
-  #gasBanner.v3-merge { translate: calc(100vw - 98px) 0; scale: .35; opacity: 0; pointer-events: none; }
-  .v3-ai-float.is-min { width: 46px; height: 46px; }
+  #gasBanner.v3-merge { translate: -3px 78px; scale: .3; opacity: 0; pointer-events: none; }
+  .v3-ai-float { transition: transform .35s cubic-bezier(.34,1.56,.64,1), translate .8s cubic-bezier(.34,1.25,.64,1), width .6s cubic-bezier(.34,1.35,.64,1), height .6s cubic-bezier(.34,1.35,.64,1), opacity .25s; }
+  .v3-ai-float.is-min { width: 46px; height: 46px; translate: calc(78px - 100vw) 77px; }
+  .v3-ai-float.is-min .v3-bars { transform: scale(.8); }
   .v3-ai-float.is-gulp { animation: v3-gulp .6s cubic-bezier(.34,1.56,.64,1) .3s; }
   .v3-orb-badge { display: flex; position: absolute; top: -5px; left: -5px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%;
     color: #3a2400; background: linear-gradient(145deg, #fff0b8, #ffd27a); box-shadow: 0 3px 8px rgba(2,20,18,.35), inset 0 1px 1px rgba(255,255,255,.7);
@@ -1950,7 +1952,7 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
   .mob-nav-item { transition: height .6s cubic-bezier(.34,1.35,.64,1); }
   .mob-nav-icon { transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
 
-  html body .mob-nav.mob-nav-compact { height: 52px; left: 34px; right: 34px; grid-template-columns: repeat(4, 1fr) 58px; }
+  html body .mob-nav.mob-nav-compact { height: 52px; left: 68px; right: 14px; grid-template-columns: repeat(4, 1fr) 58px; }
   .mob-nav.mob-nav-compact::after { width: calc(100% - 62px); }
   .mob-nav.mob-nav-compact::before { top: 4px; bottom: 4px; width: calc((100% - 62px - 12px) / 4); }
   .mob-nav.mob-nav-compact .mn-label { display: block; opacity: 0; max-height: 0; transform: translateY(5px); }
@@ -1960,3 +1962,27 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
   .mob-nav.mob-nav-compact .mob-nav-icon { transform: scale(.92); }
 }
 @media (prefers-reduced-motion: reduce) { .v3-bars i, .v3-ai-float::before { animation: none; } .v3-bars i { transform: scaleY(.7); } html body .mob-nav, .mob-nav::after, .mob-nav .mn-label, .mob-nav-post { transition: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   30. NOTIFICATIONS GROW OUT OF THE BELL
+   ═══════════════════════════════════════════════════════════════════════════ */
+.v3-bell-ring { animation: v3-bellring .9s ease-in-out .1s; transform-origin: 50% 12%; }
+@keyframes v3-bellring { 0%,100% { rotate: 0deg; } 15% { rotate: 16deg; } 30% { rotate: -14deg; } 45% { rotate: 10deg; } 60% { rotate: -8deg; } 75% { rotate: 4deg; } }
+.v3-bell-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 0 rgba(255,210,122,.8); animation: v3-ping .9s ease-out; }
+@keyframes v3-ping { to { box-shadow: 0 0 0 16px rgba(255,210,122,0); } }
+.v3-pop { position: fixed; z-index: 9500; top: calc(10px + env(safe-area-inset-top, 0px)); left: 14px; right: 14px; max-width: 420px; margin-left: auto;
+  display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 30px; color: #fff;
+  background: var(--v3-fill), rgba(6,40,36,.8); -webkit-backdrop-filter: blur(26px) saturate(190%) brightness(1.08); backdrop-filter: blur(26px) saturate(190%) brightness(1.08);
+  box-shadow: var(--v3-rim), 0 22px 50px rgba(2,20,18,.5); will-change: transform, opacity; }
+.v3-pop-ic { flex: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 21px;
+  background: linear-gradient(135deg, #fff0b8, #ffd27a); box-shadow: inset 0 1px 1px rgba(255,255,255,.7); }
+.v3-pop-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.v3-pop-t b { font: 700 12px var(--v3-font, 'Sora', sans-serif); letter-spacing: .08em; text-transform: uppercase; color: #ffd27a; }
+.v3-pop-t span { font-size: 14px; line-height: 1.35; color: rgba(255,255,255,.95); }
+.v3-pop-go { flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; font: 700 14px var(--v3-font, 'Sora', sans-serif); color: #1a1405; cursor: pointer;
+  background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); box-shadow: 0 6px 16px rgba(244,195,0,.3), inset 0 1px 1px rgba(255,255,255,.7); }
+.v3-pop-x { flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; font-size: 13px; color: rgba(255,255,255,.85); background: rgba(255,255,255,.14); cursor: pointer; }
+.v3-pop.is-in .v3-pop-t, .v3-pop.is-in .v3-pop-go, .v3-pop.is-in .v3-pop-x { animation: v3-pop-fade .45s ease .55s backwards; }
+@keyframes v3-pop-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .v3-bell-ring, .v3-bell-ping::after, .v3-pop.is-in * { animation: none; } }
+@media (prefers-reduced-transparency: reduce) { .v3-pop { background: #0f3d36; -webkit-backdrop-filter: none; backdrop-filter: none; } }

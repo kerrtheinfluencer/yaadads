@@ -212,6 +212,7 @@
     safe(setupHeroSearch);
     safe(setupAiFloat);
     safe(setupSuggest);
+    safe(setupBellPop);
     safe(setupListingDepth);
       return out;
     };
@@ -414,14 +415,15 @@
         setTimeout(function (n) { return function () { n.remove(); }; }(sp), 700);
       }
     });
-    // On scroll the gas pill and this orb fold into ONE button: the gas pill glides across and
-    // tucks into the orb (which wears a little pump badge). Tap it to open them both again.
-    var gas = $('gasBanner'), pinned = false, pinTimer = 0;
+    // On scroll the bottom bar slims down, the orb shrinks and travels down into the same row
+    // (docked just left of the bar), and the gas pill tucks into it, leaving a pump badge.
+    var gas = $('gasBanner');
     function sync() {
       if (!gas) return;
-      var min = gas.classList.contains('gas-banner-compact') && !pinned;
+      var min = gas.classList.contains('gas-banner-compact');
       if (min === ai.classList.contains('is-min')) return;
       ai.classList.toggle('is-min', min);
+      document.body.classList.toggle('v3-orb-docked', min);
       gas.classList.toggle('v3-merge', min);
       if (min) { ai.classList.remove('is-gulp'); void ai.offsetWidth; ai.classList.add('is-gulp'); }
     }
@@ -429,13 +431,6 @@
       new MutationObserver(sync).observe(gas, { attributes: true, attributeFilter: ['class'] });
       sync();
     }
-    document.addEventListener('click', function (e) {
-      if (!e.target.closest || !e.target.closest('#v3AiOrb') || !ai.classList.contains('is-min')) return;
-      e.preventDefault(); e.stopImmediatePropagation();     // first tap only unfolds
-      pinned = true; sync();
-      clearTimeout(pinTimer);
-      pinTimer = setTimeout(function () { pinned = false; sync(); }, 5000);
-    }, true);
   }
 
 
@@ -526,6 +521,68 @@
       var pg = $('page-browse');
       if (pg && !pg.classList.contains('active')) { box.classList.remove('open'); page && page.classList.remove('has-sugg'); prev = {}; }
     }).observe($('page-browse'), { attributes: true, attributeFilter: ['class'] });
+  }
+
+
+  /* ── Notifications pop out of the bell ───────────────────────────────────────
+     On phones, tips and prompts that carry a button (install the app, gas prices…) no longer
+     sit on top of the page: the bell rings, a glass card grows out of it with a spring, and
+     when it is done it shrinks back into the bell. Plain one-line toasts stay as they were. */
+  function setupBellPop() {
+    if (window.__v3Pop) return; window.__v3Pop = true;
+    var orig = window.showToast, cur = null, timer = 0;
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function bellCenter() {
+      var b = $('v3Bell'), r = b && b.getBoundingClientRect();
+      if (r && r.width && r.bottom > 0 && r.top < window.innerHeight * 0.5) return { x: r.left + r.width / 2, y: r.top + r.height / 2, real: true };
+      return { x: window.innerWidth - 14 - 23, y: 58, real: false };
+    }
+    function ring(cls) {
+      var b = $('v3Bell'); if (!b) return;
+      b.classList.remove('v3-bell-ring', 'v3-bell-ping'); void b.offsetWidth; b.classList.add(cls);
+      setTimeout(function () { b.classList.remove(cls); }, 1200);
+    }
+    function close(instant) {
+      var el = cur; if (!el) return; cur = null; clearTimeout(timer);
+      if (instant || reduce || !el.animate) { el.remove(); return; }
+      el.classList.add('is-leaving');
+      var o = el.style.transformOrigin;
+      var an = el.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.78)', opacity: .9, offset: .35 }, { transform: 'scale(.06)', opacity: 0 }],
+        { duration: 460, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
+      an.onfinish = function () { el.remove(); ring('v3-bell-ping'); };
+    }
+    function pop(msg, icon, action) {
+      close(true);
+      var el = document.createElement('div');
+      el.className = 'v3-pop'; el.setAttribute('role', 'status');
+      var has = action && typeof action.fn === 'function';
+      el.innerHTML = '<span class="v3-pop-ic" aria-hidden="true">' + esc(icon || '🔔') + '</span>' +
+        '<span class="v3-pop-t"><b>' + (has ? 'Yaad Adz' : 'Notice') + '</b><span>' + esc(msg) + '</span></span>' +
+        (has ? '<button type="button" class="v3-pop-go">' + esc(action.label || 'Open') + '</button>' : '') +
+        '<button type="button" class="v3-pop-x" aria-label="Dismiss">✕</button>';
+      document.body.appendChild(el); cur = el;
+      var c = bellCenter(), r = el.getBoundingClientRect();
+      el.style.transformOrigin = Math.round(c.x - r.left) + 'px ' + Math.round(c.y - r.top) + 'px';
+      ring('v3-bell-ring');
+      if (!reduce && el.animate) {
+        el.animate([{ transform: 'scale(.06)', opacity: 0 }, { transform: 'scale(1.05)', opacity: 1, offset: .65 }, { transform: 'scale(1)', opacity: 1 }],
+          { duration: 700, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 160, fill: 'backwards' });
+        el.classList.add('is-in');
+      }
+      el.addEventListener('click', function (e) {
+        if (e.target.closest('.v3-pop-go')) { try { action.fn(); } catch (err) {} close(); return; }
+        if (e.target.closest('.v3-pop-x')) { close(); }
+      });
+      var sx = 0;
+      el.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+      el.addEventListener('touchend', function (e) { if (Math.abs(e.changedTouches[0].clientX - sx) > 60) close(); }, { passive: true });
+      timer = setTimeout(close, has ? 9000 : 5000);
+    }
+    window.v3Notify = pop;
+    window.showToast = function (msg, icon, action) {
+      if (window.innerWidth <= 640 && action && typeof action.fn === 'function') { pop(msg, icon, action); return; }
+      return orig.apply(this, arguments);
+    };
   }
 
   /* ── boot ── */
