@@ -211,6 +211,7 @@
       safe(ensureMore);
     safe(setupHeroSearch);
     safe(setupAiFloat);
+    safe(setupSuggest);
     safe(setupListingDepth);
       return out;
     };
@@ -435,6 +436,96 @@
       clearTimeout(pinTimer);
       pinTimer = setTimeout(function () { pinned = false; sync(); }, 5000);
     }, true);
+  }
+
+
+  /* ── Live suggestions under the Browse search box ───────────────────────────
+     As you type, a glass panel unfolds with the best-matching listings (thumb, title with
+     your words highlighted, price, parish), quick category / parish chips, and a gold
+     "See all" row. New rows slide in one after another; rows already there stay put. */
+  function setupSuggest() {
+    var form = $('v3bSearch'), input = $('v3bInput');
+    if (!form || !input || form.getAttribute('data-sg')) return;
+    form.setAttribute('data-sg', '1');
+    var box = document.createElement('div');
+    box.className = 'v3b-sugg'; box.id = 'v3bSugg'; box.setAttribute('aria-live', 'polite');
+    box.innerHTML = '<div class="v3b-sugg-in"></div>';
+    form.parentNode.insertBefore(box, form.nextSibling);
+    var inner = box.firstChild, page = form.closest('.v3b'), prev = {}, timer = 0;
+
+    function hl(text, terms) {
+      var out = esc(text);
+      terms.forEach(function (t) {
+        if (!t) return;
+        var re = new RegExp('(' + esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+        out = out.replace(re, '<mark>$1</mark>');
+      });
+      return out;
+    }
+    function find(q) {
+      var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+      var ads = (typeof L !== 'undefined' && L && L.ads) ? L.ads : (typeof _ads !== 'undefined' ? _ads : []);
+      var hits = [];
+      ads.forEach(function (a) {
+        var t = (a.title || '').toLowerCase(), c = ((typeof catById === 'function' ? catById(a.category).name : '') || '').toLowerCase(),
+            pa = (a.parish || '').toLowerCase(), d = (a.desc || '').toLowerCase();
+        var ok = terms.every(function (w) { return t.indexOf(w) > -1 || c.indexOf(w) > -1 || pa.indexOf(w) > -1 || d.indexOf(w) > -1; });
+        if (!ok) return;
+        var sc = (typeof scoreAd === 'function') ? scoreAd(a, terms) : 0;
+        if (a.status === 'sold') sc -= 20;
+        hits.push({ a: a, sc: sc });
+      });
+      hits.sort(function (x, y) { return y.sc - x.sc; });
+      return { terms: terms, hits: hits };
+    }
+    function render() {
+      var q = (input.value || '').trim();
+      if (q.length < 2) { box.classList.remove('open'); page && page.classList.remove('has-sugg'); prev = {}; return; }
+      var r = find(q), html = '', now = {}, i = 0;
+      var chips = '';
+      if (typeof CATS !== 'undefined') CATS.forEach(function (c) {
+        if (c.name.toLowerCase().indexOf(q.toLowerCase()) === 0 || q.toLowerCase().indexOf(c.name.toLowerCase()) === 0)
+          chips += '<button type="button" class="v3b-sg-chip" data-cat="' + esc(c.id) + '">' + esc(c.name) + '</button>';
+      });
+      var pe = document.querySelectorAll('#v3bParishes [data-parish]');
+      Array.prototype.forEach.call(pe, function (b) {
+        var pn = b.getAttribute('data-parish') || '';
+        if (pn.toLowerCase().indexOf(q.toLowerCase()) === 0) chips += '<button type="button" class="v3b-sg-chip" data-parish="' + esc(pn) + '">📍 ' + esc(pn) + '</button>';
+      });
+      if (chips) html += '<div class="v3b-sg-chips">' + chips + '</div>';
+      r.hits.slice(0, 5).forEach(function (h) {
+        var a = h.a, isNew = !prev[a.id];
+        now[a.id] = 1;
+        var img = a.image || (a.photos && a.photos[0]) || '';
+        if (img && typeof thumbUrl === 'function') img = thumbUrl(img, 120);
+        var cat = (typeof catById === 'function') ? catById(a.category) : {};
+        html += '<button type="button" class="v3b-sg-row' + (isNew ? ' in' : '') + '" style="--i:' + (i++) + '" data-open="' + esc(a.id) + '">' +
+          '<span class="v3b-sg-th">' + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy" decoding="async">' : esc(cat.icon || '📦')) + '</span>' +
+          '<span class="v3b-sg-t"><b>' + hl(a.title || '', r.terms) + '</b><span>' + esc(a.parish || '') + (a.status === 'sold' ? ' · Sold' : '') + '</span></span>' +
+          '<span class="v3b-sg-p">J$' + Number(a.price || 0).toLocaleString('en-JM') + '</span></button>';
+      });
+      if (r.hits.length) {
+        html += '<button type="submit" class="v3b-sg-all' + (Object.keys(prev).length ? '' : ' in') + '" style="--i:' + i + '">See all ' + r.hits.length + ' result' + (r.hits.length === 1 ? '' : 's') + ' for “' + esc(q) + '” <span aria-hidden="true">→</span></button>';
+      } else {
+        html += '<div class="v3b-sg-none in" style="--i:0"><b>No matches yet</b><span>Try a shorter word, like “honda”, “phone” or “rent”.</span></div>';
+      }
+      prev = now;
+      inner.innerHTML = html;
+      box.classList.add('open'); page && page.classList.add('has-sugg');
+    }
+    input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(render, 70); });
+    input.addEventListener('search', render);
+    box.addEventListener('click', function (e) {
+      var row = e.target.closest && e.target.closest('[data-open]');
+      if (!row) return;
+      var id = row.getAttribute('data-open');
+      if (typeof window.openDetail === 'function') window.openDetail(id);
+    });
+    // leaving Browse closes the panel
+    new MutationObserver(function () {
+      var pg = $('page-browse');
+      if (pg && !pg.classList.contains('active')) { box.classList.remove('open'); page && page.classList.remove('has-sugg'); prev = {}; }
+    }).observe($('page-browse'), { attributes: true, attributeFilter: ['class'] });
   }
 
   /* ── boot ── */

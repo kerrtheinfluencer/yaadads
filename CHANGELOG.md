@@ -22,6 +22,7 @@ The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greet
 - New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts
 - Changed: tapping the search bar on the home screen opens Browse with its search box ready to type in, and the AI star is now a floating glass orb on the right of the screen, opposite the gas price, that bobs, glows and sparkles when you press it
 - Changed: Notifications is more compact — slimmer rows with a time on each one, so more fit on screen
+- New: typing in the Browse search now unfolds a glass panel under it with the best matching listings — photo, title with your words highlighted, price and parish — plus quick category and parish chips and a gold See all button
 - New: scrolling down folds the gas price and the AI orb into one button — the gas pill glides into the orb, which wears a little pump badge — and tapping it opens both again
 - New: the welcome tour is redesigned — a full-screen sunset scene on phones with floating glass tiles, a gold progress bar, big friendly headings and gold buttons, and the coach-mark tips are glass too
 - New: scrolling a listing now pushes the photo back — it shrinks and softens while the blurred copy behind it sharpens, so the glass panels slide over it
