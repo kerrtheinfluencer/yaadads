@@ -357,6 +357,7 @@ var SITE_UPDATES = {
         'New: the bell on the home screen opens Notifications — unread chats, news about Yaad Adz, your new ads and today’s gas price, with a switch to turn on push alerts',
         'Changed: tapping the search bar on the home screen opens Browse with its search box ready to type in, and the AI star is now a floating glass orb on the right of the screen, opposite the gas price, that bobs, glows and sparkles when you press it',
         'Changed: Notifications is more compact — slimmer rows with a time on each one, so more fit on screen',
+        'New: the AI chat is redesigned — a slim header, answers that use the full width, big two-up photo cards for what it finds with large prices and titles, a compact message bar, and smoother opening and scrolling',
         'New: notifications such as the install and gas price tips now grow out of the bell with a spring, ring it, and shrink back into it — instead of sitting on top of the page',
         'Changed: when you scroll, the AI orb shrinks and glides down beside the slim bottom bar, and the gas price tucks into it as a small pump badge',
         'New: the AI button has a new look — a glass orb with a slowly turning colour ring and four bars that breathe like a voice, and they speed up when you press it',

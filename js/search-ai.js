@@ -1566,7 +1566,18 @@ const AiChat=(function(){
   function bodyEl(s){const id=SURFACES[s].body;return id?document.getElementById(id):null;}
   function scrollEnd(s){
     const el=bodyEl(s)||chatEl(s);
-    requestAnimationFrame(function(){if(el)el.scrollTop=el.scrollHeight;});
+    requestAnimationFrame(function(){
+      if(!el)return;
+      /* §CHAT-SMOOTH — after an answer with results, land on the START of that answer
+         (not its last card) so you read the reply first, then scroll the findings. */
+      const chat=chatEl(s),last=chat&&chat.lastElementChild;
+      if(last&&last.classList.contains('ai-msg-ai')&&last.querySelector('.ai-results')&&el!==chat){
+        const top=last.getBoundingClientRect().top-el.getBoundingClientRect().top+el.scrollTop-6;
+        el.scrollTop=Math.max(0,top);
+        return;
+      }
+      el.scrollTop=el.scrollHeight;
+    });
   }
   function setStatus(txt){
     const a=document.getElementById('aiSheetStatusTxt');
@@ -1719,6 +1730,7 @@ const AiChat=(function(){
      thread used to run one rAF loop per message forever). */
   function revealText(el,text){
     const reduce=window.matchMedia&&typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.innerHTML=textHtml(text);return;   /* §CHAT-SMOOTH — instant text; the bubble itself fades in via CSS */
     if(reduce||!text||text.length>420||thread.length>12){el.innerHTML=textHtml(text);return;}
     const steps=Math.min(26,Math.max(8,Math.ceil(text.length/18)));
     let i=0,frames=0;
@@ -1775,7 +1787,7 @@ const AiChat=(function(){
     const card=document.createElement('div');card.className='ai-result-card'+(isSold?' is-gone':'');
     const isNew=((Date.now()-new Date(ad.date||0))/86400000)<3;
     const thumb=ad.image
-      ?'<img class="ai-thumb" src="'+escHtml(thumbUrl(ad.image,120))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+      ?'<img class="ai-thumb" src="'+escHtml(thumbUrl(ad.image,420))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
       :'<div class="ai-thumb ai-thumb-icon">'+(cat.icon||'📦')+'</div>';
     card.innerHTML=thumb
       +'<div class="ai-result-info">'

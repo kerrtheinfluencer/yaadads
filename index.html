@@ -1160,16 +1160,16 @@ function v3HeroSearch(e){
   <div class="ai-sheet-handle" aria-hidden="true"><span></span></div>
   <header class="ai-sheet-header">
     <div class="ai-sheet-title">
-      <span class="ai-orb" aria-hidden="true"><span class="ai-orb-core">🤖</span></span>
+      <span class="ai-orb" aria-hidden="true"><span class="v3-bars"><i></i><i></i><i></i><i></i></span></span>
       <div class="ai-title-txt">
-        <div class="ai-sheet-name">Yaad <em>Adz</em> AI</div>
-        <div class="ai-sheet-sub" id="aiSheetStatus"><i class="ai-dot" aria-hidden="true"></i><span id="aiSheetStatusTxt">Yaad Brain v2 · 100% local</span></div>
+        <div class="ai-sheet-name">Yaad <em>Brain</em></div>
+        <div class="ai-sheet-sub" id="aiSheetStatus"><i class="ai-dot" aria-hidden="true"></i><span id="aiSheetStatusTxt">Ask me anything · runs on your phone</span></div>
       </div>
     </div>
     <div class="ai-sheet-tools">
-      <button class="ai-tool-btn" onclick="aiChatNewChat()" title="New chat" aria-label="New chat">✦</button>
-      <button class="ai-tool-btn" onclick="clearSheetChat()" title="Clear conversation" aria-label="Clear conversation">🗑️</button>
-      <button class="ai-tool-btn ai-tool-close" onclick="closeAiSheet()" title="Close" aria-label="Close">✕</button>
+      <button class="ai-tool-btn" onclick="aiChatNewChat()" title="New chat" aria-label="New chat"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="ai-tool-btn" onclick="clearSheetChat()" title="Clear conversation" aria-label="Clear conversation"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg></button>
+      <button class="ai-tool-btn ai-tool-close" onclick="closeAiSheet()" title="Close" aria-label="Close"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
   </header>
 
@@ -1178,7 +1178,7 @@ function v3HeroSearch(e){
     <!-- Hero welcome (hidden once the conversation starts) -->
     <div class="ai-hero" id="aiHero">
       <div class="ai-hero-greet" id="aiHeroGreet">Wah gwaan! 👋</div>
-      <div class="ai-hero-lead">Ask me anything — search listings, check prices, compare deals or get advice. It all runs on Yaad Brain, right on your phone.</div>
+      <div class="ai-hero-lead">Search listings, check prices, compare deals. Just ask.</div>
     </div>
 
     <!-- Recent searches (populated by JS) -->
