@@ -97,18 +97,18 @@ const OB = (function() {
     _root.innerHTML = `
       <div class="ob-overlay" id="obOverlay"></div>
       <div class="ob-welcome" id="obWelcome" role="dialog" aria-modal="true" aria-label="Welcome to Yaad Adz" tabindex="-1" hidden>
-        <div class="ob-brand"><img src="/logo.svg" width="30" height="30" alt=""><span>YOUR QUICK START</span></div>
+        <div class="ob-brand"><img src="/logo.svg" width="30" height="30" alt=""><span>WELCOME TO YAAD ADZ</span></div>
         <button class="ob-skip" id="obSkip" aria-label="Skip onboarding">Skip ✕</button>
         <div class="ob-dots" id="obDots" aria-label="Quick start steps"></div>
         <div class="ob-welcome-inner">
           <section class="ob-slide" data-slide="0">
             <div class="ob-visual ob-market" aria-hidden="true">
-              <span class="ob-visual-label">LOCAL FINDS. NEW POSSIBILITIES.</span>
+              <span class="ob-visual-label">LOCAL FINDS · NEW POSSIBILITIES</span>
               <div class="ob-mini-cards"><span>🚗<small>Vehicles</small></span><span>📱<small>Phones</small></span><span>🏡<small>Property</small></span></div>
               <span class="ob-visual-caption">One marketplace. All 14 parishes.</span>
             </div>
-            <h2 class="ob-slide-title">A little closer to your <em>next great find.</em></h2>
-            <p class="ob-slide-text">Welcome to Yaad Adz, Jamaica's free marketplace. Find something you need or give something you own a new home.</p>
+            <h2 class="ob-slide-title">Wah gwaan! <em>Find your next great deal.</em></h2>
+            <p class="ob-slide-text">Jamaica's free marketplace. Find what you need nearby, or give what you own a new home.</p>
             <div class="ob-benefits"><span>✓ Browse without an account</span><span>✓ Free to post</span></div>
           </section>
           <section class="ob-slide" data-slide="1" hidden>
@@ -319,7 +319,7 @@ const OB = (function() {
       icon: '🔍',
       title: 'Search anything',
       text: isMobile()
-        ? 'Tap here to ask the Yaad Brain — "cheap car under 2M" works just fine.'
+        ? 'Tap here to search every listing — try "cheap car under 2M". The sparkle button on the right is Yaad Brain, your AI helper.'
         : 'Type here or press ⌘K / Ctrl+K to search. Try "cheap car under 2M".',
       pos: 'bottom',
     },

@@ -1751,3 +1751,106 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
 
 /* the photo sinks behind these, so they always paint on top of it */
 .v3d-panel, .v3d-seller, .v3d-extras, .v3d-soldnote, .v3d > section, .v3d > div:not(.v3d-hero):not(.v3d-bg):not(.v3d-cta) { position: relative; z-index: 2; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   27. WELCOME ONBOARDING + TOUR — lagoon glass
+   Phones: a full-screen sunset scene. Desktop: one glass card over a dimmed page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#obRoot .ob-overlay { background: rgba(3, 24, 22, .62); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
+#obRoot .ob-welcome {
+  position: fixed; left: 0; top: 0; width: 100%; max-width: none; height: 100vh; height: 100dvh; max-height: none;
+  margin: 0; padding: calc(18px + env(safe-area-inset-top, 0px)) 22px calc(18px + env(safe-area-inset-bottom, 0px));
+  border: 0; border-radius: 0; color: #fff; text-align: left; overflow-y: auto;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(11rem 11rem at 84% 6%, rgba(255,238,190,.85), rgba(255,190,110,.42) 45%, rgba(255,150,80,0) 72%),
+    radial-gradient(26rem 18rem at 92% 8%, rgba(255,160,90,.4), transparent 66%),
+    radial-gradient(23rem 15rem at 6% 40%, rgba(0,205,140,.3), transparent 62%),
+    linear-gradient(180deg, #123f5c 0%, #0c5f60 45%, #053a2a 100%);
+  box-shadow: none; transform: translateY(24px); opacity: 0;
+  transition: opacity .4s ease, transform .5s cubic-bezier(.34,1.3,.64,1);
+}
+#obRoot.ob-welcome-open .ob-welcome { transform: none; opacity: 1; }
+#obRoot .ob-welcome > * { position: relative; z-index: 1; }
+#obRoot .ob-brand { padding: 0; gap: 10px; color: rgba(255,255,255,.92); font: 700 11px var(--v3-font, 'Sora', sans-serif); letter-spacing: .14em; }
+#obRoot .ob-brand img { width: 44px; height: auto; filter: drop-shadow(0 4px 10px rgba(0,30,30,.3)); }
+#obRoot .ob-skip { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: 16px; z-index: 3; min-height: 38px; padding: 0 16px; border: 0; border-radius: 999px;
+  color: #fff; font: 600 13px var(--v3-font, 'Sora', sans-serif); background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
+
+/* progress: three capsules, the current one stretches and turns gold */
+#obRoot .ob-dots { display: flex; gap: 8px; margin: 18px 0 0; }
+#obRoot .ob-dot { flex: 1; height: 8px; min-height: 8px; padding: 0; border: 0; border-radius: 999px; font-size: 0; background: rgba(255,255,255,.25);
+  transition: flex .45s cubic-bezier(.34,1.56,.64,1), background .3s ease; }
+#obRoot .ob-dot span { display: none; }
+#obRoot .ob-dot.active { flex: 2.6; background: linear-gradient(90deg, #fff0b8, #ffd45c, #f4c300); box-shadow: 0 0 14px rgba(255,210,92,.55); }
+
+#obRoot .ob-welcome-inner { flex: 1 0 auto; display: flex; flex-direction: column; min-height: 0; padding: 8px 0; }
+#obRoot .ob-slide { margin: auto 0; }
+#obRoot button:focus-visible { outline-width: 2px; outline-offset: 2px; outline-color: rgba(255,240,184,.9); }
+#obRoot .ob-slide.active { animation: obRise .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes obRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+#obRoot .ob-slide-title { margin: 6px 0 10px; font: 600 clamp(28px, 8vw, 38px)/1.08 var(--v3-font, 'Sora', sans-serif); letter-spacing: -.025em; color: #fff; text-shadow: 0 2px 20px rgba(0,30,30,.35); }
+#obRoot .ob-slide-title em { display: block; font-style: normal; color: #ffd27a; }
+#obRoot .ob-slide-text { margin: 0; font-size: 16px; line-height: 1.55; color: rgba(255,255,255,.92); max-width: 34ch; }
+
+/* illustration area: no box, just floating glass pieces */
+#obRoot .ob-visual { background: none; border: 0; padding: 0 0 6px; margin-bottom: 8px; text-align: left; }
+#obRoot .ob-visual-label { color: #ffd27a; font: 700 11px var(--v3-font, 'Sora', sans-serif); letter-spacing: .14em; }
+#obRoot .ob-visual-caption { color: rgba(255,255,255,.8); font-size: 12.5px; margin-top: 12px; }
+#obRoot .ob-mini-cards, #obRoot .ob-sell-steps { gap: 10px; margin-top: 14px; justify-content: flex-start; }
+#obRoot .ob-mini-cards > span, #obRoot .ob-sell-steps > span {
+  flex: 1; max-width: none; padding: 18px 6px 14px; border: 0; border-radius: 28px; font-size: 34px; color: #fff; text-align: center;
+  background: var(--v3-fill), var(--v3-tint); -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06); backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: var(--v3-rim), var(--v3-shadow); animation: v3-float 3.6s ease-in-out infinite;
+}
+#obRoot .ob-mini-cards > span:nth-child(2), #obRoot .ob-sell-steps > span:nth-child(3) { animation-delay: -1.2s; transform: none; background: var(--v3-fill), var(--v3-tint); }
+#obRoot .ob-mini-cards > span:nth-child(3), #obRoot .ob-sell-steps > span:nth-child(5) { animation-delay: -2.4s; }
+#obRoot .ob-mini-cards small, #obRoot .ob-sell-steps small { font: 600 12px var(--v3-font, 'Sora', sans-serif); color: #fff; margin-top: 8px; }
+#obRoot .ob-sell-steps b { color: #ffd27a; font-size: 18px; flex: none; }
+#obRoot .ob-demo-input { margin: 14px 0 12px; padding: 0 20px; height: 56px; border-radius: 999px; color: #fff; font-size: 16px; align-items: center;
+  background: var(--v3-fill), var(--v3-tint); -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06); backdrop-filter: blur(22px) saturate(190%) brightness(1.06);
+  box-shadow: var(--v3-rim), var(--v3-shadow); }
+#obRoot .ob-demo-tags { justify-content: flex-start; gap: 8px; }
+#obRoot .ob-demo-tags span { padding: 8px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #3a2400; background: linear-gradient(145deg, #fff0b8, #ffd27a); }
+#obRoot .ob-benefits { gap: 8px; margin-top: 18px; }
+#obRoot .ob-benefits span { padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #fff; background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
+#obRoot .ob-note { padding: 14px 16px; border-radius: 24px; font-size: 13.5px; color: rgba(255,255,255,.92); background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
+#obRoot .ob-note strong { color: #ffd27a; }
+
+/* buttons: gold capsule primary, glass capsule secondary */
+#obRoot .btn { border: 0; border-radius: 999px; min-height: 54px; padding: 0 26px; font: 700 16px var(--v3-font, 'Sora', sans-serif); transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+#obRoot .btn:active { transform: scale(.95); }
+#obRoot .btn-gold { color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); box-shadow: 0 10px 26px rgba(244,195,0,.34), inset 0 1px 1px rgba(255,255,255,.7); }
+#obRoot .btn-outline, #obRoot .btn-ghost { color: #fff; background: var(--v3-fill), var(--v3-tint); box-shadow: var(--v3-rim); }
+#obRoot .ob-start-actions { flex-direction: column; gap: 10px; margin-top: 20px; }
+#obRoot .ob-welcome-nav { flex-wrap: wrap; border: 0; margin: 0; padding: 10px 0 0; gap: 10px; justify-content: space-between; align-items: center; }
+#obRoot .ob-welcome-nav #obNext { flex: 1 1 0; width: auto; height: 54px; min-width: 0; border-radius: 999px; aspect-ratio: auto; padding: 0 22px; white-space: nowrap; }
+#obRoot .ob-welcome-nav #obBack { flex: none; }
+#obRoot .ob-step-label { order: -1; width: 100%; text-align: center; font-size: 12px; letter-spacing: .08em; color: rgba(255,255,255,.75); flex-basis: 100%; }
+#obRoot .ob-replay-note { margin: 8px 0 0; font-size: 11.5px; color: rgba(255,255,255,.7); text-align: center; }
+
+/* coach-mark tour */
+#obRoot.ob-tour-open .ob-overlay { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#obRoot .ob-tip { border: 0; border-radius: 30px; padding: 18px 18px 16px; color: #fff;
+  background: var(--v3-fill), var(--v3-tint); -webkit-backdrop-filter: blur(24px) saturate(190%) brightness(1.06); backdrop-filter: blur(24px) saturate(190%) brightness(1.06);
+  box-shadow: var(--v3-rim), 0 22px 50px rgba(2,20,18,.5); }
+#obRoot .ob-tip-step { color: #ffd27a; font: 700 11px var(--v3-font, 'Sora', sans-serif); letter-spacing: .12em; }
+#obRoot .ob-tip-title { font: 600 18px var(--v3-font, 'Sora', sans-serif); color: #fff; }
+#obRoot .ob-tip-text { color: rgba(255,255,255,.9); font-size: 14px; line-height: 1.5; }
+#obRoot .ob-tour-progress { height: 6px; background: rgba(255,255,255,.2); }
+#obRoot .ob-tour-progress span { background: linear-gradient(90deg, #fff0b8, #f4c300); }
+#obRoot .ob-tip-next { border: 0; border-radius: 999px; min-height: 44px; padding: 0 22px; font-weight: 700; color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); }
+#obRoot .ob-tip-back, #obRoot .ob-tip-skip { color: rgba(255,255,255,.88); border-radius: 999px; }
+#obRoot .ob-spotlight { border-radius: 24px; box-shadow: 0 0 0 9999px rgba(3,24,22,.6), 0 0 0 3px rgba(255,210,122,.9), 0 0 24px rgba(255,210,122,.5); }
+
+@media (min-width: 641px) {
+  #obRoot .ob-welcome { left: 50%; top: 50%; width: min(520px, calc(100vw - 48px)); height: auto; max-height: calc(100dvh - 48px); padding: 26px 30px 24px;
+    border-radius: 40px; overflow: hidden; transform: translate(-50%, -46%) scale(.96); box-shadow: var(--v3-rim), 0 34px 90px rgba(0,20,18,.55); }
+  #obRoot.ob-welcome-open .ob-welcome { transform: translate(-50%, -50%); }
+  #obRoot .ob-welcome-inner { padding: 18px 0 6px; } #obRoot .ob-slide { margin: 0; }
+  #obRoot .ob-start-actions { flex-direction: row; }
+}
+@media (max-height: 640px) { #obRoot .ob-slide-title { font-size: 28px; } #obRoot .ob-mini-cards > span, #obRoot .ob-sell-steps > span { padding: 12px 6px 10px; font-size: 28px; } }
+@media (prefers-reduced-motion: reduce) { #obRoot .ob-slide.active, #obRoot .ob-mini-cards > span, #obRoot .ob-sell-steps > span { animation: none; } }
+@media (prefers-reduced-transparency: reduce) { #obRoot .ob-tip, #obRoot .ob-overlay { background: #0c3b34; -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media (max-width: 360px) { #obRoot .ob-brand { letter-spacing: .08em; font-size: 10px; } #obRoot .ob-brand img { width: 36px; } }
