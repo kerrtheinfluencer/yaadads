@@ -6186,3 +6186,6 @@ nav,
 /* Hover optics are pure decoration; the existing reduced-motion block already
    collapses transitions globally, so the rim states simply resolve instantly.
    Nothing here animates on its own — no keyframes were introduced. */
+
+/* AI chat — link button under gas answers (glass styling in v3-glass.css) */
+.ai-gas-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 16px; border-radius: 999px; font-weight: 700; text-decoration: none; color: #1a1405; background: #f4c300; }

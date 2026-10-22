@@ -494,12 +494,18 @@ padding-top: 108px;
 
 <div class="g-card g-calc" id="fillCalc">
 <div class="g-card-hd"><h2>What will it cost?</h2>
-<div class="g-seg" id="calcMode" role="tablist" aria-label="Calculator mode"><button type="button" class="active" data-mode="fill">Fill up</button><button type="button" data-mode="budget">I have J$</button></div></div>
+<div class="g-seg" id="calcMode" role="tablist" aria-label="Calculator mode"><button type="button" class="active" data-mode="fill">Litres</button><button type="button" data-mode="gal">Gallons</button><button type="button" data-mode="budget">J$</button></div></div>
 <div class="g-calc-in">
 <div class="g-chips" id="calcChips" role="group" aria-label="Litres"></div>
-<label class="g-calc-field"><span id="calcLabel">Litres</span><input id="calcInput" type="number" inputmode="decimal" min="1" step="1" value="40"></label>
+<label class="g-calc-field"><span id="calcLabel">Litres</span><input id="calcInput" type="number" inputmode="decimal" min="0" step="any" value="40" placeholder="Type any amount" aria-label="Amount"></label>
 </div>
 <div class="g-calc-out" id="calcResult" aria-live="polite"></div>
+</div>
+
+<div class="g-card g-ask" id="gAsk">
+<div class="g-card-hd"><h2>Ask Yaad Brain</h2></div>
+<form class="g-ask-form" id="gAskForm"><input id="gAskInput" type="text" enterkeyhint="send" autocomplete="off" placeholder="Ask anything about gas…" aria-label="Ask a gas question"><button type="submit" aria-label="Ask">➤</button></form>
+<div class="g-chips g-ask-chips" id="gAskChips"><button type="button" class="g-chip" data-q="Will gas prices go up or down?">Going up or down?</button><button type="button" class="g-chip" data-q="Cheapest fuel right now">Cheapest fuel</button><button type="button" class="g-chip" data-q="How much is 35 litres of 90?">35 L of 90?</button><button type="button" class="g-chip" data-q="What does J$7000 of gas buy?">What does J$7000 buy?</button></div>
 </div>
 
 <div class="g-card g-all">
@@ -746,15 +752,27 @@ function renderCalc() {
   if (!chips || !out) return;
   const p = PRICES.find(x => x.key === selectedFuel);
   if (!p) return;
-  const pump = pumpOf(p);
-  const presets = calcMode === 'fill' ? [20, 30, 40, 50] : [3000, 5000, 10000, 15000];
-  chips.innerHTML = presets.map(v => '<button type="button" class="g-chip' + (v === calcValue ? ' active' : '') + '" data-v="' + v + '">' + (calcMode === 'fill' ? v + ' L' : 'J$' + v.toLocaleString()) + '</button>').join('');
-  label.textContent = calcMode === 'fill' ? 'Litres' : 'Budget (J$)';
-  if (document.activeElement !== input) input.value = calcValue;
+  const pump = pumpOf(p), GAL = 3.78541;
+  const presets = calcMode === 'fill' ? [20, 30, 40, 50] : calcMode === 'gal' ? [5, 8, 10, 13] : [3000, 5000, 10000, 15000];
+  const unit = v => calcMode === 'fill' ? v + ' L' : calcMode === 'gal' ? v + ' gal' : 'J$' + v.toLocaleString();
+  chips.innerHTML = presets.map(v => '<button type="button" class="g-chip' + (v === calcValue ? ' active' : '') + '" data-v="' + v + '">' + unit(v) + '</button>').join('');
+  label.textContent = calcMode === 'fill' ? 'Litres' : calcMode === 'gal' ? 'Gallons' : 'Budget (J$)';
+  if (document.activeElement !== input) input.value = calcValue || '';
   const n = Number(calcValue) || 0;
+  const nice = x => (Math.round(x * 10) / 10).toLocaleString();
   out.innerHTML = calcMode === 'fill'
-    ? '<span>' + n + ' L of ' + escapeHtml(p.name) + '</span><strong>' + fmtPriceInt(pump * n) + '</strong>'
-    : '<span>J$' + n.toLocaleString() + ' buys about</span><strong>' + (n / pump).toFixed(1) + ' L</strong><em>of ' + escapeHtml(p.name) + '</em>';
+    ? '<span>' + nice(n) + ' L of ' + escapeHtml(p.name) + '</span><strong>' + fmtPriceInt(pump * n) + '</strong><em>≈ ' + nice(n / GAL) + ' gallons</em>'
+    : calcMode === 'gal'
+    ? '<span>' + nice(n) + ' gal of ' + escapeHtml(p.name) + '</span><strong>' + fmtPriceInt(pump * n * GAL) + '</strong><em>≈ ' + nice(n * GAL) + ' litres</em>'
+    : '<span>J$' + n.toLocaleString() + ' buys about</span><strong>' + nice(n / pump) + ' L</strong><em>' + nice(n / pump / GAL) + ' gal of ' + escapeHtml(p.name) + '</em>';
+}
+
+function initAsk() {
+  const form = document.getElementById('gAskForm'), inp = document.getElementById('gAskInput'), chips = document.getElementById('gAskChips');
+  if (!form) return;
+  const go = q => { q = (q || '').trim(); if (q) location.href = '/?ask=' + encodeURIComponent(q); };
+  form.addEventListener('submit', e => { e.preventDefault(); go(inp.value); });
+  chips.addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) go(b.dataset.q); });
 }
 
 function initCalc() {
@@ -763,7 +781,7 @@ function initCalc() {
   modes.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     calcMode = b.dataset.mode;
-    calcValue = calcMode === 'fill' ? 40 : 10000;
+    calcValue = calcMode === 'fill' ? 40 : calcMode === 'gal' ? 10 : 10000;
     modes.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
     renderCalc();
   });
@@ -1832,7 +1850,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initScrollProgress();
   initGTabs();
   initPriceTabs();
-  initCalc();
+  initCalc(); initAsk();
   initReportSheet();
   initChartToggle();
   try {

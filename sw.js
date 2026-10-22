@@ -22,6 +22,7 @@ const PRECACHE_URLS = [
   '/js/core.js',
   '/js/ui-nav.js',
   '/js/listings.js',
+  '/js/gas-ai.js',
   '/js/search-ai.js',
   '/js/auth-account.js',
   '/js/ad-social.js',

@@ -265,3 +265,16 @@ body.g-sheet-open { overflow: hidden; }
 .g-sheet input, .g-sheet select { color: #fff; }
 .g-sheet input::placeholder { color: rgba(255,255,255,.7); }
 .g-sheet select option { color: #111; }
+
+/* free-entry amount + ask Yaad Brain */
+.g-seg button { padding: 0 12px; }
+.g-calc-field { min-height: 60px; }
+.g-calc-field span { font-weight: 600; }
+.g-calc-field input { width: 55%; height: 46px; font-size: 22px; }
+.g-calc-out em { display: block; }
+.g-ask-form { display: flex; gap: 8px; margin-bottom: 10px; }
+.g-ask-form input { flex: 1; min-width: 0; height: 50px; padding: 0 18px; border: 0; border-radius: 999px; color: #fff; font: 500 16px var(--v3-font); background: rgba(6,34,30,.4); box-shadow: inset 0 1px 1px rgba(255,255,255,.25); }
+.g-ask-form input::placeholder { color: rgba(255,255,255,.7); }
+.g-ask-form input:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,210,122,.45); }
+.g-ask-form button { flex: none; width: 50px; height: 50px; border: 0; border-radius: 50%; font-size: 18px; color: #1a1405; cursor: pointer; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); }
+.g-ask-chips .g-chip { flex: 1 1 auto; font-size: 13.5px; padding: 0 12px; }

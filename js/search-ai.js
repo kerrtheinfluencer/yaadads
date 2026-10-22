@@ -1529,7 +1529,7 @@ const AiChat=(function(){
     try{
       localStorage.setItem(AI_THREAD_KEY,JSON.stringify({
         v:2,ts:Date.now(),
-        thread:thread.slice(-40).map(function(m){return{r:m.role==='user'?'u':'a',k:m.kind||'',t:m.text,ids:m.ids||[],q:m.qTerms||[]};}),
+        thread:thread.slice(-40).map(function(m){return{r:m.role==='user'?'u':'a',k:m.kind||'',t:m.text,ids:m.ids||[],q:m.qTerms||[],c:m.cta||null};}),
         state:{
           results:(state.results||[]).slice(0,12).map(function(a){return a.id;}),
           pool:(state.pool||[]).slice(0,80).map(function(a){return a.id;}),
@@ -1543,7 +1543,7 @@ const AiChat=(function(){
     let t=null;
     try{t=JSON.parse(localStorage.getItem(AI_THREAD_KEY)||'null');}catch(e){t=null;}
     if(!t||t.v!==2||!Array.isArray(t.thread)||!t.thread.length) return false;
-    thread=t.thread.map(function(m){return{role:m.r==='u'?'user':'ai',kind:m.k||'answer',text:m.t||'',ids:m.ids||[],qTerms:m.q||[]};});
+    thread=t.thread.map(function(m){return{role:m.r==='u'?'user':'ai',kind:m.k||'answer',text:m.t||'',ids:m.ids||[],qTerms:m.q||[],cta:m.c||null};});
     const st=t.state||{};
     /* Keep the raw ids, not just the resolved ads: if the sheet opens before
        _ads has loaded, rehydrate() maps them again the moment listings arrive
@@ -1719,6 +1719,11 @@ const AiChat=(function(){
         }
         if(m.kind==='search'&&m.filters&&m.total>0) col.appendChild(footerRow(m,surface));
       }
+    }
+    if(m.cta&&m.cta.href){
+      const a=document.createElement('a');a.className='ai-gas-cta';a.href=m.cta.href;
+      a.innerHTML='<span aria-hidden="true">⛽</span> '+escHtml(m.cta.label||'Open')+' <span aria-hidden="true">→</span>';
+      col.appendChild(a);
     }
     if(m.kind&&m.kind!=='greet') col.appendChild(actionsRow(m,surface));
     col.appendChild(chipsRow(surface));
@@ -2197,6 +2202,24 @@ const AiChat=(function(){
     busy(surface,true);
     setStatus('Thinking…');
     setTimeout(function(){
+      /* §GAS — fuel questions are answered from the Petrojam sheet (js/gas-ai.js) */
+      if(window.YaadGas&&!opts.noGas&&YaadGas.matches(q)){
+        YaadGas.answer(q).then(function(g){
+          const msg={role:'ai',kind:'gas',text:g.text,cta:g.cta||null,ts:Date.now(),query:q};
+          thread.push(msg);
+          _v2History.push({role:'ai',text:msg.text});
+          if(_v2History.length>8)_v2History=_v2History.slice(-8);
+          store();
+          typing.remove();
+          paint(surface);
+          setStatus(statusFor(msg));
+        }).catch(function(){
+          typing.remove();
+          thread.push({role:'ai',kind:'answer',text:'I could not reach the gas prices just now — try the Gas Prices page 🙏',ts:Date.now()});
+          paint(surface);
+        }).then(function(){busy(surface,false);});
+        return;
+      }
       try{
         const d=decide(q);
         const msg=(d.type==='local')?buildLocal(d.c,q):buildAnswer(d,q);
@@ -2230,6 +2253,7 @@ const AiChat=(function(){
     if(m.kind==='best')return 'Best pick · by value, age & demand';
     if(m.kind==='compare')return 'Head-to-head comparison';
     if(m.kind==='detail')return 'Listing details';
+    if(m.kind==='gas')return 'Gas prices · Petrojam weekly';
     return 'Yaad Brain · 100% local';
   }
   function medianLabel(){
@@ -2255,7 +2279,7 @@ const AiChat=(function(){
       paint(surface);
       return;
     }
-    if(!_ads||!_ads.length){
+    if((!_ads||!_ads.length)&&!(window.YaadGas&&YaadGas.matches(query))){
       thread.push({role:'ai',kind:'answer',ts:Date.now(),text:'Listings are still loading — try again in a moment, or browse the homepage.'});
       paint(surface);
       return;
@@ -2863,3 +2887,19 @@ function renderReferralSpot() {
 }
 
 
+
+/* §GAS-DEEPLINK — /?ask=<question> (from the Gas Prices page) opens Yaad Brain with that question */
+(function () {
+  var q = '';
+  try { q = (new URLSearchParams(location.search).get('ask') || '').trim().slice(0, 200); } catch (e) {}
+  if (!q) return;
+  try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+  var tries = 0;
+  (function go() {
+    if (typeof openAiSheet === 'function' && window.YaadGas && document.getElementById('sheetInput')) {
+      try { openAiSheet(q); } catch (e) {}
+      return;
+    }
+    if (++tries < 40) setTimeout(go, 150);
+  })();
+})();

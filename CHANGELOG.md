@@ -9,6 +9,8 @@
 
 The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Listing pages now open on a big photo with a glass info panel and a floating contact bar. Nothing about how the app works has changed.
 
+- New: ask Yaad Brain anything about gas — what a fill-up costs, what your budget buys, which fuel is cheapest, or whether prices are going up
+- New: type any amount in litres, gallons or J$ on the gas page to see the estimate
 - Changed: the gas prices page is rebuilt with Prices, Stations and Trends tabs, a fuel picker with a big pump price, a fill-up calculator, and a quick report-a-price sheet
 - New: the home screen opens on a sunset scene with a greeting and one large glass search bar
 - New: pick a parish at the top to see only listings from there
