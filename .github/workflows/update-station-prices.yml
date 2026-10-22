@@ -1,0 +1,27 @@
+name: Update station prices (Bussgas / CAC survey)
+
+on:
+  schedule:
+    - cron: '0 14 * * 5'   # Fridays 14:00 UTC — weekly, gentle on their server
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Import station prices (about 4 minutes, one request per second)
+        run: node scrape-bussgas.js
+      - name: Commit changes
+        run: |
+          git config user.name "Yaad Adz Bot"
+          git config user.email "bot@yaadadz.com"
+          git add gas-station-prices.json
+          git diff --staged --quiet || git commit -m "⛽ Update station prices [$(date +'%Y-%m-%d')]"
+          git pull --rebase -q origin main || true
+          git push

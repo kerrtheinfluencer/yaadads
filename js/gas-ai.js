@@ -16,6 +16,45 @@
     return loading;
   }
 
+  var stCache = undefined;
+  function loadStations() {
+    if (stCache !== undefined) return Promise.resolve(stCache);
+    return fetch('/gas-station-prices.json', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) { stCache = d && d.stations && d.stations.length ? d : null; return stCache; });
+  }
+  function fmtDay(iso) { var d = new Date(iso); return isNaN(d) ? String(iso || '') : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+  var FKEY = { '87': '87', '90': '90', diesel: 'diesel', ulsd: 'ulsd' };
+
+  /* "cheapest 87 in Mandeville", "diesel prices in Portmore", "price at Texaco Bushy Park" */
+  function stationAnswer(q, d, st) {
+    if (!st) return null;
+    var s = q.toLowerCase();
+    var f = fuelOf(q, d.prices), key = FKEY[f.p.key] ? f.p.key : '87';
+    var words = s.replace(/[^a-z0-9\s'`-]/g, ' ').split(/\s+/).filter(function (w) { return w.length > 2; });
+    var towns = {};
+    st.stations.forEach(function (x) { if (x.town) towns[x.town.toLowerCase()] = 1; });
+    var townHit = Object.keys(towns).filter(function (t) { return t.length >= 4 && s.indexOf(t) !== -1; }).sort(function (a, b) { return b.length - a.length; })[0];
+    var stop = /^(the|gas|fuel|price|prices|cheapest|cheap|lowest|diesel|ulsd|petrol|station|stations|what|how|much|does|cost|per|litre|liter|for|near|and|best|where|can|find|got|any|show|tell|today|now|right|90|87)$/;
+    var hits = [];
+    if (townHit) {
+      hits = st.stations.filter(function (x) { return (x.town || '').toLowerCase() === townHit; });
+    } else {
+      var terms = words.filter(function (w) { return !stop.test(w); });
+      if (terms.length) hits = st.stations.filter(function (x) { var n = (x.name + ' ' + (x.town || '')).toLowerCase(); return terms.every(function (t) { return n.indexOf(t) !== -1; }); });
+      if (hits.length > 8 || (!hits.length)) hits = [];
+    }
+    if (!hits.length) return null;
+    var priced = hits.filter(function (x) { return x.prices[key] != null; }).sort(function (a, b) { return a.prices[key] - b.prices[key]; });
+    var label = { '87': '87', '90': '90', diesel: 'Diesel', ulsd: 'ULSD' }[key];
+    var week = fmtDay(st.survey_week_ending);
+    if (!priced.length) return { text: 'I found ' + hits.length + ' station' + (hits.length === 1 ? '' : 's') + ' there but none list a ' + label + ' price in the latest survey.', cta: CTA_ST };
+    var lines = priced.slice(0, 5).map(function (x, i) { return (i + 1) + '. ' + x.name + (x.town ? ' (' + x.town + ')' : '') + ' — ' + j2(x.prices[key]); });
+    var head = townHit ? '📍 ' + label + ' prices in ' + townHit.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) + ' (cheapest first):' : '📍 ' + label + ' at the station' + (priced.length > 1 ? 's' : '') + ' I found:';
+    return { text: head + '\n' + lines.join('\n') + (priced.length > 5 ? '\n…and ' + (priced.length - 5) + ' more on the map.' : '') + '\n\nOfficial survey, week ending ' + week + ' (via Bussgas / CAC). Station prices can change — check the pump.' + (f.explicit ? '' : '\nI assumed 87 — say “90” or “diesel” for others.'), cta: CTA_ST };
+  }
+
   var GAS_WORDS = /\b(gas|gasoline|gasolene|petrol|fuel|diesel|ulsd|kerosene|kero|propane|butane|lpg|petrojam|fill\s?-?up|fillup|pump price|octane|(?:87|90)\s*(?:gas|octane|fuel)|cooking gas)\b|\d\s*(?:litres?|liters?|ltrs?|gallons?)\b|\b(?:87|90)\s*(?:vs\.?|or|versus|and)\s*(?:87|90)\b/i;
   var NOT_GAS = /\b(stove|cooker|oven|generator|heater|cylinder|regulator|for sale|selling|sale|rent|job|hiring|wanted|tanker|truck|station for|service station for|wholesale)\b/i;
 
@@ -144,7 +183,13 @@
   }
 
   function answer(q) {
-    return load().then(function (d) { return build(String(q || ''), d); }).catch(function () {
+    q = String(q || '');
+    return load().then(function (d) {
+      if (/\b(in|at|around|near)\b|station|cheapest|cheap/i.test(q) && !/near me|nearby|closest/i.test(q)) {
+        return loadStations().then(function (st) { return stationAnswer(q, d, st) || build(q, d); });
+      }
+      return build(q, d);
+    }).catch(function () {
       return { text: 'I couldn’t load the latest gas prices just now — open the Gas Prices page for the live sheet.', cta: CTA };
     });
   }

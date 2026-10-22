@@ -1042,7 +1042,7 @@ function directionsUrl(station) {
 
 function stationPopup(station) {
   const label = [station.brand, station.parish].filter(Boolean).join(' · ');
-  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p>${communityLinesForStation(station.id)}<a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
+  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p>${surveyLinesForStation(station)}${communityLinesForStation(station.id)}<a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
 }
 
 function escapeHtml(value) {
@@ -1114,7 +1114,58 @@ async function fetchOverpass() {
   throw lastError || new Error('All Overpass mirrors failed');
 }
 
+/* ── Official survey prices (Consumer Affairs Commission weekly survey, via Bussgas) ──
+   gas-station-prices.json is refreshed weekly by a GitHub Action. Survey stations are matched to
+   map stations by position (≈150 m); unmatched ones are added so every surveyed station shows. */
+let surveyMeta = null;
+const SURVEY_FUEL_LABEL = { '87': '87', '90': '90', diesel: 'Diesel', ulsd: 'ULSD' };
+function fmtSurveyDate(iso) {
+  const d = new Date(iso); if (isNaN(d)) return iso || '';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+async function loadSurvey() {
+  try {
+    const r = await fetch('/gas-station-prices.json', { cache: 'no-cache' });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d && Array.isArray(d.stations) && d.stations.length ? d : null;
+  } catch (e) { return null; }
+}
+function mergeSurvey(base, survey) {
+  if (!survey) return base;
+  surveyMeta = survey;
+  const list = base.slice(), used = new Set();
+  survey.stations.forEach(sv => {
+    let best = null, bd = 0.15;
+    list.forEach(st => {
+      if (used.has(st.id)) return;
+      const [la, lo] = stationCoords(st);
+      const d = haversineKm(sv.lat, sv.lon, la, lo);
+      if (d < bd) { bd = d; best = st; }
+    });
+    const rec = { prices: sv.prices, as_of: sv.as_of, name: sv.name, town: sv.town };
+    if (best) { best.survey = rec; used.add(best.id); if (!best.parish && sv.town) best.parish = sv.town; }
+    else { const ns = { id: 'cac_' + sv.id, name: sv.name, brand: '', parish: sv.town, lat: sv.lat, lng: sv.lon, survey: rec }; list.push(ns); used.add(ns.id); }
+  });
+  return list;
+}
+function surveyLinesForStation(station) {
+  const sv = station.survey;
+  if (!sv) return '';
+  const parts = Object.keys(SURVEY_FUEL_LABEL).filter(k => sv.prices[k] != null).map(k => '<strong>' + SURVEY_FUEL_LABEL[k] + ':</strong> J$' + Number(sv.prices[k]).toFixed(2));
+  if (!parts.length) return '';
+  return '<p style="font-size:12px;color:var(--text-2);margin:6px 0;line-height:1.7">' + parts.join(' · ') + '<br><span style="color:var(--text-3)">Official survey · week ending ' + escapeHtml(fmtSurveyDate(sv.as_of)) + '</span></p>';
+}
+
 async function loadStations() {
+  const survey = await loadSurvey();
+  let base = [];
+  try { base = await loadBaseStations(); } catch (e) { if (!survey) throw e; }
+  stations = mergeSurvey(base, survey);
+  return stations;
+}
+
+async function loadBaseStations() {
   // 1) Prefer a committed snapshot if it actually has data
   const snapshot = await fetch(STATION_SNAPSHOT_URL, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
   if (snapshot?.stations?.length) {
@@ -1288,7 +1339,10 @@ async function initStationLocator() {
     addStationMarkers();
     stationMap.invalidateSize();
     renderCommunityPrices(aggregateCommunityReports(reports));
-    document.getElementById('mapStatus').textContent = `${stations.length} station${stations.length === 1 ? '' : 's'} found · locations from OpenStreetMap`;
+    const nSv = stations.filter(s => s.survey).length;
+    document.getElementById('mapStatus').textContent = nSv
+      ? `${stations.length} stations · official prices for ${nSv} (week ending ${fmtSurveyDate(surveyMeta.survey_week_ending)}) · survey via Bussgas / CAC`
+      : `${stations.length} station${stations.length === 1 ? '' : 's'} found · locations from OpenStreetMap`;
   } catch (error) {
     document.getElementById('mapStatus').textContent = 'Could not load live station locations. Try again later.';
   }
@@ -1361,14 +1415,19 @@ function renderCheapestResults() {
 
   const candidates = stations.map(station => {
     const data = stationReportsIndex[station.id]?.[cheapestFuel];
-    if (!data || !data.prices.length) return null;
-    const avg = data.prices.reduce((a, b) => a + b, 0) / data.prices.length;
+    const svp = station.survey && station.survey.prices[cheapestFuel];
+    let price, latest = null, src = 'community';
+    if (data && data.prices.length) { price = data.prices.reduce((a, b) => a + b, 0) / data.prices.length; latest = data.latest; }
+    else if (svp != null) { price = Number(svp); src = 'survey'; }
+    else return null;
     const [lat, lng] = stationCoords(station);
     return {
       station,
-      price: avg,
+      price,
+      src,
       distanceKm: haversineKm(lastKnownLocation.lat, lastKnownLocation.lng, lat, lng),
-      latest: data.latest
+      latest,
+      asOf: station.survey && station.survey.as_of
     };
   }).filter(Boolean);
 
@@ -1391,7 +1450,7 @@ function renderCheapestResults() {
   `;
 
   if (!top.length) {
-    panel.innerHTML = header + `<div class="cheapest-empty">No community-reported ${COMMUNITY_FUEL_LABEL[cheapestFuel]} prices anywhere yet. Be the first to report one — tap a station on the map to get started!</div>`;
+    panel.innerHTML = header + `<div class="cheapest-empty">No prices for ${COMMUNITY_FUEL_LABEL[cheapestFuel]} anywhere yet. Be the first to report one — tap a station on the map to get started!</div>`;
   } else {
     const widenedNote = widened ? `<div class="cheapest-note">No reports within ${CHEAPEST_RADIUS_KM}km — showing the closest island-wide results instead.</div>` : '';
     const rows = top.map((c, i) => `
@@ -1399,7 +1458,7 @@ function renderCheapestResults() {
         <span class="cr-rank">${i + 1}</span>
         <span class="cr-info">
           <span class="cr-name">${escapeHtml(c.station.name)}</span>
-          <span class="cr-meta">${c.distanceKm.toFixed(1)} km away · ${freshnessLabel(c.latest).text}</span>
+          <span class="cr-meta">${c.distanceKm.toFixed(1)} km away · ${c.src === 'survey' ? 'Official survey · week ending ' + escapeHtml(fmtSurveyDate(c.asOf)) : freshnessLabel(c.latest).text}</span>
         </span>
         <span class="cr-price">J$${c.price.toFixed(2)}</span>
       </div>
