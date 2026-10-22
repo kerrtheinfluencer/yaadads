@@ -465,37 +465,59 @@ padding-top: 108px;
 <body>
 <div class="scroll-progress" id="scrollProgress"></div>
 
-<!-- ═══ NAV ═══ -->
-<nav>
-<a href="/" class="nav-logo">Yaad<em>Adz</em> <span style="font-size:14px;font-weight:500;color:rgba(255,255,255,.5)">⛽ Gas Prices</span></a>
-<div class="nav-spacer"></div>
-<a href="/" class="nav-link">Marketplace</a>
-<a href="/gas-prices.html" class="nav-link" style="color:var(--gold)">Gas Prices</a>
-</nav>
-
-<!-- ═══ HERO ═══ -->
-<section class="hero">
-<div class="hero-content">
-<div class="hero-eyebrow">⛽ Petrojam Official · Weekly Updates</div>
+<!-- ═══ HEADER: slim, so the numbers are on screen immediately ═══ -->
+<header class="g-top">
+<a class="g-back" href="/" aria-label="Back to Yaad Adz"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<div class="g-top-t">
 <h1>Jamaica <em>Fuel</em> Prices</h1>
-<p class="hero-sub">Track ex-refinery and estimated pump prices for gasoline, diesel, kerosene & LPG. Updated weekly from Petrojam.</p>
-<div class="last-updated"><span class="dot" id="lastUpdatedDot"></span> Last updated: <span id="lastUpdated">Loading...</span></div>
-<button class="hero-share-btn" id="shareBtn" type="button" aria-label="Share gas prices">🔗 Share prices</button>
-<div id="staleWarning" style="display:none;margin-top:12px;color:var(--gold);font-size:13px;background:rgba(244,195,0,.12);border:1px solid rgba(244,195,0,.3);border-radius:20px;padding:8px 18px"></div>
+<div class="last-updated"><span class="dot" id="lastUpdatedDot"></span><span id="lastUpdated">Loading...</span></div>
+</div>
+<button class="hero-share-btn g-share" id="shareBtn" type="button" aria-label="Share gas prices"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg></button>
+</header>
+<p class="g-sub">Official Petrojam prices, estimated pump prices, and what drivers are reporting at the pump — updated weekly.</p>
+<div id="staleWarning" class="g-stale" style="display:none"></div>
+
+<!-- ═══ MAIN TABS ═══ -->
+<div class="g-tabs" role="tablist" aria-label="Fuel prices sections" id="gTabs">
+<button type="button" class="g-tab active" role="tab" id="gtab-prices" aria-selected="true" aria-controls="gpanel-prices" data-gtab="prices"><span aria-hidden="true">💰</span>Prices</button>
+<button type="button" class="g-tab" role="tab" id="gtab-stations" aria-selected="false" aria-controls="gpanel-stations" data-gtab="stations"><span aria-hidden="true">📍</span>Stations</button>
+<button type="button" class="g-tab" role="tab" id="gtab-trends" aria-selected="false" aria-controls="gpanel-trends" data-gtab="trends"><span aria-hidden="true">📈</span>Trends</button>
+</div>
+
+<div class="wrap g-wrap">
+
+<!-- ═════════ PRICES ═════════ -->
+<section class="g-panel" id="gpanel-prices" role="tabpanel" aria-labelledby="gtab-prices">
+<div class="takeaway-card g-take"><div class="takeaway-icon" id="takeawayIcon">💡</div><p class="takeaway-text" id="takeawayText">Crunching this week's numbers…</p></div>
+
+<div class="g-fuelhero" id="fuelHero" aria-live="polite"><!-- Injected by JS: fuel picker + big pump price + 12-week line --></div>
+
+<div class="g-card g-calc" id="fillCalc">
+<div class="g-card-hd"><h2>What will it cost?</h2>
+<div class="g-seg" id="calcMode" role="tablist" aria-label="Calculator mode"><button type="button" class="active" data-mode="fill">Fill up</button><button type="button" data-mode="budget">I have J$</button></div></div>
+<div class="g-calc-in">
+<div class="g-chips" id="calcChips" role="group" aria-label="Litres"></div>
+<label class="g-calc-field"><span id="calcLabel">Litres</span><input id="calcInput" type="number" inputmode="decimal" min="1" step="1" value="40"></label>
+</div>
+<div class="g-calc-out" id="calcResult" aria-live="polite"></div>
+</div>
+
+<div class="g-card g-all">
+<div class="g-card-hd"><h2>All fuels</h2>
+<div class="price-tabs g-seg" role="tablist"><button type="button" class="price-tab active" data-tab="official">Official</button><button type="button" class="price-tab" data-tab="community">Reported at pump</button></div></div>
+<div class="g-list" id="priceCards" data-panel="official"><!-- Injected by JS --></div>
+<div class="price-grid g-community" id="communityPrices" data-panel="community" style="display:none"><!-- Injected by JS --></div>
+<p class="g-foot">Pump price = ex-refinery + about J$25/L typical margin. Stations vary.</p>
 </div>
 </section>
 
-<div class="wrap">
-
-<!-- ═══ STATION LOCATOR ═══ -->
-<section class="locator-section" id="station-locator">
-<div class="section-hd">
-<div>
-<h2 class="section-title">Find a Gas Station</h2>
-<p class="section-sub">Tap a station on the map, then just pick the fuel type and price to report it.</p>
+<!-- ═════════ STATIONS ═════════ -->
+<section class="g-panel" id="gpanel-stations" role="tabpanel" aria-labelledby="gtab-stations" hidden>
+<div class="locator-section" id="station-locator">
+<div class="g-actions">
+<button class="map-locate-btn g-act" type="button" id="locateMe" aria-label="Use my location"><span aria-hidden="true">📍</span> Near me</button>
+<button class="map-locate-btn map-cheapest-btn g-act g-act-gold" type="button" id="cheapestBtn" aria-label="Find cheapest gas near me"><span aria-hidden="true">💰</span> Cheapest</button>
 </div>
-</div>
-<div class="locator-grid">
 <div class="map-card">
 <div class="map-frame">
 <div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
@@ -504,24 +526,29 @@ padding-top: 108px;
 <button type="button" class="station-search-clear" id="stationSearchClear" aria-label="Clear search">✕</button>
 <div id="stationSearchResults" class="station-search-results"></div>
 </div>
-<button class="map-locate-btn" type="button" id="locateMe" aria-label="Use my location" title="Use my location">📍</button>
-<button class="map-locate-btn map-cheapest-btn" type="button" id="cheapestBtn" aria-label="Find cheapest gas near me" title="Find cheapest gas near me">💰</button>
 </div>
 <div class="map-status-bar" id="mapStatus">Loading station locations…</div>
 <div class="cheapest-panel" id="cheapestPanel" style="display:none"></div>
 </div>
-<div class="report-card">
-<h3 class="report-title">Report a price</h3>
+<button type="button" class="g-report-open" id="reportOpen"><span aria-hidden="true">✍️</span> Report a price<small>Help other drivers — takes 10 seconds</small></button>
+<div class="last-report" id="lastReportPanel" style="display:none"></div>
+</div>
+
+<!-- Report a price: a sheet that slides up as soon as a station is picked -->
+<div class="g-sheet-ov" id="reportOverlay"></div>
+<div class="report-card g-sheet" id="reportSheet" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+<div class="g-sheet-grab" aria-hidden="true"><span></span></div>
+<div class="g-sheet-hd"><h3 class="report-title" id="reportTitle">Report a price</h3><button type="button" class="g-sheet-x" id="reportClose" aria-label="Close">✕</button></div>
 <div class="selected-station" id="selectedStationDisplay">
 <span class="ss-icon">⛽</span>
-<div class="ss-body">
-<div class="ss-text" id="selectedStationText">Tap a station on the map or search above</div>
-</div>
+<div class="ss-body"><div class="ss-text" id="selectedStationText">Tap a station on the map or search above</div></div>
 </div>
 <form class="report-form" id="priceReportForm">
 <input type="hidden" id="reportStationId" name="station_id" required>
-<label>Fuel type<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
-<label>Price per litre (JMD)<input name="price" type="number" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
+<div class="g-form-row">
+<label>Fuel<select name="fuel_type" required><option value="87">Gasolene 87</option><option value="90">Gasolene 90</option><option value="diesel">Auto Diesel</option></select></label>
+<label>Price / litre (J$)<input name="price" type="number" inputmode="decimal" min="1" max="2000" step="0.01" placeholder="e.g. 235.50" required></label>
+</div>
 <label>Your name (optional)<input name="reporter_name" maxlength="80" placeholder="Anonymous is okay"></label>
 <!-- Honeypot: real users never fill this in; bots that auto-fill every field will -->
 <label style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
@@ -530,59 +557,19 @@ padding-top: 108px;
 <button class="report-submit" type="submit" id="reportSubmitBtn" disabled>Select a station first</button>
 <div class="report-note" id="reportStatus" role="status"></div>
 </form>
-<div class="last-report" id="lastReportPanel" style="display:none"></div>
-</div>
 </div>
 </section>
 
-<!-- ═══ PRICE CARDS ═══ -->
-<section class="price-section" id="pricing-section">
-<div class="section-hd">
-<div>
-<h2 class="section-title">Fuel Prices</h2>
-<p class="section-sub">Official Petrojam rates vs. what drivers are reporting at the pump right now.</p>
-</div>
-<div class="tank-toggle" id="tankToggle" role="tablist" aria-label="Tank size">
-<button type="button" class="tank-btn" data-size="30">30L</button>
-<button type="button" class="tank-btn active" data-size="40">40L</button>
-<button type="button" class="tank-btn" data-size="50">50L</button>
-</div>
-</div>
-<div class="price-tabs" role="tablist">
-<button type="button" class="price-tab active" data-tab="official">Official (Petrojam)</button>
-<button type="button" class="price-tab" data-tab="community">Community-reported</button>
-</div>
-<div class="price-grid" id="priceCards" data-panel="official">
-<!-- Injected by JS -->
-</div>
-<div class="price-grid" id="communityPrices" data-panel="community" style="display:none">
-<!-- Injected by JS -->
-</div>
-</section>
-
-<!-- ═══ TRENDS ═══ -->
-<section class="chart-section">
-<div class="section-hd">
-<div>
-<h2 class="section-title">Price Trends</h2>
-<p class="section-sub">Movement over the last 12 weeks</p>
-</div>
-<div class="chart-toggle" id="chartToggle" role="tablist" aria-label="Chart view">
-<button type="button" class="chart-tab active" data-chart="mainChart">By fuel</button>
-<button type="button" class="chart-tab" data-chart="comparisonChart">Compare all</button>
-</div>
-</div>
-<div class="chart-card">
+<!-- ═════════ TRENDS ═════════ -->
+<section class="g-panel" id="gpanel-trends" role="tabpanel" aria-labelledby="gtab-trends" hidden>
+<div class="g-trendchips" id="trendChips" aria-live="polite"></div>
+<div class="chart-section g-card">
+<div class="g-card-hd"><h2>Last 12 weeks</h2>
+<div class="chart-toggle g-seg" id="chartToggle" role="tablist" aria-label="Chart view"><button type="button" class="chart-tab active" data-chart="mainChart">By fuel</button><button type="button" class="chart-tab" data-chart="comparisonChart">Compare all</button></div></div>
+<div class="chart-card g-chart">
 <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
 <div class="chart-wrap" style="display:none"><canvas id="comparisonChart"></canvas></div>
 </div>
-</section>
-
-<!-- ═══ TAKEAWAY ═══ -->
-<section class="takeaway-section">
-<div class="takeaway-card">
-<div class="takeaway-icon" id="takeawayIcon">💡</div>
-<p class="takeaway-text" id="takeawayText">Crunching this week's numbers…</p>
 </div>
 </section>
 
@@ -691,46 +678,183 @@ function getTrendClass(diff) {
 let currentTankSize = 40;
 const chartInstances = {};
 
+let selectedFuel = null;
+let calcMode = 'fill';       // 'fill' = litres → cost,  'budget' = J$ → litres
+let calcValue = 40;
+
+function pumpOf(p) { return p.exRefinery + MARKUP_DEFAULT; }
+
+function sparkSvg(values) {
+  if (!values || values.length < 2) return '';
+  const w = 220, h = 54, pad = 4;
+  const min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+  const span = (max - min) || 1;
+  const pts = values.map((v, i) => [pad + (w - pad * 2) * i / (values.length - 1), h - pad - (h - pad * 2) * (v - min) / span]);
+  const d = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
+  const last = pts[pts.length - 1];
+  return '<svg class="g-spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="Price over the last ' + values.length + ' weeks">' +
+    '<path d="' + d + ' L' + last[0].toFixed(1) + ' ' + h + ' L' + pts[0][0].toFixed(1) + ' ' + h + ' Z" class="g-spark-fill"/>' +
+    '<path d="' + d + '" class="g-spark-line"/><circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3.5" class="g-spark-dot"/></svg>';
+}
+
+function renderFuelHero() {
+  const box = document.getElementById('fuelHero');
+  if (!box || !PRICES.length) return;
+  if (!selectedFuel || !PRICES.some(p => p.key === selectedFuel)) selectedFuel = (PRICES.find(p => p.key === '87') || PRICES[0]).key;
+  const p = PRICES.find(x => x.key === selectedFuel);
+  const pump = pumpOf(p);
+  const change = calcChange(p.exRefinery, PREV_WEEK[p.key]);
+  const w4 = calcChange(p.exRefinery, WEEK_4_AGO[p.key]);
+  const asOf = p.as_of || _dataMeta?.price_date || '';
+  const picker = PRICES.map(x => '<button type="button" class="g-fuelchip' + (x.key === p.key ? ' active' : '') + '" data-fuel="' + escapeHtml(x.key) + '" aria-pressed="' + (x.key === p.key) + '"><span aria-hidden="true">' + x.icon + '</span>' + escapeHtml(x.name.replace('Gasolene ', '')) + '</button>').join('');
+  const arrow = change.unavailable ? '' : '<span class="g-delta ' + change.class + '">' + change.text + ' <em>vs last week</em></span>';
+  box.innerHTML =
+    '<div class="g-picker" role="group" aria-label="Choose a fuel">' + picker + '</div>' +
+    '<div class="g-hero-card price-card ' + p.class + '">' +
+      '<div class="g-hero-lab">' + escapeHtml(p.name) + ' · estimated at the pump</div>' +
+      '<div class="g-hero-price"><span class="currency">J$</span>' + pump.toFixed(0) + '<small>/ litre</small></div>' +
+      arrow +
+      '<div class="g-hero-meta"><span>Ex-refinery <b>' + fmtPrice(p.exRefinery) + '</b></span>' + (asOf ? '<span>as of ' + escapeHtml(asOf) + '</span>' : '') + (!w4.unavailable ? '<span>4 wk: <b class="' + w4.class + '">' + (w4.diff > 0 ? '+' : w4.diff < 0 ? '−' : '') + 'J$' + Math.abs(w4.diff).toFixed(2) + '</b></span>' : '') + '</div>' +
+      sparkSvg(HISTORY[p.key]) +
+    '</div>';
+}
+
 function renderPriceCards() {
   const container = document.getElementById('priceCards');
   container.innerHTML = PRICES.map(p => {
-    const pump = p.exRefinery + MARKUP_DEFAULT;
     const change = calcChange(p.exRefinery, PREV_WEEK[p.key]);
-    const w4 = calcChange(p.exRefinery, WEEK_4_AGO[p.key]);
-    const asOf = p.as_of || _dataMeta?.price_date || '';
-    return `
-      <div class="price-card ${p.class}">
-        <div class="fuel-icon">${p.icon}</div>
-        <div class="fuel-name">${p.name}</div>
-        <div class="fuel-price"><span class="currency">J$</span>${p.exRefinery.toFixed(2)}</div>
-        <div class="fuel-pump">Pump est: <strong>${fmtPriceInt(pump)}</strong>/L</div>
-        <div class="fuel-tank" data-tank-line data-per-litre="${pump}">Full tank (<span data-tank-size>${currentTankSize}</span>L): <strong>${fmtPriceInt(pump * currentTankSize)}</strong></div>
-        <div class="fuel-ex">Ex-refinery${asOf ? ' · as of ' + escapeHtml(asOf) : ''}</div>
-        <div class="change-badge ${change.class}"${change.unavailable ? ' title="No prior-week figure was found in the data source"' : ''}>${change.text}</div>
-        ${!w4.unavailable ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px">4wk: ${w4.text}</div>` : ''}
-      </div>
-    `;
+    return '<button type="button" class="g-row ' + p.class + (p.key === selectedFuel ? ' active' : '') + '" data-fuel="' + escapeHtml(p.key) + '">' +
+      '<span class="g-row-ic" aria-hidden="true">' + p.icon + '</span>' +
+      '<span class="g-row-n"><b>' + escapeHtml(p.name) + '</b><small>Ex-refinery ' + fmtPrice(p.exRefinery) + '</small></span>' +
+      '<span class="g-row-p"><b>' + fmtPriceInt(pumpOf(p)) + '</b><small class="' + (change.unavailable ? 'same' : change.class) + '">' + (change.unavailable ? '—' : getTrendArrow(change.diff) + ' ' + Math.abs(change.diff).toFixed(2)) + '</small></span></button>';
   }).join('');
+  renderFuelHero();
+  renderCalc();
 }
 
-function applyTankSize(size) {
-  currentTankSize = size;
-  document.querySelectorAll('[data-tank-line]').forEach(el => {
-    const perLitre = Number(el.dataset.perLitre);
-    el.querySelector('[data-tank-size]').textContent = size;
-    el.querySelector('strong').textContent = fmtPriceInt(perLitre * size);
+function selectFuel(key) {
+  selectedFuel = key;
+  renderFuelHero();
+  document.querySelectorAll('#priceCards .g-row').forEach(r => r.classList.toggle('active', r.dataset.fuel === key));
+  renderCalc();
+}
+
+/* ── "What will it cost?" ─────────────────────────────────────── */
+function renderCalc() {
+  const chips = document.getElementById('calcChips'), out = document.getElementById('calcResult');
+  const input = document.getElementById('calcInput'), label = document.getElementById('calcLabel');
+  if (!chips || !out) return;
+  const p = PRICES.find(x => x.key === selectedFuel);
+  if (!p) return;
+  const pump = pumpOf(p);
+  const presets = calcMode === 'fill' ? [20, 30, 40, 50] : [3000, 5000, 10000, 15000];
+  chips.innerHTML = presets.map(v => '<button type="button" class="g-chip' + (v === calcValue ? ' active' : '') + '" data-v="' + v + '">' + (calcMode === 'fill' ? v + ' L' : 'J$' + v.toLocaleString()) + '</button>').join('');
+  label.textContent = calcMode === 'fill' ? 'Litres' : 'Budget (J$)';
+  if (document.activeElement !== input) input.value = calcValue;
+  const n = Number(calcValue) || 0;
+  out.innerHTML = calcMode === 'fill'
+    ? '<span>' + n + ' L of ' + escapeHtml(p.name) + '</span><strong>' + fmtPriceInt(pump * n) + '</strong>'
+    : '<span>J$' + n.toLocaleString() + ' buys about</span><strong>' + (n / pump).toFixed(1) + ' L</strong><em>of ' + escapeHtml(p.name) + '</em>';
+}
+
+function initCalc() {
+  const modes = document.getElementById('calcMode'), chips = document.getElementById('calcChips'), input = document.getElementById('calcInput');
+  if (!modes) return;
+  modes.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    calcMode = b.dataset.mode;
+    calcValue = calcMode === 'fill' ? 40 : 10000;
+    modes.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+    renderCalc();
+  });
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('.g-chip'); if (!b) return;
+    calcValue = Number(b.dataset.v);
+    renderCalc();
+  });
+  input.addEventListener('input', () => { calcValue = Math.max(0, Number(input.value) || 0); renderCalc(); });
+  document.addEventListener('click', (e) => {
+    const f = e.target.closest('[data-fuel]');
+    if (f && f.closest('#fuelHero, #priceCards')) selectFuel(f.dataset.fuel);
   });
 }
 
-function initTankToggle() {
-  const toggle = document.getElementById('tankToggle');
-  if (!toggle) return;
-  toggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.tank-btn');
-    if (!btn) return;
-    toggle.querySelectorAll('.tank-btn').forEach(b => b.classList.toggle('active', b === btn));
-    applyTankSize(Number(btn.dataset.size));
+/* ── tabs: Prices · Stations · Trends (deep-linkable with #stations) ── */
+function showGTab(name, opts) {
+  if (!document.getElementById('gpanel-' + name)) name = 'prices';
+  document.querySelectorAll('.g-panel').forEach(pn => { pn.hidden = pn.id !== 'gpanel-' + name; });
+  document.querySelectorAll('.g-tab').forEach(t => { const on = t.dataset.gtab === name; t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  if (!(opts && opts.noHash)) { try { history.replaceState(null, '', name === 'prices' ? location.pathname : '#' + name); } catch (e) {} }
+  if (name === 'stations' && stationMap) { setTimeout(() => stationMap.invalidateSize(), 60); setTimeout(() => stationMap.invalidateSize(), 400); }
+  if (name === 'trends') Object.values(chartInstances).forEach(c => { try { c.resize(); } catch (e) {} });
+  if (!(opts && opts.noScroll)) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function initGTabs() {
+  const tabs = document.getElementById('gTabs');
+  if (!tabs) return;
+  tabs.addEventListener('click', (e) => { const b = e.target.closest('.g-tab'); if (b) showGTab(b.dataset.gtab); });
+  tabs.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const list = Array.from(tabs.querySelectorAll('.g-tab')), i = list.indexOf(document.activeElement);
+    if (i < 0) return;
+    const n = list[(i + (e.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
+    n.focus(); showGTab(n.dataset.gtab, { noScroll: true });
   });
+  const h = (location.hash || '').replace('#', '');
+  showGTab(['stations', 'trends'].includes(h) ? h : 'prices', { noHash: true, noScroll: true });
+  window.addEventListener('hashchange', () => { const x = (location.hash || '').replace('#', ''); showGTab(['stations', 'trends'].includes(x) ? x : 'prices', { noHash: true, noScroll: true }); });
+}
+
+/* ── report sheet ─────────────────────────────────────────────── */
+function openReport() {
+  const sheet = document.getElementById('reportSheet'), ov = document.getElementById('reportOverlay');
+  if (!sheet) return;
+  sheet.classList.add('open'); ov.classList.add('open');
+  document.body.classList.add('g-sheet-open');
+  const price = sheet.querySelector('input[name="price"]');
+  setTimeout(() => { if (price && document.getElementById('reportStationId').value) price.focus(); }, 350);
+}
+function closeReport() {
+  const sheet = document.getElementById('reportSheet'), ov = document.getElementById('reportOverlay');
+  if (!sheet) return;
+  sheet.classList.remove('open'); ov.classList.remove('open');
+  document.body.classList.remove('g-sheet-open');
+}
+function initReportSheet() {
+  document.getElementById('reportClose').addEventListener('click', closeReport);
+  document.getElementById('reportOverlay').addEventListener('click', closeReport);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReport(); });
+  document.getElementById('reportOpen').addEventListener('click', () => {
+    if (document.getElementById('reportStationId').value) { openReport(); return; }
+    const st = document.getElementById('mapStatus');
+    st.textContent = '👆 Tap a station on the map (or search for it) — then enter the price.';
+    st.classList.add('g-nudge'); setTimeout(() => st.classList.remove('g-nudge'), 1800);
+    const si = document.getElementById('stationSearchInput'); if (si) si.focus();
+  });
+  document.addEventListener('click', (e) => { if (e.target.closest('#ssChangeLink')) closeReport(); });
+  // picking a station (map marker or search result) opens the sheet right away
+  const orig = window.selectStationForReport;
+  window.selectStationForReport = function (station) { orig.apply(this, arguments); if (station) openReport(); };
+  // after a successful report, close the sheet and confirm on the map
+  const origStatus = window.setReportStatus;
+  window.setReportStatus = function (message, type) {
+    origStatus.apply(this, arguments);
+    if (type === 'success') {
+      const st = document.getElementById('mapStatus'); if (st) st.textContent = '✅ Thanks! Your price is live for everyone.';
+      setTimeout(closeReport, 2200);
+    }
+  };
+}
+
+/* ── trends summary chips ─────────────────────────────────────── */
+function renderTrendChips() {
+  const box = document.getElementById('trendChips');
+  if (!box) return;
+  box.innerHTML = PRICES.filter(p => HISTORY[p.key] && HISTORY[p.key].length > 1).slice(0, 4).map(p => {
+    const arr = HISTORY[p.key], first = arr[0], last = arr[arr.length - 1], d = last - first;
+    const cls = Math.abs(d) < 0.01 ? 'same' : d > 0 ? 'up' : 'down';
+    return '<div class="g-trendchip ' + cls + '"><span>' + p.icon + ' ' + escapeHtml(p.name.replace('Gasolene ', '')) + '</span><b>' + (d > 0 ? '▲' : d < 0 ? '▼' : '→') + ' J$' + Math.abs(d).toFixed(2) + '</b><small>over ' + arr.length + ' weeks</small></div>';
+  }).join('');
 }
 
 function initPriceTabs() {
@@ -741,7 +865,7 @@ function initPriceTabs() {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.toggle('active', t === tab));
       const showCommunity = tab.dataset.tab === 'community';
-      officialPanel.style.display = showCommunity ? 'none' : 'grid';
+      officialPanel.style.display = showCommunity ? 'none' : 'flex';
       communityPanel.style.display = showCommunity ? 'grid' : 'none';
     });
   });
@@ -768,7 +892,7 @@ function initChartToggle() {
 // ═══════════════════════════════════════════════════════════
 function initCharts() {
   Chart.defaults.font.family = 'Outfit';
-  Chart.defaults.color = '#555';
+  Chart.defaults.color = 'rgba(255,255,255,.85)';
 
   const ctx1 = document.getElementById('mainChart').getContext('2d');
   chartInstances.mainChart = new Chart(ctx1, {
@@ -796,7 +920,7 @@ function initCharts() {
       scales: {
         y: {
           beginAtZero: false,
-          grid: { color: 'rgba(0,0,0,.04)' },
+          grid: { color: 'rgba(255,255,255,.12)' },
           ticks: { callback: (v) => 'J$' + v.toFixed(0) }
         },
         x: { grid: { display: false } }
@@ -827,7 +951,7 @@ function initCharts() {
       },
       scales: {
         y: {
-          grid: { color: 'rgba(0,0,0,.04)' },
+          grid: { color: 'rgba(255,255,255,.12)' },
           ticks: { callback: (v) => 'J$' + v.toFixed(0) }
         },
         x: { grid: { display: false } }
@@ -1706,8 +1830,10 @@ function initScrollProgress() {
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('lastUpdated').textContent = 'Loading from Petrojam…';
   initScrollProgress();
+  initGTabs();
   initPriceTabs();
-  initTankToggle();
+  initCalc();
+  initReportSheet();
   initChartToggle();
   try {
     const data = await loadPriceData();
@@ -1723,6 +1849,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkDataFreshness(data);
     renderPriceCards();
     renderInsights();
+    renderTrendChips();
     initCharts();
   } catch (e) {
     console.error(e);
@@ -1742,8 +1869,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           await navigator.share({ title: 'Jamaica Gas Prices — Yaad Adz', text: shareText, url: shareUrl });
         } else {
           await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
-          shareBtn.textContent = '✓ Link copied!';
-          setTimeout(function() { shareBtn.textContent = '🔗 Share prices'; }, 2200);
+          shareBtn.setAttribute('aria-label','Link copied');shareBtn.style.color='#ffd27a';
+          setTimeout(function() { shareBtn.setAttribute('aria-label','Share gas prices');shareBtn.style.color=''; }, 2200);
         }
       } catch (e) { /* user cancelled the share sheet */ }
     });
