@@ -1,0 +1,30 @@
+name: Probe Bussgas data (manual)
+
+# One-off, manual. Fetches the Bussgas dashboard and its map-content feed once for a few
+# map positions and saves the raw responses so we can see exactly how station prices are
+# delivered. Nothing is published to the site. Run it from Actions → "Probe Bussgas data".
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch raw responses (polite, a few requests only)
+        run: |
+          mkdir -p probe
+          UA="YaadAdz-probe/1.0 (+https://yaadadz.com; one-off check)"
+          curl -sS -L -m 30 -A "$UA" -D probe/dashboard.headers -o probe/dashboard.html "https://bussgasja.com/bussgas/dashboard" || true
+          i=0
+          for pos in "18.1096 -77.2975 9" "17.9970 -76.7936 12" "18.4762 -77.8939 12" "18.0179 -77.4981 12"; do
+            set -- $pos; i=$((i+1)); sleep 3
+            curl -sS -L -m 30 -A "$UA" -H "HX-Request: true" -D probe/map$i.headers -o probe/map$i.body \
+              "https://bussgasja.com/bussgas/map-content?lat=$1&lon=$2&zoom=$3" || true
+          done
+          ls -la probe
+          for f in probe/*.headers; do echo "== $f"; head -12 "$f"; done
+          for f in probe/map*.body; do echo "== $f"; head -c 1500 "$f"; echo; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bussgas-probe
+          path: probe/
