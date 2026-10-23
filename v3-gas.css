@@ -390,3 +390,20 @@ body.g-sheet-open { overflow: hidden; }
 .g-wrap .map-status-bar:empty { display: none; }
 .g-wrap .map-status-bar:not(:empty) { margin-top: 10px; padding: 10px 14px; border-radius: 18px; background: rgba(255,255,255,.1); color: #fff; }
 .g-wrap .cheapest-panel { margin-top: 10px; }
+
+/* station card — type in the price you saw */
+.st-own { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); }
+.st-confirm-box > .st-own:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.st-own-l { display: block; margin-bottom: 8px; font: 700 13.5px var(--v3-font, system-ui); color: #fff; }
+.st-own-row { display: flex; gap: 8px; align-items: stretch; }
+.st-own-fuel { flex: none; height: 46px; padding: 0 12px; border: 0; border-radius: 999px; color: #fff; font: 700 14px var(--v3-font, system-ui); background: rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.3); }
+.st-own-fuel option { color: #111; }
+.st-own-in { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; height: 46px; padding: 0 14px; border-radius: 999px; background: rgba(0,0,0,.28); box-shadow: inset 0 1px 3px rgba(0,0,0,.35); }
+.st-own-in b { color: #ffd45c; font: 800 14px var(--v3-font, system-ui); }
+.st-own-price { flex: 1; min-width: 0; width: 100%; border: 0; outline: 0; background: none; color: #fff; font: 700 17px var(--v3-font, system-ui); }
+.st-own-price::placeholder { color: rgba(255,255,255,.4); }
+.st-own-in:focus-within { box-shadow: inset 0 1px 3px rgba(0,0,0,.35), 0 0 0 3px rgba(255,210,122,.5); }
+.st-own-price.bad { color: #ffb4b4; }
+.st-own-go { flex: none; height: 46px; padding: 0 18px; border: 0; border-radius: 999px; font: 800 14px var(--v3-font, system-ui); color: #1a1405; cursor: pointer; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); transition: transform .3s var(--v3-spring); }
+.st-own-go:active { transform: scale(.94); } .st-own-go:disabled { opacity: .6; }
+@media (max-width: 360px) { .st-own-row { flex-wrap: wrap; } .st-own-in { flex-basis: 100%; order: 3; } .st-own-fuel { flex: 1; } }

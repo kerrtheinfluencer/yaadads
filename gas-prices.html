@@ -1055,9 +1055,35 @@ function confirmButtonsForStation(station) {
     if (price == null || price < REPORT_PRICE_MIN || price > REPORT_PRICE_MAX) return '';
     return '<button type="button" class="st-confirm" data-station="' + escapeHtml(station.id) + '" data-fuel="' + f + '" data-price="' + price.toFixed(2) + '">✓ ' + (SURVEY_FUEL_LABEL[f] || f) + ' · J$' + price.toFixed(2) + '</button>';
   }).join('');
-  if (!chips) return '';
-  return '<div class="st-confirm-box"><div class="st-confirm-t">Paying this today? Tap to confirm</div><div class="st-confirm-row">' + chips + '</div></div>';
+  const opts = COMMUNITY_FUELS.map(f => '<option value="' + f + '">' + (SURVEY_FUEL_LABEL[f] || f) + '</option>').join('');
+  const custom = '<form class="st-own" data-station="' + escapeHtml(station.id) + '" novalidate><span class="st-own-l">' + (chips ? 'Different price on the pump?' : 'What is the pump price?') + '</span>' +
+    '<div class="st-own-row"><select class="st-own-fuel" aria-label="Fuel type">' + opts + '</select>' +
+    '<label class="st-own-in"><b>J$</b><input class="st-own-price" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="Price you saw at the pump"></label>' +
+    '<button type="submit" class="st-own-go">Send</button></div></form>';
+  return '<div class="st-confirm-box">' + (chips ? '<div class="st-confirm-t">Paying this today? Tap to confirm</div><div class="st-confirm-row">' + chips + '</div>' : '') + custom + '</div>';
 }
+
+async function sendOwnPrice(form) {
+  const station = stations.find(x => x.id === form.dataset.station);
+  const fuel = form.querySelector('.st-own-fuel').value;
+  const input = form.querySelector('.st-own-price'), go = form.querySelector('.st-own-go');
+  const price = parseFloat(String(input.value).replace(/[^0-9.]/g, ''));
+  const status = document.getElementById('mapStatus');
+  const say = (m) => { if (status) status.textContent = m; };
+  if (!station) return;
+  if (!(price >= REPORT_PRICE_MIN && price <= REPORT_PRICE_MAX)) { input.classList.add('bad'); input.focus(); say('Enter a price between J$' + REPORT_PRICE_MIN + ' and J$' + REPORT_PRICE_MAX + '.'); return; }
+  input.classList.remove('bad');
+  if (cooldownRemainingMs(cooldownKey(station.id, fuel)) > 0) { say('You already sent a ' + (SURVEY_FUEL_LABEL[fuel] || fuel) + ' price for this station recently.'); return; }
+  go.disabled = true; go.textContent = 'Sending…';
+  try {
+    await postReportToSupabase({ station_id: station.id, station_name: station.name, lat: station.lat, lng: station.lng,
+      fuel_type: fuel, price, reporter_name: 'Entered on map', reported_at: new Date().toISOString() });
+    setCooldown(cooldownKey(station.id, fuel));
+    say('Thanks! ' + (SURVEY_FUEL_LABEL[fuel] || fuel) + ' at J$' + price.toFixed(2) + ' is live for everyone.');
+    await refreshCommunityData();
+  } catch (e) { go.disabled = false; go.textContent = 'Send'; say('Could not send that — check your connection and try again.'); }
+}
+document.addEventListener('submit', (e) => { const f = e.target.closest && e.target.closest('.st-own'); if (f) { e.preventDefault(); sendOwnPrice(f); } });
 
 async function confirmStationPrice(btn) {
   const station = stations.find(x => x.id === btn.dataset.station);
