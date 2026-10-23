@@ -460,6 +460,7 @@ padding-top: 108px;
 }
 </style>
 <link rel="stylesheet" href="/v3-gas.css">
+<script src="/js/gas-est.js"></script>
 <base target="_blank">
 </head>
 <body>
@@ -1149,12 +1150,26 @@ function mergeSurvey(base, survey) {
   });
   return list;
 }
+/* hybrid price: survey price + national move since the survey week (see js/gas-est.js) */
+function surveyEst(station, fuel) {
+  const sv = station.survey;
+  if (!sv || sv.prices[fuel] == null) return null;
+  const base = Number(sv.prices[fuel]);
+  const e = (window.YaadGasEst && _dataMeta) ? window.YaadGasEst.estimate(_dataMeta, fuel, base, sv.as_of) : null;
+  return e ? { price: e.price, est: e.est, survey: base } : { price: base, est: false, survey: base };
+}
 function surveyLinesForStation(station) {
   const sv = station.survey;
   if (!sv) return '';
-  const parts = Object.keys(SURVEY_FUEL_LABEL).filter(k => sv.prices[k] != null).map(k => '<strong>' + SURVEY_FUEL_LABEL[k] + ':</strong> J$' + Number(sv.prices[k]).toFixed(2));
-  if (!parts.length) return '';
-  return '<p style="font-size:12px;color:var(--text-2);margin:6px 0;line-height:1.7">' + parts.join(' · ') + '<br><span style="color:var(--text-3)">Official survey · week ending ' + escapeHtml(fmtSurveyDate(sv.as_of)) + '</span></p>';
+  const keys = Object.keys(SURVEY_FUEL_LABEL).filter(k => sv.prices[k] != null);
+  if (!keys.length) return '';
+  let anyEst = false;
+  const parts = keys.map(k => {
+    const e = surveyEst(station, k);
+    if (e.est) anyEst = true;
+    return '<strong>' + SURVEY_FUEL_LABEL[k] + ':</strong> ' + (e.est ? '≈ ' : '') + 'J$' + e.price.toFixed(2) + (e.est ? ' <span style="color:var(--text-3)">(survey ' + e.survey.toFixed(2) + ')</span>' : '');
+  });
+  return '<p style="font-size:12px;color:var(--text-2);margin:6px 0;line-height:1.7">' + parts.join('<br>') + '<br><span style="color:var(--text-3)">' + (anyEst ? 'Estimated today from the official survey (week ending ' : 'Official survey · week ending ') + escapeHtml(fmtSurveyDate(sv.as_of)) + (anyEst ? ') plus this week’s fuel price change' : '') + '</span></p>';
 }
 
 async function loadStations() {
@@ -1418,7 +1433,7 @@ function renderCheapestResults() {
     const svp = station.survey && station.survey.prices[cheapestFuel];
     let price, latest = null, src = 'community';
     if (data && data.prices.length) { price = data.prices.reduce((a, b) => a + b, 0) / data.prices.length; latest = data.latest; }
-    else if (svp != null) { price = Number(svp); src = 'survey'; }
+    else if (svp != null) { const e = surveyEst(station, cheapestFuel); price = e.price; src = e.est ? 'est' : 'survey'; }
     else return null;
     const [lat, lng] = stationCoords(station);
     return {
@@ -1458,9 +1473,9 @@ function renderCheapestResults() {
         <span class="cr-rank">${i + 1}</span>
         <span class="cr-info">
           <span class="cr-name">${escapeHtml(c.station.name)}</span>
-          <span class="cr-meta">${c.distanceKm.toFixed(1)} km away · ${c.src === 'survey' ? 'Official survey · week ending ' + escapeHtml(fmtSurveyDate(c.asOf)) : freshnessLabel(c.latest).text}</span>
+          <span class="cr-meta">${c.distanceKm.toFixed(1)} km away · ${c.src === 'est' ? 'Estimated today · survey week ending ' + escapeHtml(fmtSurveyDate(c.asOf)) : c.src === 'survey' ? 'Official survey · week ending ' + escapeHtml(fmtSurveyDate(c.asOf)) : freshnessLabel(c.latest).text}</span>
         </span>
-        <span class="cr-price">J$${c.price.toFixed(2)}</span>
+        <span class="cr-price">${c.src === 'est' ? '≈ ' : ''}J$${c.price.toFixed(2)}</span>
       </div>
     `).join('');
     panel.innerHTML = header + widenedNote + rows;

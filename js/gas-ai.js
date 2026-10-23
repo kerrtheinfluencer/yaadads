@@ -46,13 +46,15 @@
       if (hits.length > 8 || (!hits.length)) hits = [];
     }
     if (!hits.length) return null;
-    var priced = hits.filter(function (x) { return x.prices[key] != null; }).sort(function (a, b) { return a.prices[key] - b.prices[key]; });
+    var E = window.YaadGasEst, anyEst = false;
+    hits.forEach(function (x) { var e = x.prices[key] != null && E ? E.estimate(d, key, x.prices[key], x.as_of || st.survey_week_ending) : null; x._p = e ? e.price : x.prices[key]; x._e = !!(e && e.est); if (x._e) anyEst = true; });
+    var priced = hits.filter(function (x) { return x._p != null; }).sort(function (a, b) { return a._p - b._p; });
     var label = { '87': '87', '90': '90', diesel: 'Diesel', ulsd: 'ULSD' }[key];
     var week = fmtDay(st.survey_week_ending);
     if (!priced.length) return { text: 'I found ' + hits.length + ' station' + (hits.length === 1 ? '' : 's') + ' there but none list a ' + label + ' price in the latest survey.', cta: CTA_ST };
-    var lines = priced.slice(0, 5).map(function (x, i) { return (i + 1) + '. ' + x.name + (x.town ? ' (' + x.town + ')' : '') + ' — ' + j2(x.prices[key]); });
+    var lines = priced.slice(0, 5).map(function (x, i) { return (i + 1) + '. ' + x.name + (x.town ? ' (' + x.town + ')' : '') + ' — ' + (x._e ? '≈ ' : '') + j2(x._p); });
     var head = townHit ? '📍 ' + label + ' prices in ' + townHit.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) + ' (cheapest first):' : '📍 ' + label + ' at the station' + (priced.length > 1 ? 's' : '') + ' I found:';
-    return { text: head + '\n' + lines.join('\n') + (priced.length > 5 ? '\n…and ' + (priced.length - 5) + ' more on the map.' : '') + '\n\nOfficial survey, week ending ' + week + ' (via Bussgas / CAC). Station prices can change — check the pump.' + (f.explicit ? '' : '\nI assumed 87 — say “90” or “diesel” for others.'), cta: CTA_ST };
+    return { text: head + '\n' + lines.join('\n') + (priced.length > 5 ? '\n…and ' + (priced.length - 5) + ' more on the map.' : '') + '\n\n' + (anyEst ? 'Estimated for today: the official survey (week ending ' + week + ') plus this week’s fuel price change' : 'Official survey, week ending ' + week) + ' (via Bussgas / CAC). Check the pump — stations can differ.' + (f.explicit ? '' : '\nI assumed 87 — say “90” or “diesel” for others.'), cta: CTA_ST };
   }
 
   var GAS_WORDS = /\b(gas|gasoline|gasolene|petrol|fuel|diesel|ulsd|kerosene|kero|propane|butane|lpg|petrojam|fill\s?-?up|fillup|pump price|octane|(?:87|90)\s*(?:gas|octane|fuel)|cooking gas)\b|\d\s*(?:litres?|liters?|ltrs?|gallons?)\b|\b(?:87|90)\s*(?:vs\.?|or|versus|and)\s*(?:87|90)\b/i;
