@@ -2383,12 +2383,18 @@ const AiChat=(function(){
     const sheet=document.getElementById('aiSheet');if(!sheet)return;
     const vv=window.visualViewport;
     const kb=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;
-    if(kb>140){
+    if(kb>140&&vv){
+      /* pin the sheet to the VISIBLE area (above the keyboard + its suggestion bar) — iOS keeps the
+         layout viewport tall and scrolls it, so bottom:0 + a computed height left a gap with the page showing through */
       sheet.style.setProperty('--ai-kb',Math.round(kb)+'px');
       sheet.classList.add('ai-sheet-keyboard-open');
+      sheet.style.top=Math.round(vv.offsetTop+8)+'px';
+      sheet.style.bottom='auto';
+      sheet.style.height=Math.max(240,Math.round(vv.height-8))+'px';
     }else{
       sheet.style.removeProperty('--ai-kb');
       sheet.classList.remove('ai-sheet-keyboard-open');
+      sheet.style.removeProperty('top');sheet.style.removeProperty('bottom');sheet.style.removeProperty('height');
     }
   }
   function syncClearBtn(){
@@ -2525,6 +2531,7 @@ function openAiSheet(prefill) {
   document.body.style.overflow = 'hidden';
   document.body.classList.add('ai-sheet-open');
   sheet.classList.remove('ai-sheet-keyboard-open');
+  sheet.style.removeProperty('top'); sheet.style.removeProperty('bottom'); sheet.style.removeProperty('height');
 
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('mnSearch')?.classList.add('active');
@@ -2554,6 +2561,7 @@ function closeAiSheet() {
   const sheet = document.getElementById('aiSheet');
   const overlay = document.getElementById('aiSheetOverlay');
   sheet.classList.remove('open', 'ai-sheet-keyboard-open');
+  sheet.style.removeProperty('top'); sheet.style.removeProperty('bottom'); sheet.style.removeProperty('height');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
   document.body.classList.remove('ai-sheet-open', 'ai-sheet-keyboard-open');
