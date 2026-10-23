@@ -529,12 +529,13 @@ padding-top: 108px;
 <div class="map-frame">
 <div id="stationMap" aria-label="Map of Jamaican gas stations"></div>
 <div class="map-overlay-search" id="stationSearch">
-<input type="text" id="stationSearchInput" placeholder="Search stations…" autocomplete="off" aria-label="Search for a gas station">
+<svg class="g-search-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+<input type="text" id="stationSearchInput" placeholder="Search station, town or brand" autocomplete="off" aria-label="Search for a gas station">
 <button type="button" class="station-search-clear" id="stationSearchClear" aria-label="Clear search">✕</button>
 <div id="stationSearchResults" class="station-search-results"></div>
 </div>
 </div>
-<div class="map-status-bar" id="mapStatus">Loading station locations…</div>
+<div class="map-status-bar" id="mapStatus" aria-live="polite"></div>
 <div class="cheapest-panel" id="cheapestPanel" style="display:none"></div>
 </div>
 <section class="g-stcard" id="stationCard" hidden aria-live="polite"></section>
@@ -1448,9 +1449,7 @@ async function initStationLocator() {
     stationMap.invalidateSize();
     renderCommunityPrices(aggregateCommunityReports(reports));
     const nSv = stations.filter(s => s.survey).length;
-    document.getElementById('mapStatus').textContent = nSv
-      ? `${stations.length} stations · official prices for ${nSv} (week ending ${fmtSurveyDate(surveyMeta.survey_week_ending)}) · survey via Bussgas / CAC`
-      : `${stations.length} station${stations.length === 1 ? '' : 's'} found`;
+    document.getElementById('mapStatus').textContent = '';
   } catch (error) {
     document.getElementById('mapStatus').textContent = 'Could not load live station locations. Try again later.';
   }

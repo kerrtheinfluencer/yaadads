@@ -344,6 +344,7 @@ var SITE_UPDATES = {
       body: 'The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Listing pages now open on a big photo with a glass info panel and a floating contact bar. Nothing about how the app works has changed.',
       date: 'Oct 17, 2026',
       notes: [
+        'Changed: the gas station map and search have a new premium look — one glass card, a cleaner search bar, gold station clusters and glass zoom buttons',
         'Fixed: the Yaad Brain chat now stays snug against the keyboard on iPhone, with no gap showing the page behind',
         'Changed: smoother scrolling and animations — listings, inbox and chat now scroll without stutter on older phones',
         'New: tap “✓ confirm” on a station to confirm today’s price in one tap',

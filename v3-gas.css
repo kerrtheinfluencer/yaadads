@@ -358,3 +358,35 @@ body.g-sheet-open { overflow: hidden; }
   #gpanel-prices .g-ask { grid-column: 1 / -1; }
   .g-picker { margin: 0; padding: 2px 0 4px; flex-wrap: wrap; overflow: visible; }
 }
+
+/* ═══ Stations — premium map card ═══
+   One glass card: a search pill on top, the map inset below with rounded corners, glass zoom, gold clusters. */
+.g-wrap .map-card { padding: 10px; border-radius: 36px; overflow: visible;
+  background: var(--v3-fill), rgba(6,34,30,.72); box-shadow: var(--v3-rim), var(--v3-shadow); }
+.g-wrap .map-frame { display: flex; flex-direction: column; gap: 10px; }
+.g-wrap .map-overlay-search { margin: 0; z-index: 700; }
+.g-wrap .map-overlay-search .g-search-ic { position: absolute; left: 18px; top: 26px; transform: translateY(-50%); color: #ffd45c; pointer-events: none; z-index: 1; }
+.g-wrap .map-overlay-search input { height: 52px; padding: 0 46px 0 48px; background: rgba(255,255,255,.1); -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.08); transition: box-shadow .3s, background .3s; }
+.g-wrap .map-overlay-search input:focus { background: rgba(255,255,255,.16); box-shadow: inset 0 1px 1px rgba(255,255,255,.4), 0 0 0 3px rgba(255,210,122,.5); }
+.g-wrap .station-search-clear { top: 26px; right: 12px; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: rgba(255,255,255,.16); font-size: 13px; display: none; }
+.g-wrap .station-search-clear.show { display: grid; place-items: center; }
+.g-wrap .station-search-results { top: calc(100% + 8px); border-radius: 24px; padding: 6px; background: rgba(7,36,32,.98); box-shadow: 0 24px 50px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.2); max-height: 300px; }
+.g-wrap .station-search-item { border: 0; border-radius: 16px; padding: 12px 14px; }
+.g-wrap #stationMap { border-radius: 28px; height: clamp(340px, 56vh, 560px); background: #e6e2d6; isolation: isolate;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.g-wrap #stationMap .leaflet-tile-pane { filter: saturate(.82) contrast(1.03) brightness(1.02); }
+.g-wrap #stationMap .leaflet-tile { outline: 1px solid transparent; }
+.g-wrap .leaflet-control-zoom { border: 0 !important; border-radius: 20px; overflow: hidden; margin: 12px 0 0 12px; background: rgba(8,40,36,.72); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 22px rgba(0,0,0,.28), inset 0 1px 1px rgba(255,255,255,.3); }
+.g-wrap .leaflet-control-zoom a { width: 42px; height: 42px; line-height: 42px; background: transparent !important; color: #fff !important; font-size: 22px; border: 0 !important; }
+.g-wrap .leaflet-control-zoom a + a { border-top: 1px solid rgba(255,255,255,.16) !important; }
+.g-wrap .leaflet-control-attribution { background: rgba(8,40,36,.55) !important; color: rgba(255,255,255,.7); font-size: 9.5px; border-radius: 10px 0 0 0; padding: 1px 6px; }
+.g-wrap .leaflet-control-attribution a { color: #ffd88a; }
+.g-wrap .marker-cluster-small, .g-wrap .marker-cluster-medium, .g-wrap .marker-cluster-large { background: rgba(255,212,92,.28); }
+.g-wrap .marker-cluster div { background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); color: #2a1d00; font: 800 13px var(--v3-font, system-ui);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.8); }
+.g-wrap .marker-cluster span { line-height: 30px; }
+.g-wrap .map-status-bar { padding: 0 8px; }
+.g-wrap .map-status-bar:empty { display: none; }
+.g-wrap .map-status-bar:not(:empty) { margin-top: 10px; padding: 10px 14px; border-radius: 18px; background: rgba(255,255,255,.1); color: #fff; }
+.g-wrap .cheapest-panel { margin-top: 10px; }
