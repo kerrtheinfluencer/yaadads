@@ -957,7 +957,7 @@ function initCharts() {
       labels: PRICES.map(p => p.name),
       datasets: [
         { label: 'Ex-Refinery', data: PRICES.map(p => p.exRefinery), backgroundColor: PRICES.map(p => p.color + 'cc'), borderRadius: 8, barPercentage: 0.6 },
-        { label: 'Est. Pump (+J$30)', data: PRICES.map(p => p.exRefinery + MARKUP_DEFAULT), backgroundColor: PRICES.map(p => p.color + '44'), borderRadius: 8, barPercentage: 0.6 }
+        { label: 'Est. Pump (+J$25)', data: PRICES.map(p => p.exRefinery + MARKUP_DEFAULT), backgroundColor: PRICES.map(p => p.color + '44'), borderRadius: 8, barPercentage: 0.6 }
       ]
     },
     options: {

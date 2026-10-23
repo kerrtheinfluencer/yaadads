@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v103'; // bump this any time style.css or js/*.js changes — otherwise
+const CACHE_VERSION  = 'yaadadz-v104'; // bump this any time style.css or js/*.js changes — otherwise
                                       // Cache-First below will keep serving the OLD file forever,
                                       // no matter how many times the actual file is updated on GitHub.
 const STATIC_CACHE   = CACHE_VERSION + '-static';
@@ -138,6 +138,7 @@ async function networkFirstPages(request) {
     // Network failed — try cache as offline fallback
     const cached = await caches.match(request);
     if (cached) return cached;
+    if (request.mode !== 'navigate') return Response.error();
     // Last resort: serve home page
     const home = await caches.match('/');
     return home || new Response('Offline', { status: 503 });
@@ -171,6 +172,9 @@ async function networkFirst(request) {
     // Network failed — try cache
     const cached = await caches.match(request);
     if (cached) return cached;
+    // Only PAGES get the offline screen. Data/script requests must fail cleanly — handing them
+    // HTML made callers crash with "Unexpected token '<'" when parsing JSON.
+    if (request.mode !== 'navigate') return Response.error();
     // Last resort — offline page
     const offlinePage = await caches.match('/offline.html');
     return offlinePage || new Response(

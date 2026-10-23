@@ -345,6 +345,8 @@ var SITE_UPDATES = {
       date: 'Oct 17, 2026',
       notes: [
         'New: tap “✓ confirm” on a station to confirm today’s price in one tap',
+        'Fixed: the gas price on the home screen now matches the Gas Prices page, and the gas page lays out cleanly on tablets and computers',
+        'Fixed: when you are offline, pages that load data no longer show an error from a wrong offline screen',
         'Fixed: the Yaad Brain chat now sits neatly above the keyboard when you tap to type, with no gap showing the page behind',
         'Changed: each fuel on a station card now shows the station’s survey price, today’s estimate, how it compares to the national price, and the ex-refinery price',
         'Fixed: the Report a price form no longer shows up on its own — it only opens when you tap Report a price',
