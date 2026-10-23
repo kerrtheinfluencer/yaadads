@@ -1365,7 +1365,7 @@ function addStationMarkers() {
   stationLayer.clearLayers();
   markerIndex.clear();
   stations.forEach(station => {
-    const marker = L.marker(stationCoords(station)).bindPopup(stationPopup(station));
+    const marker = L.marker(stationCoords(station), L.divIcon ? { icon: L.divIcon({ className: 'g-pin', html: '<span><i>⛽</i></span>', iconSize: [36, 36], iconAnchor: [8, 34], popupAnchor: [10, -30] }) } : {}).bindPopup(stationPopup(station));
     marker.on('click', () => selectStationForReport(station));
     markerIndex.set(station.id, marker);
     stationLayer.addLayer(marker);

@@ -286,6 +286,20 @@ body.g-sheet-open { overflow: hidden; }
 .st-confirm { min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; font: 700 13px var(--v3-font, system-ui); color: #1a1405; cursor: pointer; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); transition: transform .3s var(--v3-spring); }
 .st-confirm:active { transform: scale(.94); } .st-confirm:disabled { opacity: .6; }
 
-/* keep the zoom buttons clear of the station search box */
-#stationMap .leaflet-top.leaflet-left { top: 62px; }
-#stationMap { z-index: 0; }
+/* station search sits ABOVE the map (not over it) so it never covers the map or its buttons */
+.g-wrap .map-frame { display: flex; flex-direction: column; }
+.g-wrap .map-overlay-search { order: -1; width: 100% !important; max-width: none !important; left: auto; right: auto; top: auto; margin: 0 0 10px; padding: 0; background: none; box-shadow: none; }
+.g-wrap .map-overlay-search { position: relative !important; }
+.g-wrap .map-overlay-search input { width: 100%; box-sizing: border-box; height: 52px; padding: 0 44px 0 20px; border: 0; border-radius: 999px; color: #fff; font: 500 16px var(--v3-font, system-ui);
+  background: var(--v3-fill), rgba(6,34,30,.72); -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%); box-shadow: var(--v3-rim), var(--v3-shadow); }
+.g-wrap .map-overlay-search input::placeholder { color: rgba(255,255,255,.75); }
+.g-wrap .map-overlay-search input:focus { outline: none; box-shadow: var(--v3-rim), 0 0 0 3px rgba(255,210,122,.5); }
+.g-wrap .station-search-clear { color: #fff; right: 16px; top: 26px; }
+.g-wrap .station-search-results { z-index: 600; background: rgba(8,40,36,.97); border: 0; border-radius: 22px; }
+.g-wrap .station-search-item { color: #fff; border-bottom-color: rgba(255,255,255,.1); }
+.g-wrap .station-search-item .ssi-name { color: #fff; } .g-wrap .station-search-item .ssi-meta { color: rgba(255,255,255,.75); }
+.g-wrap .station-search-item:hover, .g-wrap .station-search-item.active { background: rgba(255,255,255,.12); }
+#stationMap { z-index: 0; border-radius: 28px; overflow: hidden; }
+.g-pin { background: none; border: 0; }
+.g-pin span { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50% 50% 50% 8%; transform: rotate(-45deg); background: linear-gradient(145deg, #ffcf6b, #f08a1c); box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.7); border: 2px solid #fff; }
+.g-pin i { transform: rotate(45deg); font-style: normal; font-size: 16px; }

@@ -345,6 +345,7 @@ var SITE_UPDATES = {
       date: 'Oct 17, 2026',
       notes: [
         'New: tap “✓ confirm” on a station to confirm today’s price in one tap',
+        'Fixed: the station search no longer covers the map, and stations now show as orange fuel pins',
         'Fixed: gas stations now load instantly on the map instead of waiting on a slow map service',
         'Fixed: the Yaad Brain panel no longer peeks up from the bottom of the home screen on some iPhones',
         'Changed: station prices are now estimated for today by adding this week’s national fuel price change to the latest official survey, and marked with ≈',
