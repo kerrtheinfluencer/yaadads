@@ -345,6 +345,7 @@ var SITE_UPDATES = {
       date: 'Oct 17, 2026',
       notes: [
         'New: tap “✓ confirm” on a station to confirm today’s price in one tap',
+        'Changed: tapping a station now shows a roomy card under the map with its prices, a one-tap confirm, directions and a Report a price button — it no longer opens the report form over the map',
         'Fixed: the station search no longer covers the map, and stations now show as orange fuel pins',
         'Fixed: gas stations now load instantly on the map instead of waiting on a slow map service',
         'Fixed: the Yaad Brain panel no longer peeks up from the bottom of the home screen on some iPhones',

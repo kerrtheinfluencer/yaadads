@@ -10,6 +10,7 @@
 The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Listing pages now open on a big photo with a glass info panel and a floating contact bar. Nothing about how the app works has changed.
 
 - New: tap “✓ confirm” on a station to confirm today’s price in one tap
+- Changed: tapping a station now shows a roomy card under the map with its prices, a one-tap confirm, directions and a Report a price button — it no longer opens the report form over the map
 - Fixed: the station search no longer covers the map, and stations now show as orange fuel pins
 - Fixed: gas stations now load instantly on the map instead of waiting on a slow map service
 - Fixed: the Yaad Brain panel no longer peeks up from the bottom of the home screen on some iPhones

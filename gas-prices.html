@@ -537,6 +537,7 @@ padding-top: 108px;
 <div class="map-status-bar" id="mapStatus">Loading station locations…</div>
 <div class="cheapest-panel" id="cheapestPanel" style="display:none"></div>
 </div>
+<section class="g-stcard" id="stationCard" hidden aria-live="polite"></section>
 <button type="button" class="g-report-open" id="reportOpen"><span aria-hidden="true">✍️</span> Report a price<small>Help other drivers — takes 10 seconds</small></button>
 <div class="last-report" id="lastReportPanel" style="display:none"></div>
 </div>
@@ -853,6 +854,7 @@ function initReportSheet() {
   document.addEventListener('click', (e) => { if (e.target.closest('#ssChangeLink')) closeReport(); });
   // picking a station (map marker or search result) opens the sheet right away
   const orig = window.selectStationForReport;
+  window.__selectStationQuiet = orig;
   window.selectStationForReport = function (station) { orig.apply(this, arguments); if (station) openReport(); };
   // after a successful report, close the sheet and confirm on the map
   const origStatus = window.setReportStatus;
@@ -1078,6 +1080,44 @@ async function confirmStationPrice(btn) {
   }
 }
 document.addEventListener('click', (e) => { const b = e.target.closest('.st-confirm'); if (b) confirmStationPrice(b); });
+
+/* ── Selected-station card (replaces the cramped map popup): prices, one-tap confirm, report, directions ── */
+function stationPriceRows(station) {
+  const rows = ['87', '90', 'diesel', 'ulsd'].map(f => {
+    const rep = stationReportsIndex[station.id]?.[f];
+    const label = SURVEY_FUEL_LABEL[f];
+    if (rep && rep.prices.length) {
+      const avg = rep.prices.reduce((a, b) => a + b, 0) / rep.prices.length;
+      return '<div class="g-stp"><span>' + label + '</span><b>J$' + avg.toFixed(2) + '</b><small>' + escapeHtml(freshnessLabel(rep.latest).text) + '</small></div>';
+    }
+    const e = surveyEst(station, f);
+    if (!e) return '';
+    return '<div class="g-stp"><span>' + label + '</span><b>' + (e.est ? '≈ ' : '') + 'J$' + e.price.toFixed(2) + '</b><small>' + (e.est ? 'survey ' + e.survey.toFixed(2) : 'official survey') + '</small></div>';
+  }).join('');
+  return rows;
+}
+function showStationCard(station, opts) {
+  opts = opts || {};
+  const card = document.getElementById('stationCard');
+  if (!card || !station) return;
+  if (window.__selectStationQuiet) window.__selectStationQuiet(station);
+  if (opts.pan && stationMap) { try { stationMap.setView(stationCoords(station), opts.zoom || Math.max(stationMap.getZoom ? stationMap.getZoom() : 13, 14)); } catch (e) {} }
+  const sv = station.survey;
+  const rows = stationPriceRows(station);
+  const note = sv ? 'Official survey · week ending ' + escapeHtml(fmtSurveyDate(sv.as_of)) + ' · ≈ means estimated for today' : 'No official survey price for this station yet';
+  card.innerHTML =
+    '<button type="button" class="g-stcard-x" id="stCardClose" aria-label="Close">✕</button>' +
+    '<h3>' + escapeHtml(station.name) + '</h3>' +
+    '<p class="g-stcard-sub">' + escapeHtml([station.brand, station.parish].filter(Boolean).join(' · ') || 'Jamaica') + '</p>' +
+    (rows ? '<div class="g-stp-grid">' + rows + '</div><p class="g-stcard-note">' + note + '</p>' : '<p class="g-stcard-note">' + note + '</p>') +
+    confirmButtonsForStation(station) +
+    '<div class="g-stcard-acts"><button type="button" class="g-act g-act-gold" id="stCardReport">✍️ Report a price</button><a class="g-act" href="' + directionsUrl(station) + '" target="_blank" rel="noopener">🧭 Directions</a></div>';
+  card.hidden = false;
+  document.getElementById('stCardClose').onclick = () => { card.hidden = true; };
+  document.getElementById('stCardReport').onclick = () => openReport();
+  if (opts.noScroll) return;
+  setTimeout(() => { try { card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 120);
+}
 
 function stationPopup(station) {
   const label = [station.brand, station.parish].filter(Boolean).join(' · ');
@@ -1359,14 +1399,16 @@ async function refreshCommunityData() {
   stationReportsIndex = aggregateStationReports(reports);
   renderCommunityPrices(aggregateCommunityReports(reports));
   addStationMarkers(); // rebuild popups so map reflects the latest community numbers too
+  const _c = document.getElementById('stationCard'), _sid = _c && !_c.hidden && document.getElementById('reportStationId').value;
+  if (_sid) { const _st = stations.find(x => x.id === _sid); if (_st) showStationCard(_st, { noScroll: true }); }
 }
 
 function addStationMarkers() {
   stationLayer.clearLayers();
   markerIndex.clear();
   stations.forEach(station => {
-    const marker = L.marker(stationCoords(station), L.divIcon ? { icon: L.divIcon({ className: 'g-pin', html: '<span><i>⛽</i></span>', iconSize: [36, 36], iconAnchor: [8, 34], popupAnchor: [10, -30] }) } : {}).bindPopup(stationPopup(station));
-    marker.on('click', () => selectStationForReport(station));
+    const marker = L.marker(stationCoords(station), L.divIcon ? { icon: L.divIcon({ className: 'g-pin', html: '<span><i>⛽</i></span>', iconSize: [36, 36], iconAnchor: [8, 34], popupAnchor: [10, -30] }) } : {});
+    marker.on('click', () => showStationCard(station, { pan: true }));
     markerIndex.set(station.id, marker);
     stationLayer.addLayer(marker);
   });
@@ -1530,13 +1572,7 @@ function renderCheapestResults() {
     row.addEventListener('click', () => {
       const station = stations.find(s => s.id === row.dataset.stationId);
       if (!station) return;
-      stationMap.setView(stationCoords(station), 16);
-      const marker = markerIndex.get(station.id);
-      if (marker) {
-        if (stationLayer.zoomToShowLayer) stationLayer.zoomToShowLayer(marker, () => marker.openPopup());
-        else marker.openPopup();
-      }
-      selectStationForReport(station);
+      showStationCard(station, { pan: true, zoom: 16 });
     });
   });
 }
@@ -1859,16 +1895,7 @@ function initStationSearch() {
     input.value = station.name;
     clearBtn.classList.add('show');
     closeResults();
-    stationMap.setView(stationCoords(station), 16);
-    selectStationForReport(station);
-    const marker = markerIndex.get(station.id);
-    if (marker) {
-      if (stationLayer.zoomToShowLayer) {
-        stationLayer.zoomToShowLayer(marker, () => marker.openPopup());
-      } else {
-        marker.openPopup();
-      }
-    }
+    showStationCard(station, { pan: true, zoom: 16 });
   }
 
   input.addEventListener('input', () => {
