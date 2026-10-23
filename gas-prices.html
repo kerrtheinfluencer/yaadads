@@ -841,6 +841,7 @@ function closeReport() {
   document.body.classList.remove('g-sheet-open');
 }
 function initReportSheet() {
+  ['reportOverlay', 'reportSheet'].forEach(id => { const el = document.getElementById(id); if (el && el.parentNode !== document.body) document.body.appendChild(el); });
   document.getElementById('reportClose').addEventListener('click', closeReport);
   document.getElementById('reportOverlay').addEventListener('click', closeReport);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReport(); });
@@ -1083,18 +1084,27 @@ document.addEventListener('click', (e) => { const b = e.target.closest('.st-conf
 
 /* ── Selected-station card (replaces the cramped map popup): prices, one-tap confirm, report, directions ── */
 function stationPriceRows(station) {
-  const rows = ['87', '90', 'diesel', 'ulsd'].map(f => {
-    const rep = stationReportsIndex[station.id]?.[f];
+  return ['87', '90', 'diesel', 'ulsd'].map(f => {
     const label = SURVEY_FUEL_LABEL[f];
-    if (rep && rep.prices.length) {
-      const avg = rep.prices.reduce((a, b) => a + b, 0) / rep.prices.length;
-      return '<div class="g-stp"><span>' + label + '</span><b>J$' + avg.toFixed(2) + '</b><small>' + escapeHtml(freshnessLabel(rep.latest).text) + '</small></div>';
-    }
+    const nat = PRICES.find(x => x.key === f);
+    const natPump = nat ? pumpOf(nat) : null;
+    const rep = stationReportsIndex[station.id]?.[f];
     const e = surveyEst(station, f);
-    if (!e) return '';
-    return '<div class="g-stp"><span>' + label + '</span><b>' + (e.est ? '≈ ' : '') + 'J$' + e.price.toFixed(2) + '</b><small>' + (e.est ? 'survey ' + e.survey.toFixed(2) : 'official survey') + '</small></div>';
+    let main = null, mainNote = '';
+    if (rep && rep.prices.length) { main = rep.prices.reduce((a, b) => a + b, 0) / rep.prices.length; mainNote = 'Driver report · ' + freshnessLabel(rep.latest).text; }
+    else if (e) { main = e.price; mainNote = e.est ? 'Estimated today' : 'Official survey'; }
+    if (main == null) return '';
+    const diff = natPump != null ? main - natPump : null;
+    const badge = diff == null ? '' : Math.abs(diff) < 0.5 ? '<span class="g-stp-d same">≈ national</span>'
+      : '<span class="g-stp-d ' + (diff > 0 ? 'up' : 'down') + '">' + (diff > 0 ? '▲' : '▼') + ' J$' + Math.abs(diff).toFixed(2) + (diff > 0 ? ' above' : ' below') + '</span>';
+    return '<div class="g-stp"><div class="g-stp-top"><span>' + label + '</span>' + badge + '</div>' +
+      '<b>' + (!rep && e && e.est ? '≈ ' : '') + 'J$' + main.toFixed(2) + '</b><small>' + escapeHtml(mainNote) + '</small>' +
+      '<dl>' +
+      (e ? '<dt>Survey</dt><dd>J$' + e.survey.toFixed(2) + '</dd>' : '') +
+      (natPump != null ? '<dt>National</dt><dd>J$' + natPump.toFixed(2) + '</dd>' : '') +
+      (nat ? '<dt>Ex-ref.</dt><dd>J$' + nat.exRefinery.toFixed(2) + '</dd>' : '') +
+      '</dl></div>';
   }).join('');
-  return rows;
 }
 function showStationCard(station, opts) {
   opts = opts || {};
@@ -1104,7 +1114,7 @@ function showStationCard(station, opts) {
   if (opts.pan && stationMap) { try { stationMap.setView(stationCoords(station), opts.zoom || Math.max(stationMap.getZoom ? stationMap.getZoom() : 13, 14)); } catch (e) {} }
   const sv = station.survey;
   const rows = stationPriceRows(station);
-  const note = sv ? 'Official survey · week ending ' + escapeHtml(fmtSurveyDate(sv.as_of)) + ' · ≈ means estimated for today' : 'No official survey price for this station yet';
+  const note = sv ? 'Survey week ending ' + escapeHtml(fmtSurveyDate(sv.as_of)) + ' · ≈ = survey price adjusted by this week’s fuel price change · national = Petrojam ex-refinery + J$' + MARKUP_DEFAULT : 'No official survey price for this station yet';
   card.innerHTML =
     '<button type="button" class="g-stcard-x" id="stCardClose" aria-label="Close">✕</button>' +
     '<h3>' + escapeHtml(station.name) + '</h3>' +
