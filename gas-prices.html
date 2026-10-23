@@ -1135,11 +1135,14 @@ async function fetchOverpass() {
   let lastError;
   for (const url of OSM_OVERPASS_URLS) {
     try {
+      const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 9000);
       const response = await fetch(url, {
+        signal: ac.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body: 'data=' + encodeURIComponent(query)
       });
+      clearTimeout(to);
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const data = await response.json();
       const list = normalizeOverpassElements(data.elements);
@@ -1395,7 +1398,7 @@ async function initStationLocator() {
     const nSv = stations.filter(s => s.survey).length;
     document.getElementById('mapStatus').textContent = nSv
       ? `${stations.length} stations · official prices for ${nSv} (week ending ${fmtSurveyDate(surveyMeta.survey_week_ending)}) · survey via Bussgas / CAC`
-      : `${stations.length} station${stations.length === 1 ? '' : 's'} found · locations from OpenStreetMap`;
+      : `${stations.length} station${stations.length === 1 ? '' : 's'} found`;
   } catch (error) {
     document.getElementById('mapStatus').textContent = 'Could not load live station locations. Try again later.';
   }

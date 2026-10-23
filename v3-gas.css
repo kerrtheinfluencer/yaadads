@@ -285,3 +285,7 @@ body.g-sheet-open { overflow: hidden; }
 .st-confirm-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .st-confirm { min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; font: 700 13px var(--v3-font, system-ui); color: #1a1405; cursor: pointer; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); transition: transform .3s var(--v3-spring); }
 .st-confirm:active { transform: scale(.94); } .st-confirm:disabled { opacity: .6; }
+
+/* keep the zoom buttons clear of the station search box */
+#stationMap .leaflet-top.leaflet-left { top: 62px; }
+#stationMap { z-index: 0; }

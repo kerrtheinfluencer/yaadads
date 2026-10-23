@@ -80,6 +80,12 @@ async function main() {
   }
   console.log('priced stations:', out.length, 'failed:', failed);
   if (out.length < 100) throw new Error('Too few priced stations (' + out.length + ') — keeping the previous file');
+  /* keep the committed station list fresh too (the map loads it instantly, no OpenStreetMap needed) */
+  fs.writeFileSync('gas-stations-snapshot.json', JSON.stringify({
+    updated_at: new Date().toISOString().slice(0, 10),
+    source: 'Station list from the Consumer Affairs Commission survey (via Bussgas); prices are added separately',
+    stations: stations.map(s => ({ id: 'cac_' + s.id, name: s.name, brand: '', parish: s.town, lat: s.lat, lng: s.lon }))
+  }));
   const asOf = out.map(r => r.as_of).filter(Boolean).sort().pop() || null;
   fs.writeFileSync(OUT, JSON.stringify({
     source: 'Bussgas (bussgasja.com), from the Consumer Affairs Commission weekly survey',
