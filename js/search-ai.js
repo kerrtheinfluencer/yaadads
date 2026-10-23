@@ -2371,6 +2371,14 @@ const AiChat=(function(){
     });
     const inp=document.getElementById('sheetInput');
     if(inp)inp.addEventListener('input',syncClearBtn);
+    /* iOS reports the keyboard/QuickType bar height late and sometimes without a resize event, which left a gap
+       above the keys. While the composer is focused, re-pin on a short timer until it blurs. */
+    if(inp){
+      let pin=null;
+      const stop=()=>{if(pin){clearInterval(pin);pin=null;}[0,120,350].forEach(t=>setTimeout(onViewport,t));};
+      inp.addEventListener('focus',()=>{onViewport();if(!pin)pin=setInterval(onViewport,150);[60,250,600].forEach(t=>setTimeout(onViewport,t));});
+      inp.addEventListener('blur',stop);
+    }
     if(window.visualViewport&&typeof window.visualViewport.addEventListener==='function'){
       window.visualViewport.addEventListener('resize',onViewport);
       window.visualViewport.addEventListener('scroll',onViewport);
@@ -2383,7 +2391,8 @@ const AiChat=(function(){
     const sheet=document.getElementById('aiSheet');if(!sheet)return;
     const vv=window.visualViewport;
     const kb=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;
-    if(kb>140&&vv){
+    const typing=!!(vv&&document.activeElement&&document.activeElement.id==='sheetInput');
+    if(vv&&(kb>140||typing)){
       /* pin the sheet to the VISIBLE area (above the keyboard + its suggestion bar) — iOS keeps the
          layout viewport tall and scrolls it, so bottom:0 + a computed height left a gap with the page showing through */
       sheet.style.setProperty('--ai-kb',Math.round(kb)+'px');
