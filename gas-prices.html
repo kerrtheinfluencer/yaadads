@@ -461,6 +461,9 @@ padding-top: 108px;
 </style>
 <link rel="stylesheet" href="/v3-gas.css">
 <script src="/js/gas-est.js"></script>
+<script src="/js/gas-ai.js" defer></script>
+<script src="/js/live-visits.js" defer></script>
+<script src="/js/gas-float-chat.js" defer></script>
 <base target="_blank">
 </head>
 <body>
@@ -476,6 +479,7 @@ padding-top: 108px;
 <button class="hero-share-btn g-share" id="shareBtn" type="button" aria-label="Share gas prices"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg></button>
 </header>
 <p class="g-sub">Official Petrojam prices, estimated pump prices, and what drivers are reporting at the pump — updated weekly.</p>
+<div class="live-strip g-live" data-live-strip hidden><i class="live-dot" aria-hidden="true"></i><b data-live-now>1</b> live now<span class="live-sep">·</span><b data-live-today>0</b> visits today</div>
 <div id="staleWarning" class="g-stale" style="display:none"></div>
 
 <!-- ═══ MAIN TABS ═══ -->
@@ -773,7 +777,7 @@ function renderCalc() {
 function initAsk() {
   const form = document.getElementById('gAskForm'), inp = document.getElementById('gAskInput'), chips = document.getElementById('gAskChips');
   if (!form) return;
-  const go = q => { q = (q || '').trim(); if (q) location.href = '/?ask=' + encodeURIComponent(q); };
+  const go = q => { q = (q || '').trim(); if (!q) return; if (window.GasChat) { inp.value = ''; GasChat.ask(q); } else location.href = '/?ask=' + encodeURIComponent(q); };
   form.addEventListener('submit', e => { e.preventDefault(); go(inp.value); });
   chips.addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) go(b.dataset.q); });
 }
@@ -2028,6 +2032,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initGTabs();
   initPriceTabs();
   initCalc(); initAsk();
+  if (window.YaadLive) YaadLive.start('gas'); else window.addEventListener('load', () => window.YaadLive && YaadLive.start('gas'));
   initReportSheet();
   initChartToggle();
   try {

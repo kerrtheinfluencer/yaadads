@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v108'; // bump this any time style.css or js/*.js changes — otherwise
+const CACHE_VERSION  = 'yaadadz-v109'; // bump this any time style.css or js/*.js changes — otherwise
                                       // Cache-First below will keep serving the OLD file forever,
                                       // no matter how many times the actual file is updated on GitHub.
 const STATIC_CACHE   = CACHE_VERSION + '-static';
@@ -24,6 +24,8 @@ const PRECACHE_URLS = [
   '/js/listings.js',
   '/js/gas-est.js',
   '/js/gas-ai.js',
+  '/js/gas-float-chat.js',
+  '/js/live-visits.js',
   '/js/search-ai.js',
   '/js/auth-account.js',
   '/js/ad-social.js',

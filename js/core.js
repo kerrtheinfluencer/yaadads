@@ -180,7 +180,12 @@ function getReferralCode(clear) {
    One increment per page per calendar day per device (localStorage dedup).
    Caches the count locally so the number shows instantly on repeat visits.
 ═══════════════════════════════════════════════════════════ */
-async function sbTrackVisit(page) {
+function sbTrackVisit(page) {
+  /* js/live-visits.js owns the counter now (daily total + live-now presence); the old RPC stays as a fallback */
+  if (window.YaadLive) return window.YaadLive.start(page || 'home');
+  return sbTrackVisitLegacy(page);
+}
+async function sbTrackVisitLegacy(page) {
   page = page || 'home';
   const today   = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const dedupKey = 'ya_visit_' + page + '_' + today;

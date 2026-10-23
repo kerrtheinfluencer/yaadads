@@ -508,6 +508,7 @@ if ('serviceWorker' in navigator) {
         <div><div class="hero-stat-num" id="vStat">0</div><div class="hero-stat-lbl">Visits Today</div></div>
         <div><div class="hero-stat-num">14</div><div class="hero-stat-lbl">Parishes</div></div>
         <div><div class="hero-stat-num"><span>Free</span></div><div class="hero-stat-lbl">Always</div></div>
+        <div class="live-strip" data-live-strip hidden><i class="live-dot" aria-hidden="true"></i><b data-live-now>1</b> live now<span class="live-sep">·</span><b data-live-today>0</b> visits today</div>
       </div>
     </div>
   </div>
@@ -1540,6 +1541,7 @@ function v3HeroSearch(e){
   <div class="lightbox-counter" id="lbCounter"></div>
 </div>
 
+<script src="js/live-visits.js" defer></script>
 <script src="js/core.js" defer></script>
 <script src="js/auth-account.js" defer></script>
 <script src="js/listings.js" defer></script>
