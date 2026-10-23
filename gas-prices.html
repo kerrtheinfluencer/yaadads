@@ -1041,9 +1041,47 @@ function directionsUrl(station) {
   return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 }
 
+/* one-tap confirm: "✓ 87 · J$225" sends that price as a community report in a single tap */
+function confirmButtonsForStation(station) {
+  const chips = COMMUNITY_FUELS.map(f => {
+    const rep = stationReportsIndex[station.id]?.[f];
+    let price = null;
+    if (rep && rep.prices.length) price = rep.prices.reduce((a, b) => a + b, 0) / rep.prices.length;
+    else { const e = surveyEst(station, f); if (e) price = e.price; }
+    if (price == null || price < REPORT_PRICE_MIN || price > REPORT_PRICE_MAX) return '';
+    return '<button type="button" class="st-confirm" data-station="' + escapeHtml(station.id) + '" data-fuel="' + f + '" data-price="' + price.toFixed(2) + '">✓ ' + (SURVEY_FUEL_LABEL[f] || f) + ' · J$' + price.toFixed(2) + '</button>';
+  }).join('');
+  if (!chips) return '';
+  return '<div class="st-confirm-box"><div class="st-confirm-t">Paying this today? Tap to confirm</div><div class="st-confirm-row">' + chips + '</div></div>';
+}
+
+async function confirmStationPrice(btn) {
+  const station = stations.find(x => x.id === btn.dataset.station);
+  const fuel = btn.dataset.fuel, price = Number(btn.dataset.price);
+  const status = document.getElementById('mapStatus');
+  if (!station || !COMMUNITY_FUELS.includes(fuel) || !(price >= REPORT_PRICE_MIN && price <= REPORT_PRICE_MAX)) return;
+  const waitMs = cooldownRemainingMs(cooldownKey(station.id, fuel));
+  if (waitMs > 0) { btn.textContent = 'Already confirmed'; btn.disabled = true; return; }
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    await postReportToSupabase({
+      station_id: station.id, station_name: station.name, lat: station.lat, lng: station.lng,
+      fuel_type: fuel, price, reporter_name: 'Confirmed on map', reported_at: new Date().toISOString()
+    });
+    setCooldown(cooldownKey(station.id, fuel));
+    if (status) status.textContent = 'Thanks! ' + (SURVEY_FUEL_LABEL[fuel] || fuel) + ' at J$' + price.toFixed(2) + ' confirmed at ' + station.name + '.';
+    await refreshCommunityData();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = label;
+    if (status) status.textContent = 'Could not send that — check your connection and try again.';
+  }
+}
+document.addEventListener('click', (e) => { const b = e.target.closest('.st-confirm'); if (b) confirmStationPrice(b); });
+
 function stationPopup(station) {
   const label = [station.brand, station.parish].filter(Boolean).join(' · ');
-  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p>${surveyLinesForStation(station)}${communityLinesForStation(station.id)}<a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
+  return `<div class="station-popup"><h3>${escapeHtml(station.name)}</h3><p>${escapeHtml(label || 'Jamaica')}</p>${surveyLinesForStation(station)}${communityLinesForStation(station.id)}${confirmButtonsForStation(station)}<a href="${directionsUrl(station)}" target="_blank" rel="noopener">Get accurate directions</a></div>`;
 }
 
 function escapeHtml(value) {

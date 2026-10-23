@@ -278,3 +278,10 @@ body.g-sheet-open { overflow: hidden; }
 .g-ask-form input:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,210,122,.45); }
 .g-ask-form button { flex: none; width: 50px; height: 50px; border: 0; border-radius: 50%; font-size: 18px; color: #1a1405; cursor: pointer; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); }
 .g-ask-chips .g-chip { flex: 1 1 auto; font-size: 13.5px; padding: 0 12px; }
+
+/* one-tap confirm in station popups */
+.st-confirm-box { margin: 8px 0 4px; padding: 8px; border-radius: 14px; background: rgba(0,0,0,.06); }
+.st-confirm-t { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.st-confirm-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-confirm { min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; font: 700 13px var(--v3-font, system-ui); color: #1a1405; cursor: pointer; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); transition: transform .3s var(--v3-spring); }
+.st-confirm:active { transform: scale(.94); } .st-confirm:disabled { opacity: .6; }

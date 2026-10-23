@@ -344,6 +344,8 @@ var SITE_UPDATES = {
       body: 'The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Listing pages now open on a big photo with a glass info panel and a floating contact bar. Nothing about how the app works has changed.',
       date: 'Oct 17, 2026',
       notes: [
+        'New: tap “✓ confirm” on a station to confirm today’s price in one tap',
+        'Fixed: the Yaad Brain panel no longer peeks up from the bottom of the home screen on some iPhones',
         'Changed: station prices are now estimated for today by adding this week’s national fuel price change to the latest official survey, and marked with ≈',
         'New: official fuel prices for individual stations from the weekly Consumer Affairs Commission survey — see them on the Stations map, in Cheapest near me, and ask Yaad Brain things like “cheapest 87 in Mandeville”',
         'New: ask Yaad Brain anything about gas — what a fill-up costs, what your budget buys, which fuel is cheapest, or whether prices are going up',

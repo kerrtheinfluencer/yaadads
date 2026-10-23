@@ -2090,3 +2090,9 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
 .ai-gas-cta { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; margin-top: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; text-decoration: none; font: 700 14.5px var(--v3-font); color: #1a1405;
   background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); box-shadow: 0 8px 20px rgba(244,195,0,.3), inset 0 1px 1px rgba(255,255,255,.7); transition: transform .4s var(--v3-spring); }
 .ai-gas-cta:active { transform: scale(.95); }
+
+/* 33 · AI sheet — never peek from the bottom edge when closed
+   (iOS Safari's collapsing toolbar made a closed sheet's header show above the screen bottom) */
+.ai-sheet:not(.open) { visibility: hidden; pointer-events: none; transform: translateY(calc(100% + 220px)); transition: transform .5s cubic-bezier(.22,1,.36,1), visibility 0s linear .5s; }
+.ai-sheet.open { visibility: visible; }
+@media (min-width: 641px) { .ai-sheet:not(.open) { transform: translateX(calc(100% + 40px)); } }
