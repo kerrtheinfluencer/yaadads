@@ -539,6 +539,7 @@ padding-top: 108px;
 <div id="stationSearchResults" class="station-search-results"></div>
 </div>
 </div>
+<div class="g-mapbar" id="mapBar" hidden></div>
 <div class="map-status-bar" id="mapStatus" aria-live="polite"></div>
 <div class="cheapest-panel" id="cheapestPanel" style="display:none"></div>
 </div>
@@ -1156,8 +1157,9 @@ function navTilesHtml(station) {
   const pin = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>';
   const arrow = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M3.5 11 20.5 3.5 13 20.5l-2.2-7.3z"/></svg>';
   const bubble = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 3C7 3 3.5 6.6 3.5 11c0 2 .7 3.7 1.9 5-.1 1.2-.5 2.4-1.2 3.4 1.5 0 2.9-.5 4-1.3 1.2.5 2.4.7 3.8.7 5 0 8.5-3.6 8.5-7.8S17 3 12 3Zm-3 7.2a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Zm6 0a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Zm-6.2 3.4c.9 1.2 2 1.8 3.2 1.8s2.3-.6 3.2-1.8l.9.6c-1.1 1.5-2.5 2.3-4.1 2.3s-3-.8-4.1-2.3Z"/></svg>';
-  return '<div class="g-nav"><div class="g-nav-h">Get there</div><div class="g-nav-row">' +
-    tile('google', l.google, 'Google Maps', pin) + (IS_APPLE ? tile('apple', l.apple, 'Apple Maps', arrow) : '') + tile('waze', l.waze, 'Waze', bubble) + '</div></div>';
+  return '<div class="g-mapbar-h"><span>Get there</span><b>' + escapeHtml(station.name) + '</b></div><div class="g-nav-row">' +
+    tile('google', l.google, 'Google', pin) + (IS_APPLE ? tile('apple', l.apple, 'Apple', arrow) : '') + tile('waze', l.waze, 'Waze', bubble) +
+    '<button type="button" class="g-navt wa" id="mbShare"><span class="g-navt-ic">' + WA_SVG + '</span><b>Share</b></button></div>';
 }
 function stationMainPrices(station) {
   return ['87', '90', 'diesel', 'ulsd'].map(f => {
@@ -1226,12 +1228,12 @@ function showStationCard(station, opts) {
     '<p class="g-stcard-sub">' + escapeHtml([station.brand, station.parish].filter(Boolean).join(' · ') || 'Jamaica') + '</p>' +
     (rows ? '<div class="g-stp-grid">' + rows + '</div><p class="g-stcard-note">' + note + '</p>' : '<p class="g-stcard-note">' + note + '</p>') +
     confirmButtonsForStation(station) +
-    navTilesHtml(station) +
-    '<div class="g-stcard-acts"><button type="button" class="g-act g-act-gold" id="stCardReport">✍️ Report a price</button><button type="button" class="g-act g-act-wa" id="stCardShare">' + WA_SVG + ' Share</button></div>';
+    '<div class="g-stcard-acts"><button type="button" class="g-act g-act-gold" id="stCardReport">✍️ Report a price</button></div>';
   card.hidden = false;
-  document.getElementById('stCardClose').onclick = () => { card.hidden = true; };
+  document.getElementById('stCardClose').onclick = () => { card.hidden = true; const b = document.getElementById('mapBar'); if (b) b.hidden = true; };
   document.getElementById('stCardReport').onclick = () => openReport();
-  document.getElementById('stCardShare').onclick = () => openShare(stationShare(station));
+  const bar = document.getElementById('mapBar');
+  if (bar) { bar.innerHTML = navTilesHtml(station); bar.hidden = false; bar.querySelector('#mbShare').onclick = () => openShare(stationShare(station)); }
   if (opts.noScroll) return;
   setTimeout(() => { try { card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 120);
 }

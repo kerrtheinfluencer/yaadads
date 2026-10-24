@@ -501,3 +501,15 @@ body:has(.g-sheet.open) .gfc { display: none; }
 body:has(.g-share-ov.open) .gfc { display: none; }
 .gfc-fab.gfc-away { transform: translateY(90px) scale(.9); opacity: 0; }
 .g-wrap { padding-bottom: 96px; }
+
+/* "Get there" bar — sits directly under the map */
+.g-mapbar { margin: 10px 0 0; padding: 12px; border-radius: 28px; background: rgba(255,255,255,.08); box-shadow: inset 0 1px 1px rgba(255,255,255,.22); animation: g-in .3s ease both; }
+.g-mapbar[hidden] { display: none; }
+.g-mapbar-h { display: flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0 4px 10px; }
+.g-mapbar-h span { flex: none; font: 800 11.5px var(--v3-font, system-ui); letter-spacing: .12em; text-transform: uppercase; color: #ffd45c; }
+.g-mapbar-h b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 14px var(--v3-font, system-ui); color: #fff; }
+.g-mapbar .g-navt { padding: 10px 4px 9px; gap: 6px; border: 0; font: inherit; cursor: pointer; }
+.g-mapbar .g-navt b { font-size: 12px; }
+.g-mapbar .g-navt-ic { width: 42px; height: 42px; border-radius: 15px; }
+.g-navt.wa .g-navt-ic { background: linear-gradient(145deg, #3fe27c, #17b457); }
+.g-nav-row { display: flex; gap: 8px; }
