@@ -27,6 +27,51 @@
   function fmtDay(iso) { var d = new Date(iso); return isNaN(d) ? String(iso || '') : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
   var FKEY = { '87': '87', '90': '90', diesel: 'diesel', ulsd: 'ulsd' };
 
+  /* structured station rows for the chat cards (map / directions / share buttons) */
+  function pack(list, label, from) {
+    return list.map(function (x) {
+      var o = { id: x.id, name: x.name, town: x.town || '', lat: x.lat, lng: x.lon != null ? x.lon : x.lng, price: x._p, est: !!x._e, fuel: label };
+      if (x._d != null) o.km = x._d;
+      return o;
+    });
+  }
+  function hav(a, b, c, d2) {
+    var R = 6371, r = Math.PI / 180, dLa = (c - a) * r, dLo = (d2 - b) * r;
+    var h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  var NEAR_RX = /\b(near me|nearby|near here|closest|nearest|around me|close to me|around here)\b/i;
+  function isNear(q) { return NEAR_RX.test(String(q || '')); }
+
+  /* cheapest stations around a point: prefers the cheapest within ~12 km, otherwise the nearest few */
+  function answerNear(q, coords) {
+    return Promise.all([load(), loadStations()]).then(function (r) {
+      var d = r[0], st = r[1];
+      if (!st) return { text: 'I can’t see the station prices right now — open the Stations map to browse them.', cta: CTA_ST };
+      var f = fuelOf(q, d.prices), key = FKEY[f.p.key] ? f.p.key : '87', E = window.YaadGasEst;
+      var label = { '87': '87', '90': '90', diesel: 'Diesel', ulsd: 'ULSD' }[key], anyEst = false;
+      var rows = [];
+      st.stations.forEach(function (x) {
+        if (x.lat == null || x.lon == null || x.prices[key] == null) return;
+        var e = E ? E.estimate(d, key, x.prices[key], x.as_of || st.survey_week_ending) : null;
+        x._p = e ? e.price : x.prices[key]; x._e = !!(e && e.est); x._d = hav(coords.lat, coords.lng, x.lat, x.lon);
+        rows.push(x);
+      });
+      if (!rows.length) return { text: 'No station near you lists a ' + label + ' price in the latest survey.', cta: CTA_ST };
+      var near = rows.filter(function (x) { return x._d <= 12; });
+      var pickNear = near.length >= 2;
+      var pool = pickNear ? near : rows.sort(function (a, b) { return a._d - b._d; }).slice(0, 6);
+      var top = pool.sort(function (a, b) { return a._p - b._p || a._d - b._d; }).slice(0, 4);
+      top.forEach(function (x) { if (x._e) anyEst = true; });
+      var lines = top.map(function (x, i) { return (i + 1) + '. ' + x.name + ' — ' + (x._e ? '≈ ' : '') + j2(x._p) + ' · ' + (x._d < 1 ? Math.round(x._d * 1000) + ' m' : x._d.toFixed(1) + ' km'); });
+      return {
+        text: '📍 Cheapest ' + label + (pickNear ? ' near you (within 12 km):' : ' — the closest stations I have prices for:') + '\n' + lines.join('\n') +
+          '\n\n' + (anyEst ? 'Estimated for today: survey price plus this week’s fuel price change. ' : '') + 'Check the pump — stations can differ.',
+        stations: pack(top, label), near: true
+      };
+    }).catch(function () { return { text: 'I couldn’t load station prices just now — try again in a moment.', cta: CTA_ST }; });
+  }
+
   /* "cheapest 87 in Mandeville", "diesel prices in Portmore", "price at Texaco Bushy Park" */
   function stationAnswer(q, d, st) {
     if (!st) return null;
@@ -54,7 +99,7 @@
     if (!priced.length) return { text: 'I found ' + hits.length + ' station' + (hits.length === 1 ? '' : 's') + ' there but none list a ' + label + ' price in the latest survey.', cta: CTA_ST };
     var lines = priced.slice(0, 5).map(function (x, i) { return (i + 1) + '. ' + x.name + (x.town ? ' (' + x.town + ')' : '') + ' — ' + (x._e ? '≈ ' : '') + j2(x._p); });
     var head = townHit ? '📍 ' + label + ' prices in ' + townHit.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) + ' (cheapest first):' : '📍 ' + label + ' at the station' + (priced.length > 1 ? 's' : '') + ' I found:';
-    return { text: head + '\n' + lines.join('\n') + (priced.length > 5 ? '\n…and ' + (priced.length - 5) + ' more on the map.' : '') + '\n\n' + (anyEst ? 'Estimated for today: the official survey (week ending ' + week + ') plus this week’s fuel price change' : 'Official survey, week ending ' + week) + ' (via Bussgas / CAC). Check the pump — stations can differ.' + (f.explicit ? '' : '\nI assumed 87 — say “90” or “diesel” for others.'), cta: CTA_ST };
+    return { text: head + '\n' + lines.join('\n') + (priced.length > 5 ? '\n…and ' + (priced.length - 5) + ' more on the map.' : '') + '\n\n' + (anyEst ? 'Estimated for today: the official survey (week ending ' + week + ') plus this week’s fuel price change' : 'Official survey, week ending ' + week) + '. Check the pump — stations can differ.' + (f.explicit ? '' : '\nI assumed 87 — say “90” or “diesel” for others.'), cta: CTA_ST, stations: pack(priced.slice(0, 5), label) };
   }
 
   var GAS_WORDS = /\b(gas|gasoline|gasolene|petrol|fuel|diesel|ulsd|kerosene|kero|propane|butane|lpg|petrojam|fill\s?-?up|fillup|pump price|octane|(?:87|90)\s*(?:gas|octane|fuel)|cooking gas)\b|\d\s*(?:litres?|liters?|ltrs?|gallons?)\b|\b(?:87|90)\s*(?:vs\.?|or|versus|and)\s*(?:87|90)\b/i;
@@ -196,5 +241,5 @@
     });
   }
 
-  window.YaadGas = { matches: matches, answer: answer, preload: load };
+  window.YaadGas = { matches: matches, answer: answer, answerNear: answerNear, isNear: isNear, preload: function () { loadStations(); return load(); } };
 })();

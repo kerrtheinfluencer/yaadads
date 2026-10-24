@@ -421,6 +421,8 @@ var SITE_UPDATES = {
       body: 'The Gas Prices page now opens on the Stations map. Tap a station to see its price for each fuel, confirm or type in what you paid, and get directions in Google Maps, Apple Maps or Waze. Share any station — or today’s prices — to WhatsApp in one tap, and ask the new floating gas assistant anything about pump prices. On the home screen you can now swipe through an ad’s photos without opening it, and a live counter shows how many people are on Yaad Adz right now.',
       date: 'Oct 24, 2026',
       notes: [
+        'New: the gas assistant can now find the cheapest stations near you, with Map, Directions (Google Maps, Apple Maps or Waze) and WhatsApp buttons on every station, plus a WhatsApp button to share any answer',
+        'New: the gas assistant suggests follow-up questions, remembers the fuel you asked about, and understands “directions to the second one”',
         'New: official per-station fuel prices from the weekly Consumer Affairs Commission survey, estimated for today and marked with ≈',
         'New: the Gas Prices page opens on the Stations map, with a cleaner search and a premium map card',
         'New: tap a station for its prices, a one-tap confirm, and a box to type the exact price you saw at the pump',

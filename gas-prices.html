@@ -1208,6 +1208,21 @@ function openShare(d) {
   more.onclick = async () => { try { await navigator.share({ title: d.title, text: d.text }); } catch (e) {} };
   requestAnimationFrame(() => ov.classList.add('open'));
 }
+function gotoStation(ref) {
+  let st = stations.find(x => x.id === ref.id);
+  if (!st && ref.lat != null) {
+    const R = 6371, r = Math.PI / 180;
+    let best = null, bd = 0.25;
+    stations.forEach(x => { const [la, lo] = stationCoords(x); const h = Math.sin((la - ref.lat) * r / 2) ** 2 + Math.cos(ref.lat * r) * Math.cos(la * r) * Math.sin((lo - ref.lng) * r / 2) ** 2; const d = 2 * R * Math.asin(Math.sqrt(h)); if (d < bd) { bd = d; best = x; } });
+    st = best;
+  }
+  showGTab('stations', { noScroll: true });
+  if (!st) { window.__pendingStation = ref.id; return false; }
+  showStationCard(st, { pan: true, noScroll: true });
+  const m = document.getElementById('stationMap'); if (m) setTimeout(() => m.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  return true;
+}
+window.gotoStation = gotoStation;
 function openPendingStation() {
   const id = window.__pendingStation; if (!id) return;
   const st = stations.find(x => x.id === id); if (!st) return;

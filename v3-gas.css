@@ -513,3 +513,25 @@ body:has(.g-share-ov.open) .gfc { display: none; }
 .g-mapbar .g-navt-ic { width: 42px; height: 42px; border-radius: 15px; }
 .g-navt.wa .g-navt-ic { background: linear-gradient(145deg, #3fe27c, #17b457); }
 .g-nav-row { display: flex; gap: 8px; }
+
+/* ═══ gas assistant — station cards, tools, header buttons ═══ */
+.gfc-hbtns { display: flex; gap: 8px; flex: none; }
+.gfc-clr { width: 40px; height: 40px; border: 0; border-radius: 50%; color: #fff; font-size: 19px; cursor: pointer; background: rgba(255,255,255,.12); }
+.gfc-msg { max-width: 94%; }
+.gfc-ai .gfc-b { max-width: 100%; }
+.gfc-sts { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px; }
+.gfc-st { padding: 12px; border-radius: 22px; background: rgba(255,255,255,.1); box-shadow: inset 0 1px 1px rgba(255,255,255,.22); }
+.gfc-st-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.gfc-st-top b { min-width: 0; font: 700 14.5px var(--v3-font, system-ui); line-height: 1.25; }
+.gfc-st-p { flex: none; font: 800 15px var(--v3-font, system-ui); color: #ffd45c; font-variant-numeric: tabular-nums; }
+.gfc-st small { display: block; margin-top: 3px; font-size: 12px; color: rgba(255,255,255,.7); }
+.gfc-st-acts { display: flex; gap: 6px; margin-top: 10px; }
+.gfc-st-acts button, .gfc-st-acts a { flex: 1; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 8px; border: 0; border-radius: 999px; text-decoration: none; white-space: nowrap; color: #fff; font: 700 12.5px var(--v3-font, system-ui); cursor: pointer; background: rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.25); transition: transform .3s var(--v3-spring); }
+.gfc-st-acts button:active, .gfc-st-acts a:active { transform: scale(.94); }
+.gfc-st-acts button[data-act="map"] { color: #1a1405; background: linear-gradient(145deg, #fff0b8, #ffd45c 55%, #f4c300); box-shadow: none; }
+.gfc-st-acts .gfc-wa { flex: none; width: 42px; padding: 0; color: #fff; background: linear-gradient(145deg, #3fe27c, #17b457); box-shadow: none; }
+.gfc-tools { display: flex; gap: 6px; margin-top: 6px; }
+.gfc-tools button { min-height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; color: rgba(255,255,255,.85); font: 700 12px var(--v3-font, system-ui); cursor: pointer; background: rgba(255,255,255,.08); }
+.gfc-tools button:first-child { color: #7ff0ab; }
+.gfc-tools button:active { transform: scale(.95); }
+@media (max-width: 360px) { .gfc-st-acts a, .gfc-st-acts button { font-size: 11.5px; padding: 0 5px; } }
