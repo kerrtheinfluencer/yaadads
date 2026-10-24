@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'v3-gas-live',
+  current: 'v3-gas-assistant',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -421,8 +421,6 @@ var SITE_UPDATES = {
       body: 'The Gas Prices page now opens on the Stations map. Tap a station to see its price for each fuel, confirm or type in what you paid, and get directions in Google Maps, Apple Maps or Waze. Share any station — or today’s prices — to WhatsApp in one tap, and ask the new floating gas assistant anything about pump prices. On the home screen you can now swipe through an ad’s photos without opening it, and a live counter shows how many people are on Yaad Adz right now.',
       date: 'Oct 24, 2026',
       notes: [
-        'New: the gas assistant can now find the cheapest stations near you, with Map, Directions (Google Maps, Apple Maps or Waze) and WhatsApp buttons on every station, plus a WhatsApp button to share any answer',
-        'New: the gas assistant suggests follow-up questions, remembers the fuel you asked about, and understands “directions to the second one”',
         'New: official per-station fuel prices from the weekly Consumer Affairs Commission survey, estimated for today and marked with ≈',
         'New: the Gas Prices page opens on the Stations map, with a cleaner search and a premium map card',
         'New: tap a station for its prices, a one-tap confirm, and a box to type the exact price you saw at the pump',
@@ -433,6 +431,24 @@ var SITE_UPDATES = {
         'New: a live counter showing how many people are on Yaad Adz now and how many visits today',
         'Changed: smoother scrolling and animations on older phones',
         'Fixed: the Yaad Brain chat sits neatly above the keyboard on iPhone',
+      ],
+      url: '/gas-prices.html',
+    },
+    'v3-gas-assistant': {
+      version: 'v3.2',
+      icon: '🧭',
+      title: 'A smarter gas assistant',
+      cta: 'Open Gas Prices',
+      ctaFn: 'goGasPrices',
+      body: 'The gas assistant on the Gas Prices page can now find the cheapest stations near you. Every station it suggests comes with Map, Directions (Google Maps, Apple Maps or Waze) and WhatsApp buttons, and you can share any answer to WhatsApp in one tap. It also suggests what to ask next, remembers the fuel you asked about, and understands things like “directions to the second one”.',
+      date: 'Oct 24, 2026',
+      notes: [
+        'New: ask “cheapest 87 near me” to see the cheapest stations around you, with how far each one is',
+        'New: every station in a chat answer has Map, Directions, Waze and WhatsApp buttons',
+        'New: a WhatsApp button and a Copy button under every answer',
+        'New: say “directions to the second one” to get the route to a station from the list',
+        'New: follow-up suggestions after each answer, and the chat remembers which fuel you asked about',
+        'New: a button to start a fresh chat',
       ],
       url: '/gas-prices.html',
     },
