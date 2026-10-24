@@ -345,6 +345,8 @@ var SITE_UPDATES = {
       date: 'Oct 17, 2026',
       notes: [
         'New: a floating gas assistant on the Gas Prices page — tap Ask to check pump prices, fill-up costs and trends without leaving the page',
+        'New: share gas prices or any station on WhatsApp in one tap, with the prices written out and a link that opens that station for your friend',
+        'New: every station card now has Google Maps, Apple Maps and Waze buttons to start directions',
         'Fixed: the visits-today number on the home and Gas Prices pages now counts correctly instead of showing 0',
         'New: a live counter on the home and Gas Prices pages showing how many people are on the site right now and how many visits today',
         'New: on a station card you can now type in the exact price you saw at the pump, next to the one-tap confirm buttons',

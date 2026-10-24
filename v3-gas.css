@@ -466,3 +466,38 @@ body.g-sheet-open { overflow: hidden; }
 .gfc-send:disabled { opacity: .4; } .gfc-send:not(:disabled):active { transform: scale(.92); }
 body:has(.g-sheet.open) .gfc { display: none; }
 @media (prefers-reduced-motion: reduce) { .gfc-panel, .gfc-fab { transition: none; } .gfc-orb i, .gfc-dots i { animation: none; } }
+
+/* ═══ station card — "Get there" tiles + share ═══ */
+.g-nav { margin-top: 14px; padding: 12px; border-radius: 26px; background: rgba(255,255,255,.07); box-shadow: inset 0 1px 1px rgba(255,255,255,.2); }
+.g-nav-h { margin: 2px 4px 10px; font: 800 12px var(--v3-font, system-ui); letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+.g-nav-row { display: flex; gap: 8px; }
+.g-navt { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 6px 11px; border-radius: 22px; text-decoration: none; color: #fff;
+  background: rgba(255,255,255,.1); box-shadow: inset 0 1px 1px rgba(255,255,255,.28); transition: transform .4s var(--v3-spring), background .2s; }
+.g-navt:active { transform: scale(.94); background: rgba(255,255,255,.18); }
+.g-navt b { font: 700 12.5px var(--v3-font, system-ui); white-space: nowrap; }
+.g-navt-ic { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; color: #fff; box-shadow: 0 8px 18px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.5); }
+.g-navt.google .g-navt-ic { background: linear-gradient(145deg, #5b9bff, #2f6fe4); }
+.g-navt.apple .g-navt-ic { background: linear-gradient(145deg, #5fd48a, #1f9d57); }
+.g-navt.waze .g-navt-ic { background: linear-gradient(145deg, #5fdcff, #1db4e8); }
+.g-act-wa, .g-stcard-acts .g-act-wa { color: #fff; background: linear-gradient(145deg, #3fe27c, #17b457); box-shadow: 0 10px 24px rgba(23,180,87,.35), inset 0 1px 1px rgba(255,255,255,.5); }
+.g-act-wa svg { flex: none; }
+
+/* share sheet */
+.g-share-ov { display: flex; align-items: flex-end; justify-content: center; z-index: 95; }
+.g-share-sheet { width: 100%; max-width: 560px; padding: 8px 18px calc(18px + env(safe-area-inset-bottom, 0px)); border-radius: 32px 32px 0 0; color: #fff; transform: translateY(105%); transition: transform .45s cubic-bezier(.22,1,.36,1);
+  background: linear-gradient(180deg, #14506a, #0a4a48 60%, #053a2a); box-shadow: inset 0 1px 1px rgba(255,255,255,.5), 0 -18px 50px rgba(2,20,18,.5); }
+.g-share-ov.open .g-share-sheet { transform: none; }
+.g-grab { width: 38px; height: 4px; margin: 6px auto 10px; border-radius: 4px; background: rgba(255,255,255,.4); }
+.g-share-sheet h3 { margin: 0 0 10px; font: 700 20px var(--v3-font, system-ui); }
+.g-share-pre { margin: 0 0 12px; padding: 14px 16px; max-height: 32dvh; overflow: auto; white-space: pre-wrap; word-break: break-word; border-radius: 22px; font: 500 14px/1.5 var(--v3-font, system-ui); color: rgba(255,255,255,.92);
+  background: rgba(0,0,0,.26); box-shadow: inset 0 1px 3px rgba(0,0,0,.35); }
+.g-share-wa { display: flex; align-items: center; justify-content: center; gap: 10px; height: 56px; border-radius: 999px; text-decoration: none; font: 800 16px var(--v3-font, system-ui); color: #fff;
+  background: linear-gradient(145deg, #3fe27c, #17b457); box-shadow: 0 12px 28px rgba(23,180,87,.38), inset 0 1px 1px rgba(255,255,255,.55); transition: transform .4s var(--v3-spring); }
+.g-share-wa:active { transform: scale(.96); }
+.g-share-row { display: flex; gap: 8px; margin-top: 10px; }
+.g-share-row button { flex: 1; height: 48px; border: 0; border-radius: 999px; color: #fff; font: 700 14px var(--v3-font, system-ui); cursor: pointer; background: rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.25); }
+.g-share-row button[hidden] { display: none; }
+@media (min-width: 700px) { .g-share-ov { align-items: center; } .g-share-sheet { border-radius: 32px; transform: translateY(24px) scale(.97); opacity: 0; transition: transform .4s var(--v3-spring), opacity .25s; } .g-share-ov.open .g-share-sheet { opacity: 1; } }
+body:has(.g-share-ov.open) .gfc { display: none; }
+.gfc-fab.gfc-away { transform: translateY(90px) scale(.9); opacity: 0; }
+.g-wrap { padding-bottom: 96px; }

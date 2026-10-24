@@ -825,9 +825,10 @@ function initGTabs() {
     const n = list[(i + (e.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
     n.focus(); showGTab(n.dataset.gtab, { noScroll: true });
   });
+  const tabOf = (x) => { if (/^s=/.test(x)) { window.__pendingStation = decodeURIComponent(x.slice(2)); return 'stations'; } return ['stations', 'trends'].includes(x) ? x : 'prices'; };
   const h = (location.hash || '').replace('#', '');
-  showGTab(['stations', 'trends'].includes(h) ? h : 'prices', { noHash: true, noScroll: true });
-  window.addEventListener('hashchange', () => { const x = (location.hash || '').replace('#', ''); showGTab(['stations', 'trends'].includes(x) ? x : 'prices', { noHash: true, noScroll: true }); });
+  showGTab(tabOf(h), { noHash: true, noScroll: true });
+  window.addEventListener('hashchange', () => { const x = (location.hash || '').replace('#', ''); showGTab(tabOf(x), { noHash: true, noScroll: true }); if (window.__pendingStation && stations && stations.length) openPendingStation(); });
 }
 
 /* ── report sheet ─────────────────────────────────────────────── */
@@ -1137,6 +1138,79 @@ function stationPriceRows(station) {
       '</dl></div>';
   }).join('');
 }
+
+/* ── navigate + share (station card and header) ── */
+const WA_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.04 2a9.9 9.9 0 0 0-8.4 15.1L2 22l5-1.6A9.9 9.9 0 1 0 12.04 2Zm0 1.8a8.1 8.1 0 1 1-4.3 15l-.3-.2-2.9.9.9-2.8-.2-.3a8.1 8.1 0 0 1 6.8-12.6Zm-3 3.7c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4l-.5-.3-1.8-.9c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.3-.1-1.1-.4-2.1-1.3-.8-.7-1.3-1.5-1.4-1.8-.2-.3 0-.4.1-.5l.4-.5.3-.4c.1-.2 0-.3 0-.5l-.8-2c-.2-.5-.4-.4-.6-.4Z"/></svg>';
+function navLinks(station) {
+  const [lat, lng] = stationCoords(station), name = encodeURIComponent(station.name || 'Gas station');
+  return {
+    google: 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng + '&travelmode=driving',
+    apple: 'https://maps.apple.com/?daddr=' + lat + ',' + lng + '&dirflg=d&q=' + name,
+    waze: 'https://waze.com/ul?ll=' + lat + ',' + lng + '&navigate=yes'
+  };
+}
+const IS_APPLE = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+function navTilesHtml(station) {
+  const l = navLinks(station);
+  const tile = (cls, href, label, svg) => '<a class="g-navt ' + cls + '" href="' + href + '" target="_blank" rel="noopener"><span class="g-navt-ic">' + svg + '</span><b>' + label + '</b></a>';
+  const pin = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>';
+  const arrow = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M3.5 11 20.5 3.5 13 20.5l-2.2-7.3z"/></svg>';
+  const bubble = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 3C7 3 3.5 6.6 3.5 11c0 2 .7 3.7 1.9 5-.1 1.2-.5 2.4-1.2 3.4 1.5 0 2.9-.5 4-1.3 1.2.5 2.4.7 3.8.7 5 0 8.5-3.6 8.5-7.8S17 3 12 3Zm-3 7.2a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Zm6 0a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Zm-6.2 3.4c.9 1.2 2 1.8 3.2 1.8s2.3-.6 3.2-1.8l.9.6c-1.1 1.5-2.5 2.3-4.1 2.3s-3-.8-4.1-2.3Z"/></svg>';
+  return '<div class="g-nav"><div class="g-nav-h">Get there</div><div class="g-nav-row">' +
+    tile('google', l.google, 'Google Maps', pin) + (IS_APPLE ? tile('apple', l.apple, 'Apple Maps', arrow) : '') + tile('waze', l.waze, 'Waze', bubble) + '</div></div>';
+}
+function stationMainPrices(station) {
+  return ['87', '90', 'diesel', 'ulsd'].map(f => {
+    const rep = stationReportsIndex[station.id]?.[f], e = surveyEst(station, f);
+    let price = null, est = false;
+    if (rep && rep.prices.length) price = rep.prices.reduce((a, b) => a + b, 0) / rep.prices.length;
+    else if (e) { price = e.price; est = !!e.est; }
+    return price == null ? null : { label: SURVEY_FUEL_LABEL[f] || f, price, est };
+  }).filter(Boolean);
+}
+function stationShare(station) {
+  const rows = stationMainPrices(station);
+  const url = location.origin + '/gas-prices.html#s=' + encodeURIComponent(station.id);
+  const text = '⛽ ' + station.name + (station.parish ? ' (' + station.parish + ')' : '') + '\n' +
+    (rows.length ? rows.map(r => r.label + ': ' + (r.est ? '≈ ' : '') + 'J$' + r.price.toFixed(2)).join('\n') + '\n' + (rows.some(r => r.est) ? '(≈ estimated for today)\n' : '') : '') +
+    '📍 Directions: ' + navLinks(station).google + '\nMore prices: ' + url;
+  return { title: station.name + ' — gas prices', text, url, heading: 'Share this station' };
+}
+function nationalShare() {
+  const want = ['87', '90', 'diesel', 'ulsd'];
+  const rows = (typeof PRICES !== 'undefined' ? PRICES : []).filter(p => want.includes(p.key)).map(p => p.name + ': J$' + pumpOf(p).toFixed(2) + '/L');
+  const url = location.origin + '/gas-prices.html';
+  return { title: 'Jamaica Gas Prices — Yaad Adz', heading: 'Share gas prices', url,
+    text: '⛽ Jamaica gas prices today (est. at the pump)\n' + (rows.length ? rows.join('\n') + '\n' : '') + 'Compare stations near you: ' + url };
+}
+function openShare(d) {
+  let ov = document.getElementById('shareOv');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'shareOv'; ov.className = 'g-sheet-ov g-share-ov';
+    ov.innerHTML = '<section class="g-share-sheet" role="dialog" aria-label="Share"><div class="g-grab"></div><h3 id="shTitle">Share</h3>' +
+      '<pre class="g-share-pre" id="shText"></pre>' +
+      '<a class="g-share-wa" id="shWa" target="_blank" rel="noopener">' + WA_SVG + ' Send on WhatsApp</a>' +
+      '<div class="g-share-row"><button type="button" id="shCopy">📋 Copy</button><button type="button" id="shMore">⤴︎ More…</button><button type="button" id="shClose">Close</button></div></section>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+    ov.querySelector('#shClose').onclick = () => ov.classList.remove('open');
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') ov.classList.remove('open'); });
+  }
+  ov.querySelector('#shTitle').textContent = d.heading || 'Share';
+  ov.querySelector('#shText').textContent = d.text;
+  ov.querySelector('#shWa').href = 'https://wa.me/?text=' + encodeURIComponent(d.text);
+  const copy = ov.querySelector('#shCopy'), more = ov.querySelector('#shMore');
+  copy.textContent = '📋 Copy';
+  copy.onclick = async () => { try { await navigator.clipboard.writeText(d.text); copy.textContent = '✓ Copied'; } catch (e) { copy.textContent = 'Press and hold the text to copy'; } };
+  more.hidden = !navigator.share;
+  more.onclick = async () => { try { await navigator.share({ title: d.title, text: d.text }); } catch (e) {} };
+  requestAnimationFrame(() => ov.classList.add('open'));
+}
+function openPendingStation() {
+  const id = window.__pendingStation; if (!id) return;
+  const st = stations.find(x => x.id === id); if (!st) return;
+  window.__pendingStation = null; showStationCard(st, { pan: true });
+}
 function showStationCard(station, opts) {
   opts = opts || {};
   const card = document.getElementById('stationCard');
@@ -1152,10 +1226,12 @@ function showStationCard(station, opts) {
     '<p class="g-stcard-sub">' + escapeHtml([station.brand, station.parish].filter(Boolean).join(' · ') || 'Jamaica') + '</p>' +
     (rows ? '<div class="g-stp-grid">' + rows + '</div><p class="g-stcard-note">' + note + '</p>' : '<p class="g-stcard-note">' + note + '</p>') +
     confirmButtonsForStation(station) +
-    '<div class="g-stcard-acts"><button type="button" class="g-act g-act-gold" id="stCardReport">✍️ Report a price</button><a class="g-act" href="' + directionsUrl(station) + '" target="_blank" rel="noopener">🧭 Directions</a></div>';
+    navTilesHtml(station) +
+    '<div class="g-stcard-acts"><button type="button" class="g-act g-act-gold" id="stCardReport">✍️ Report a price</button><button type="button" class="g-act g-act-wa" id="stCardShare">' + WA_SVG + ' Share</button></div>';
   card.hidden = false;
   document.getElementById('stCardClose').onclick = () => { card.hidden = true; };
   document.getElementById('stCardReport').onclick = () => openReport();
+  document.getElementById('stCardShare').onclick = () => openShare(stationShare(station));
   if (opts.noScroll) return;
   setTimeout(() => { try { card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 120);
 }
@@ -1477,6 +1553,7 @@ async function initStationLocator() {
     stationReportsIndex = aggregateStationReports(reports);
     addStationMarkers();
     stationMap.invalidateSize();
+    openPendingStation();
     renderCommunityPrices(aggregateCommunityReports(reports));
     const nSv = stations.filter(s => s.survey).length;
     document.getElementById('mapStatus').textContent = '';
@@ -2058,23 +2135,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Station locator is independent of price data — init it regardless
   initStationLocator();
 
-  // v2: share button — native share sheet on mobile, clipboard fallback
+  // header share button opens the WhatsApp-ready share sheet
   const shareBtn = document.getElementById('shareBtn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', async function() {
-      const shareText = '⛽ Live Jamaica gas prices (Petrojam weekly) — 87, 90, diesel & more. Check before you drive:';
-      const shareUrl = location.origin + '/gas-prices.html';
-      try {
-        if (navigator.share) {
-          await navigator.share({ title: 'Jamaica Gas Prices — Yaad Adz', text: shareText, url: shareUrl });
-        } else {
-          await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
-          shareBtn.setAttribute('aria-label','Link copied');shareBtn.style.color='#ffd27a';
-          setTimeout(function() { shareBtn.setAttribute('aria-label','Share gas prices');shareBtn.style.color=''; }, 2200);
-        }
-      } catch (e) { /* user cancelled the share sheet */ }
-    });
-  }
+  if (shareBtn) shareBtn.addEventListener('click', () => openShare(nationalShare()));
 });
 </script>
 

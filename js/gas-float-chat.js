@@ -45,6 +45,10 @@
     input.addEventListener('blur', function () { if (pinTimer) { clearInterval(pinTimer); pinTimer = null; } setTimeout(pin, 80); setTimeout(pin, 350); });
     if (window.visualViewport) { visualViewport.addEventListener('resize', pin); visualViewport.addEventListener('scroll', pin); }
 
+    /* tuck the button away while scrolling so it never sits on top of what you are reading */
+    var st = null;
+    window.addEventListener('scroll', function () { if (open) return; fab.classList.add('gfc-away'); clearTimeout(st); st = setTimeout(function () { fab.classList.remove('gfc-away'); }, 700); }, { passive: true });
+
     load();
     if (hist.length) hist.forEach(function (m) { paint(m, true); });
     else paint({ r: 'ai', t: 'Hi! Ask me about today’s pump prices, what a fill-up costs, or whether prices are going up or down.' }, true);

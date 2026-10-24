@@ -10,6 +10,8 @@
 The home screen has been rebuilt. It opens on a sunset-lagoon scene with a greeting and one large glass search bar, with a parish picker and your notifications on top. Categories are round icon buttons — tap More for the rest. Listings are frosted glass cards, and the bottom bar is now Home, Saved, Chats and Me, with Post as its own gold button. Saved shows only the listings you have hearted. Listing pages now open on a big photo with a glass info panel and a floating contact bar. Nothing about how the app works has changed.
 
 - New: a floating gas assistant on the Gas Prices page — tap Ask to check pump prices, fill-up costs and trends without leaving the page
+- New: share gas prices or any station on WhatsApp in one tap, with the prices written out and a link that opens that station for your friend
+- New: every station card now has Google Maps, Apple Maps and Waze buttons to start directions
 - Fixed: the visits-today number on the home and Gas Prices pages now counts correctly instead of showing 0
 - New: a live counter on the home and Gas Prices pages showing how many people are on the site right now and how many visits today
 - New: on a station card you can now type in the exact price you saw at the pump, next to the one-tap confirm buttons
