@@ -38,7 +38,7 @@
   function start(page) {
     if (started) return; started = true;
     page = page || 'home'; today = jamaicaDay();
-    var cacheKey = 'ya_visit_count_' + page, dedupKey = 'ya_visit_' + page + '_' + today;
+    var cacheKey = 'ya_visit_count_' + page, dedupKey = 'ya_vd2_' + page + '_' + today; /* new key: the older counter's key made devices that already visited today skip the new table */
     try { var c = localStorage.getItem(cacheKey); if (c) paintToday(c); } catch (e) {}
     getClient(function (client) {
       sb = client;
