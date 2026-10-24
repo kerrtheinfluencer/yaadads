@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'v3-lagoon-glass',
+  current: 'v3-gas-live',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -412,8 +412,33 @@ var SITE_UPDATES = {
       ],
       url: '/',
     },
+    'v3-gas-live': {
+      version: 'v3.1',
+      icon: '⛽',
+      title: 'Gas stations, shared and swipeable',
+      cta: 'Open Gas Prices',
+      ctaFn: 'goGasPrices',
+      body: 'The Gas Prices page now opens on the Stations map. Tap a station to see its price for each fuel, confirm or type in what you paid, and get directions in Google Maps, Apple Maps or Waze. Share any station — or today’s prices — to WhatsApp in one tap, and ask the new floating gas assistant anything about pump prices. On the home screen you can now swipe through an ad’s photos without opening it, and a live counter shows how many people are on Yaad Adz right now.',
+      date: 'Oct 24, 2026',
+      notes: [
+        'New: official per-station fuel prices from the weekly Consumer Affairs Commission survey, estimated for today and marked with ≈',
+        'New: the Gas Prices page opens on the Stations map, with a cleaner search and a premium map card',
+        'New: tap a station for its prices, a one-tap confirm, and a box to type the exact price you saw at the pump',
+        'New: Google Maps, Apple Maps and Waze buttons right under the map',
+        'New: share gas prices or any station on WhatsApp — your friend’s link opens that station',
+        'New: a floating gas assistant on the Gas Prices page — tap Ask for fill-up costs, trends and the cheapest fuel',
+        'New: swipe through an ad’s photos right on the home screen; a tap still opens the ad',
+        'New: a live counter showing how many people are on Yaad Adz now and how many visits today',
+        'Changed: smoother scrolling and animations on older phones',
+        'Fixed: the Yaad Brain chat sits neatly above the keyboard on iPhone',
+      ],
+      url: '/gas-prices.html',
+    },
   },
 };
+
+/* target for the v3.1 update's call-to-action button */
+window.goGasPrices = function () { location.href = '/gas-prices.html'; };
 
 function siteUpdateSeenId() {
   try { return localStorage.getItem('ya_seen_update') || ''; } catch (e) { return ''; }
