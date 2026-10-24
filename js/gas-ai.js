@@ -28,9 +28,9 @@
   var FKEY = { '87': '87', '90': '90', diesel: 'diesel', ulsd: 'ulsd' };
 
   /* structured station rows for the chat cards (map / directions / share buttons) */
-  function pack(list, label, from) {
-    return list.map(function (x) {
-      var o = { id: x.id, name: x.name, town: x.town || '', lat: x.lat, lng: x.lon != null ? x.lon : x.lng, price: x._p, est: !!x._e, fuel: label };
+  function pack(list, label, offset) {
+    return list.map(function (x, i) {
+      var o = { id: x.id, name: x.name, town: x.town || '', lat: x.lat, lng: x.lon != null ? x.lon : x.lng, price: x._p, est: !!x._e, fuel: label, rank: (offset || 0) + i + 1 };
       if (x._d != null) o.km = x._d;
       return o;
     });
@@ -43,33 +43,72 @@
   var NEAR_RX = /\b(near me|nearby|near here|closest|nearest|around me|close to me|around here)\b/i;
   function isNear(q) { return NEAR_RX.test(String(q || '')); }
 
-  /* cheapest stations around a point: prefers the cheapest within ~12 km, otherwise the nearest few */
-  function answerNear(q, coords) {
+  var LAB = { '87': '87', '90': '90', diesel: 'Diesel', ulsd: 'ULSD' };
+  function kmTxt(k) { return k < 1 ? Math.round(k * 1000) + ' m' : k.toFixed(1) + ' km'; }
+
+  /* The cheapest stations for ONE fuel — around a point (coords), in a town, or nationwide.
+     o = { fuel:'87'|'90'|'diesel'|'ulsd', coords?:{lat,lng}, town?, offset?, litres?, kmpl? }
+     With coords it also does the maths on whether driving further to the cheapest one pays off. */
+  function cheapest(o) {
+    o = o || {};
     return Promise.all([load(), loadStations()]).then(function (r) {
       var d = r[0], st = r[1];
       if (!st) return { text: 'I can’t see the station prices right now — open the Stations map to browse them.', cta: CTA_ST };
-      var f = fuelOf(q, d.prices), key = FKEY[f.p.key] ? f.p.key : '87', E = window.YaadGasEst;
-      var label = { '87': '87', '90': '90', diesel: 'Diesel', ulsd: 'ULSD' }[key], anyEst = false;
-      var rows = [];
+      var key = FKEY[o.fuel] ? o.fuel : '87', label = LAB[key], E = window.YaadGasEst, tank = o.litres || 40, kmpl = o.kmpl || 10;
+      var town = o.town ? String(o.town).toLowerCase() : null, rows = [], anyEst = false;
       st.stations.forEach(function (x) {
         if (x.lat == null || x.lon == null || x.prices[key] == null) return;
+        if (town && (x.town || '').toLowerCase() !== town) return;
         var e = E ? E.estimate(d, key, x.prices[key], x.as_of || st.survey_week_ending) : null;
-        x._p = e ? e.price : x.prices[key]; x._e = !!(e && e.est); x._d = hav(coords.lat, coords.lng, x.lat, x.lon);
+        x._p = e ? e.price : x.prices[key]; x._e = !!(e && e.est);
+        x._d = o.coords ? hav(o.coords.lat, o.coords.lng, x.lat, x.lon) : null;
         rows.push(x);
       });
-      if (!rows.length) return { text: 'No station near you lists a ' + label + ' price in the latest survey.', cta: CTA_ST };
-      var near = rows.filter(function (x) { return x._d <= 12; });
-      var pickNear = near.length >= 2;
-      var pool = pickNear ? near : rows.sort(function (a, b) { return a._d - b._d; }).slice(0, 6);
-      var top = pool.sort(function (a, b) { return a._p - b._p || a._d - b._d; }).slice(0, 4);
-      top.forEach(function (x) { if (x._e) anyEst = true; });
-      var lines = top.map(function (x, i) { return (i + 1) + '. ' + x.name + ' — ' + (x._e ? '≈ ' : '') + j2(x._p) + ' · ' + (x._d < 1 ? Math.round(x._d * 1000) + ' m' : x._d.toFixed(1) + ' km'); });
+      var where = town ? ' in ' + town.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) : '';
+      if (!rows.length) return { text: 'No station' + where + ' lists a ' + label + ' price in the latest survey.', cta: CTA_ST };
+      var pool = rows, scope = town ? 'town' : 'national', nearest = null;
+      if (o.coords) {
+        var byD = rows.slice().sort(function (a, b) { return a._d - b._d; });
+        nearest = byD[0];
+        var within = rows.filter(function (x) { return x._d <= 12; });
+        if (within.length >= 2) { pool = within; scope = 'near'; } else { pool = byD.slice(0, 8); scope = 'closest'; }
+      }
+      var sorted = pool.slice().sort(function (a, b) { return a._p - b._p || (a._d || 0) - (b._d || 0); });
+      var off = o.offset || 0, page = sorted.slice(off, off + 4);
+      if (!page.length) return { text: 'That’s every ' + label + ' station I have prices for' + (town ? where : o.coords ? ' around you' : '') + '.', meta: { fuel: key, scope: scope, offset: off, total: sorted.length }, more: false };
+      page.forEach(function (x) { if (x._e) anyEst = true; });
+      var head = scope === 'near' ? '📍 Cheapest ' + label + ' near you (within 12 km):' : scope === 'closest' ? '📍 Cheapest ' + label + ' — the closest stations I have prices for:' : scope === 'town' ? '📍 Cheapest ' + label + where + ':' : '📍 Cheapest ' + label + ' in Jamaica right now:';
+      if (off) head = '📍 More ' + label + ' stations' + (scope === 'town' ? where : '') + ':';
+      var lines = page.map(function (x, i) { return (off + i + 1) + '. ' + x.name + ' — ' + (x._e ? '≈ ' : '') + j2(x._p) + (x._d != null ? ' · ' + kmTxt(x._d) : x.town ? ' · ' + x.town : ''); });
+      var think = '';
+      if (o.coords && off === 0) {
+        var best = sorted[0];
+        if (best === nearest) think = '💡 The cheapest one is also the closest to you.';
+        else if (nearest._p > best._p) {
+          var save = (nearest._p - best._p) * tank, extra = Math.max(0, best._d - nearest._d), cost = extra * 2 / kmpl * best._p, net = save - cost;
+          think = '💡 Vs your closest station (' + nearest.name + ', ' + kmTxt(nearest._d) + '): ' + best.name + ' is ' + j2(nearest._p - best._p) + '/L cheaper — about ' + j(save) + ' saved on a ' + tank + ' L fill-up' +
+            (extra > 0.3 ? ', roughly ' + j(Math.max(0, net)) + ' after the extra ' + extra.toFixed(1) + ' km each way in fuel (at ~' + kmpl + ' km/L)' : '') + '. ' + (net > 150 ? 'Worth the drive.' : 'Probably not worth a detour.');
+        }
+      }
       return {
-        text: '📍 Cheapest ' + label + (pickNear ? ' near you (within 12 km):' : ' — the closest stations I have prices for:') + '\n' + lines.join('\n') +
-          '\n\n' + (anyEst ? 'Estimated for today: survey price plus this week’s fuel price change. ' : '') + 'Check the pump — stations can differ.',
-        stations: pack(top, label), near: true
+        text: head + '\n' + lines.join('\n') + (think ? '\n\n' + think : '') + '\n\n' + (anyEst ? 'Estimated for today: survey price plus this week’s fuel price change. ' : '') + 'Check the pump — stations can differ.',
+        stations: pack(page, label, off), near: !!o.coords, more: off + 4 < sorted.length,
+        nearest: nearest ? { name: nearest.name, town: nearest.town || '', price: nearest._p, km: nearest._d, est: nearest._e } : null,
+        meta: { fuel: key, scope: scope, town: town, offset: off, total: sorted.length }
       };
     }).catch(function () { return { text: 'I couldn’t load station prices just now — try again in a moment.', cta: CTA_ST }; });
+  }
+  function answerNear(q, coords) {
+    return load().then(function (d) { var f = fuelOf(q, d.prices); return cheapest({ fuel: FKEY[f.p.key] ? f.p.key : '87', coords: coords }); });
+  }
+  /* town names the survey knows, lower-case (for "what about Mandeville?") */
+  function towns() {
+    return loadStations().then(function (st) { var t = {}; (st ? st.stations : []).forEach(function (x) { if (x.town && x.town.length >= 4) t[x.town.toLowerCase()] = 1; }); return Object.keys(t); });
+  }
+  /* explicit fuel / amount in a sentence */
+  function parse(q, prices) {
+    var f = fuelOf(q, prices || (cache && cache.prices) || []);
+    return { fuel: f && f.explicit ? f.p.key : null, amount: amountOf(q) };
   }
 
   /* "cheapest 87 in Mandeville", "diesel prices in Portmore", "price at Texaco Bushy Park" */
@@ -241,5 +280,5 @@
     });
   }
 
-  window.YaadGas = { matches: matches, answer: answer, answerNear: answerNear, isNear: isNear, preload: function () { loadStations(); return load(); } };
+  window.YaadGas = { matches: matches, answer: answer, answerNear: answerNear, cheapest: cheapest, towns: towns, parse: parse, isNear: isNear, preload: function () { loadStations(); return load(); } };
 })();

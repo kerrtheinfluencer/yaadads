@@ -14,6 +14,9 @@ The gas assistant on the Gas Prices page can now find the cheapest stations near
 - New: a WhatsApp button and a Copy button under every answer
 - New: say “directions to the second one” to get the route to a station from the list
 - New: follow-up suggestions after each answer, and the chat remembers which fuel you asked about
+- Changed: “Cheapest 90” (or 87, diesel, ULSD) now finds the actual cheapest stations for that fuel near you, instead of just naming the cheapest fuel
+- New: the assistant works out whether driving further to a cheaper station is worth it, using your tank size and your car’s km per litre — just tell it, e.g. “my tank is 50 litres”
+- New: follow-ups understand what you mean — “what about diesel?”, “in Mandeville”, “show more”, “40 litres” — and the assistant remembers the fuel you usually ask about
 - New: a button to start a fresh chat
 
 ## ⛽ v3.1 — Gas stations, shared and swipeable (Oct 24, 2026)

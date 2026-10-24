@@ -535,3 +535,6 @@ body:has(.g-share-ov.open) .gfc { display: none; }
 .gfc-tools button:first-child { color: #7ff0ab; }
 .gfc-tools button:active { transform: scale(.95); }
 @media (max-width: 360px) { .gfc-st-acts a, .gfc-st-acts button { font-size: 11.5px; padding: 0 5px; } }
+.gfc-st-n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 7px; border-radius: 50%; font: 800 11.5px var(--v3-font, system-ui); font-style: normal; color: #1a1405; background: #ffd45c; vertical-align: 1px; }
+.gfc-more { margin-top: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; color: #fff; font: 700 13.5px var(--v3-font, system-ui); cursor: pointer; background: rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.25); align-self: flex-start; }
+button.gfc-cta { border: 0; cursor: pointer; font-family: inherit; }
