@@ -2130,3 +2130,18 @@ body:has(#page-detail.active)::before, body:has(#page-detail.active)::after { di
 .g-live { margin: 2px 4px 14px; }
 @media (prefers-reduced-motion: reduce) { .live-dot, .lv-bump { animation: none; } }
 
+
+/* 36 · swipeable photos on the home cards */
+.ad-card-img .ad-strip { position: absolute; inset: 0; z-index: 1; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-radius: inherit; }
+.ad-card-img .ad-strip::-webkit-scrollbar { display: none; }
+.ad-card-img .ad-strip img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: center; scroll-snap-stop: always; -webkit-user-drag: none; user-select: none; animation: none !important; }
+.ad-dots { position: absolute; left: 0; right: 0; bottom: 10px; z-index: 4; display: flex; justify-content: center; gap: 5px; pointer-events: none; }
+.ad-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.5); transition: width .3s cubic-bezier(.34,1.56,.64,1), background .2s; }
+.ad-dots i.on { width: 18px; border-radius: 6px; background: #fff; box-shadow: 0 0 8px rgba(0,0,0,.35); }
+.ad-strip-nav { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .ad-strip-nav { position: absolute; top: 50%; z-index: 5; width: 38px; height: 38px; margin-top: -19px; display: grid; place-items: center; border: 0; border-radius: 50%; font: 700 24px/1 system-ui; color: #fff; cursor: pointer; opacity: 0; background: rgba(8,36,30,.6); transition: opacity .25s; }
+  .ad-strip-nav[hidden] { display: none; }
+  .ad-strip-nav.prev { left: 10px; } .ad-strip-nav.next { right: 10px; }
+  .ad-card:hover .ad-strip-nav { opacity: 1; }
+}

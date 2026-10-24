@@ -345,6 +345,8 @@ var SITE_UPDATES = {
       date: 'Oct 17, 2026',
       notes: [
         'New: a floating gas assistant on the Gas Prices page — tap Ask to check pump prices, fill-up costs and trends without leaving the page',
+        'New: swipe through an ad’s photos right on the home screen — no need to open the ad (tap still opens it)',
+        'Changed: the Gas Prices page now opens on the Stations map first',
         'New: share gas prices or any station on WhatsApp in one tap, with the prices written out and a link that opens that station for your friend',
         'New: every station card now has Google Maps, Apple Maps and Waze buttons to start directions',
         'Fixed: the visits-today number on the home and Gas Prices pages now counts correctly instead of showing 0',

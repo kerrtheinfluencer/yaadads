@@ -117,7 +117,7 @@
     return p.exRefinery - pv;
   }
   function dTxt(x) { return x === null ? 'no change data yet' : Math.abs(x) < 0.005 ? 'unchanged vs last week' : (x > 0 ? '▲ up ' : '▼ down ') + j2(Math.abs(x)) + ' vs last week'; }
-  var CTA = { label: 'Open Gas Prices', href: '/gas-prices.html' };
+  var CTA = { label: 'Open Gas Prices', href: '/gas-prices.html#prices' };
   var CTA_ST = { label: 'Find stations', href: '/gas-prices.html#stations' };
 
   function build(q, d) {

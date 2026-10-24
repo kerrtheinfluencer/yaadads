@@ -275,6 +275,14 @@ function cardHTML(ad, idx) {
   // the LCP image queues behind the lazy loader and paints late. Everything
   // deeper stays lazy. alt/src are DB-authored — escape before interpolating.
   const eager = typeof idx === 'number' && idx < 2;
+  /* §CARD-SWIPE — listings with several photos swipe right on the card itself; a tap still opens the ad */
+  const _ph = (ad.photos && ad.photos.length > 1) ? ad.photos.filter(Boolean).slice(0, 6) : [];
+  const strip = _ph.length > 1
+    ? `<div class="ad-strip" data-n="${_ph.length}" aria-label="${escHtml(ad.title)} photos">` +
+        _ph.map((u, i) => `<img src="${escHtml(u)}" alt="${escHtml(ad.title)}${i ? ' — photo ' + (i + 1) : ''}" loading="${(eager && i === 0) ? 'eager' : 'lazy'}"${idx === 0 && i === 0 ? ' fetchpriority="high"' : ''} decoding="async" draggable="false" onload="this.classList.add('loaded')" onerror="this.remove()">`).join('') +
+      `</div><span class="ad-dots" aria-hidden="true">${_ph.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</span>` +
+      `<button type="button" class="ad-strip-nav prev" hidden aria-label="Previous photo" onclick="event.stopPropagation();stripStep(this,-1)">‹</button><button type="button" class="ad-strip-nav next" aria-label="Next photo" onclick="event.stopPropagation();stripStep(this,1)">›</button>`
+    : '';
   const img   = ad.image
     ? `<img src="${escHtml(ad.image)}" alt="${escHtml(ad.title)}" loading="${eager ? 'eager' : 'lazy'}"${idx === 0 ? ' fetchpriority="high"' : ''} decoding="async" width="270" height="200" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='<span class=img-placeholder>${cat.icon||'📦'}</span>'">`
     : `<span class="img-placeholder">${cat.icon||'📦'}</span>`;
@@ -289,7 +297,7 @@ function cardHTML(ad, idx) {
   const freshBadge = ageDays < 2 && ad.status !== 'sold'
     ? `<span class="fresh-badge">✨ New</span>` : '';
   const photoCount = (ad.photos && ad.photos.length > 1)
-    ? `<span class="photo-count-badge">📷 ${ad.photos.length}</span>` : '';
+    ? `<span class="photo-count-badge">📷 1/${Math.min(ad.photos.length, 6)}${ad.photos.length > 6 ? '+' : ''}</span>` : '';
   const eyeSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
   // ── Neg pill ──
@@ -316,7 +324,7 @@ function cardHTML(ad, idx) {
     <div class="accent-stripe"></div>
     <div class="card-glow"></div>
     ${ad.status==='sold' ? '<div class="sold-watermark"></div>' : ''}
-    <div class="ad-card-img" style="--cat-bg:${catColor}">${img}${tag}${freshBadge}${trending}${photoCount}
+    <div class="ad-card-img" style="--cat-bg:${catColor}">${strip || img}${tag}${freshBadge}${trending}${photoCount}
       <button class="fav-btn" aria-label="Save listing" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
@@ -331,6 +339,21 @@ function cardHTML(ad, idx) {
     </div>
   </div>`;
 }
+
+/* swipe strip: keep the dots + "2/5" badge in step with the photo on screen */
+(function () {
+  function sync(strip) {
+    const w = strip.clientWidth || 1, i = Math.max(0, Math.min(strip.children.length - 1, Math.round(strip.scrollLeft / w)));
+    const box = strip.parentElement, dots = box.querySelectorAll('.ad-dots i');
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    const b = box.querySelector('.photo-count-badge');
+    if (b) b.textContent = '📷 ' + (i + 1) + '/' + strip.dataset.n + (b.textContent.slice(-1) === '+' ? '+' : '');
+    const pv = box.querySelector('.ad-strip-nav.prev'), nx = box.querySelector('.ad-strip-nav.next');
+    if (pv) pv.hidden = i === 0; if (nx) nx.hidden = i >= strip.children.length - 1;
+  }
+  document.addEventListener('scroll', function (e) { const t = e.target; if (t && t.classList && t.classList.contains('ad-strip')) sync(t); }, true);
+  window.stripStep = function (btn, dir) { const strip = btn.parentElement.querySelector('.ad-strip'); if (strip) strip.scrollBy({ left: dir * strip.clientWidth, behavior: 'smooth' }); };
+})();
 
 function fillParishSelects() {
   const opts = PARISHES.map(p => `<option>${p}</option>`).join('');

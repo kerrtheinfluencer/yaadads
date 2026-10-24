@@ -484,15 +484,15 @@ padding-top: 108px;
 
 <!-- ═══ MAIN TABS ═══ -->
 <div class="g-tabs" role="tablist" aria-label="Fuel prices sections" id="gTabs">
-<button type="button" class="g-tab active" role="tab" id="gtab-prices" aria-selected="true" aria-controls="gpanel-prices" data-gtab="prices"><span aria-hidden="true">💰</span>Prices</button>
-<button type="button" class="g-tab" role="tab" id="gtab-stations" aria-selected="false" aria-controls="gpanel-stations" data-gtab="stations"><span aria-hidden="true">📍</span>Stations</button>
+<button type="button" class="g-tab" role="tab" id="gtab-prices" aria-selected="false" aria-controls="gpanel-prices" data-gtab="prices"><span aria-hidden="true">💰</span>Prices</button>
+<button type="button" class="g-tab active" role="tab" id="gtab-stations" aria-selected="true" aria-controls="gpanel-stations" data-gtab="stations"><span aria-hidden="true">📍</span>Stations</button>
 <button type="button" class="g-tab" role="tab" id="gtab-trends" aria-selected="false" aria-controls="gpanel-trends" data-gtab="trends"><span aria-hidden="true">📈</span>Trends</button>
 </div>
 
 <div class="wrap g-wrap">
 
 <!-- ═════════ PRICES ═════════ -->
-<section class="g-panel" id="gpanel-prices" role="tabpanel" aria-labelledby="gtab-prices">
+<section class="g-panel" id="gpanel-prices" role="tabpanel" aria-labelledby="gtab-prices" hidden>
 <div class="takeaway-card g-take"><div class="takeaway-icon" id="takeawayIcon">💡</div><p class="takeaway-text" id="takeawayText">Crunching this week's numbers…</p></div>
 
 <div class="g-fuelhero" id="fuelHero" aria-live="polite"><!-- Injected by JS: fuel picker + big pump price + 12-week line --></div>
@@ -523,7 +523,7 @@ padding-top: 108px;
 </section>
 
 <!-- ═════════ STATIONS ═════════ -->
-<section class="g-panel" id="gpanel-stations" role="tabpanel" aria-labelledby="gtab-stations" hidden>
+<section class="g-panel" id="gpanel-stations" role="tabpanel" aria-labelledby="gtab-stations">
 <div class="locator-section" id="station-locator">
 <div class="g-actions">
 <button class="map-locate-btn g-act" type="button" id="locateMe" aria-label="Use my location"><span aria-hidden="true">📍</span> Near me</button>
@@ -807,12 +807,12 @@ function initCalc() {
 
 /* ── tabs: Prices · Stations · Trends (deep-linkable with #stations) ── */
 function showGTab(name, opts) {
-  if (!document.getElementById('gpanel-' + name)) name = 'prices';
+  if (!document.getElementById('gpanel-' + name)) name = 'stations';
   document.querySelectorAll('.g-panel').forEach(pn => { pn.hidden = pn.id !== 'gpanel-' + name; });
   document.querySelectorAll('.g-tab').forEach(t => { const on = t.dataset.gtab === name; t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
-  if (!(opts && opts.noHash)) { try { history.replaceState(null, '', name === 'prices' ? location.pathname : '#' + name); } catch (e) {} }
+  if (!(opts && opts.noHash)) { try { history.replaceState(null, '', name === 'stations' ? location.pathname : '#' + name); } catch (e) {} }
   if (name === 'stations' && stationMap) { setTimeout(() => stationMap.invalidateSize(), 60); setTimeout(() => stationMap.invalidateSize(), 400); }
-  if (name === 'trends') Object.values(chartInstances).forEach(c => { try { c.resize(); } catch (e) {} });
+  if (name !== 'stations') Object.values(chartInstances).forEach(c => { try { c.resize(); } catch (e) {} });
   if (!(opts && opts.noScroll)) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function initGTabs() {
@@ -826,7 +826,7 @@ function initGTabs() {
     const n = list[(i + (e.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
     n.focus(); showGTab(n.dataset.gtab, { noScroll: true });
   });
-  const tabOf = (x) => { if (/^s=/.test(x)) { window.__pendingStation = decodeURIComponent(x.slice(2)); return 'stations'; } return ['stations', 'trends'].includes(x) ? x : 'prices'; };
+  const tabOf = (x) => { if (/^s=/.test(x)) { window.__pendingStation = decodeURIComponent(x.slice(2)); return 'stations'; } return ['prices', 'trends'].includes(x) ? x : 'stations'; };
   const h = (location.hash || '').replace('#', '');
   showGTab(tabOf(h), { noHash: true, noScroll: true });
   window.addEventListener('hashchange', () => { const x = (location.hash || '').replace('#', ''); showGTab(tabOf(x), { noHash: true, noScroll: true }); if (window.__pendingStation && stations && stations.length) openPendingStation(); });
@@ -1181,7 +1181,7 @@ function stationShare(station) {
 function nationalShare() {
   const want = ['87', '90', 'diesel', 'ulsd'];
   const rows = (typeof PRICES !== 'undefined' ? PRICES : []).filter(p => want.includes(p.key)).map(p => p.name + ': J$' + pumpOf(p).toFixed(2) + '/L');
-  const url = location.origin + '/gas-prices.html';
+  const url = location.origin + '/gas-prices.html#prices';
   return { title: 'Jamaica Gas Prices — Yaad Adz', heading: 'Share gas prices', url,
     text: '⛽ Jamaica gas prices today (est. at the pump)\n' + (rows.length ? rows.join('\n') + '\n' : '') + 'Compare stations near you: ' + url };
 }

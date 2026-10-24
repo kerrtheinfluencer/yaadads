@@ -535,7 +535,7 @@ const OB = (function() {
       icon: '⛽',
       delay: 14000,
       msg: 'Live Jamaica gas prices, updated weekly — check before you drive',
-      action: { label: 'View', fn: function() { location.href = '/gas-prices.html'; } },
+      action: { label: 'View', fn: function() { location.href = '/gas-prices.html#prices'; } },
     });
   }
 
