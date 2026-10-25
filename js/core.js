@@ -480,20 +480,23 @@ function sbIncrView(id) {
   const BASE = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
   const H    = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
-  // keepalive:true guarantees the request completes even after navigation
-  // Try RPC first (security definer bypasses RLS)
-  fetch(BASE + '/rpc/increment_view', {
-    method: 'POST', keepalive: true, headers: H,
-    body: JSON.stringify({ ad_id: id })
-  }).then(function(r) {
-    if (!r.ok) {
-      // RPC missing or failed — fall back to direct PATCH
-      fetch(BASE + '/ads?id=eq.' + id, {
+  if (!SAFE_ID.test(String(id))) return;
+  var rpc = function(name, body) {
+    return fetch(BASE + '/rpc/' + name, { method: 'POST', keepalive: true, headers: H, body: JSON.stringify(body) });
+  };
+  // keepalive:true guarantees the request completes even after navigation.
+  // Preferred: security-definer RPC (sql/security-hardening.sql). Then the older RPC,
+  // then a direct PATCH (only works while anon UPDATE is still allowed on ads).
+  rpc('bump_ad_views', { p_id: String(id) }).then(function(r) {
+    if (r.ok) return;
+    return rpc('increment_view', { ad_id: String(id) }).then(function(r2) {
+      if (r2.ok) return;
+      return fetch(BASE + '/ads?id=eq.' + encodeURIComponent(id), {
         method: 'PATCH', keepalive: true,
         headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ views: newViews })
-      }).catch(function(){});
-    }
+      });
+    });
   }).catch(function() {});
 }
 
