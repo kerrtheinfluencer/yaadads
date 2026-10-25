@@ -1832,7 +1832,7 @@ function setReportStatus(message, type) {
   if (!status) return;
   status.className = 'report-note' + (type ? ' ' + type : '');
   const icon = type === 'success' ? '✅ ' : type === 'error' ? '⚠️ ' : type === 'info' ? 'ℹ️ ' : '';
-  status.innerHTML = icon + message;
+  status.textContent = icon + message;
 }
 
 // ═══════════════════════════════════════════════════════════

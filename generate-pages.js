@@ -23,6 +23,12 @@ const BASE_URL     = 'https://yaadadz.com';
 const OUT_DIR      = path.join(__dirname, 'ad');
 
 // ── Helpers ───────────────────────────────────────────────────
+/* §SECURITY — ids go into file names, URLs and inline JS, so only plain ids are ever used */
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+/* JSON that is safe inside <script>: "<" can never close the tag, and U+2028/2029 can't break a JS string */
+function jsonForScript(v, space) {
+  return JSON.stringify(v, null, space).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
 function slugify(ad) {
   const raw = (ad.title || '') + (ad.parish ? '-' + ad.parish : '');
   return raw
@@ -32,7 +38,7 @@ function slugify(ad) {
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-{2,}/g, '-')
-    .slice(0, 80) + '-' + ad.id.slice(0, 8);
+    .slice(0, 80) + '-' + String(ad.id).replace(/[^a-z0-9]/gi, '').slice(0, 8);
 }
 
 function fmtPrice(p) {
@@ -92,12 +98,15 @@ function dbToAd(row) {
     image = row.image_url || '';
     if (image) photos = [image];
   }
+  /* §SECURITY — only http(s) image URLs without quotes/brackets/spaces; anything else is dropped */
+  photos = (Array.isArray(photos) ? photos : []).filter(u => typeof u === 'string' && /^https?:\/\//i.test(u.trim()) && !/["'<>\s]/.test(u.trim())).map(u => u.trim());
+  image = photos[0] || '';
   return {
-    id: row.id, title: row.title, category: row.category,
+    id: String(row.id), title: row.title, category: row.category,
     parish: row.parish, price: row.price, desc: row.description,
     phone: row.phone, image, photos,
     neg: row.negotiable, seller: row.seller_name,
-    sellerInit: row.seller_init, sellerId: row.seller_id,
+    sellerInit: String(row.seller_init || '').replace(/[^\p{L}\p{N} .]/gu, '').slice(0, 4), sellerId: SAFE_ID.test(String(row.seller_id || '')) ? String(row.seller_id) : '',
     date: row.created_at, status: row.status || 'active',
     views: row.views || 0,
   };
@@ -393,7 +402,7 @@ function buildPage(ad, allAds) {
       </div>
       ${photos.length > 1 ? `
       <div class="gallery-thumbs">
-        ${photos.map((p,i) => `<img src="${esc(xf(p,144,50))}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" onclick="setFeatured(this,'${esc(xf(p,1280,72))}',${i})" loading="lazy">`).join('')}
+        ${photos.map((p,i) => `<img src="${esc(xf(p,144,50))}" alt="${esc(ad.title)} photo ${i+1}" class="thumb${i===0?' active':''}" data-full="${esc(xf(p,1280,72))}" data-i="${i}" loading="lazy">`).join('')}
       </div>` : ''}
     </div>`;
   } else {
@@ -448,8 +457,8 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
 <meta name="geo.placename" content="${esc(ad.parish)}, Jamaica">
 
 <!-- JSON-LD Structured Data -->
-<script type="application/ld+json">${JSON.stringify(schemas[0], null, 2)}</script>
-<script type="application/ld+json">${JSON.stringify(schemas[1], null, 2)}</script>
+<script type="application/ld+json">${jsonForScript(schemas[0], 2)}</script>
+<script type="application/ld+json">${jsonForScript(schemas[1], 2)}</script>
 
 <!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE3X5BMY63"></script>
@@ -1263,7 +1272,7 @@ ${ad.image ? `<meta name="twitter:image" content="${esc(xf(ad.image,1200,75))}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Share on WhatsApp
         </a>
-        <button class="copy-link-btn" onclick="copyAdLink('${esc(adUrl)}', this)">🔗 Copy Link</button>
+        <button class="copy-link-btn" data-url="${esc(adUrl)}">🔗 Copy Link</button>
         ${require('./tools/ad-report-markup')(ad)}
       </div>
 
@@ -1338,10 +1347,10 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
 
 <script>
   // ── Photos array ─────────────────────────────────────────────
-  var PHOTOS = ${JSON.stringify(photos.map(function(p){return xf(p,1600,80);}))};
+  var PHOTOS = ${jsonForScript(photos.map(function(p){return xf(p,1600,80);}))};
   // The inline featured image uses a lighter 1280px crop; kept in step with the
   // lightbox so closing fullscreen never leaves the page showing a stale photo.
-  var PHOTOS_FEAT = ${JSON.stringify(photos.map(function(p){return xf(p,1280,72);}))};
+  var PHOTOS_FEAT = ${jsonForScript(photos.map(function(p){return xf(p,1280,72);}))};
   var lbIndex = 0;
 
   // ── Thumbnail switcher ────────────────────────────────────────
@@ -2139,6 +2148,12 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
   });
 
   // ── Copy link to clipboard ────────────────────────────────────
+  document.addEventListener('click', function (e) {
+    var th = e.target.closest && e.target.closest('.thumb[data-full]');
+    if (th) { setFeatured(th, th.getAttribute('data-full'), +th.getAttribute('data-i')); return; }
+    var cb = e.target.closest && e.target.closest('.copy-link-btn[data-url]');
+    if (cb) copyAdLink(cb.getAttribute('data-url'), cb);
+  });
   function copyAdLink(url, btn) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(function() {
@@ -2244,7 +2259,7 @@ ${ad.status !== 'sold' && (ad.phone || waLink) ? `
   // RLS), falls back to direct PATCH (works if RLS policy allows it).
   (function() {
     var el    = document.getElementById('viewCountEl');
-    var adId  = '${ad.id}';
+    var adId  = ${jsonForScript(String(ad.id))};
     var BASE  = 'https://cquwshpsfybvgqodbxsf.supabase.co/rest/v1';
     var KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdXdzaHBzZnlidmdxb2RieHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzQ1NzQsImV4cCI6MjA4ODIxMDU3NH0.Ang5B1EF6aOou1m-b7j28V_B0Thur69xXdY8hgiPydw';
     var H     = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
@@ -2348,7 +2363,7 @@ async function main() {
      and their sitemap entry, not just disappear from the app. Dropping them
      here also feeds the stale-file sweep below, which deletes the leftover
      /ad/<slug>.html on this run. */
-  const allAds = allRows.map(dbToAd).filter(ad => ad.status !== 'hidden');
+  const allAds = allRows.filter(r => SAFE_ID.test(String(r && r.id))).map(dbToAd).filter(ad => ad.status !== 'hidden');
 
   const existingFiles = new Set(
     fs.existsSync(OUT_DIR)
@@ -2372,11 +2387,13 @@ async function main() {
       const i = cursor++;
       if (i >= allAds.length) return;
       const ad = allAds[i];
-      const slug = slugify(ad);
-      const file = slug + '.html';
-      generatedFiles.add(file);
-      const html = buildPage(ad, allAds);
-      await fsp.writeFile(path.join(OUT_DIR, file), html, 'utf8');
+      try {
+        const slug = slugify(ad);
+        const file = slug + '.html';
+        const html = buildPage(ad, allAds);
+        await fsp.writeFile(path.join(OUT_DIR, file), html, 'utf8');
+        generatedFiles.add(file);
+      } catch (err) { console.warn('  ⚠️ skipped one listing (bad data):', String(err && err.message).slice(0, 120)); continue; }
       created++;
       if (created % 50 === 0) console.log(`  ✅ ${created} pages written…`);
     }
@@ -2584,7 +2601,7 @@ ${catSections}
 
   indexHtml = indexHtml.replace(
     /<script id="ld-listings" type="application\/ld\+json">[\s\S]*?<\/script>/,
-    `<script id="ld-listings" type="application/ld+json">${JSON.stringify(itemListLd)}</script>`
+    `<script id="ld-listings" type="application/ld+json">${jsonForScript(itemListLd)}</script>`
   );
 
   indexHtml = indexHtml.replace(
@@ -2701,8 +2718,8 @@ ${img}
 <meta property="og:type" content="website">
 <meta property="og:url" content="${url}">
 <meta property="og:image" content="${BASE_URL}/og-image.jpg">
-<script type="application/ld+json">${JSON.stringify(itemListLd)}</script>
-<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
+<script type="application/ld+json">${jsonForScript(itemListLd)}</script>
+<script type="application/ld+json">${jsonForScript(breadcrumbLd)}</script>
 <style>
 body{font-family:system-ui,sans-serif;background:#f6f4ef;color:#111;margin:0;padding:0}
 .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 60px}

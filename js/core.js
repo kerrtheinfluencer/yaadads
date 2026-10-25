@@ -260,7 +260,11 @@ const ADS_HOME_COLS = 'id,title,category,parish,price,description,phone,image_ur
    which pulls a disingenuous post off the site without destroying the row.
    'active', null (legacy rows) and 'sold' all stay visible, so this is the
    single gate that decides "is this row public?". */
-function isPublicRow(row) { return !!row && row.status !== 'hidden'; }
+/* §SECURITY — ids end up inside inline onclick="openDetail('…')" handlers and data-* attributes, so an id (or
+   seller_id) containing a quote or tag could run script. Only plain ids are ever shown; anything else is dropped. */
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+function isPublicRow(row) { return !!row && row.status !== 'hidden' && SAFE_ID.test(String(row.id)); }
+function safeHttpUrl(u) { return (typeof u === 'string' && /^https?:\/\//i.test(u.trim()) && !/["'<>\s]/.test(u.trim())) ? u.trim() : ''; }
 
 // Load all active ads into cache
 async function loadAds(_isRetry) {
@@ -376,8 +380,11 @@ function dbToAd(row) {
     image = row.image_url || '';
     if (image) photos = [image];
   }
+  /* image URLs: http(s) only, no quotes/angle brackets/spaces (they are placed in src="…" attributes) */
+  photos = (Array.isArray(photos) ? photos : []).map(safeHttpUrl).filter(Boolean);
+  image = photos[0] || '';
   return {
-    id:         row.id,
+    id:         String(row.id),
     title:      row.title,
     category:   row.category,
     parish:     row.parish,
@@ -388,8 +395,8 @@ function dbToAd(row) {
     photos:     photos,
     neg:        row.negotiable,
     seller:     row.seller_name,
-    sellerInit: row.seller_init,
-    sellerId:   row.seller_id,
+    sellerInit: String(row.seller_init || '').replace(/[^\p{L}\p{N} .]/gu, '').slice(0, 4),
+    sellerId:   SAFE_ID.test(String(row.seller_id || '')) ? String(row.seller_id) : '',
     date:       row.created_at,
     status:     row.status || 'active',
     views:      row.views || 0,

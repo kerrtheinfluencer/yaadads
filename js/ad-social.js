@@ -104,7 +104,7 @@ function showAdInline(ad) {
   if (similar.length) {
     var cards = similar.map(function (a) {
       var ac = catById(a.category);
-      return '<a href="javascript:openDetail(\'' + a.id + '\')" class="sim-card" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden">'
+      return '<a href="javascript:openDetail(\'' + escHtml(a.id) + '\')" class="sim-card" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden">'
         + (a.image ? '<div style="aspect-ratio:4/3;overflow:hidden"><img src="' + t(a.image) + '" alt="' + escHtml(a.title) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>'
           : '<div style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--surface-2)">' + (ac.icon || '📦') + '</div>')
         + '<div style="padding:10px"><div style="font-weight:800;color:var(--green);font-family:var(--font-d)">J$' + fmtN(a.price) + '</div><div style="font-size:13px;font-weight:600;margin-top:2px">' + escHtml(a.title) + '</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">📍 ' + escHtml(a.parish) + '</div></div>'
@@ -311,10 +311,10 @@ function openProfile(sellerId) {
 
   document.getElementById('profileInner').innerHTML =
     '<div class="prof-header">' +
-      '<div class="prof-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + ini + '</div>' +
+      '<div class="prof-avatar" style="background:' + clr.bg + ';color:' + clr.fg + '">' + escHtml(ini) + '</div>' +
       '<div class="prof-info">' +
         '<div class="prof-name">' + escHtml(name) + (verified ? ' <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="#005c35"/><path d="M5 8l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') + '</div>' +
-        '<div class="prof-since" id="profSinceLine">📍 ' + (sample.parish||'Jamaica') + ' · <span id="profJoinDate">Yaad Adz Seller</span></div>' +
+        '<div class="prof-since" id="profSinceLine">📍 ' + escHtml(sample.parish||'Jamaica') + ' · <span id="profJoinDate">Yaad Adz Seller</span></div>' +
         (avgRating ? '<div style="font-size:13px;color:#888;margin-top:2px">⭐ ' + avgRating + ' avg · ' + ratings.length + ' review' + (ratings.length!==1?'s':'') + '</div>' : '') +
         '<div class="prof-stats">' +
           '<div><div class="prof-stat-n">' + activeAds.length + '</div><div class="prof-stat-l">Active Ads</div></div>' +

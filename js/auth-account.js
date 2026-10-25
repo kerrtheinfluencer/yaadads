@@ -739,10 +739,10 @@ function renderMyAds() {
       '</div>' +
       '<span class="s-badge ' + (ad.status==='sold'?'s-sold':'s-active') + '">' + (ad.status==='sold'?'● Sold':'● Active') + '</span>' +
       '<div class="my-ad-acts">' +
-        '<button class="btn btn-ghost btn-sm" onclick="openEditAd(\'' + ad.id + '\')">✏️ Edit</button>' +
-        '<button class="btn btn-ghost btn-sm" onclick="openDetail(\'' + ad.id + '\')">View</button>' +
-        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + ad.id + '\');setTimeout(renderMyAds,200)">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
-        '<button class="btn btn-red btn-sm" onclick="delAd(\'' + ad.id + '\')">🗑️</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="openEditAd(\'' + escHtml(ad.id) + '\')">✏️ Edit</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="openDetail(\'' + escHtml(ad.id) + '\')">View</button>' +
+        '<button class="btn ' + (ad.status==='sold'?'btn-ghost':'btn-red') + ' btn-sm" onclick="toggleSold(\'' + escHtml(ad.id) + '\');setTimeout(renderMyAds,200)">' + (ad.status==='sold'?'Relist':'Sold') + '</button>' +
+        '<button class="btn btn-red btn-sm" onclick="delAd(\'' + escHtml(ad.id) + '\')">🗑️</button>' +
       '</div>' +
     '</div>';
   }).join('');

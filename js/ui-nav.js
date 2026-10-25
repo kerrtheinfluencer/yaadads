@@ -60,10 +60,13 @@ async function init() {
   if (_yaadLastLoad && !_yaadLastLoad.ok) {
     const banner = document.getElementById('setupBanner');
     if (banner) {
-      let msg = '⚠️ <strong>Connection issue</strong> — Showing demo listings. Your real ads are safe. ';
-      if (_yaadLastLoad.reason === 'supabase_error') msg += 'Supabase error: ' + (_yaadLastLoad.message || 'unknown');
-      else if (_yaadLastLoad.reason === 'exception') msg += 'Error: ' + (_yaadLastLoad.message || 'unknown');
-      banner.innerHTML = msg;
+      let detail = '';
+      if (_yaadLastLoad.reason === 'supabase_error') detail = 'Supabase error: ' + (_yaadLastLoad.message || 'unknown');
+      else if (_yaadLastLoad.reason === 'exception') detail = 'Error: ' + (_yaadLastLoad.message || 'unknown');
+      banner.textContent = '';
+      const b = document.createElement('strong'); b.textContent = '⚠️ Connection issue';
+      banner.appendChild(b);
+      banner.appendChild(document.createTextNode(' — Showing demo listings. Your real ads are safe. ' + detail));
       banner.style.display = 'block';
     }
     console.warn('[Yaad Adz] Loaded from DEMO fallback — DB not connected:', _yaadLastLoad);
@@ -309,7 +312,7 @@ function cardHTML(ad, idx) {
   const sellerClr   = avatarColor(sellerName);
   const sellerRow   = ad.sellerId
     ? `<div class="ad-seller-row">
-        <a class="ad-seller-row-link" onclick="event.stopPropagation();openProfile('${ad.sellerId}')" aria-label="View ${escHtml(sellerName)}'s profile">
+        <a class="ad-seller-row-link" onclick="event.stopPropagation();openProfile('${escHtml(ad.sellerId)}')" aria-label="View ${escHtml(sellerName)}'s profile">
           <span class="ad-seller-avatar" style="background:${sellerClr.bg};color:${sellerClr.fg}">${escHtml(sellerInit)}</span>
           <div class="ad-seller-info">
             <span class="ad-seller-name"><span class="ad-seller-name-text">${escHtml(sellerName)}</span> <span class="ad-seller-verified">Verified</span></span>
@@ -320,12 +323,12 @@ function cardHTML(ad, idx) {
     : '';
 
   // Note: ad.title/parish are DB-authored strings — escape before interpolating.
-  return `<div class="ad-card${ad.status==='sold'?' sold':''}" data-id="${ad.id}" onclick="openDetail('${ad.id}')">
+  return `<div class="ad-card${ad.status==='sold'?' sold':''}" data-id="${escHtml(ad.id)}" onclick="openDetail('${escHtml(ad.id)}')">
     <div class="accent-stripe"></div>
     <div class="card-glow"></div>
     ${ad.status==='sold' ? '<div class="sold-watermark"></div>' : ''}
     <div class="ad-card-img" style="--cat-bg:${catColor}">${strip || img}${tag}${freshBadge}${trending}${photoCount}
-      <button class="fav-btn" aria-label="Save listing" onclick="event.stopPropagation();togFav('${ad.id}',this)">${fav}</button>
+      <button class="fav-btn" aria-label="Save listing" onclick="event.stopPropagation();togFav('${escHtml(ad.id)}',this)">${fav}</button>
     </div>
     <div class="ad-card-body">
       <div class="ad-price">J$${fmtN(ad.price)}${negPill}</div>

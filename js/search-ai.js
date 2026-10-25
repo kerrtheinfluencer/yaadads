@@ -2475,7 +2475,17 @@ function renderRecentSearches(){
   if(!wrap||!list) return;
   if(!recent.length){wrap.style.display='none';return;}
   wrap.style.display='block';
-  list.innerHTML=recent.slice(0,6).map(s=>`<button class="sheet-recent-chip" onclick="sheetSearch('${s.replace(/'/g,"\\'") }')"><span class="src-chip-icon">🕐</span>${s}</button>`).join('');
+  /* built with DOM APIs: saved searches come from localStorage (and ?ask= links), so they are never parsed as HTML */
+  list.textContent='';
+  recent.slice(0,6).forEach(function(q){
+    q=String(q);
+    const b=document.createElement('button');
+    b.type='button'; b.className='sheet-recent-chip';
+    const ic=document.createElement('span'); ic.className='src-chip-icon'; ic.textContent='🕐';
+    b.appendChild(ic); b.appendChild(document.createTextNode(q));
+    b.addEventListener('click',function(){sheetSearch(q);});
+    list.appendChild(b);
+  });
 }
 
 function updateSheetSugs(){
@@ -2508,8 +2518,12 @@ function updateSheetSugs(){
     });
   }
   if(!sugs.length) return;
-  const extra=sugs.map(s=>`<button class="sheet-sug sheet-sug-dynamic" onclick="sheetSearch('${s.query.replace(/'/g,"\\'") }'")">${s.label}</button>`).join('');
-  wrap.insertAdjacentHTML('beforeend',extra);
+  sugs.forEach(function(sg){
+    const b=document.createElement('button');
+    b.type='button'; b.className='sheet-sug sheet-sug-dynamic'; b.textContent=String(sg.label);
+    b.addEventListener('click',function(){sheetSearch(String(sg.query));});
+    wrap.appendChild(b);
+  });
 }
 
 function openAiSheet(prefill) {
