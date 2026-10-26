@@ -14,7 +14,7 @@ for (const file of files) {
   assert.equal((html.match(/data-ad-feedback/g) || []).length, 1, file);
   assert(html.includes('/js/ad-feedback.js'), file);
   assert(html.includes('/ad-feedback.css'), file);
-  const id = html.match(/var adId\s*=\s*'([^']+)'/)[1];
+  const id = html.match(/var adId\s*=\s*['"]([^'"]+)['"]/)[1];
   assert(html.includes('data-ad-id="' + id + '"'), file);
 }
 assert(fs.readFileSync('generate-pages.js', 'utf8').includes("require('./tools/ad-feedback-markup')(ad)"));

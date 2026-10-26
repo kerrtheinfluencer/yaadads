@@ -587,14 +587,35 @@ async function doForgotPassword() {
   }
 }
 
+function friendlyAuthError(err) {
+  const m = String((err && err.message) || err || '').toLowerCase();
+  if (m.includes('invalid login') || m.includes('invalid credentials')) return 'Incorrect email or password. Tap "Email me a sign-in link" to get in without a password.';
+  if (m.includes('not confirmed')) return 'Please confirm your email first — check your inbox (and spam) for the confirmation link, or tap "Email me a sign-in link".';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Too many attempts right now — wait a few minutes, or sign in with Google.';
+  if (m.includes('failed to fetch') || m.includes('network')) return 'Can\'t reach the server — check your connection and try again.';
+  return (err && err.message) || 'Sign-in failed. Please try again.';
+}
+
+// Passwordless fallback: emails a one-tap sign-in link (existing accounts only)
+async function sbMagicLink(email) {
+  const { error } = await _db.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false, emailRedirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) throw new Error(friendlyAuthError(error));
+}
+
 async function sbLogin(email, password) {
   // Use Supabase Auth for proper authentication
   const { data, error } = await _db.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message || 'Incorrect email or password.');
+  if (error) throw new Error(friendlyAuthError(error));
   if (!data.user) throw new Error('Login failed — no user returned.');
-  // Fetch profile data
-  const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
-  const p = profile || {};
+  // Fetch profile data — a failed lookup must never block sign-in
+  let p = {};
+  try {
+    const r = await _db.from('profiles').select('*').eq('id', data.user.id).single();
+    p = r.data || {};
+  } catch (e) { console.warn('[sbLogin] profile lookup failed:', e && e.message); }
   return cuFromProfile(p, { id: data.user.id, name: p.name || data.user.email, email: p.email || email, phone: p.phone || '', parish: p.parish || '' });
 }
 

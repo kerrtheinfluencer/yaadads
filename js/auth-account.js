@@ -175,10 +175,10 @@ async function doLogin() {
     const user = await sbLogin(email, pass);
     CU = cuFromProfile(user, { id: user.id });
     L.sess = CU;
-    await loadMessages(); subscribeMessages();
     closeOverlay('ovAuth');
-    renderNav(); updateStats(); updateMsgBadge();
-    showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', '👋');
+    try { await loadMessages(); subscribeMessages(); } catch (e2) { console.warn('[login] messages:', e2 && e2.message); }
+    try { renderNav(); updateStats(); updateMsgBadge(); } catch (e3) { console.warn('[login] ui:', e3 && e3.message); }
+    showToast('Welcome back, ' + String(user.name || 'friend').split(' ')[0] + '! 👋', '👋');
     // Ask for push permission after login (polite — user just chose to engage)
     setTimeout(requestPushPermission, 4000);
   } catch(e) {
@@ -186,6 +186,20 @@ async function doLogin() {
   } finally {
     if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
   }
+}
+async function doMagicLink() {
+  const email = document.getElementById('lEmail').value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr('Enter your email above first, then tap "Email me a sign-in link".');
+  const link = document.getElementById('magicLink');
+  if (link) { link.textContent = 'Sending…'; link.style.pointerEvents = 'none'; }
+  try {
+    await sbMagicLink(email);
+    const el = document.getElementById('authAlert');
+    el.className = 'alert-box show';
+    el.style.cssText = 'display:block;background:var(--green-light);color:var(--green);border-color:var(--green)';
+    el.textContent = 'Check your email — tap the link to sign in instantly.';
+  } catch (e) { authErr(e.message); }
+  finally { if (link) { link.textContent = "Can't sign in? Email me a sign-in link"; link.style.pointerEvents = ''; } }
 }
 async function doRegister() {
   const name   = document.getElementById('rName').value.trim();
