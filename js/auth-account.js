@@ -160,6 +160,16 @@ function authTab(t) {
   document.getElementById('tLogin').classList.toggle('active', t === 'login');
   document.getElementById('tReg').classList.toggle('active',   t === 'register');
   document.getElementById('authAlert').classList.remove('show');
+  var down = typeof EMAIL_SIGNUP_ENABLED !== 'undefined' && !EMAIL_SIGNUP_ENABLED;
+  var rd = document.getElementById('regDown'), rf = document.getElementById('regFields');
+  if (rd) rd.hidden = !down;
+  if (rf) rf.style.display = down ? 'none' : '';
+  var ml = document.getElementById('magicLink');
+  if (ml && ml.parentElement) ml.parentElement.style.display = down ? 'none' : '';
+  var orEl = document.getElementById('authOr');
+  if (orEl) orEl.style.display = (down && t === 'register') ? 'none' : '';
+  var gb = document.querySelector('#ovAuth button[onclick="signInWithGoogle()"]:not(#regDown button)');
+  if (gb) gb.style.display = (down && t === 'register') ? 'none' : 'flex';
 }
 function authErr(m) {
   const e = document.getElementById('authAlert');
