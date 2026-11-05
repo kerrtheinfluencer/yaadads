@@ -263,7 +263,7 @@ const ADS_HOME_COLS = 'id,title,category,parish,price,description,phone,image_ur
 /* §SECURITY — ids end up inside inline onclick="openDetail('…')" handlers and data-* attributes, so an id (or
    seller_id) containing a quote or tag could run script. Only plain ids are ever shown; anything else is dropped. */
 // Flip to true once yaadadz.com is verified in Resend and Supabase custom SMTP uses it.
-// While false, email sign-up shows a "temporarily down" notice and points to Google.
+// While false, email sign-up shows a Google-only sign-up screen.
 const EMAIL_SIGNUP_ENABLED = false;
 const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 function isPublicRow(row) { return !!row && row.status !== 'hidden' && SAFE_ID.test(String(row.id)); }
@@ -535,7 +535,7 @@ function cuFromProfile(profile, fallback = {}) {
 }
 
 async function sbRegister(name, email, phone, parish, password) {
-  if (!EMAIL_SIGNUP_ENABLED) throw new Error('Email sign-up is temporarily down — please sign up with Google instead.');
+  if (!EMAIL_SIGNUP_ENABLED) throw new Error('Please sign up with Google — tap "Continue with Google".');
   // Use Supabase Auth for proper password hashing
   const { data, error } = await _db.auth.signUp({
     email,
