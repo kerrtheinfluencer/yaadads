@@ -2066,31 +2066,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (seen) { dbg('already counted, skipping'); return; }
 
-        // Try RPC first
-        dbg('calling increment_view RPC...');
-        fetch(BASE + '/rpc/increment_view', {
-          method: 'POST', headers: H,
-          body: JSON.stringify({ ad_id: adId })
-        }).then(function(r) {
-          r.text().then(function(body) {
-            dbg('RPC status: ' + r.status + ' body: ' + body);
-            if (r.ok) {
-              sessionStorage.setItem(sKey, '1');
-              dbg('RPC success ✅');
-            } else {
-              dbg('RPC failed, trying PATCH...');
-              fetch(BASE + '/ads?id=eq.' + adId, {
-                method: 'PATCH',
-                headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
-                body: JSON.stringify({ views: cur + 1 })
-              }).then(function(r2) {
-                dbg('PATCH status: ' + r2.status);
-                if (r2.ok) { sessionStorage.setItem(sKey, '1'); dbg('PATCH success ✅'); }
-                else { show(cur); dbg('PATCH also failed ❌'); }
-              }).catch(function(e) { show(cur); dbg('PATCH error: ' + e); });
-            }
+        // Preferred: bump_ad_views RPC (security definer). Then the older
+        // increment_view RPC. Last resort: direct PATCH (only if RLS allows it).
+        function rpc(name, body) {
+          return fetch(BASE + '/rpc/' + name, { method: 'POST', headers: H, body: JSON.stringify(body) });
+        }
+        function done(how) { sessionStorage.setItem(sKey, '1'); dbg(how + ' success ✅'); }
+        rpc('bump_ad_views', { p_id: adId }).then(function(r) {
+          if (r.ok) return done('bump_ad_views');
+          return rpc('increment_view', { ad_id: adId }).then(function(r2) {
+            if (r2.ok) return done('increment_view');
+            return fetch(BASE + '/ads?id=eq.' + encodeURIComponent(adId), {
+              method: 'PATCH',
+              headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
+              body: JSON.stringify({ views: cur + 1 })
+            }).then(function(r3) {
+              if (r3.ok) return done('PATCH');
+              show(cur); dbg('all view counters failed ❌');
+            });
           });
-        }).catch(function(e) { dbg('RPC error: ' + e); show(cur); });
+        }).catch(function(e) { dbg('view counter error: ' + e); show(cur); });
       }).catch(function(e) { dbg('GET error: ' + e); });
   })();
 </script>

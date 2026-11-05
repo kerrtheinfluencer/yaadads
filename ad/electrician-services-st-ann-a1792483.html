@@ -908,10 +908,10 @@ Contact S.R Electrical Services We Provide Electrical Installations For Homes An
         <div class="price-main">J$10,000</div>
         
         <h1 class="ad-title-panel">Electrician Services</h1>
-        <div class="v3-loc"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg> St. Ann · 15 days ago</div>
+        <div class="v3-loc"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg> St. Ann · 16 days ago</div>
         <div class="v3-specs">
           <div class="v3-spec"><span class="v3-spec-k">Category</span><span class="v3-spec-v">Other</span></div>
-          <div class="v3-spec"><span class="v3-spec-k">Posted</span><span class="v3-spec-v">15 days ago</span></div>
+          <div class="v3-spec"><span class="v3-spec-k">Posted</span><span class="v3-spec-v">16 days ago</span></div>
           <div class="v3-spec"><span class="v3-spec-k">Views</span><span class="v3-spec-v"><span id="viewCountEl">13</span></span></div>
         </div>
         <h2 class="v3-h">About this item</h2>
@@ -2018,31 +2018,26 @@ Contact S.R Electrical Services We Provide Electrical Installations For Homes An
 
         if (seen) { dbg('already counted, skipping'); return; }
 
-        // Try RPC first
-        dbg('calling increment_view RPC...');
-        fetch(BASE + '/rpc/increment_view', {
-          method: 'POST', headers: H,
-          body: JSON.stringify({ ad_id: adId })
-        }).then(function(r) {
-          r.text().then(function(body) {
-            dbg('RPC status: ' + r.status + ' body: ' + body);
-            if (r.ok) {
-              sessionStorage.setItem(sKey, '1');
-              dbg('RPC success ✅');
-            } else {
-              dbg('RPC failed, trying PATCH...');
-              fetch(BASE + '/ads?id=eq.' + adId, {
-                method: 'PATCH',
-                headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
-                body: JSON.stringify({ views: cur + 1 })
-              }).then(function(r2) {
-                dbg('PATCH status: ' + r2.status);
-                if (r2.ok) { sessionStorage.setItem(sKey, '1'); dbg('PATCH success ✅'); }
-                else { show(cur); dbg('PATCH also failed ❌'); }
-              }).catch(function(e) { show(cur); dbg('PATCH error: ' + e); });
-            }
+        // Preferred: bump_ad_views RPC (security definer). Then the older
+        // increment_view RPC. Last resort: direct PATCH (only if RLS allows it).
+        function rpc(name, body) {
+          return fetch(BASE + '/rpc/' + name, { method: 'POST', headers: H, body: JSON.stringify(body) });
+        }
+        function done(how) { sessionStorage.setItem(sKey, '1'); dbg(how + ' success ✅'); }
+        rpc('bump_ad_views', { p_id: adId }).then(function(r) {
+          if (r.ok) return done('bump_ad_views');
+          return rpc('increment_view', { ad_id: adId }).then(function(r2) {
+            if (r2.ok) return done('increment_view');
+            return fetch(BASE + '/ads?id=eq.' + encodeURIComponent(adId), {
+              method: 'PATCH',
+              headers: Object.assign({}, H, { 'Prefer': 'return=minimal' }),
+              body: JSON.stringify({ views: cur + 1 })
+            }).then(function(r3) {
+              if (r3.ok) return done('PATCH');
+              show(cur); dbg('all view counters failed ❌');
+            });
           });
-        }).catch(function(e) { dbg('RPC error: ' + e); show(cur); });
+        }).catch(function(e) { dbg('view counter error: ' + e); show(cur); });
       }).catch(function(e) { dbg('GET error: ' + e); });
   })();
 </script>
