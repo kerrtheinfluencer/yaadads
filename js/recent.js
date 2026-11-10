@@ -182,6 +182,10 @@
     window.renderHome = wrapped;
   }
 
+  // §SMOOTH — the feed now stays mounted while a listing is open, so goPage('home')
+  // calls this to refresh the strip instead of relying on a full re-render.
+  window.refreshRecentStrip = function() { try { renderStrip(); } catch (e) {} };
+
   // First paint (in case renderHome was already called before we hooked)
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {

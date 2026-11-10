@@ -477,16 +477,32 @@ function goHome() {
   goPage('home');
 }
 
-function goPage(p) {
+function goPage(p, keepScroll) {
   const current = document.querySelector('.page.active');
   const next = document.getElementById('page-'+p);
   if (!next || next === current) return;
+  // §SMOOTH — leaving an in-app listing view by any route other than the browser
+  // Back button (logo tap, etc.): drop its history entry so Back never needs a dead extra press.
+  if (current && current.id === 'page-detail' && p !== 'detail' && history.state && history.state.yaDetail) {
+    try { history.back(); } catch (e) {}
+  }
   // Fade out current, then swap
   if (current) current.classList.remove('active');
-  // Use rAF so CSS transition has a frame to start from opacity:0
+  // Use rAF so the swap lands on a clean frame; .ya-enter plays a short fade-in
+  // (display:none -> block can't run a CSS transition, a keyframe animation can).
   requestAnimationFrame(() => {
     next.classList.add('active');
-    window.scrollTo({top:0, behavior:'instant'});
+    next.classList.add('ya-enter');
+    setTimeout(() => next.classList.remove('ya-enter'), 260);
+    let top = keepScroll || 0;
+    if (p === 'home' && typeof window.refreshRecentStrip === 'function') {
+      // The feed stayed mounted while a listing was open: refresh the "recently viewed"
+      // strip, and if it grew above the feed, move the restored scroll position with it.
+      const h1 = document.documentElement.scrollHeight;
+      try { window.refreshRecentStrip(); } catch (e) {}
+      if (top) top += document.documentElement.scrollHeight - h1;
+    }
+    window.scrollTo({top: top, behavior:'instant'});
   });
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   const map = {home:'mnHome',msgs:'mnMsgs',myads:'mnAccount'};
@@ -662,17 +678,25 @@ function armCardReveals(container, stagger) {
 
   var vh = window.innerHeight || document.documentElement.clientHeight;
   var batch = 0, CAP = 8;
-  cards.forEach(function(card) {
+  // §SMOOTH — measure every card FIRST, then write. The old loop wrote an attribute and
+  // then measured, once per card, which made the browser redo style + layout for the whole
+  // page 24+ times per render (~100 style recalcs on a single category tap).
+  var list = Array.prototype.slice.call(cards);
+  var rects = list.map(function(card) {
+    var id0 = card.getAttribute('data-id') || '';
+    return (id0 && _revealedIds[id0]) ? null : card.getBoundingClientRect();
+  });
+  list.forEach(function(card, idx) {
     card.setAttribute('data-reveal', 'on');
     var rid = card.getAttribute('data-id') || '';
     if (rid && _revealedIds[rid]) {
       card.classList.add('in', 'seen'); // instant, no replay
       return;
     }
-    // Synchronous measure in the same task as the innerHTML insert, so
+    // Measured in the same task as the innerHTML insert (read pass above), so
     // in-view cards animate on the very first paint (no flash), and
     // off-screen cards hide before ever being painted.
-    var r = card.getBoundingClientRect();
+    var r = rects[idx];
     if (r.top < vh && r.bottom > 0) {
       card.style.animationDelay = (stagger && batch < CAP) ? (batch++ * 45) + 'ms' : '0ms';
       card.classList.add('in');

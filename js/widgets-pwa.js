@@ -322,6 +322,22 @@ function checkUrlAdParam() {
 window.addEventListener('popstate', function(e) {
   const params = new URLSearchParams(location.search);
 
+  // §SMOOTH — in-app listing views are history entries on this same document.
+  var st = e.state || {};
+  if (st.yaDetail) {
+    // Back/Forward landed on a listing entry: show that listing inline.
+    var entryAd = (typeof findAd === 'function') ? findAd(st.yaDetail) : null;
+    if (entryAd) { showAdInline(entryAd); return; }
+  } else {
+    var dp = document.getElementById('page-detail');
+    if (dp && dp.classList.contains('active')) {
+      // Back from a listing: return to the feed exactly as it was left.
+      goPage('home', window._yaHomeScroll || 0);
+      try { if (window._yaHomeTitle) document.title = window._yaHomeTitle; SEO.resetOG(); SEO.setCanonical('/'); } catch (err) {}
+      return;
+    }
+  }
+
   // Pretty URL: /ad/slug — these are static pages now, let browser handle navigation
   const pathParts = location.pathname.split('/');
   if (pathParts[1] === 'ad') return; // static page, no action needed

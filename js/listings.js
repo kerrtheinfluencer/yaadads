@@ -260,6 +260,15 @@ function togFav(id, btn) {
   if (i > -1) { f.splice(i, 1); if(btn) btn.textContent = '🤍'; showToast('Removed from favourites', '🤍'); }
   else         { f.push(id);     if(btn) btn.textContent = '❤️'; showToast('Saved to favourites', '❤️'); }
   L.favs = f;
+  // §SMOOTH — the feed stays mounted while a listing is open, so keep every rendered
+  // copy of this listing's heart in step (the tapped button is already handled above).
+  try {
+    const on = f.indexOf(id) > -1;
+    document.querySelectorAll('.ad-card .fav-btn').forEach(function (b) {
+      const c = b.closest('.ad-card');
+      if (b !== btn && c && c.dataset.id === id) b.textContent = on ? '❤️' : '🤍';
+    });
+  } catch (e) {}
   // Tactile heart pop — transform-only; skipped under reduced motion
   if (btn && !(typeof window.matchMedia === 'function' &&
                window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
