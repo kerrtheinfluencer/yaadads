@@ -1,0 +1,55 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   §SMOOTH — frame-rate governor. Loads AFTER v3-glass.css.
+   Roll back by deleting its <link> in index.html (and bumping sw.js CACHE_VERSION).
+
+   Why: the Lagoon scene (sun + mountains) animates behind ~14 glass chips. Every
+   chip has to re-blur whatever is behind it on every animation frame, which is
+   cheap on a flagship and choppy on a budget Android. So:
+     1. ambient animation rests while the feed is moving      (all devices)
+     2. the small repeated glass controls use a lighter blur  (all devices)
+     3. budget devices drop that blur and the ambient scene   (html.perf-lite)
+     4. page changes fade in instead of hard-cutting          (all devices)
+   Big surfaces (bottom nav, sheets, modals) keep full glass everywhere.
+   Device tier is set in index.html <head>; override with ?perf=lite or ?perf=full.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1 — rest the ambient animations while scrolling (resume ~160ms after you stop) */
+html.is-scrolling body::before,
+html.is-scrolling body::after,
+html.is-scrolling .fresh-badge::after,
+html.is-scrolling .trending-badge::after,
+html.is-scrolling .live-dot,
+html.is-scrolling .gfc-orb i,
+html.is-scrolling .v3-orb,
+html.is-scrolling .v3-orb-glow,
+html.is-scrolling .v3-bars i,
+html.is-scrolling .v3-ai-float::before { animation-play-state: paused; }
+
+/* 2 — lighter glass on the small repeated controls (was blur 18–22px + brightness) */
+html body :is(.v3b-chip, .v3pp-chip, .v3b-tile, .v3b-big, .v3b-link, .v3s-chip, .cat-pill-sm, .m-close) {
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  backdrop-filter: blur(14px) saturate(1.6);
+}
+
+/* 3 — budget devices: no blur on small controls, no ambient scene motion */
+html.perf-lite body :is(.v3b-chip, .v3pp-chip, .v3b-tile, .v3b-big, .v3b-link, .v3s-chip, .cat-pill-sm, .m-close, .btn.btn-ghost) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.perf-lite body::before,
+html.perf-lite body::after,
+html.perf-lite .fresh-badge::after,
+html.perf-lite .trending-badge::after,
+html.perf-lite .v3-ai-float::before,
+html.perf-lite .live-dot,
+html.perf-lite .gfc-orb i,
+html.perf-lite .v3-orb,
+html.perf-lite .v3-orb-glow,
+html.perf-lite .v3-bars i { animation: none; }
+
+/* 4 — soft page change (class added/removed by goPage in js/ui-nav.js).
+   Opacity only on purpose: a transform here would trap position:fixed children
+   (floating contact bar, bottom nav) inside the page for the animation's duration. */
+@keyframes ya-page-in { from { opacity: 0; } to { opacity: 1; } }
+.page.ya-enter { animation: ya-page-in .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .page.ya-enter { animation: none; } }

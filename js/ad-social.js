@@ -22,22 +22,28 @@ function openDetail(id) {
     body: JSON.stringify({ views: newViews })
   });
 
-  // Navigate after tiny delay to let fetch initiate
-  // Check if static page exists before navigating away from SPA
-  var xhr = new XMLHttpRequest();
-  xhr.open('HEAD', dest, true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        setTimeout(function() { window.location.href = dest; }, 60);
-      } else {
-        // Static page not generated yet (brand-new ad) — render it inline
-        // instead of bouncing to /?ad=…, which looped until the generator ran.
-        setTimeout(function() { showAdInline(ad); }, 60);
-      }
-    }
-  };
-  xhr.send();
+  // §SMOOTH — open the listing inside the app, instantly. The old path did a
+  // HEAD request, waited 60ms, then reloaded the whole site, and Back
+  // re-downloaded and re-rendered the entire feed. The static /ad/<slug>.html
+  // pages are untouched (Google and shared links still land on them); only the
+  // in-app tap changed. If rendering throws we fall back to the old navigation.
+  try {
+    var pg = document.getElementById('page-detail');
+    var reopen = !!(pg && pg.classList.contains('active'));
+    if (!reopen) { window._yaHomeScroll = window.scrollY || 0; window._yaHomeTitle = document.title; }
+    showAdInline(ad);
+    history.pushState({ yaDetail: id }, '', location.href);
+    try { if (window.gtag) gtag('event', 'page_view', { page_title: ad.title, page_location: location.origin + dest, page_path: dest }); } catch (e) {}
+  } catch (err) {
+    window.location.href = dest;
+  }
+}
+
+// In-app Back button on a listing: step back through history so the feed
+// returns exactly as it was left (category, search, scroll position).
+function goBackFromDetail() {
+  if (history.state && history.state.yaDetail) { history.back(); }
+  else { goHome(); }
 }
 
 // ── Absolute URL for a generated ad page ──────────────────────────────────
@@ -139,7 +145,7 @@ function showAdInline(ad) {
     + '<div class="v3d-hero">'
     +   gallery
     +   '<div class="v3d-bar">'
-    +     '<button type="button" class="v3d-circ v3d-back" onclick="goHome()" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>'
+    +     '<button type="button" class="v3d-circ v3d-back" onclick="goBackFromDetail()" aria-label="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>'
     +     '<span class="v3d-bar-r">'
     +       '<button type="button" class="v3d-circ v3d-share" aria-label="Share this listing" onclick="shareAdInline(\'' + slug + '\')">' + shareIc + '</button>'
     +       '<button type="button" class="v3d-circ v3d-save' + (faved ? ' on' : '') + '" aria-label="Save listing" aria-pressed="' + (faved ? 'true' : 'false') + '">' + heart + '</button>'

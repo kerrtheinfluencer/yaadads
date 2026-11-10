@@ -425,12 +425,18 @@ if ('serviceWorker' in navigator) {
         </div>
       </noscript>
 
+<script>/* §SMOOTH device tier — runs before first paint. ?perf=lite|full overrides it (and is remembered). */
+(function(){try{var r=document.documentElement,f=null;try{var q=new URLSearchParams(location.search).get('perf');if(q==='lite'||q==='full')localStorage.setItem('ya_perf',q);f=localStorage.getItem('ya_perf');}catch(e){}
+var c=navigator.connection||{},lite=f==='lite'||(f!=='full'&&(c.saveData||(navigator.deviceMemory||8)<=4||(navigator.hardwareConcurrency||8)<=4));
+r.classList.add(lite?'perf-lite':'perf-full');}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="ad-feedback.css">
 <link rel="stylesheet" href="ad-report.css">
 <!-- §V3-GLASS — v3.0 "Lagoon" Liquid Glass layer. Loads LAST so it can restyle
      everything above. Delete this one line (and bump sw.js CACHE_VERSION) to roll back. -->
 <link rel="stylesheet" href="v3-glass.css">
+<!-- §SMOOTH — frame-rate governor. Loads after v3-glass.css. Delete this line (and bump sw.js CACHE_VERSION) to roll back. -->
+<link rel="stylesheet" href="smooth.css">
 
 
 
@@ -1576,6 +1582,7 @@ function v3HeroSearch(e){
 <script src="js/v3-home.js" defer></script>
 <script src="js/v3-screens.js" defer></script>
 <script src="js/site-updates.js" defer></script>
+<script src="js/smooth.js" defer></script>
 <script src="js/boot.js" defer></script>
 <!-- ── REFERRAL ENV BINDINGS ── -->
 <script>
