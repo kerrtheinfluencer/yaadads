@@ -1,0 +1,239 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   §HYBRID — "Island Editorial layout on the Lagoon glass scene".
+   Loads LAST (after smooth.css). Phones only (≤640px); desktop is untouched.
+   Roll back by deleting its <link> in index.html (and bumping sw.js CACHE_VERSION).
+
+   Matches the approved mockups: Home, Listing. Headings are Fraunces, body Inter.
+   Class hooks: html.ui2 is NOT required — this file is self-contained.
+═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --hy-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --hy-ink: #F2FBF9;
+  --hy-soft: #C9E8E4;
+  --hy-mute: #9FD6CF;
+  --hy-gold: #FFC857;
+  --hy-deep: #07303A;
+  --hy-glass: rgba(255, 255, 255, .10);
+  --hy-glass-2: rgba(255, 255, 255, .14);
+  --hy-line: rgba(255, 255, 255, .22);
+}
+
+.hy-head { display: none; }
+
+@media (max-width: 640px) {
+
+  /* ── 1. HOME HEADER: wordmark · parish · search · bell ─────────────────── */
+  html body #page-home .hero:not(.searched) { padding: 18px 20px 0; }
+  html body #page-home .hero:not(.searched) .hero-content {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px; position: relative; max-width: none;
+  }
+  html body #page-home .v3-top { display: contents; }
+  html body #page-home .v3-brand { order: 1; flex: 1 1 auto; margin: 0; min-width: 0; animation: none; }
+  html body #page-home .v3-brand img { display: none; }
+  html body #page-home .v3-brand::before {
+    content: "Yaad Adz"; font: 700 26px/1.1 var(--hy-serif); letter-spacing: -.5px; color: var(--hy-ink);
+  }
+  html body #page-home .v3-loc {
+    order: 2; height: 44px; padding: 0 12px 0 10px; gap: 6px; font-size: 12px; font-weight: 600;
+    background: var(--hy-glass-2); border: 1px solid var(--hy-line);
+  }
+  html body #page-home .v3-loc #v3LocLabel { max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  html body #page-home .v3-loc .v3-loc-chev { display: none; }
+  html body #page-home .v3-hero-search {
+    order: 3; width: 44px; height: 44px; flex: none; margin: 0; padding: 0; gap: 0;
+    justify-content: center; animation: none; position: relative;
+    background: var(--hy-glass-2); border: 1px solid var(--hy-line);
+  }
+  html body #page-home .v3-hero-search .v3-hs-ico { margin: 0; }
+  html body #page-home .v3-hero-search input {
+    position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; padding: 0; cursor: pointer;
+  }
+  html body #page-home .v3-hero-search .v3-hs-ai { display: none; }
+  /* tap the circle → it opens into the full search bar over the header */
+  html body #page-home .v3-hero-search:focus-within {
+    position: absolute; z-index: 6; left: 0; right: 0; top: 0; width: auto; height: 52px;
+    justify-content: flex-start; padding: 0 8px 0 18px; gap: 12px; border-radius: 26px;
+    background: rgba(10, 40, 50, .92);
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  }
+  html body #page-home .v3-hero-search:focus-within input {
+    position: static; opacity: 1; width: auto; flex: 1; cursor: text;
+  }
+  html body #page-home .v3-hero-search:focus-within .v3-hs-ai { display: flex; }
+  html body #page-home .v3-bell { order: 4; width: 44px; height: 44px; background: var(--hy-glass-2); border: 1px solid var(--hy-line); }
+
+  /* while a search is showing, the header steps aside and only "Back to all listings" remains */
+  html body #page-home .hero.searched .v3-brand,
+  html body #page-home .hero.searched .v3-top { display: none; }
+  html body #page-home .hero.searched { padding-top: 0; padding-bottom: 0; }
+  html body #page-home .hero.searched .hero-content > :not(.hero-reset) { display: none; }
+
+  /* greeting stays in the DOM for search engines and screen readers */
+  html body #page-home .hero:not(.searched) h1.v3-greet {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  html body #page-home .hero:not(.searched) .hero-sub,
+  html body #page-home .hero:not(.searched) .hero-stats,
+  html body #page-home .hero:not(.searched) .live-strip { display: none; }
+
+  /* ── 2. STORY-STYLE CATEGORY RAIL ──────────────────────────────────────── */
+  html body .cat-row { padding: 16px 20px 6px; gap: 14px; }
+  html body .cat-row .cat-pill-sm,
+  html body .cat-row .cat-pill-sm:hover { width: 64px; gap: 6px; }
+  html body .cat-row .cat-pill-sm .cp-icon {
+    width: 64px; height: 64px; box-sizing: border-box; border: 3px solid transparent;
+    background:
+      linear-gradient(#0A4A52, #0A4A52) padding-box,
+      linear-gradient(135deg, #FFC857, #2BB3A3) border-box;
+    box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  html body .cat-row .cat-pill-sm .cp-icon::after { display: none; }
+  html body .cat-row .cat-pill-sm .cp-name { font-size: 11px; font-weight: 600; color: var(--hy-ink); }
+  html body .cat-row .cat-pill-sm.active .cp-icon {
+    background: linear-gradient(#0A4A52, #0A4A52) padding-box, linear-gradient(135deg, #FFC857, #FFC857) border-box;
+    box-shadow: 0 0 0 4px rgba(255, 200, 87, .22);
+  }
+
+  /* ── 3. SECTION HEADLINE ───────────────────────────────────────────────── */
+  html body .hy-head {
+    display: block; margin: 10px 0 4px;
+    font: 700 30px/1.08 var(--hy-serif); letter-spacing: -1px; color: var(--hy-ink);
+  }
+
+  /* ── 4. LISTING CARDS: big photo, serif title, gold price ─────────────── */
+  html body .ad-card {
+    padding: 0; border-radius: 26px; overflow: hidden;
+    background: var(--hy-glass); border: 1px solid var(--hy-line);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .28);
+  }
+  html body .ad-card .accent-stripe,
+  html body .ad-card .card-glow { display: none; }
+  html body .ad-card .ad-card-img { border-radius: 0; height: 240px; aspect-ratio: auto; min-height: 0; }
+  html body .ad-card .ad-card-img::after { display: none; }
+  html body .ad-card .ad-card-body {
+    padding: 14px 16px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "meta price" "title price"; column-gap: 12px; align-items: end;
+  }
+  html body .ad-card .ad-meta { grid-area: meta; font-size: 12px; color: var(--hy-mute); margin: 0; padding: 0; border: 0; }
+  html body .ad-card .ad-meta span:nth-child(n+2) { display: none; }
+  html body .ad-card .ad-title {
+    grid-area: title; font: 700 20px/1.2 var(--hy-serif); letter-spacing: 0; color: var(--hy-ink);
+    margin: 2px 0 0; min-height: 0;
+  }
+  html body .ad-card .ad-price {
+    grid-area: price; font: 700 17px/1 'Inter', sans-serif; letter-spacing: 0; color: var(--hy-gold);
+    margin: 0; text-align: right; white-space: nowrap;
+  }
+  html body .ad-card [class*="ad-seller"], html body .ad-card .ad-seller-row { display: none; }
+  html body .ad-card .fav-btn {
+    width: 40px; height: 40px; top: 14px; right: 14px;
+    background: rgba(6, 48, 58, .55); border: 1px solid rgba(255, 255, 255, .25); box-shadow: none;
+  }
+  html body .ad-card .ad-cat-tag { display: none; }
+  html body .ad-card .fresh-badge {
+    top: 14px; left: 14px; right: auto; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 14px;
+    background: rgba(6, 48, 58, .55); border: 1px solid rgba(255, 255, 255, .25); color: var(--hy-ink);
+  }
+  html body .ad-card .trending-badge { bottom: 12px; left: 14px; font-size: 11px; padding: 5px 10px; border-radius: 12px; }
+  /* the results toolbar becomes one quiet row */
+  html body .results-header { padding: 4px 0 0; gap: 8px; }
+  html body .results-header .results-count { display: none; }
+  html body .results-header .rb-controls { width: 100%; display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 8px; }
+  html body .results-header .hs-switch, html body .results-header .rb-select select, html body .results-header .view-toggle { height: 40px; }
+  html body .results-header .rb-select { flex: 1; min-width: 0; }
+  html body .results-header .hs-switch-label { font-size: 12px; }
+  html body .results-header .rb-select select { font-size: 13px; }
+  /* two-column grid view: compact version of the same card */
+  html body .home-grid .ad-card .ad-card-img { height: 150px; }
+  html body .home-grid .ad-card .ad-card-body { grid-template-areas: "meta meta" "title title" "price price"; padding: 10px 12px 12px; }
+  html body .home-grid .ad-card .ad-title { font-size: 16px; }
+  html body .home-grid .ad-card .ad-price { text-align: left; font-size: 14px; margin-top: 4px; }
+
+  /* ── 5. FLOATING GLASS TAB BAR (Home · Saved · [+] · Chats · Me) ───────── */
+  html body .mob-nav, html body .mob-nav.scrolled-transparent, html body .mob-nav.mob-nav-compact {
+    left: 16px; right: 16px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); height: 68px;
+    display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; align-items: center;
+    border-radius: 34px; background: rgba(10, 40, 50, .62); background-image: none;
+    border: 1px solid var(--hy-line);
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .35);
+  }
+  html body .mob-nav::before, html body .mob-nav::after { display: none; }
+  html body #mnHome { grid-column: 1; } html body #mnSaved { grid-column: 2; }
+  html body .mob-nav-item:has(.mob-nav-post) { grid-column: 3; justify-self: center; width: 56px; height: 56px; margin-top: -18px; }
+  html body #mnMsgs { grid-column: 4; } html body #mnAccount { grid-column: 5; }
+  html body .mob-nav-item .mob-nav-icon { display: none; }
+  html body .mob-nav-item .badge-wrap { display: contents; }
+  html body .mob-nav-item { color: var(--hy-soft); }
+  html body .mob-nav-item .mn-label,
+  html body .mob-nav.mob-nav-compact .mn-label { display: block; font-size: 11px; font-weight: 600; margin: 0; }
+  html body .mob-nav-item.active { color: var(--hy-gold); background: none; box-shadow: none; }
+  html body .mob-nav-item.active .mn-label { font-weight: 700; }
+  html body .mob-nav-post,
+  html body .mob-nav.mob-nav-compact .mob-nav-post {
+    width: 56px; height: 56px; margin: 0; background: var(--hy-gold); color: var(--hy-deep); border: 0;
+    box-shadow: 0 8px 24px rgba(255, 200, 87, .45); font-size: 30px; font-weight: 700;
+  }
+
+  /* ── 6. LISTING PAGE: photo + curved glass sheet + pill indicator ─────── */
+  html body .v3d-hero .gallery-wrap { border-radius: 0; }
+  html body .v3d-hero .gallery-slide { height: 400px; max-height: none; aspect-ratio: auto; }
+  html body .v3d-hero .gallery-slide img { object-fit: cover; }
+  html body .v3d-hero .detail-img { height: 400px; border-radius: 0; }
+  html body .v3d-hero .gallery-dots {
+    display: flex; position: absolute; left: 0; right: 0; bottom: 56px; justify-content: center; gap: 6px; z-index: 3;
+  }
+  html body .v3d-hero .gallery-dot { width: 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .5); transition: width .25s ease, background .25s ease; }
+  html body .v3d-hero .gallery-dot.active { width: 22px; background: #fff; }
+  html body .v3d-count { display: none; }
+
+  html body .v3d-panel.detail-body {
+    margin: -50px 0 0; position: relative; z-index: 2; padding: 22px 20px 18px;
+    border-radius: 34px 34px 0 0; border: 0; border-top: 1px solid rgba(255, 255, 255, .28);
+    background: rgba(10, 40, 50, .74);
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+    display: flex; flex-direction: column; gap: 12px; box-shadow: none;
+  }
+  html body .v3d-panel > * { order: 5; }
+  html body .v3d-panel .v3d-loc { order: 1; font-size: 12px; font-weight: 500; color: var(--hy-mute); margin: 0; }
+  html body .v3d-panel .v3d-loc svg { display: none; }
+  html body .v3d-panel .detail-title {
+    order: 2; font: 700 28px/1.1 var(--hy-serif); letter-spacing: -.8px; color: var(--hy-ink); margin: 0;
+  }
+  html body .v3d-panel .detail-price { order: 3; font: 700 24px/1.1 'Inter', sans-serif; letter-spacing: 0; color: var(--hy-gold); margin: 0; }
+  html body .v3d-panel .detail-desc { order: 4; font-size: 14px; line-height: 1.55; color: #D5EEEA; margin: 0; }
+  html body .v3d-panel .v3d-specs, html body .v3d-panel .v3d-h { display: none; }
+  html body .v3d-panel .ad-feedback, html body .v3d .ad-feedback {
+    background: rgba(255, 255, 255, .08); border: 1px solid var(--hy-line); color: var(--hy-ink); box-shadow: none;
+  }
+  html body .v3d .ad-feedback :is(h2, h3, h4, p, label, span, small) { color: var(--hy-soft); }
+  html body .v3d .ad-feedback :is(h2, h3) { color: var(--hy-ink); font-family: var(--hy-serif); }
+  html body .v3d-seller { background: none; border: 0; box-shadow: none; padding: 4px 20px; }
+  html body .v3d-seller .s-avatar { background: var(--hy-gold) !important; color: var(--hy-deep) !important; }
+  html body .v3d-sname { font-weight: 600; }
+
+  /* contact bar: Call · WhatsApp (gold) · Chat (glass) */
+  html body .v3d-cta {
+    left: 16px; right: 16px; width: auto; transform: none; bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; gap: 10px;
+  }
+  html body .v3d-cta .v3d-call { width: 56px; height: 56px; flex: none; }
+  html body .v3d-cta .v3d-wa {
+    flex: 1; width: auto; height: 56px; border-radius: 28px; gap: 8px;
+    background: var(--hy-gold); color: var(--hy-deep); box-shadow: 0 8px 24px rgba(255, 200, 87, .35);
+  }
+  html body .v3d-cta .v3d-wa::after { content: "WhatsApp seller"; font: 700 15px/1 'Inter', sans-serif; }
+  html body .v3d-cta .detail-msg-slot { flex: none; width: 84px; }
+  html body .v3d-cta .detail-msg-btn, html body .v3d-cta .detail-msg-slot .btn {
+    width: 84px; height: 56px; padding: 0; border-radius: 28px; font-size: 0;
+    background: rgba(255, 255, 255, .14); color: var(--hy-ink); border: 1px solid rgba(255, 255, 255, .3); box-shadow: none;
+  }
+  html body .v3d-cta .detail-msg-btn::after, html body .v3d-cta .detail-msg-slot .btn::after { content: "Chat"; font: 700 15px/1 'Inter', sans-serif; }
+  html body .v3d-cta:not(:has(.detail-msg-btn)) .v3d-wa { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body .v3d-hero .gallery-dot { transition: none; }
+}
