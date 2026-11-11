@@ -1,0 +1,31 @@
+/* §HYBRID-GAS — gas pages in the approved hybrid style (serif headlines, solid gold actives,
+   quiet glass cards). Loads after v3-gas.css. Roll back by deleting its <link> in gas-prices.html. */
+:root { --hy-serif: 'Fraunces', Georgia, 'Times New Roman', serif; --hy-gold: #FFC857; --hy-deep: #07303A; --hy-line: rgba(255,255,255,.22); }
+
+html body .g-top h1 { font: 700 clamp(20px, 5.6vw, 26px)/1.1 var(--hy-serif); letter-spacing: -.5px; }
+html body .g-top h1 em { color: inherit; }
+html body .g-top .last-updated { color: #9FD6CF; }
+html body .g-card-hd h2 { font: 700 18px var(--hy-serif); letter-spacing: 0; }
+
+/* segmented tabs: Prices · Stations · Trends — no emoji, solid gold active */
+html body .g-tabs { padding: 4px; background: rgba(255,255,255,.10); border: 1px solid var(--hy-line); }
+html body .g-tab span[aria-hidden="true"] { display: none; }
+html body .g-tab { color: #C9E8E4; font-weight: 600; font-size: 14px; }
+html body .g-tab.active, html body .g-fuelchip.active, html body .g-chip.active, html body .g-seg button.active {
+  background: var(--hy-gold); color: var(--hy-deep); box-shadow: none; font-weight: 700;
+}
+html body .g-fuelchip, html body .g-chip { background: rgba(255,255,255,.12); border: 1px solid var(--hy-line); font-weight: 600; }
+
+/* the big price */
+html body .g-card, html body .g-hero-card { border-radius: 28px; background: rgba(255,255,255,.10); border: 1px solid var(--hy-line); }
+html body .g-hero-lab { color: #9FD6CF; font-weight: 600; font-size: 12px; }
+html body .g-hero-price { font-family: var(--hy-serif); font-weight: 700; letter-spacing: -2px; color: var(--hy-gold); }
+html body .g-hero-price small { font-family: 'Inter', sans-serif; color: #C9E8E4; }
+html body .g-spark-line { stroke: var(--hy-gold); }
+
+/* take-away callout */
+html body .g-take { background: rgba(255,200,87,.12); border: 1px solid rgba(255,200,87,.35); border-radius: 24px; }
+
+/* station actions: Near me · Cheapest */
+html body .g-act { background: rgba(255,255,255,.12); border: 1px solid var(--hy-line); color: #F2FBF9; font-weight: 600; box-shadow: none; }
+html body .g-act.active, html body .g-act[aria-pressed="true"], html body .g-act.on { background: var(--hy-gold); color: var(--hy-deep); font-weight: 700; }
