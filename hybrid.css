@@ -292,6 +292,24 @@
   html body .btn-green.btn-block, html body .modal .btn-green {
     background: var(--hy-gold); color: var(--hy-deep); border: 0; font-weight: 700; box-shadow: 0 8px 24px rgba(255, 200, 87, .35);
   }
+  /* ── 10. POST-AN-AD: progress segments, serif title, cover-photo grid ──── */
+  html body #ovPost .modal h2 { font: 700 28px/1.1 var(--hy-serif) !important; letter-spacing: -.8px; color: var(--hy-ink); }
+  html body #ovPost .v3pp-step { color: var(--hy-mute); font-weight: 600; font-size: 13px; }
+  html body #ovPost .step-bar { display: flex; gap: 6px; margin: 12px 0 16px; padding: 0; background: none; border: 0; }
+  html body #ovPost .step-bar .step {
+    flex: 1; height: 4px; padding: 0; border-radius: 2px; font-size: 0; color: transparent;
+    background: rgba(255, 255, 255, .2); border: 0; box-shadow: none;
+  }
+  html body #ovPost .step-bar .step.active, html body #ovPost .step-bar .step.done { background: var(--hy-gold); }
+  html body #ovPost .step-bar .step .step-num { display: none; }
+  html body #ovPost .photo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  html body #ovPost .photo-grid > :first-child { grid-column: span 2; grid-row: span 2; }
+  html body #ovPost .photo-grid > * { aspect-ratio: 1; width: auto; height: auto; border-radius: 22px; overflow: hidden; }
+  html body #ovPost .photo-add-btn {
+    background: rgba(255, 255, 255, .08); border: 2px dashed rgba(255, 255, 255, .35); color: var(--hy-gold);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 600;
+  }
+  html body #ovPost .step-nav .btn-ghost { background: var(--hy-glass-2); border: 1px solid rgba(255, 255, 255, .3); color: var(--hy-ink); }
 }
 
 @media (prefers-reduced-motion: reduce) {
