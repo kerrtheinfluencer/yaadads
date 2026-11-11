@@ -232,6 +232,17 @@
   }
   html body .v3d-cta .detail-msg-btn::after, html body .v3d-cta .detail-msg-slot .btn::after { content: "Chat"; font: 700 15px/1 'Inter', sans-serif; }
   html body .v3d-cta:not(:has(.detail-msg-btn)) .v3d-wa { flex: 1; }
+  /* ── 7. SAVED · SIGN-IN · other page titles ────────────────────────────── */
+  html body .v3s-h1, html body .v3a-h {
+    font: 700 30px/1.08 var(--hy-serif); letter-spacing: -1px; color: var(--hy-ink);
+  }
+  html body .v3s-seg-pill { background: var(--hy-gold); box-shadow: 0 6px 18px rgba(255, 200, 87, .3); border: 0; }
+  html body .v3s-seg button.on { color: var(--hy-deep); }
+  html body .v3s-card, html body .v3s-sc, html body .v3s-empty { border-radius: 24px; background: var(--hy-glass); border: 1px solid var(--hy-line); }
+  html body .v3s-sc-title, html body .v3s-title { font-family: var(--hy-serif); font-weight: 700; font-size: 16px; }
+  html body .v3s-empty .btn, html body .v3a .btn-green, html body .v3a .btn-lg.btn-green {
+    background: var(--hy-gold); color: var(--hy-deep); box-shadow: 0 8px 24px rgba(255, 200, 87, .35);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
