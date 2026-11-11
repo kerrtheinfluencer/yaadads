@@ -243,6 +243,55 @@
   html body .v3s-empty .btn, html body .v3a .btn-green, html body .v3a .btn-lg.btn-green {
     background: var(--hy-gold); color: var(--hy-deep); box-shadow: 0 8px 24px rgba(255, 200, 87, .35);
   }
+  /* ── 8. ONBOARDING ─────────────────────────────────────────────────────── */
+  html body #obRoot .ob-slide-title { font: 700 36px/1.05 var(--hy-serif); letter-spacing: -1.2px; color: var(--hy-ink); }
+  html body #obRoot .ob-slide-title em { color: var(--hy-gold); font-style: normal; }
+  html body #obRoot .ob-slide-text { font-size: 15px; line-height: 1.5; color: var(--hy-soft); }
+  html body #obRoot .ob-brand img { display: none; }
+  html body #obRoot .ob-brand span { color: var(--hy-gold); font-size: 13px; letter-spacing: .5px; font-weight: 700; }
+  html body #obRoot .ob-visual-label { display: none; }
+  html body #obRoot .ob-visual-caption { font-size: 12px; color: var(--hy-mute); }
+  html body #obRoot .ob-mini-cards span, html body #obRoot .ob-sell-steps span, html body #obRoot .ob-note, html body #obRoot .ob-benefits span, html body #obRoot .ob-demo-input {
+    background: var(--hy-glass); border: 1px solid var(--hy-line); border-radius: 22px; box-shadow: none;
+  }
+  html body #obRoot .ob-welcome .btn-gold, html body #obRoot .ob-welcome .btn.btn-gold, html body #obRoot .ob-tip .btn-gold {
+    background: var(--hy-gold); color: var(--hy-deep); border: 0; font-weight: 700; box-shadow: 0 8px 24px rgba(255, 200, 87, .4);
+  }
+  html body #obRoot .ob-welcome .btn-outline, html body #obRoot .ob-welcome .btn-ghost {
+    background: var(--hy-glass-2); color: var(--hy-ink); border: 1px solid rgba(255, 255, 255, .3); font-weight: 700; box-shadow: none;
+  }
+  html body #obRoot .ob-skip { background: rgba(6, 48, 58, .5); border: 1px solid var(--hy-line); color: var(--hy-ink); box-shadow: none; font-weight: 600; }
+  html body #obRoot .ob-tip {
+    background: rgba(10, 40, 50, .85); border: 1px solid rgba(255, 255, 255, .3); border-radius: 26px;
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  }
+  html body #obRoot .ob-tip-step { color: var(--hy-gold); font-weight: 700; }
+  html body #obRoot .ob-tip h3, html body #obRoot .ob-tip .ob-tip-title { font: 700 20px var(--hy-serif); color: var(--hy-ink); }
+  /* ── 9. CHAT · PROFILE · FORMS (Post-an-ad, sign-in, sheets) ──────────── */
+  html body .msg-bubble { font-size: 15px; line-height: 1.4; }
+  html body .msg-in .msg-bubble {
+    background: var(--hy-glass-2); border: 1px solid var(--hy-line); color: var(--hy-ink); border-radius: 22px 22px 22px 6px; box-shadow: none;
+  }
+  html body .msg-out .msg-bubble {
+    background: var(--hy-gold); color: var(--hy-deep); border: 0; font-weight: 500; border-radius: 22px 22px 6px 22px; box-shadow: none;
+  }
+  html body .msg-out .msg-time, html body .msg-out .msg-ticks { color: rgba(7, 48, 58, .7); }
+  html body .chat-header { background: transparent; border: 0; }
+  html body .chat-input-row {
+    background: rgba(10, 40, 50, .62); border: 1px solid rgba(255, 255, 255, .26); border-radius: 28px;
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  }
+  html body .chat-send { background: var(--hy-gold); color: var(--hy-deep); border-radius: 50%; }
+  html body .chat-chip { background: var(--hy-glass-2); border: 1px solid var(--hy-line); color: var(--hy-ink); border-radius: 999px; }
+  html body .v3me-gold { background: var(--hy-gold); color: var(--hy-deep); }
+  html body .v3me-menu { border-radius: 24px; background: var(--hy-glass); border: 1px solid var(--hy-line); }
+  html body .form-inp, html body .form-sel, html body textarea.form-inp {
+    background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .24); border-radius: 20px; color: var(--hy-ink);
+  }
+  html body .form-inp::placeholder { color: var(--hy-soft); opacity: .8; }
+  html body .btn-green.btn-block, html body .modal .btn-green {
+    background: var(--hy-gold); color: var(--hy-deep); border: 0; font-weight: 700; box-shadow: 0 8px 24px rgba(255, 200, 87, .35);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
