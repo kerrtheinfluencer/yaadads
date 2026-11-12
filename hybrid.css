@@ -23,6 +23,21 @@
 
 @media (max-width: 640px) {
 
+  /* typing: the tab bar and floating buttons step aside so they never cover the field or results */
+  html.kb-open body .mob-nav, html.kb-open body #gasBanner, html.kb-open body .v3-ai-float, html.kb-open body .back-to-top { display: none !important; }
+
+  /* floating helpers sit ABOVE the tab bar (it is wider than the old one and would cover them) */
+  html body #gasBanner, html body #gasBanner.gas-compact, html body .v3-ai-float {
+    bottom: calc(108px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  html body .v3-ai-float.is-min { translate: none; width: 52px; height: 52px; }
+  html body #gasBanner.v3-merge { translate: none; }
+  html body #gasBanner { left: 16px !important; }
+  html body .v3-ai-float { right: 16px !important; }
+  html body .back-to-top, html body .back-to-top.visible.back-to-top-compact {
+    bottom: calc(170px + env(safe-area-inset-bottom, 0px)) !important; right: 16px !important;
+  }
+
   /* ── 1. HOME HEADER: wordmark · parish · search · bell ─────────────────── */
   html body #page-home .hero:not(.searched) { padding: 18px 20px 0; }
   html body #page-home .hero:not(.searched) .hero-content {
@@ -155,7 +170,7 @@
   html body .mob-nav, html body .mob-nav.scrolled-transparent, html body .mob-nav.mob-nav-compact {
     left: 16px; right: 16px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); height: 68px;
     display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; align-items: center;
-    border-radius: 34px; background: rgba(10, 40, 50, .62); background-image: none;
+    border-radius: 34px; background: rgba(10, 40, 50, .8); background-image: none;
     border: 1px solid var(--hy-line);
     -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
     box-shadow: 0 14px 40px rgba(0, 0, 0, .35);
@@ -164,6 +179,12 @@
   html body #mnHome { grid-column: 1; } html body #mnSaved { grid-column: 2; }
   html body .mob-nav-item:has(.mob-nav-post) { grid-column: 3; justify-self: center; width: 56px; height: 56px; margin-top: -18px; }
   html body #mnMsgs { grid-column: 4; } html body #mnAccount { grid-column: 5; }
+  /* the old scroll-down "compact" state hid the labels (it relied on icons) — keep the bar steady instead */
+  html body .mob-nav .mn-label, html body .mob-nav.mob-nav-compact .mn-label {
+    display: block; opacity: 1; max-height: none; transform: none; overflow: visible;
+  }
+  html body .mob-nav.mob-nav-compact .mob-nav-item { height: 56px; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item:has(.mob-nav-post) { width: 56px; height: 56px; }
   html body .mob-nav-item .mob-nav-icon { display: none; }
   html body .mob-nav-item .badge-wrap { display: contents; }
   html body .mob-nav-item { color: var(--hy-soft); }

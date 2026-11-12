@@ -27,4 +27,17 @@
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { clearTimeout(timer); rest(); }
   });
+
+  // While a text field is focused the on-screen keyboard shrinks the viewport, and bottom-fixed
+  // bars (tab bar, gas pill, AI button) ride up and cover what you are typing into.
+  // html.kb-open lets the CSS tuck them away until the field loses focus.
+  var TYPING = /^(INPUT|TEXTAREA|SELECT)$/;
+  var NOT_TEXT = /^(checkbox|radio|button|submit|range|file|color|image|reset)$/;
+  function isTextField(el) { return !!el && TYPING.test(el.tagName) && !NOT_TEXT.test(el.type || ''); }
+  document.addEventListener('focusin', function (e) {
+    if (isTextField(e.target)) root.classList.add('kb-open');
+  });
+  document.addEventListener('focusout', function () {
+    setTimeout(function () { if (!isTextField(document.activeElement)) root.classList.remove('kb-open'); }, 60);
+  });
 })();
