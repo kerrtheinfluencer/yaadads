@@ -1,0 +1,16 @@
+/* Admin dashboard — Hybrid look (teal glass, serif headings, gold actions). Roll back by removing the <link> in admin.html. */
+body { background: linear-gradient(180deg, #06303A 0%, #0A4A52 38%, #0B2E3C 100%) fixed; font-family: 'Inter', system-ui, sans-serif; }
+.adm-head h1, .adm-gate h1, .adm-card h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 700; letter-spacing: -.3px; }
+.adm-head h1 { font-size: 26px; }
+.adm-card h2 { font-size: 22px; }
+.adm-gate, .adm-stat, .adm-card, .adm-row {
+  background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.2); box-shadow: none;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+.adm-stat b { font-family: 'Fraunces', Georgia, serif; font-size: 24px; }
+.adm-stat.is-alert b { color: #FFC857; }
+.adm-count { color: #9FD6CF; }
+.adm-card em { color: #FFC857; }
+.adm-gate button, #go, .adm-btn.is-primary, .adm-btn.is-hide { background: #FFC857; color: #07303A; border: 0; box-shadow: none; font-weight: 700; border-radius: 999px; }
+.adm-head-acts a, .adm-head-acts button, .adm-btn { background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); border-radius: 999px; color: #F2FBF9; }
+.adm-tools input, .adm-tools select, .adm-gate input { background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); border-radius: 999px; color: #fff; }

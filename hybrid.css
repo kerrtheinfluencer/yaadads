@@ -333,6 +333,37 @@
   html body #ovPost .step-nav .btn-ghost { background: var(--hy-glass-2); border: 1px solid rgba(255, 255, 255, .3); color: var(--hy-ink); }
 }
 
+/* ───────── AI chat sheet (Yaad Brain) — matches AI-Chat mockup ───────── */
+@media (max-width: 640px) {
+  html body .ai-sheet.ai-v2 {
+    background: linear-gradient(180deg, #06303A 0%, #0A4A52 38%, #0B2E3C 100%);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  html body .ai-sheet.ai-v2::before {
+    content: ''; position: absolute; top: -70px; right: -60px; width: 260px; height: 260px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, #FFC857 0%, rgba(255,200,87,.25) 40%, rgba(255,200,87,0) 70%);
+  }
+  html body .ai-sheet.ai-v2 > * { position: relative; }
+  html body .ai-sheet.ai-v2 .ai-sheet-name { font-family: var(--hy-serif); font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+  html body .ai-sheet.ai-v2 .ai-sheet-name em { color: var(--hy-gold); font-style: normal; }
+  html body .ai-sheet.ai-v2 .ai-sheet-sub { color: var(--hy-mute); }
+  html body .ai-sheet.ai-v2 .ai-orb { background: linear-gradient(135deg, #FFC857, #2BB3A3); box-shadow: none; }
+  html body .ai-sheet.ai-v2 .ai-tool-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--hy-glass); border: 1px solid var(--hy-line); box-shadow: none; color: #fff; }
+  html body .ai-sheet.ai-v2 .ai-hero-greet { font-family: var(--hy-serif); font-size: 32px; line-height: 1.08; font-weight: 700; letter-spacing: -1px; }
+  html body .ai-sheet.ai-v2 .ai-hero-lead { color: var(--hy-soft); font-size: 15px; line-height: 1.5; }
+  html body .ai-sheet.ai-v2 .sheet-sug, html body .ai-sheet.ai-v2 .ai-chip, html body .ai-sheet.ai-v2 .sheet-recent-chip {
+    background: var(--hy-glass); border: 1px solid var(--hy-line); box-shadow: none; color: var(--hy-ink); height: 40px; border-radius: 20px; font-weight: 600;
+  }
+  html body .ai-sheet.ai-v2 .ai-bubble-user { background: var(--hy-gold); color: var(--hy-deep); box-shadow: none; }
+  html body .ai-sheet.ai-v2 .ai-bubble-ai { background: var(--hy-glass); border: 1px solid var(--hy-line); box-shadow: none; }
+  html body .ai-sheet.ai-v2 .ai-result-card { background: var(--hy-glass); border: 1px solid var(--hy-line); box-shadow: none; border-radius: 22px; }
+  html body .ai-sheet.ai-v2 .ai-result-price { color: var(--hy-gold); font-family: 'Inter', sans-serif; }
+  html body .ai-sheet.ai-v2 .ai-sheet-input-bar { background: rgba(10,40,50,.7); border: 1px solid rgba(255,255,255,.26); box-shadow: none; }
+  html body .ai-sheet.ai-v2 .ai-sheet-send { background: var(--hy-gold); color: var(--hy-deep); box-shadow: none; }
+  html body .ai-sheet.ai-v2 .ai-sheet-hint { color: var(--hy-mute); }
+  html body .ai-sheet.ai-v2 .ai-hint-link { color: var(--hy-gold); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html body .v3d-hero .gallery-dot { transition: none; }
 }
