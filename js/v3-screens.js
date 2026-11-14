@@ -259,6 +259,10 @@
     items.sort(function (a, b) { return b.ts - a.ts; });
     return items;
   }
+  /* §BELL — how many things on the Notifications page are unread (chats, a new site update…); drives the red bell badge */
+  window.v3UnreadNotifs = function () {
+    try { return notifItems().filter(function (i) { return i.unread; }).length; } catch (e) { return 0; }
+  };
   function ago(ts) {
     var m = Math.max(0, Math.round((Date.now() - ts) / 60000));
     if (m < 1) return 'now'; if (m < 60) return m + 'm';
@@ -297,6 +301,7 @@
     body.innerHTML = html;
     var mark = $('v3NotifMark');
     if (mark) mark.hidden = !items.some(function (i) { return i.unread && i.stampable; });
+    if (window.v3SyncBell) window.v3SyncBell();
   }
   document.addEventListener('click', function (e) {
     var t = e.target; if (!t.closest) return;

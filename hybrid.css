@@ -483,3 +483,13 @@
 
 /* the card contact chip is phone-only (the rules above sit inside the phone media block) */
 .ad-contact-btn, .ad-contact-tray { display: none; }
+
+/* red unread badge on the home bell (phone + desktop) */
+.v3-bell-dot {
+  top: 3px !important; right: 3px !important; min-width: 17px; height: 17px; width: auto !important; padding: 0 4px; border-radius: 9px !important;
+  background: #FF453A !important; color: #fff; font: 700 10px/17px 'Inter', system-ui, sans-serif; text-align: center;
+  box-shadow: 0 0 0 2px #0A4A52, 0 2px 8px rgba(255, 69, 58, .55) !important; animation: hy-bell-pop .35s cubic-bezier(.34, 1.56, .64, 1);
+}
+.v3-bell-dot:empty { min-width: 11px; width: 11px !important; height: 11px; padding: 0; }
+@keyframes hy-bell-pop { from { transform: scale(.4); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .v3-bell-dot { animation: none; } }

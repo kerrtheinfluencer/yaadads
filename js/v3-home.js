@@ -237,8 +237,18 @@
   function syncBell() {
     var dot = $('v3BellDot'), badge = $('mobMsgBadge');
     if (!dot) return;
-    dot.hidden = !(badge && badge.classList.contains('show'));
+    var n = typeof window.v3UnreadNotifs === 'function' ? window.v3UnreadNotifs() : 0;
+    var chats = badge && badge.classList.contains('show');
+    if (!n && chats) n = 1;
+    dot.hidden = !n;
+    dot.textContent = n > 9 ? '9+' : String(n || '');
+    var b = $('v3Bell'); if (b) b.setAttribute('aria-label', n ? 'Notifications, ' + n + ' unread' : 'Notifications');
   }
+  window.v3SyncBell = syncBell;
+  /* first paint, once the chat/update data has loaded, and when the tab comes back */
+  setTimeout(function () { safe(syncBell); }, 1500);
+  setTimeout(function () { safe(syncBell); }, 5000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) safe(syncBell); });
   if (typeof window.updateMsgBadge === 'function') {
     var origBadge = window.updateMsgBadge;
     window.updateMsgBadge = function () {
