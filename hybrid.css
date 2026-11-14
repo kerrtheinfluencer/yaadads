@@ -122,8 +122,8 @@
   /* glass sheet: the info panel overlaps the bottom of the photo */
   html body .ad-card .ad-card-body {
     position: relative; margin-top: -28px; padding: 14px 16px 14px; border-radius: 28px;
-    background: rgba(10, 40, 50, .58); border: 1px solid rgba(255, 255, 255, .22);
-    -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+    background: rgba(8, 36, 46, .88); border: 1px solid rgba(255, 255, 255, .22);
+    -webkit-backdrop-filter: blur(22px) saturate(1.2); backdrop-filter: blur(22px) saturate(1.2);
     box-shadow: 0 14px 34px rgba(0, 0, 0, .28);
     display: grid; grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "meta chip" "title chip" "price chip" "tray tray"; column-gap: 12px; align-items: center;
@@ -139,7 +139,7 @@
     margin: 4px 0 0; text-align: left; white-space: nowrap;
   }
   html body .ad-card [class*="ad-seller"], html body .ad-card .ad-seller-row { display: none; }
-  html body .ad-card .ad-card-body > *:not(.ad-meta):not(.ad-title):not(.ad-price):not(.ad-contact-btn):not(.ad-contact-tray) { grid-column: 1 / -1; margin-top: 8px; justify-self: start; }
+  html body .ad-card .ad-card-body > *:not(.ad-meta):not(.ad-title):not(.ad-price):not(.ad-contact-btn):not(.ad-contact-tray) { display: none; }
   /* tap to contact */
   html body .ad-card .ad-contact-btn {
     grid-area: chip; align-self: center; height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
@@ -166,6 +166,9 @@
     top: 14px; left: 14px; right: auto; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 14px;
     background: rgba(6, 48, 58, .55); border: 1px solid rgba(255, 255, 255, .25); color: var(--hy-ink);
   }
+  html body .ad-card .ad-dots { bottom: 40px; }
+  html body .ad-card .photo-count-badge { bottom: 40px; right: 14px; left: auto; }
+  html body .ad-card .ad-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   html body .ad-card .trending-badge { bottom: 40px; left: 14px; font-size: 11px; padding: 5px 10px; border-radius: 12px; }
   /* the results toolbar becomes one quiet row */
   html body .results-header { padding: 4px 0 0; gap: 8px; }
