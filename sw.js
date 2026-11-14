@@ -8,7 +8,7 @@
  *  - Everything else → Network First with cache fallback
  */
 
-const CACHE_VERSION  = 'yaadadz-v134'; // bump this any time style.css or js/*.js changes — otherwise
+const CACHE_VERSION  = 'yaadadz-v135'; // bump this any time style.css or js/*.js changes — otherwise
                                       // Cache-First below will keep serving the OLD file forever,
                                       // no matter how many times the actual file is updated on GitHub.
 const STATIC_CACHE   = CACHE_VERSION + '-static';
@@ -35,6 +35,7 @@ const PRECACHE_URLS = [
   '/smooth.css',
   '/hybrid.css',
   '/js/smooth.js',
+  '/js/dock.js',
   '/v3-pages.css',
   '/v3-gas.css',
   '/hybrid-gas.css', '/hybrid-admin.css',

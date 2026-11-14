@@ -24,18 +24,12 @@
 @media (max-width: 640px) {
 
   /* typing: the tab bar and floating buttons step aside so they never cover the field or results */
-  html.kb-open body .mob-nav, html.kb-open body #gasBanner, html.kb-open body .v3-ai-float, html.kb-open body .back-to-top { display: none !important; }
+  html.kb-open body .mob-nav, html.kb-open body .back-to-top { display: none !important; }
 
-  /* floating helpers sit ABOVE the tab bar (it is wider than the old one and would cover them) */
-  html body #gasBanner, html body #gasBanner.gas-compact, html body .v3-ai-float {
-    bottom: calc(108px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-  html body .v3-ai-float.is-min { translate: none; width: 52px; height: 52px; }
-  html body #gasBanner.v3-merge { translate: none; }
-  html body #gasBanner { left: 16px !important; }
-  html body .v3-ai-float { right: 16px !important; }
+  /* the old floating gas pill and AI orb are replaced by the strip inside the dock (js/dock.js) */
+  html body #gasBanner, html body .v3-ai-float { display: none !important; }
   html body .back-to-top, html body .back-to-top.visible.back-to-top-compact {
-    bottom: calc(170px + env(safe-area-inset-bottom, 0px)) !important; right: 16px !important;
+    bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important; right: 16px !important;
   }
 
   /* ── 1. HOME HEADER: wordmark · parish · search · bell ─────────────────── */
@@ -197,6 +191,40 @@
     width: 56px; height: 56px; margin: 0; background: var(--hy-gold); color: var(--hy-deep); border: 0;
     box-shadow: 0 8px 24px rgba(255, 200, 87, .45); font-size: 30px; font-weight: 700;
   }
+
+  /* ── 5b. GOLD DOCK: gas + Ask strip on top of the tab bar; both shrink while scrolling down ── */
+  html body .mob-nav, html body .mob-nav.scrolled-transparent, html body .mob-nav.mob-nav-compact {
+    height: 104px; padding-top: 40px; overflow: hidden; align-content: center;
+    transition: height .28s cubic-bezier(.2, .8, .2, 1), padding-top .28s cubic-bezier(.2, .8, .2, 1), bottom .28s ease;
+  }
+  html body .mob-nav:has(.hy-strip) .mob-nav-item:has(.mob-nav-post) { margin-top: -4px; }
+  .hy-strip {
+    position: absolute; top: 0; left: 0; right: 0; height: 40px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px 0 20px; font: 700 13px/1 'Inter', system-ui, sans-serif; color: var(--hy-deep);
+    background: linear-gradient(90deg, rgba(255, 200, 87, .96), rgba(255, 214, 120, .96));
+    transition: height .28s cubic-bezier(.2, .8, .2, 1), background .28s ease, color .28s ease, padding .28s ease;
+  }
+  .hy-strip a, .hy-strip button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; min-height: 40px; color: inherit; font: inherit; }
+  .hy-strip svg { flex: none; }
+  .hy-orb { width: 30px; height: 30px; border-radius: 50%; background: var(--hy-deep); display: inline-flex; align-items: center; justify-content: center; gap: 2px; transition: width .28s ease, height .28s ease; }
+  .hy-orb i { width: 3px; border-radius: 2px; background: var(--hy-gold); display: block; }
+  .hy-orb i:nth-child(1) { height: 8px; } .hy-orb i:nth-child(2) { height: 14px; } .hy-orb i:nth-child(3) { height: 11px; } .hy-orb i:nth-child(4) { height: 6px; }
+  .hy-ic { display: none; }
+  /* compact (scrolling down): thin glass strip with gold text, icon tabs, active tab keeps its name */
+  html body .mob-nav.mob-nav-compact { height: 70px; padding-top: 24px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  html body .mob-nav.mob-nav-compact .hy-strip {
+    height: 24px; background: transparent; color: var(--hy-gold); font-size: 11px; padding: 0 16px; border-bottom: 1px solid rgba(255, 200, 87, .7);
+  }
+  html body .mob-nav.mob-nav-compact .hy-strip a, html body .mob-nav.mob-nav-compact .hy-strip button { min-height: 24px; gap: 5px; }
+  html body .mob-nav.mob-nav-compact .hy-orb { display: none; }
+  html body .mob-nav.mob-nav-compact .hy-ask-full { display: none; }
+  html body .mob-nav:not(.mob-nav-compact) .hy-ask-short { display: none; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item { height: 40px; flex-direction: row; gap: 6px; justify-content: center; justify-self: center; padding: 0 14px; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item .hy-ic { display: block; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item:not(.active) .mn-label { display: none; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item.active { background: rgba(255, 200, 87, .18); border-radius: 20px; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item:has(.mob-nav-post) { width: 40px; height: 40px; margin-top: 0; background: none; }
+  html body .mob-nav.mob-nav-compact .mob-nav-post { width: 38px; height: 38px; font-size: 24px; box-shadow: 0 6px 16px rgba(255, 200, 87, .4); }
 
   /* ── 6. LISTING PAGE: photo + curved glass sheet + pill indicator ─────── */
   html body .v3d-hero .gallery-wrap { border-radius: 0; }

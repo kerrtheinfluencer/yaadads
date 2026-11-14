@@ -346,7 +346,7 @@ const OB = (function() {
       pos: 'top',
     },
     {
-      sel: () => '#gasBanner',
+      sel: () => (document.getElementById('hyGas') && isMobile()) ? '#hyGas' : '#gasBanner',
       icon: '⛽',
       title: 'Live gas prices',
       text: 'Petrojam prices weekly + real pump reports from drivers. Check before you drive.',
@@ -529,7 +529,7 @@ const OB = (function() {
   // ⛽ Gas price banner — once the visitor has settled in
   function maybeGasTip() {
     if (flag(K.tipGas)) return;
-    if (!document.getElementById('gasBanner')) return;
+    if (!document.getElementById('gasBanner') && !document.getElementById('hyGas')) return;
     Tips.push({
       id: K.tipGas,
       icon: '⛽',
