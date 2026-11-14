@@ -113,17 +113,20 @@
 
   /* ── 4. LISTING CARDS: big photo, serif title, gold price ─────────────── */
   html body .ad-card {
-    padding: 0; border-radius: 26px; overflow: hidden;
-    background: var(--hy-glass); border: 1px solid var(--hy-line);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, .28);
+    padding: 0; border-radius: 28px; overflow: visible; background: none; border: 0; box-shadow: none;
   }
   html body .ad-card .accent-stripe,
   html body .ad-card .card-glow { display: none; }
-  html body .ad-card .ad-card-img { border-radius: 0; height: 240px; aspect-ratio: auto; min-height: 0; }
+  html body .ad-card .ad-card-img { border-radius: 28px 28px 0 0; height: 250px; aspect-ratio: auto; min-height: 0; overflow: hidden; }
   html body .ad-card .ad-card-img::after { display: none; }
+  /* glass sheet: the info panel overlaps the bottom of the photo */
   html body .ad-card .ad-card-body {
-    padding: 14px 16px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "meta price" "title price"; column-gap: 12px; align-items: end;
+    position: relative; margin-top: -28px; padding: 14px 16px 14px; border-radius: 28px;
+    background: rgba(10, 40, 50, .58); border: 1px solid rgba(255, 255, 255, .22);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .28);
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "meta chip" "title chip" "price chip" "tray tray"; column-gap: 12px; align-items: center;
   }
   html body .ad-card .ad-meta { grid-area: meta; font-size: 12px; color: var(--hy-mute); margin: 0; padding: 0; border: 0; }
   html body .ad-card .ad-meta span:nth-child(n+2) { display: none; }
@@ -132,10 +135,28 @@
     margin: 2px 0 0; min-height: 0;
   }
   html body .ad-card .ad-price {
-    grid-area: price; font: 700 17px/1 'Inter', sans-serif; letter-spacing: 0; color: var(--hy-gold);
-    margin: 0; text-align: right; white-space: nowrap;
+    grid-area: price; font: 800 16px/1 'Inter', sans-serif; letter-spacing: 0; color: var(--hy-gold);
+    margin: 4px 0 0; text-align: left; white-space: nowrap;
   }
   html body .ad-card [class*="ad-seller"], html body .ad-card .ad-seller-row { display: none; }
+  html body .ad-card .ad-card-body > *:not(.ad-meta):not(.ad-title):not(.ad-price):not(.ad-contact-btn):not(.ad-contact-tray) { grid-column: 1 / -1; margin-top: 8px; justify-self: start; }
+  /* tap to contact */
+  html body .ad-card .ad-contact-btn {
+    grid-area: chip; align-self: center; height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
+    background: rgba(255, 200, 87, .16); border: 1px solid rgba(255, 200, 87, .6); color: var(--hy-gold);
+    font: 700 12px/1 'Inter', sans-serif; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  html body .ad-card.contact-open .ad-contact-btn { background: var(--hy-gold); color: var(--hy-deep); }
+  html body .ad-card .ad-contact-tray { grid-area: tray; display: none; gap: 8px; margin-top: 12px; }
+  html body .ad-card.contact-open .ad-contact-tray { display: flex; }
+  html body .ad-card .ad-contact-act {
+    all: unset; box-sizing: border-box; flex: 1; min-width: 0; height: 44px; border-radius: 22px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-align: center;
+    background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .25); color: var(--hy-ink);
+    font: 700 13px/1 'Inter', sans-serif;
+  }
+  html body .ad-card .ad-contact-act.is-wa { background: var(--hy-gold); border-color: var(--hy-gold); color: var(--hy-deep); }
+  html body .ad-card .ad-contact-act svg { width: 16px; height: 16px; flex: none; }
   html body .ad-card .fav-btn {
     width: 40px; height: 40px; top: 14px; right: 14px;
     background: rgba(6, 48, 58, .55); border: 1px solid rgba(255, 255, 255, .25); box-shadow: none;
@@ -145,7 +166,7 @@
     top: 14px; left: 14px; right: auto; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 14px;
     background: rgba(6, 48, 58, .55); border: 1px solid rgba(255, 255, 255, .25); color: var(--hy-ink);
   }
-  html body .ad-card .trending-badge { bottom: 12px; left: 14px; font-size: 11px; padding: 5px 10px; border-radius: 12px; }
+  html body .ad-card .trending-badge { bottom: 40px; left: 14px; font-size: 11px; padding: 5px 10px; border-radius: 12px; }
   /* the results toolbar becomes one quiet row */
   html body .results-header { padding: 4px 0 0; gap: 8px; }
   html body .results-header .results-count { display: none; }
@@ -157,6 +178,9 @@
   /* two-column grid view: compact version of the same card */
   html body .home-grid .ad-card .ad-card-img { height: 150px; }
   html body .home-grid .ad-card .ad-card-body { grid-template-areas: "meta meta" "title title" "price price"; padding: 10px 12px 12px; }
+  html body .home-grid .ad-card .ad-card-body { margin-top: -18px; border-radius: 20px; }
+  html body .home-grid .ad-card .ad-card-img { border-radius: 22px 22px 0 0; }
+  html body .home-grid .ad-card .ad-contact-btn, html body .home-grid .ad-card .ad-contact-tray { display: none !important; }
   html body .home-grid .ad-card .ad-title { font-size: 16px; }
   html body .home-grid .ad-card .ad-price { text-align: left; font-size: 14px; margin-top: 4px; }
 
@@ -453,3 +477,6 @@
 @media (prefers-reduced-motion: reduce) {
   html body .v3d-hero .gallery-dot { transition: none; }
 }
+
+/* the card contact chip is phone-only (the rules above sit inside the phone media block) */
+.ad-contact-btn, .ad-contact-tray { display: none; }

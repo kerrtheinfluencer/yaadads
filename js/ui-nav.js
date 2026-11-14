@@ -322,6 +322,23 @@ function cardHTML(ad, idx) {
        </div>`
     : '';
 
+  /* §CARD-CONTACT — "Contact" chip on the card opens Call / WhatsApp / Chat without opening the ad.
+     Sold ads and your own ads never show it. Chat goes through cardChat() so a seller name never sits in inline JS. */
+  const _own = (typeof CU !== 'undefined' && CU && ad.sellerId && CU.id === ad.sellerId);
+  const _num = (ad.phone || '').replace(/\D/g, '');
+  const _wa = _num.length >= 7
+    ? 'https://wa.me/' + (_num.length === 7 ? '1876' + _num : (_num.length === 10 && _num.startsWith('876')) ? '1' + _num : (_num.length === 11 && _num.startsWith('1')) ? _num : '1876' + _num) + '?text=' + encodeURIComponent('Hi! I saw your ad on Yaad Adz: ' + ad.title)
+    : '';
+  const _stop = 'onclick="event.stopPropagation()"';
+  const _tray = [
+    ad.phone ? `<a class="ad-contact-act" href="tel:${escHtml(ad.phone)}" ${_stop}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Call</a>` : '',
+    _wa ? `<a class="ad-contact-act is-wa" href="${escHtml(_wa)}" target="_blank" rel="noopener noreferrer" ${_stop}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19l1.2-3.6A7.5 7.5 0 1 1 9 18z"/></svg>WhatsApp</a>` : '',
+    ad.sellerId ? `<button type="button" class="ad-contact-act" onclick="event.stopPropagation();cardChat('${escHtml(ad.id)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Chat</button>` : ''
+  ].join('');
+  const contact = (ad.status !== 'sold' && !_own && _tray)
+    ? `<button type="button" class="ad-contact-btn" aria-expanded="false" onclick="cardContact(event,this)"><span class="ad-contact-lbl">Contact</span> <span aria-hidden="true">▾</span></button><div class="ad-contact-tray">${_tray}</div>`
+    : '';
+
   // Note: ad.title/parish are DB-authored strings — escape before interpolating.
   return `<div class="ad-card${ad.status==='sold'?' sold':''}" data-id="${escHtml(ad.id)}" onclick="openDetail('${escHtml(ad.id)}')">
     <div class="accent-stripe"></div>
@@ -339,9 +356,25 @@ function cardHTML(ad, idx) {
         <span class="ad-views">${eyeSvg} ${fmtN(views)}</span>
       </div>
       ${sellerRow}
+      ${contact}
     </div>
   </div>`;
 }
+
+/* open/close the contact tray on a card; chat opens the real conversation for that ad */
+window.cardContact = function (e, btn) {
+  e.stopPropagation();
+  const card = btn.closest('.ad-card'); if (!card) return;
+  const open = card.classList.toggle('contact-open');
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const l = btn.querySelector('.ad-contact-lbl'); if (l) l.textContent = open ? 'Close' : 'Contact';
+  btn.lastElementChild.textContent = open ? '▴' : '▾';
+};
+window.cardChat = function (id) {
+  const ad = (typeof findAd === 'function') ? findAd(id) : null; if (!ad) return;
+  const nm = ad.seller || 'Seller';
+  openChat(ad.id, ad.sellerId, nm, ad.sellerInit || (typeof initials === 'function' ? initials(nm) : 'S'));
+};
 
 /* swipe strip: keep the dots + "2/5" badge in step with the photo on screen */
 (function () {

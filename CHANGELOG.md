@@ -12,6 +12,7 @@ Yaad Adz has a new look on your phone: calm teal glass, bold island headlines an
 - New: a fresh look across Home, ads, Saved, Gas Prices, chat, your profile and sign-in
 - New: the gas price and “Ask Yaad Brain” now live in a gold strip on the bottom bar, instead of two floating buttons
 - New: scroll down and the bottom bar slims to see-through icons, and the active tab keeps its name
+- New: tap Contact on any ad in the feed to call, WhatsApp or chat with the seller without opening the ad
 - New: Post an ad now starts with your photos, then the details, then a preview
 - Changed: the Browse screen has a cleaner search bar and category tiles
 - Fixed: the bottom bar no longer covers search results while you type
