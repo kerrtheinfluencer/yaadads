@@ -5,7 +5,18 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 🧭 v3.2 — A smarter gas assistant (Oct 24, 2026) · latest
+## 🌴 v4.0 — A fresh new look (Nov 14, 2026) · latest
+
+Yaad Adz has a new look on your phone: calm teal glass, bold island headlines and big photo cards. The bottom bar now has a gold strip with today’s gas price and a shortcut to ask Yaad Brain, and it shrinks out of your way as you scroll.
+
+- New: a fresh look across Home, ads, Saved, Gas Prices, chat, your profile and sign-in
+- New: the gas price and “Ask Yaad Brain” now live in a gold strip on the bottom bar, instead of two floating buttons
+- New: scroll down and the bottom bar slims to see-through icons, and the active tab keeps its name
+- New: Post an ad now starts with your photos, then the details, then a preview
+- Changed: the Browse screen has a cleaner search bar and category tiles
+- Fixed: the bottom bar no longer covers search results while you type
+
+## 🧭 v3.2 — A smarter gas assistant (Oct 24, 2026)
 
 The gas assistant on the Gas Prices page can now find the cheapest stations near you. Every station it suggests comes with Map, Directions (Google Maps, Apple Maps or Waze) and WhatsApp buttons, and you can share any answer to WhatsApp in one tap. It also suggests what to ask next, remembers the fuel you asked about, and understands things like “directions to the second one”.
 

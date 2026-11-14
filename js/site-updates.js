@@ -32,7 +32,7 @@
 
 
 var SITE_UPDATES = {
-  current: 'v3-gas-assistant',
+  current: 'v4-fresh-look',
   items: {
     'message-v2': {
       version: 'v2.17',
@@ -454,6 +454,21 @@ var SITE_UPDATES = {
         'New: a button to start a fresh chat',
       ],
       url: '/gas-prices.html',
+    },
+    'v4-fresh-look': {
+      version: 'v4.0',
+      icon: '🌴',
+      title: 'A fresh new look',
+      body: 'Yaad Adz has a new look on your phone: calm teal glass, bold island headlines and big photo cards. The bottom bar now has a gold strip with today’s gas price and a shortcut to ask Yaad Brain, and it shrinks out of your way as you scroll.',
+      date: 'Nov 14, 2026',
+      notes: [
+        'New: a fresh look across Home, ads, Saved, Gas Prices, chat, your profile and sign-in',
+        'New: the gas price and “Ask Yaad Brain” now live in a gold strip on the bottom bar, instead of two floating buttons',
+        'New: scroll down and the bottom bar slims to see-through icons, and the active tab keeps its name',
+        'New: Post an ad now starts with your photos, then the details, then a preview',
+        'Changed: the Browse screen has a cleaner search bar and category tiles',
+        'Fixed: the bottom bar no longer covers search results while you type',
+      ],
     },
   },
 };
