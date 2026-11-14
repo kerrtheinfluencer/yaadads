@@ -364,6 +364,26 @@
   html body .ai-sheet.ai-v2 .ai-hint-link { color: var(--hy-gold); }
 }
 
+/* ───────── Browse / Search screen — matches Search mockup ───────── */
+@media (max-width: 640px) {
+  html body .v3b-h1 { font-family: var(--hy-serif); font-size: 28px; font-weight: 700; letter-spacing: -.5px; }
+  html body .v3b-search, html body .v3b-big, html body .v3b-tile, html body .v3b-chip, html body .v3b-link {
+    background: var(--hy-glass); border: 1px solid var(--hy-line); box-shadow: none;
+  }
+  html body .v3b-search { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .3); height: 52px; }
+  html body .v3b-feature { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  html body .v3b-big { height: 84px; min-width: 0; border-radius: 20px; padding: 10px; flex-direction: column; align-items: flex-start; justify-content: flex-end; }
+  html body .v3b-big-t { align-items: flex-start; }
+  html body .v3b-big svg, html body .v3b-big-t span { display: none; }
+  html body .v3b-big-t b { font: 700 13px 'Inter', sans-serif; }
+  html body .v3b-tile { height: 84px; border-radius: 20px; padding: 10px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; text-align: left; font: 700 13px 'Inter', sans-serif; }
+  html body .v3b-tile svg { display: none; }
+  html body .v3b-all { color: var(--hy-gold); }
+  html body .v3b-sub { font-family: var(--hy-serif); font-size: 20px; font-weight: 700; margin: 4px 0 0; }
+  html body .v3b-chip { height: 44px; font-weight: 600; }
+  html body .v3b-link { height: 56px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html body .v3d-hero .gallery-dot { transition: none; }
 }
