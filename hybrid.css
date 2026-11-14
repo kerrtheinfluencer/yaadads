@@ -392,6 +392,29 @@
   html body .v3b-link { height: 56px; }
 }
 
+/* ───────── Profile (logged in) — matches Profile mockup ───────── */
+@media (max-width: 640px) {
+  html body .v3me .v3s-h1 { font-family: var(--hy-serif); font-size: 28px; font-weight: 700; letter-spacing: -.5px; }
+  html body .v3p-card { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; }
+  html body .v3p-av { width: 76px; height: 76px; border-radius: 50%; border: 3px solid #0A4A52; font-family: var(--hy-serif); font-weight: 700;
+    background: #0A4A52 !important; color: var(--hy-gold) !important; box-shadow: 0 0 0 3px #2BB3A3, 0 0 0 3px #FFC857; outline: 3px solid transparent; }
+  html body .v3p-name { font-family: var(--hy-serif); font-size: 24px; font-weight: 700; letter-spacing: -.5px; }
+  html body .v3p-sub { color: var(--hy-mute); font-size: 13px; }
+  html body .v3p-edit { background: var(--hy-glass-2); border: 1px solid var(--hy-line); color: var(--hy-ink); box-shadow: none; height: 40px; border-radius: 20px; }
+  html body .v3p-stats > div { background: var(--hy-glass); border: 1px solid var(--hy-line); border-radius: 20px; box-shadow: none; padding: 14px 8px; }
+  html body .v3p-n { font-family: var(--hy-serif); font-size: 22px; font-weight: 700; color: var(--hy-gold); }
+  html body .v3p-l { font-size: 11px; color: var(--hy-soft); }
+  html body .v3p-ref { background: var(--hy-glass); border: 1px solid var(--hy-line); border-radius: 24px; box-shadow: none; }
+  html body .v3me-menu { background: var(--hy-glass); border: 1px solid var(--hy-line); border-radius: 24px; box-shadow: none; padding: 0; overflow: hidden; }
+  html body .v3me-menu .v3s-row { min-height: 56px; padding: 0 18px; border-radius: 0; }
+  html body .v3me-menu .v3s-ric { display: none; }
+  html body .v3me-menu .v3s-row + .v3s-row::before { left: 18px; right: 0; background: rgba(255, 255, 255, .12); }
+  html body .v3me-menu .v3s-rmid b { font-size: 15px; font-weight: 600; }
+  html body .v3me-menu .v3s-chev { color: var(--hy-mute); }
+  html body .v3me-out .v3s-rmid { text-align: center; }
+  html body .v3me-out .v3s-rmid b { color: var(--hy-gold); font-size: 14px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html body .v3d-hero .gallery-dot { transition: none; }
 }
