@@ -221,6 +221,8 @@ function nextStep(n) {
     if (!document.getElementById('aTitle').value.trim()) return showPostErr('Please enter a title.');
     if (!document.getElementById('aParish').value) return showPostErr('Please select a parish.');
     if (!document.getElementById('aPrice').value) return showPostErr('Please enter a price.');
+  }
+  if (n > currentPostStep && currentPostStep <= 2 && n === 3) {
     if (!document.getElementById('aDesc').value.trim()) return showPostErr('Please add a description.');
   }
   setStep(n);

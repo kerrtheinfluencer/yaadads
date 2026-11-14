@@ -371,7 +371,7 @@
      The 3-step wizard keeps every id and function it had. Added here: the
      "Step N of 3" line, and a category chip rail that mirrors the #aCat
      <select> (which stays in the page as the source of truth). */
-  var STEP_NAMES = { 1: 'Details', 2: 'Photo & contact', 3: 'Preview' };
+  var STEP_NAMES = { 1: 'Show it off', 2: 'Details', 3: 'Preview' };
   function syncPostStep(n) {
     var el = $('v3ppStep'); if (!el) return;
     var step = n || (typeof currentPostStep !== 'undefined' ? currentPostStep : 1);

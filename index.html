@@ -1074,41 +1074,21 @@ function v3HeroSearch(e){
     <button class="m-close" onclick="closeOverlay('ovPost')">✕</button>
     <div class="v3pp-head">
       <h2 style="font-family:var(--font-d);font-weight:800;font-size:24px;margin-bottom:4px">Post a Free Ad</h2>
-      <span class="v3pp-step" id="v3ppStep" aria-live="polite">Step 1 of 3 · Details</span>
+      <span class="v3pp-step" id="v3ppStep" aria-live="polite">Step 1 of 3 · Show it off</span>
     </div>
     <p class="m-sub">Reach thousands of buyers across Jamaica — always free</p>
     <div id="postAlert" class="alert-box alert-err"></div>
     <div id="ppDraftHost"></div>
     <!-- Step bar -->
     <div class="step-bar">
-      <div class="step active" id="s1"><div class="step-num">1</div>Details</div>
-      <div class="step" id="s2"><div class="step-num">2</div>Photo & Contact</div>
+      <div class="step active" id="s1"><div class="step-num">1</div>Photos</div>
+      <div class="step" id="s2"><div class="step-num">2</div>Details</div>
       <div class="step" id="s3"><div class="step-num">3</div>Preview</div>
     </div>
     <div class="pp-bar" id="ppBar"></div>
-    <!-- Step 1 -->
+    <!-- Step 1: photos first, then the basics -->
     <div class="step-panel active" id="sp1">
       <div id="ppSmartPanel"></div>
-      <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
-      <div class="form-row">
-        <div class="form-grp v3pp-cat"><label class="form-lbl" for="aCat">Category *</label><select class="form-inp" id="aCat"></select><div class="v3pp-chips" id="v3ppCats" role="group" aria-label="Category"></div></div>
-        <div class="form-grp"><label class="form-lbl">Parish *</label><select class="form-inp" id="aParish"><option value="">Select…</option></select></div>
-      </div>
-      <div class="form-row">
-        <div class="form-grp"><label class="form-lbl">Price (JMD) *</label><input class="form-inp" id="aPrice" type="number" min="0" placeholder="250000"></div>
-        <div class="form-grp" style="display:flex;align-items:flex-end;padding-bottom:1px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500">
-            <input type="checkbox" id="aNeg" style="width:16px;height:16px;accent-color:var(--green)"> Negotiable
-          </label>
-        </div>
-      </div>
-      <div class="form-grp"><label class="form-lbl">Description *</label><textarea class="form-inp" id="aDesc" rows="4" placeholder="Describe your item — condition, features, why you're selling…"></textarea></div>
-      <div class="step-nav">
-        <button class="btn btn-green btn-lg" style="flex:1" onclick="nextStep(2)">Next: Photo & Contact →</button>
-      </div>
-    </div>
-    <!-- Step 2 -->
-    <div class="step-panel" id="sp2">
       <div class="form-grp">
         <label class="form-lbl">Photos <span>(up to 6 — first photo is the cover)</span></label>
         <div class="photo-grid" id="photoGrid">
@@ -1120,6 +1100,22 @@ function v3HeroSearch(e){
         <input type="file" accept="image/*" multiple id="imgFile" style="display:none" onchange="handleImgFiles(this)">
         <p style="font-size:11px;color:var(--text-3);margin-top:6px">JPG or PNG · max 5MB each · images auto-compressed on upload</p>
       </div>
+      <div class="form-grp"><label class="form-lbl">Ad Title *</label><input class="form-inp" id="aTitle" type="text" placeholder="e.g. 2019 Honda Civic, Great Condition"></div>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl">Price (JMD) *</label><input class="form-inp" id="aPrice" type="number" min="0" placeholder="250000"></div>
+        <div class="form-grp"><label class="form-lbl">Parish *</label><select class="form-inp" id="aParish"><option value="">Select…</option></select></div>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-green btn-lg" style="flex:1" onclick="nextStep(2)">Continue →</button>
+      </div>
+    </div>
+    <!-- Step 2: details -->
+    <div class="step-panel" id="sp2">
+      <div class="form-row">
+        <div class="form-grp v3pp-cat"><label class="form-lbl" for="aCat">Category *</label><select class="form-inp" id="aCat"></select><div class="v3pp-chips" id="v3ppCats" role="group" aria-label="Category"></div></div>
+      </div>
+      <div class="form-grp"><label class="form-lbl">Description *</label><textarea class="form-inp" id="aDesc" rows="4" placeholder="Describe your item — condition, features, why you're selling…"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;margin-bottom:14px"><input type="checkbox" id="aNeg" style="width:16px;height:16px;accent-color:var(--green)"> Price is negotiable</label>
       <div class="form-grp"><label class="form-lbl">Contact Phone <span>(optional)</span></label><input class="form-inp" id="aPhone" type="tel" placeholder="876-XXX-XXXX"></div>
       <div class="step-nav">
         <button class="btn btn-ghost" onclick="nextStep(1)" style="min-width:90px">← Back</button>

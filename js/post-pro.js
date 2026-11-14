@@ -68,8 +68,8 @@ function ppCatName(id) { try { var c = catById(id); return (c && c.name) || 'Oth
 
 /* ── §PP-CHROME — progress meter, completion ring, pro tips ── */
 var PP_TIPS = {
-  1: '💡 Buyers skip ads with no price. A real number gets 3× more calls.',
-  2: ' Real photos of the actual item sell fastest. First photo = your cover.',
+  1: '📸 Real photos of the actual item sell fastest. First photo = your cover.',
+  2: '💡 Buyers skip ads with no price or details. Say the condition and why you are selling.',
   3: '👀 Check the preview — that is exactly what buyers will see.'
 };
 
@@ -638,12 +638,12 @@ function ppCloseWizard() {
 var PP_TOUR = [
   { step: 1, sel: 'ppSmartPanel', title: 'Skip the typing ✨',
     text: 'Already wrote a caption or a message about this item? Paste it here and <strong>Smart fill</strong> writes the title, price, parish, category and phone for you.' },
-  { step: 1, sel: 'aCat', title: 'What are you selling?',
-    text: 'Pick a category — buyers browse by category more than anything else, so this decides who sees your ad.' },
+  { step: 1, sel: 'photoGrid', title: 'Photos do the selling',
+    text: 'Tap to browse, <strong>drag &amp; drop</strong>, or just <strong>paste</strong> (Ctrl/⌘+V) straight from your clipboard. Tap any photo to make it the cover.' },
   { step: 1, sel: 'aPrice', title: 'Name a real price',
     text: 'Ads with an actual number get far more calls. We format it in JMD automatically, and you can still tick <strong>Negotiable</strong>.' },
-  { step: 2, sel: 'photoGrid', title: 'Photos do the selling',
-    text: 'Tap to browse, <strong>drag &amp; drop</strong>, or just <strong>paste</strong> (Ctrl/⌘+V) straight from your clipboard. Tap any photo to make it the cover.' },
+  { step: 2, sel: 'aCat', title: 'What are you selling?',
+    text: 'Pick a category — buyers browse by category more than anything else, so this decides who sees your ad.' },
   { step: 2, sel: 'aPhone', title: 'How buyers reach you',
     text: 'Optional — we use your profile number if you leave it blank. A number here gets WhatsApp and call buttons on your ad.' },
   { step: 3, sel: 'buildPreview', title: 'Exactly what buyers see',

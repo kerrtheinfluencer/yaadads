@@ -330,6 +330,14 @@
     background: rgba(255, 255, 255, .08); border: 2px dashed rgba(255, 255, 255, .35); color: var(--hy-gold);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 600;
   }
+  /* photo-first step 1 */
+  html body #ovPost .v3pp-head h2 { font-family: var(--hy-serif) !important; font-size: 30px !important; line-height: 1.08; letter-spacing: -1px; }
+  html body #ovPost .m-sub { display: none; }
+  html body #ovPost #sp1 .photo-grid > .photo-add-btn:only-child { grid-column: 1 / -1; grid-row: auto; aspect-ratio: 2 / 1; }
+  html body #ovPost .photo-add-btn span:first-child { font-size: 0; }
+  html body #ovPost .photo-add-btn span:first-child::before { content: '+'; font-size: 34px; line-height: 1; color: var(--hy-gold); font-weight: 500; }
+  html body #ovPost #sp1 .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  html body #ovPost .form-inp { min-height: 56px; border-radius: 20px; }
   html body #ovPost .step-nav .btn-ghost { background: var(--hy-glass-2); border: 1px solid rgba(255, 255, 255, .3); color: var(--hy-ink); }
 }
 
