@@ -493,3 +493,12 @@
 .v3-bell-dot:empty { min-width: 11px; width: 11px !important; height: 11px; padding: 0; }
 @keyframes hy-bell-pop { from { transform: scale(.4); } to { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .v3-bell-dot { animation: none; } }
+
+/* ===== One footer on phone: the SEO "About" blurb folds into the footer ===== */
+@media (max-width: 640px) {
+  html body .seo-about { border: 0 !important; background: transparent !important; padding: 18px 22px 0 !important; margin: 0 !important; }
+  html body .seo-about .seo-about-inner { text-align: center; font-size: 11.5px; line-height: 1.6; color: rgba(255,255,255,.5); }
+  html body .seo-about .seo-about-inner strong { color: rgba(255,255,255,.7); font-weight: 600; }
+  html body .seo-about .seo-about-cats, html body .seo-about .seo-browse-all { display: none !important; }
+  html body .seo-about .seo-about-inner p:last-child { margin: 0; }
+}

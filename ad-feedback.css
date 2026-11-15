@@ -14,3 +14,7 @@
 .ad-feedback time { display: block; font-size: 13px; color: #b1c9bb; }
 .ad-feedback article label { display: inline-block; margin-right: 10px; font-size: 13px; }
 @media (max-width: 600px) { .ad-feedback { padding: 16px; border-radius: 16px; } }
+
+.ad-feedback .fb-sub { margin: 0 0 14px; font-size: 14px; opacity: .8; }
+.ad-feedback button.fb-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; border: 0; border-radius: 14px; background: #fff; color: #1f1f1f; font-weight: 600; font-size: 16px; }
+.ad-feedback button.fb-link { display: block; width: auto; min-height: 44px; margin: 6px auto 0; padding: 8px 12px; border: 0; background: transparent; color: inherit; opacity: .75; font-size: 14px; text-decoration: underline; }
