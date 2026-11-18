@@ -24,8 +24,8 @@
     strip.className = 'hy-strip'; strip.id = 'hyStrip';
     strip.innerHTML =
       '<a href="/gas-prices.html#prices" id="hyGas" aria-label="Jamaica gas prices today">' + GAS + '<span id="hyGasPrice">Gas</span></a>' +
-      '<button type="button" id="hyAsk" aria-label="Ask Yaad Brain"><span class="hy-ask-full">Ask Yaad Brain</span><span class="hy-ask-short">Ask \u2726</span>' +
-      '<span class="hy-orb" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>';
+      '<button type="button" id="hyAsk" aria-label="Ask Yaad Brain"><span class="hy-ask-full">Ask Yaad Brain</span><span class="hy-ask-short">Ask</span>' +
+      '<span class="hy-chat" aria-hidden="true"><i></i><i></i><i></i></span></button>';
     nav.insertBefore(strip, nav.firstChild);
     document.getElementById('hyAsk').addEventListener('click', function () { if (window.openAiSheet) window.openAiSheet(); });
     Object.keys(ICONS).forEach(function (id) {

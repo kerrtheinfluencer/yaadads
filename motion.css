@@ -102,7 +102,7 @@
   .page.ya-enter, .overlay.open, .modal, .ad-card.in, .ad-card.in .ad-card-img img { animation: none !important; }
   .ad-card.pre { opacity: 1; transform: none; }
   body::before, body::after, .fresh-badge::after, .trending-badge::after, .live-dot, .gfc-orb i,
-  .v3-orb, .v3-orb-glow, .v3-bars i, .v3-ai-float::before { animation: none !important; }
+  .hy-chat i, .v3-orb, .v3-orb-glow, .v3-bars i, .v3-ai-float::before { animation: none !important; }
 }
 
 /* ── 9. Listing page: keep the contact bar and the hero photo steady while scrolling ──
@@ -114,4 +114,31 @@
 @media (max-width: 640px) {
   html body .v3d-cta { transform: translate3d(0, 0, 0); will-change: transform; contain: layout style; animation: ya-cta-in .5s var(--m-out) both; }
   html body .v3d-hero .gallery-wrap { contain: paint; }
+}
+
+/* ── 10. Dock: "typing" chat bubble for Ask Yaad Brain + a pill that always fits ── */
+@keyframes hy-type { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-3.5px); opacity: 1; } }
+@keyframes hy-bubble { 0%, 86%, 100% { transform: scale(1); } 92% { transform: scale(1.12); } }
+@media (max-width: 640px) {
+  html body .mob-nav .hy-strip { padding-right: 14px; }
+  html body .mob-nav .hy-chat { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+    width: 36px; height: 24px; border-radius: 12px 12px 12px 4px; background: var(--hy-deep, #0a2832);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .22); animation: hy-bubble 4.2s ease-in-out infinite;
+    transition: width .4s var(--m-out), height .4s var(--m-out), background-color .3s ease, box-shadow .3s ease; }
+  html body .mob-nav .hy-chat i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--hy-gold, #ffc857); animation: hy-type 1.25s ease-in-out infinite; }
+  html body .mob-nav .hy-chat i:nth-child(2) { animation-delay: .16s; }
+  html body .mob-nav .hy-chat i:nth-child(3) { animation-delay: .32s; }
+  html body .mob-nav.mob-nav-compact .hy-chat { display: inline-flex; width: 28px; height: 17px; border-radius: 9px 9px 9px 3px;
+    background: rgba(255, 200, 87, .16); box-shadow: inset 0 0 0 1px rgba(255, 200, 87, .45); gap: 2.5px; }
+  html body .mob-nav.mob-nav-compact .hy-chat i { width: 3.5px; height: 3.5px; }
+  html body .mob-nav .hy-ask-short { margin-right: 2px; }
+
+  /* compact bar: the active tab's column grows to hold its gold pill, so it is never clipped or off-centre */
+  html body .mob-nav.mob-nav-compact { padding-left: 8px; padding-right: 8px; }
+  html body .mob-nav.mob-nav-compact:has(#mnHome.active)    { grid-template-columns: 1.75fr 1fr 40px 1fr 1fr; }
+  html body .mob-nav.mob-nav-compact:has(#mnSaved.active)   { grid-template-columns: 1fr 1.75fr 40px 1fr 1fr; }
+  html body .mob-nav.mob-nav-compact:has(#mnMsgs.active)    { grid-template-columns: 1fr 1fr 40px 1.75fr 1fr; }
+  html body .mob-nav.mob-nav-compact:has(#mnAccount.active) { grid-template-columns: 1fr 1fr 40px 1fr 1.75fr; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item { min-width: 0; height: 34px; padding: 0 12px; gap: 6px; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item.active { border-radius: 999px; }
 }

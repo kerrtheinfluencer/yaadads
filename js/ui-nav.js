@@ -507,6 +507,13 @@ function goHome() {
   if (inp) inp.value = '';
   hideAiResponse();
   document.querySelector('.hero')?.classList.remove('searched');
+  // Already on Home: the Home tab scrolls back to the top, like every app tab bar.
+  const onHome = document.querySelector('.page.active')?.id === 'page-home';
+  if (onHome) {
+    const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
+    return;
+  }
   goPage('home');
 }
 
