@@ -5,7 +5,17 @@
 > Do not edit by hand — it regenerates itself on every commit and on
 > push to main (`npm run changelog` refreshes it manually).
 
-## 🌴 v4.0 — A fresh new look (Nov 14, 2026) · latest
+## ✨ v4.1 — Smoother and livelier (Nov 17, 2026) · latest
+
+Everything now moves more smoothly, and new notifications pop up in the middle of your screen, then fly back into the bell at the top.
+
+- New: a new message or tip pops up in the middle of the screen, then flies back into the bell, which rings and bumps its badge
+- Improved: smoother movement everywhere — cards settle in without bouncing, sheets and pop-ups glide, buttons answer your tap instantly, and the bottom bar shrinks and grows in one fluid motion
+- New: Ask Yaad Brain now has an animated chat bubble with typing dots, and the Home tab scrolls you back to the top when you are already on Home
+- Fixed: the highlighted tab on the minimized bar is no longer cut off at the edge
+- Fixed: the listing photo and the contact bar no longer shake while you scroll up and down on an ad
+
+## 🌴 v4.0 — A fresh new look (Nov 14, 2026)
 
 Yaad Adz has a new look on your phone: calm teal glass, bold island headlines and big photo cards. The bottom bar now has a gold strip with today’s gas price and a shortcut to ask Yaad Brain, and it shrinks out of your way as you scroll.
 
@@ -13,10 +23,6 @@ Yaad Adz has a new look on your phone: calm teal glass, bold island headlines an
 - New: the gas price and “Ask Yaad Brain” now live in a gold strip on the bottom bar, instead of two floating buttons
 - New: scroll down and the bottom bar slims to see-through icons, and the active tab keeps its name
 - New: the bell on the home screen shows a red badge with the number of unread notifications
-- Improved: smoother movement everywhere — cards settle in without bouncing, sheets and pop-ups glide, buttons answer your tap instantly, and the bottom bar shrinks and grows in one fluid motion
-- New: Ask Yaad Brain now has an animated chat-bubble with typing dots, and the Home tab scrolls you back to the top when you are already on Home
-- Fixed: the highlighted tab on the minimized bar is no longer cut off at the edge
-- Fixed: the listing photo and the contact bar no longer shake while you scroll up and down on an ad
 - New: tap Contact on any ad in the feed to call, WhatsApp or chat with the seller without opening the ad
 - New: Post an ad now starts with your photos, then the details, then a preview
 - Changed: the Browse screen has a cleaner search bar and category tiles

@@ -142,3 +142,24 @@
   html body .mob-nav.mob-nav-compact .mob-nav-item { min-width: 0; height: 34px; padding: 0 12px; gap: 6px; }
   html body .mob-nav.mob-nav-compact .mob-nav-item.active { border-radius: 999px; }
 }
+
+/* ── 11. Notification pop-up: centred glass card; flies back into the bell when done ── */
+@keyframes v3-pop-ring { 0% { transform: scale(.7); opacity: .7; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes v3-bell-bump { 0% { transform: scale(1); } 35% { transform: scale(1.55); } 65% { transform: scale(.92); } 100% { transform: scale(1); } }
+.v3-bell-dot.v3-bell-bump { animation: v3-bell-bump .6s var(--m-soft); }
+@media (max-width: 640px) {
+  .v3-pop-scrim { position: fixed; inset: 0; z-index: 9490; background: rgba(2, 22, 20, .4); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+  html body .v3-pop.v3-pop-c { position: fixed; inset: 0; margin: auto; top: 0; left: 0; right: 0; bottom: 0; width: min(calc(100% - 56px), 340px); max-width: none; height: fit-content;
+    flex-direction: column; text-align: center; gap: 8px; padding: 30px 22px 20px; border-radius: 34px; z-index: 9500;
+    box-shadow: var(--v3-rim), 0 30px 80px rgba(0, 12, 10, .6), 0 0 0 1px rgba(255, 210, 122, .18); }
+  .v3-pop-c .v3-pop-ic { position: relative; width: 68px; height: 68px; margin: 0 auto 6px; font-size: 32px; box-shadow: inset 0 1px 1px rgba(255,255,255,.7), 0 10px 28px rgba(244, 195, 0, .35); }
+  .v3-pop-c .v3-pop-ic em { font-style: normal; position: relative; }
+  .v3-pop-c .v3-pop-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255, 210, 122, .8); animation: v3-pop-ring 1.5s ease-out .35s infinite; pointer-events: none; }
+  .v3-pop-c .v3-pop-t { flex: none; align-items: center; gap: 4px; }
+  .v3-pop-c .v3-pop-t b { font-size: 12px; }
+  .v3-pop-c .v3-pop-t span { font-size: 16px; line-height: 1.4; }
+  .v3-pop-c .v3-pop-go { width: 100%; min-height: 48px; margin-top: 8px; font-size: 15px; }
+  .v3-pop-c .v3-pop-x { position: absolute; top: 14px; right: 14px; }
+  .v3-pop-c.is-leaving .v3-pop-ring { animation: none; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .v3-pop-ring, .v3-bell-dot.v3-bell-bump { animation: none !important; } }

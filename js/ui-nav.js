@@ -212,7 +212,11 @@ function subscribeMessages() {
       // Our own message from ANOTHER tab is worth the render above (that tab
       // already showed it); only someone else's is worth interrupting for.
       if (mine) return;
-      showToast('New message received 💬', '💬');
+      if (window.innerWidth <= 640 && typeof window.v3Notify === 'function') {
+        window.v3Notify('You have a new message', '💬', { title: 'New message', label: 'Open', fn: function () { try { goPage('msgs'); } catch (e) {} } });
+      } else {
+        showToast('New message received 💬', '💬');
+      }
       // Fire push notification if app is in background
       const senderName = (row.from_user_id === row.seller_id ? row.seller_name : row.buyer_name) || 'Someone';
       sendPushNotification(

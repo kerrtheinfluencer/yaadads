@@ -535,9 +535,9 @@
 
 
   /* ── Notifications pop out of the bell ───────────────────────────────────────
-     On phones, tips and prompts that carry a button (install the app, gas prices…) no longer
-     sit on top of the page: the bell rings, a glass card grows out of it with a spring, and
-     when it is done it shrinks back into the bell. Plain one-line toasts stay as they were. */
+     On phones, new notifications (a message, an install or gas tip) pop up in the middle of the
+     screen: the bell rings, a glass card rises with a spring, and when it is done it curves up and
+     shrinks into the bell, which rings and bumps its badge. Plain one-line toasts stay as they were. */
   function setupBellPop() {
     if (window.__v3Pop) return; window.__v3Pop = true;
     var orig = window.showToast, cur = null, timer = 0;
@@ -552,41 +552,63 @@
       b.classList.remove('v3-bell-ring', 'v3-bell-ping'); void b.offsetWidth; b.classList.add(cls);
       setTimeout(function () { b.classList.remove(cls); }, 1200);
     }
+    var scrim = null;
+    function bump() {
+      var d = $('v3BellDot');
+      if (typeof window.v3SyncBell === 'function') { try { window.v3SyncBell(); } catch (e) {} }
+      if (d) { d.classList.remove('v3-bell-bump'); void d.offsetWidth; d.classList.add('v3-bell-bump'); setTimeout(function () { d.classList.remove('v3-bell-bump'); }, 800); }
+    }
+    function closeScrim(fast) {
+      var sc = scrim; if (!sc) return; scrim = null;
+      if (fast || reduce || !sc.animate) { sc.remove(); return; }
+      sc.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { sc.remove(); };
+    }
+    /* leaving: the card lifts, curves up toward the bell as it shrinks, then the bell rings and the badge bumps */
     function close(instant) {
       var el = cur; if (!el) return; cur = null; clearTimeout(timer);
-      if (instant || reduce || !el.animate) { el.remove(); return; }
+      if (instant || reduce || !el.animate) { el.remove(); closeScrim(true); if (!instant) { ring('v3-bell-ping'); bump(); } return; }
+      closeScrim();
       el.classList.add('is-leaving');
-      var o = el.style.transformOrigin;
-      var an = el.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.78)', opacity: .9, offset: .35 }, { transform: 'scale(.06)', opacity: 0 }],
-        { duration: 460, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
-      an.onfinish = function () { el.remove(); ring('v3-bell-ping'); };
+      var c = bellCenter(), r = el.getBoundingClientRect();
+      var dx = c.x - (r.left + r.width / 2), dy = c.y - (r.top + r.height / 2);
+      var an = el.animate([
+        { transform: 'translate3d(0,0,0) scale(1) rotate(0deg)', opacity: 1 },
+        { transform: 'translate3d(' + (dx * .12).toFixed(1) + 'px,' + (dy * .12 + 14).toFixed(1) + 'px,0) scale(1.04) rotate(-2deg)', opacity: 1, offset: .18 },
+        { transform: 'translate3d(' + (dx * .62).toFixed(1) + 'px,' + (dy * .5).toFixed(1) + 'px,0) scale(.42) rotate(4deg)', opacity: .95, offset: .66 },
+        { transform: 'translate3d(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px,0) scale(.05) rotate(8deg)', opacity: 0 }
+      ], { duration: 720, easing: 'cubic-bezier(.45,0,.2,1)', fill: 'forwards' });
+      an.onfinish = function () { el.remove(); ring('v3-bell-ping'); bump(); };
     }
     function pop(msg, icon, action) {
-      close(true);
+      close(true); closeScrim(true);
       var el = document.createElement('div');
-      el.className = 'v3-pop'; el.setAttribute('role', 'status');
+      el.className = 'v3-pop v3-pop-c'; el.setAttribute('role', 'status');
       var has = action && typeof action.fn === 'function';
-      el.innerHTML = '<span class="v3-pop-ic" aria-hidden="true">' + esc(icon || '🔔') + '</span>' +
-        '<span class="v3-pop-t"><b>' + (has ? 'Yaad Adz' : 'Notice') + '</b><span>' + esc(msg) + '</span></span>' +
+      el.innerHTML = '<span class="v3-pop-ic" aria-hidden="true"><i class="v3-pop-ring"></i><em>' + esc(icon || '🔔') + '</em></span>' +
+        '<span class="v3-pop-t"><b>' + esc((action && action.title) || (has ? 'Yaad Adz' : 'Notice')) + '</b><span>' + esc(msg) + '</span></span>' +
         (has ? '<button type="button" class="v3-pop-go">' + esc(action.label || 'Open') + '</button>' : '') +
         '<button type="button" class="v3-pop-x" aria-label="Dismiss">✕</button>';
-      document.body.appendChild(el); cur = el;
-      var c = bellCenter(), r = el.getBoundingClientRect();
-      el.style.transformOrigin = Math.round(c.x - r.left) + 'px ' + Math.round(c.y - r.top) + 'px';
+      scrim = document.createElement('div'); scrim.className = 'v3-pop-scrim';
+      scrim.addEventListener('click', function () { close(); });
+      document.body.appendChild(scrim); document.body.appendChild(el); cur = el;
       ring('v3-bell-ring');
       if (!reduce && el.animate) {
-        el.animate([{ transform: 'scale(.06)', opacity: 0 }, { transform: 'scale(1.05)', opacity: 1, offset: .65 }, { transform: 'scale(1)', opacity: 1 }],
-          { duration: 700, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 160, fill: 'backwards' });
+        scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out', fill: 'backwards' });
+        el.animate([
+          { transform: 'translate3d(0,26px,0) scale(.78)', opacity: 0 },
+          { transform: 'translate3d(0,-4px,0) scale(1.045)', opacity: 1, offset: .6 },
+          { transform: 'translate3d(0,0,0) scale(1)', opacity: 1 }
+        ], { duration: 620, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
         el.classList.add('is-in');
       }
       el.addEventListener('click', function (e) {
         if (e.target.closest('.v3-pop-go')) { try { action.fn(); } catch (err) {} close(); return; }
         if (e.target.closest('.v3-pop-x')) { close(); }
       });
-      var sx = 0;
-      el.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
-      el.addEventListener('touchend', function (e) { if (Math.abs(e.changedTouches[0].clientX - sx) > 60) close(); }, { passive: true });
-      timer = setTimeout(close, has ? 9000 : 5000);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+      el.addEventListener('touchend', function (e) { var t = e.changedTouches[0]; if (Math.abs(t.clientX - sx) > 60 || Math.abs(t.clientY - sy) > 60) close(); }, { passive: true });
+      timer = setTimeout(close, has ? 7000 : 4500);
     }
     window.v3Notify = pop;
     window.showToast = function (msg, icon, action) {
