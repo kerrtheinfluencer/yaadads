@@ -104,3 +104,14 @@
   body::before, body::after, .fresh-badge::after, .trending-badge::after, .live-dot, .gfc-orb i,
   .v3-orb, .v3-orb-glow, .v3-bars i, .v3-ai-float::before { animation: none !important; }
 }
+
+/* ── 9. Listing page: keep the contact bar and the hero photo steady while scrolling ──
+   The photo's depth effect used to set a variable on <body> and blur a full-screen layer on
+   every scroll frame, which starved the compositor so fixed bits (the contact pill) and the
+   photo visibly shook. Now only transform/opacity change, on the photo alone, and the pill
+   sits on its own layer. */
+@keyframes ya-cta-in { from { opacity: 0; transform: translate3d(0, 22px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@media (max-width: 640px) {
+  html body .v3d-cta { transform: translate3d(0, 0, 0); will-change: transform; contain: layout style; animation: ya-cta-in .5s var(--m-out) both; }
+  html body .v3d-hero .gallery-wrap { contain: paint; }
+}

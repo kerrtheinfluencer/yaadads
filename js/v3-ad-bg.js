@@ -22,12 +22,12 @@
     var hero = document.querySelector('.gallery-main') || img.parentElement;
     var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (hero && !still) {
-      var ticking = false;
+      var ticking = false, last = -1;
       var update = function () {
         ticking = false;
         var h = hero.offsetHeight || 300;
         var p = Math.max(0, Math.min(1, (window.pageYOffset || 0) / (h * 0.85)));
-        document.body.style.setProperty('--p', p.toFixed(3));
+        if (p !== last) { last = p; hero.style.setProperty('--p', p.toFixed(3)); }
       };
       window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
       window.addEventListener('resize', update);

@@ -383,14 +383,14 @@
   function setupListingDepth() {
     if (window.__v3Depth) return; window.__v3Depth = true;
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var ticking = false;
+    var ticking = false, last = -1;
     function update() {
       ticking = false;
       var hero = document.querySelector('#page-detail.active .v3d-hero');
-      if (!hero) { document.body.style.removeProperty('--p'); return; }
+      if (!hero) return;
       var h = hero.offsetHeight || 300;
       var p = Math.max(0, Math.min(1, (window.pageYOffset || 0) / (h * 0.85)));
-      document.body.style.setProperty('--p', p.toFixed(3));
+      if (p !== last) { last = p; hero.style.setProperty('--p', p.toFixed(3)); }
     }
     window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
     window.addEventListener('resize', update);
