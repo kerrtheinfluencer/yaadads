@@ -223,7 +223,7 @@
   html body .mob-nav, html body .mob-nav.scrolled-transparent, html body .mob-nav.mob-nav-compact {
     height: 84px; padding-top: 32px; overflow: hidden; align-content: center;
     bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 18px));
-    transition: height .28s cubic-bezier(.2, .8, .2, 1), padding-top .28s cubic-bezier(.2, .8, .2, 1), bottom .28s ease;
+    transition: height .28s cubic-bezier(.2, .8, .2, 1), padding-top .28s cubic-bezier(.2, .8, .2, 1), bottom .28s ease, left .28s cubic-bezier(.2, .8, .2, 1), right .28s cubic-bezier(.2, .8, .2, 1);
   }
   html body .mob-nav:has(.hy-strip) .mob-nav-item:has(.mob-nav-post) { margin-top: 0; width: 44px; height: 44px; }
   html body .mob-nav:has(.hy-strip) .mob-nav-post { width: 44px; height: 44px; font-size: 26px; }
@@ -242,6 +242,7 @@
   .hy-ic { display: none; }
   /* compact (scrolling down): thin glass strip with gold text, icon tabs, active tab keeps its name */
   html body .mob-nav.mob-nav-compact {
+    left: 30px; right: 30px; grid-template-columns: 1fr 1fr 40px 1fr 1fr;
     height: 58px; padding-top: 20px; bottom: max(6px, calc(env(safe-area-inset-bottom, 0px) - 22px));
     background: rgba(10, 40, 50, .38); border-color: rgba(255, 255, 255, .14);
     -webkit-backdrop-filter: blur(16px) saturate(1.2); backdrop-filter: blur(16px) saturate(1.2); box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
@@ -253,7 +254,7 @@
   html body .mob-nav.mob-nav-compact .hy-orb { display: none; }
   html body .mob-nav.mob-nav-compact .hy-ask-full { display: none; }
   html body .mob-nav:not(.mob-nav-compact) .hy-ask-short { display: none; }
-  html body .mob-nav.mob-nav-compact .mob-nav-item { height: 36px; flex-direction: row; gap: 6px; justify-content: center; justify-self: center; padding: 0 14px; }
+  html body .mob-nav.mob-nav-compact .mob-nav-item { height: 36px; flex-direction: row; gap: 6px; justify-content: center; justify-self: center; padding: 0 11px; }
   html body .mob-nav.mob-nav-compact .mob-nav-item .hy-ic { display: block; }
   html body .mob-nav.mob-nav-compact .mob-nav-item:not(.active) .mn-label { display: none; }
   html body .mob-nav.mob-nav-compact .mob-nav-item.active { background: rgba(255, 200, 87, .18); border-radius: 20px; }
