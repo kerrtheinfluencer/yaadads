@@ -466,6 +466,7 @@ var SITE_UPDATES = {
         'New: the gas price and “Ask Yaad Brain” now live in a gold strip on the bottom bar, instead of two floating buttons',
         'New: scroll down and the bottom bar slims to see-through icons, and the active tab keeps its name',
         'New: the bell on the home screen shows a red badge with the number of unread notifications',
+        'Improved: smoother movement everywhere — cards settle in without bouncing, sheets and pop-ups glide, buttons answer your tap instantly, and the bottom bar shrinks and grows in one fluid motion',
         'New: tap Contact on any ad in the feed to call, WhatsApp or chat with the seller without opening the ad',
         'New: Post an ad now starts with your photos, then the details, then a preview',
         'Changed: the Browse screen has a cleaner search bar and category tiles',

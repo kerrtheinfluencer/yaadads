@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   §MOTION — one motion language for the whole site. Loads LAST (after hybrid.css).
+   Roll back by deleting its <link> in index.html and bumping sw.js CACHE_VERSION.
+
+   Rules this file enforces:
+     • Surfaces that slide or fade in (sheets, modals, toasts, the dock) use a calm
+       expo-out curve with NO overshoot. Overshoot on a sheet shows a gap at the edge.
+     • Only small controls (chips, buttons, hearts) get a soft spring.
+     • Presses answer in ~120ms; things settling take 260–460ms; leaving is faster
+       than arriving.
+     • Transform / opacity only for anything that animates on scroll or repeats.
+     • prefers-reduced-motion removes movement and decorative loops.
+═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --m-out:   cubic-bezier(.22, 1, .36, 1);     /* arrive: fast start, long soft landing */
+  --m-in:    cubic-bezier(.5, 0, .75, 0);      /* leave */
+  --m-inout: cubic-bezier(.65, 0, .35, 1);     /* move between two resting places */
+  --m-soft:  cubic-bezier(.34, 1.28, .64, 1);  /* small controls only: a gentle pop */
+  --m-fast: 140ms; --m-base: 260ms; --m-slow: 420ms;
+  /* the old springs overshot by 56%; every var()-based transition in the site now uses the soft one */
+  --v3-spring: var(--m-soft);
+  --ease-spring: var(--m-soft);
+}
+
+/* ── 1. Page change: a quick fade with a landing, not a hard cut ─────────── */
+@keyframes ya-page-in { from { opacity: 0; } to { opacity: 1; } }
+.page.ya-enter { animation: ya-page-in var(--m-base) var(--m-out) both; }
+
+/* ── 2. Ad cards: rise and settle. The old keyframes bounced past the rest
+      position and back; this lands once, cleanly. ───────────────────────── */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes cardInLift {
+  from { opacity: 0; transform: translateY(22px) scale(.975); }
+  to   { opacity: 1; transform: none; }
+}
+.ad-card.in { animation-duration: .56s; animation-timing-function: var(--m-out); }
+.ad-card.in .ad-card-img img { animation-duration: .9s; animation-timing-function: var(--m-out); }
+.ad-card { transition: transform var(--m-slow) var(--m-out), box-shadow var(--m-base) ease; }
+.ad-card:active { transform: scale(.985); transition-duration: var(--m-fast); }
+
+/* ── 3. Modals & overlays: fade the scrim, lift the card ─────────────────── */
+@keyframes ya-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mIn {
+  from { opacity: 0; transform: translateY(18px) scale(.965); }
+  to   { opacity: 1; transform: none; }
+}
+.overlay.open { animation: ya-fade var(--m-base) ease-out both; }
+.modal { animation: mIn .38s var(--m-out) both; }
+
+/* ── 4. Bottom sheet (AI chat etc): glides, never overshoots; closes quicker ─ */
+.ai-sheet-overlay { transition: opacity var(--m-slow) var(--m-out); }
+.ai-sheet { transition: transform .46s var(--m-out); }
+.ai-sheet:not(.open) { transition-duration: .32s; transition-timing-function: var(--m-inout); }
+@media (min-width: 641px) {
+  .ai-sheet { transition: transform .46s var(--m-out); }
+  .ai-sheet:not(.open) { transition-duration: .32s; transition-timing-function: var(--m-inout); }
+}
+
+/* ── 5. Toasts: slide up on arrival, drop away quickly ───────────────────── */
+.toast { transition: opacity .2s ease, transform .2s var(--m-in); }
+.toast.show { transition: opacity var(--m-base) ease, transform .36s var(--m-out); }
+
+/* ── 6. Press feedback: every tappable control answers instantly ─────────── */
+.btn:active, .load-more-btn:active { transition-duration: 90ms; }
+@media (max-width: 640px) {
+  html body :is(.v3b-chip, .v3pp-chip, .v3s-chip, .v3-fchip, .cat-pill-sm, .v3b-tile, .v3b-big, .v3b-link, .v3b-sg-chip, .m-close) {
+    transition: scale var(--m-fast) var(--m-out), transform var(--m-base) var(--m-soft), background-color var(--m-base) ease,
+      color var(--m-base) ease, border-color var(--m-base) ease, box-shadow var(--m-base) ease, opacity var(--m-base) ease;
+  }
+  html body :is(.v3b-chip, .v3pp-chip, .v3s-chip, .v3-fchip, .cat-pill-sm, .v3b-tile, .v3b-big, .v3b-link, .v3b-sg-chip, .m-close):active { scale: .95; }
+
+  /* ── 7. The dock: one calm curve for every property. (hybrid.css set its own
+        transition list and dropped grid-template-columns, so the columns snapped.) ── */
+  html body .mob-nav, html body .mob-nav.scrolled-transparent, html body .mob-nav.mob-nav-compact {
+    transition: height .4s var(--m-out), padding-top .4s var(--m-out), bottom .4s var(--m-out), left .4s var(--m-out),
+      right .4s var(--m-out), grid-template-columns .4s var(--m-out), background-color .3s ease, border-color .3s ease,
+      box-shadow .3s ease, opacity .3s ease;
+  }
+  /* the gold strip: fade the gold in and out (a gradient can't tween to transparent, so it lives on ::before) */
+  html body .mob-nav .hy-strip { background: transparent; transition: height .4s var(--m-out), color .3s ease, padding .3s ease, border-color .3s ease; border-bottom: 1px solid transparent; }
+  html body .mob-nav .hy-strip::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 200, 87, .96), rgba(255, 214, 120, .96)); transition: opacity .3s ease; }
+  html body .mob-nav .hy-strip > * { position: relative; z-index: 1; }
+  html body .mob-nav.mob-nav-compact .hy-strip { background: transparent; border-bottom-color: rgba(255, 200, 87, .7); }
+  html body .mob-nav.mob-nav-compact .hy-strip::before { opacity: 0; }
+  html body .mob-nav-item { transition: height .4s var(--m-out), color .25s ease, background-color .25s ease, scale var(--m-fast) var(--m-out), padding .3s var(--m-out); }
+  html body .mob-nav-item:active { scale: .92; }
+  html body .mob-nav .mn-label { transition: opacity .22s ease, max-height .4s var(--m-out), transform .4s var(--m-out); }
+  html body .mob-nav-icon, html body .mob-nav .hy-ic { transition: transform .4s var(--m-soft); }
+  html body .mob-nav-post { transition: width .4s var(--m-out), height .4s var(--m-out), margin .4s var(--m-out), transform .35s var(--m-soft), box-shadow .3s ease, scale var(--m-fast) var(--m-out); }
+  html body .mob-nav-post:active { scale: .92; }
+  html body .hy-orb { transition: width .4s var(--m-out), height .4s var(--m-out); }
+}
+
+/* ── 8. Reduced motion: no travel, no decorative loops ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
+  .page.ya-enter, .overlay.open, .modal, .ad-card.in, .ad-card.in .ad-card-img img { animation: none !important; }
+  .ad-card.pre { opacity: 1; transform: none; }
+  body::before, body::after, .fresh-badge::after, .trending-badge::after, .live-dot, .gfc-orb i,
+  .v3-orb, .v3-orb-glow, .v3-bars i, .v3-ai-float::before { animation: none !important; }
+}

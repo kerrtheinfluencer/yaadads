@@ -1767,7 +1767,7 @@ nav.scrolled-transparent {
   font-size: 13px;
   font-family: var(--font-b);
   cursor: pointer;
-  transition: all .15s;
+  transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s;
   font-weight: 500;
   color: var(--text-2);
   box-shadow: 0 2px 8px rgba(0,0,0,.04);
@@ -2030,7 +2030,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .alert-err  { background: #fef2f2; color: #c62828; border: 1px solid #fecaca; }
 .alert-ok   { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 .tab-switch { display: flex; background: var(--surface-2); border-radius: var(--r-sm); padding: 4px; margin-bottom: 22px; }
-.tab-btn { flex:1; padding:9px; border:none; background:transparent; border-radius:8px; font-family:var(--font-b); font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; color:var(--text-3); }
+.tab-btn { flex:1; padding:9px; border:none; background:transparent; border-radius:8px; font-family:var(--font-b); font-size:14px; font-weight:500; cursor:pointer; transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s; color:var(--text-3); }
 .tab-btn.active { background:var(--surface); color:var(--text-1); box-shadow:var(--shadow-sm); }
 .m-logo { font-family:var(--font-d); font-size:26px; font-weight:800; margin-bottom:6px; }
 .m-logo em { font-style:italic; color:var(--gold); }
@@ -2042,7 +2042,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 /* IMAGE UPLOAD */
 .img-upload-area {
   border: 2px dashed var(--border); border-radius: var(--r); padding: 28px;
-  text-align: center; cursor: pointer; transition: all .2s; background: var(--surface-2);
+  text-align: center; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s; background: var(--surface-2);
   position: relative;
 }
 .img-upload-area:hover { border-color: var(--green); background: var(--green-light); }
@@ -2167,7 +2167,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .report-opt {
   display: flex; align-items: center; gap: 10px; padding: 12px 14px;
   border: 1.5px solid var(--border); border-radius: var(--r-sm); cursor: pointer;
-  transition: all .15s; font-size: 14px;
+  transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s; font-size: 14px;
 }
 .report-opt:hover, .report-opt.selected { border-color: var(--red); background: #fef2f2; color: var(--red); }
 
@@ -2233,7 +2233,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   background: none; border: 1.5px solid var(--border); border-radius: var(--r-xl);
   padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px; color: var(--text-2);
-  font-family: var(--font-b); transition: all .15s;
+  font-family: var(--font-b); transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s;
 }
 .share-btn:hover { border-color: var(--green); color: var(--green); }
 
@@ -2524,7 +2524,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
 .step {
   flex: 1; text-align: center; position: relative;
   padding-bottom: 14px; border-bottom: 2px solid rgba(0,0,0,.08);
-  font-size: 12px; font-weight: 600; color: var(--text-3); transition: all .2s;
+  font-size: 12px; font-weight: 600; color: var(--text-3); transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s;
 }
 .step.done { border-bottom-color: var(--gold); color: var(--green); }
 .step.active { border-bottom-color: var(--gold); color: var(--green); }
@@ -2537,7 +2537,7 @@ textarea.form-inp { resize: vertical; min-height: 90px; }
   color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; margin: 0 auto 6px;
-  transition: all .2s;
+  transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s;
   box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 .step.active .step-num, .step.done .step-num {
@@ -3156,7 +3156,7 @@ footer {
 .ai-sheet-close {
   width: 32px; height: 32px; border-radius: 50%;
   background: rgba(255,255,255,.1); border: none; color: rgba(255,255,255,.6);
-  font-size: 15px; cursor: pointer; transition: all .2s;
+  font-size: 15px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s;
   display: flex; align-items: center; justify-content: center;
 }
 .ai-sheet-close:hover { background: rgba(255,255,255,.2); color: #fff; }
@@ -3330,7 +3330,7 @@ footer {
 .ai-sheet-send {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--green); color: #fff; border: none;
-  font-size: 17px; cursor: pointer; transition: all .2s;
+  font-size: 17px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
@@ -3346,7 +3346,7 @@ footer {
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
   color: rgba(255,255,255,.65); padding: 5px 12px; border-radius: 16px;
   font-size: 12px; font-weight: 500; cursor: pointer;
-  font-family: var(--font-b); transition: all .15s;
+  font-family: var(--font-b); transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s;
 }
 .sheet-recent-chip:hover { background: rgba(255,255,255,.14); color: #fff; }
 .src-chip-icon { font-size: 11px; opacity: .7; }
@@ -4256,7 +4256,7 @@ button:disabled,
   border: none; cursor: pointer; font-weight: 700;
   font-size: 13px; padding: 8px 16px; border-radius: 20px;
   font-family: var(--font-b, sans-serif);
-  transition: all 0.2s;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s;
 }
 .ob-tip-back { background: var(--surface-2, #f0ede5); color: var(--text-2, #555); }
 .ob-tip-back:hover { background: var(--border, #e2ddd4); }
