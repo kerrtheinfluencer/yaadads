@@ -45,7 +45,9 @@ test('login and registration map profile fields without replacing authenticated 
   assert.equal(user.id, 'member');
   assert.equal(user.referral_code, 'YA12345678');
   assert.equal(user.access_token, undefined);
-  assert.equal((await f.context.sbRegister('New', 'member@example.test', '', '', 'password')).id, 'member');
+  // Email sign-up is switched off (EMAIL_SIGNUP_ENABLED = false in core.js): new members join with Google, and
+  // sbRegister must say so instead of silently creating an email account. Existing members still log in (above).
+  await assert.rejects(f.context.sbRegister('New', 'member@example.test', '', '', 'password'), /Continue with Google/);
   f.db.auth.signInWithPassword = async () => ({ error: { message: 'Denied' } });
   await assert.rejects(f.context.sbLogin('x', 'bad'), /Denied/);
 });

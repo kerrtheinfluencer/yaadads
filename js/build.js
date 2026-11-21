@@ -7,7 +7,7 @@
    already fixed. If the newest build really is older (an intentional rollback), the memory is
    lowered so nobody is stuck in a loop. Must stay the FIRST script on the page. */
 (function () {
-  var YA_BUILD = 153;
+  var YA_BUILD = 154;
   window.YA_BUILD = YA_BUILD;
   var KEY = 'ya_build_hw', TRY = 'ya_build_try';
   var seen = 0, tried = null;
