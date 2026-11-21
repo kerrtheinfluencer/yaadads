@@ -196,10 +196,15 @@ check('the SQL is wrapped in a transaction',
 const DEBUG_PORT = 9339;   // Chrome's CDP port; the page server takes a random one
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
+// Same resolution order as the other browser tests (BROWSER_PATH → Windows → Linux → macOS). It used to list
+// Windows paths only, so on the Linux CI runner this check always failed with "not installed".
 const CHROME = [
+  process.env.BROWSER_PATH,
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-].find(p => fs.existsSync(p));
+  '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+].find(p => p && fs.existsSync(p));
 
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
@@ -343,12 +348,14 @@ async function browser() {
    whole browser half of this suite reports "never came up". */
 server.listen(0, '127.0.0.1', async () => {
   if (CHROME) {
-    const proc = spawn(CHROME, ['--headless=new', '--hide-scrollbars',
+    // CI containers run as root; Chrome refuses to start its sandbox there.
+    const sandboxArgs = (process.platform === 'linux' && process.getuid && process.getuid() === 0) ? ['--no-sandbox'] : [];
+    const proc = spawn(CHROME, sandboxArgs.concat(['--headless=new', '--hide-scrollbars',
       '--force-device-scale-factor=1', '--window-size=1200,900',
       '--remote-debugging-port=' + DEBUG_PORT, '--remote-allow-origins=*',
       '--no-first-run', '--no-default-browser-check',
       '--user-data-dir=' + path.join(process.cwd(), '.chrome-reports-tmp'),
-      'about:blank'], { stdio: 'ignore' });
+      'about:blank']), { stdio: 'ignore' });
     try { await browser(); }
     catch (e) { check('browser suite ran', false, msg(e)); }
     proc.kill();
