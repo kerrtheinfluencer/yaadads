@@ -31,4 +31,17 @@ try {
   console.error('[pre-commit] Release-note validation or generation failed. Review locally; content is not logged.');
   process.exit(1);
 }
+
+/* §UPGRADE-MEMORY — a commit may not undo something the site already solved or go backwards.
+ * On success the high-water mark, js/build.js and UPGRADE-MEMORY.md are advanced and staged. */
+try {
+  const memory = ['tools/upgrade-memory.js'];
+  const run = a => execFileSync(process.execPath, memory.concat(a), { cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  run(['stamp']);
+  execFileSync('git', ['add', 'upgrade-memory/high-water.json', 'js/build.js', 'UPGRADE-MEMORY.md'], { stdio: 'ignore' });
+  console.log('[pre-commit] Upgrade Memory ok (high-water mark advanced + staged)');
+} catch (e) {
+  console.error('[pre-commit] Upgrade Memory blocked this commit:\n' + String((e.stderr || e.stdout || e.message)).trim());
+  process.exit(1);
+}
 process.exit(0);

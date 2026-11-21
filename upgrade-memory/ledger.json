@@ -1,0 +1,541 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "id": "listing-scroll-shake",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Motion",
+      "title": "Listing photo and contact bar shook while scrolling",
+      "problem": "The photo depth effect set a CSS variable on <body> and re-blurred a full-screen layer every scroll frame, starving the compositor, so the photo and the fixed contact pill jittered on iPhone.",
+      "fix": "Depth now changes transform/opacity only, on the hero alone; the backdrop blur is constant; the contact pill sits on its own layer.",
+      "rule": "Never drive per-frame effects through <body> variables or animate filter/blur on scroll. Only transform and opacity.",
+      "guards": [
+        {
+          "type": "absent",
+          "file": "js/v3-home.js",
+          "text": "document.body.style.setProperty('--p'"
+        },
+        {
+          "type": "absent",
+          "file": "js/v3-ad-bg.js",
+          "text": "document.body.style.setProperty('--p'"
+        },
+        {
+          "type": "absent-regex",
+          "file": "v3-glass.css",
+          "pattern": "filter:\\s*blur\\(calc\\([^)]*var\\(--p"
+        },
+        {
+          "type": "absent-regex",
+          "file": "v3-pages.css",
+          "pattern": "filter:\\s*blur\\(calc\\([^)]*var\\(--p"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "html body .v3d-cta { transform: translate3d(0, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "sheets-never-overshoot",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Motion",
+      "title": "Bottom sheets bounced past their edge",
+      "problem": "The shared spring overshot by 56%, so sheets slid past rest and showed a gap at the screen edge, and cards bounced.",
+      "fix": "Sheets and modals use an expo-out curve with no overshoot; only small controls keep a soft spring; --v3-spring was softened globally.",
+      "rule": "Large surfaces (sheets, modals, the dock, cards) never use an overshooting curve. Overshoot is for chips and buttons only.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": ".ai-sheet { transition: transform .46s var(--m-out); }"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "--v3-spring: var(--m-soft);"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "--m-out:   cubic-bezier(.22, 1, .36, 1);"
+        },
+        {
+          "type": "in-precache",
+          "file": "motion.css"
+        },
+        {
+          "type": "load-order",
+          "file": "index.html",
+          "first": "hybrid.css",
+          "then": "motion.css"
+        }
+      ]
+    },
+    {
+      "id": "dock-columns-animate",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Navigation",
+      "title": "Minimized bar columns snapped instead of animating",
+      "problem": "hybrid.css set its own transition list and dropped grid-template-columns, so the dock columns snapped while the height animated.",
+      "fix": "motion.css owns one transition list for every dock property, including grid-template-columns, left and right.",
+      "rule": "Any rule that sets `transition` on .mob-nav must include every property that changes between the expanded and compact states.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "grid-template-columns .4s var(--m-out)"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "left .4s var(--m-out)"
+        }
+      ]
+    },
+    {
+      "id": "dock-active-pill-fits",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Navigation",
+      "title": "Highlighted tab was cut off in the minimized bar",
+      "problem": "The gold pill for the active tab was wider than its grid column and was clipped at the bar edge, off-centre.",
+      "fix": "The active tab's column grows (1.75fr) to hold its pill, via :has(); the bar has side padding.",
+      "rule": "The minimized bar must keep a column for the active pill; never fix a clipped pill by hiding overflow.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": ":has(#mnHome.active)"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": ":has(#mnAccount.active)"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "1.75fr"
+        }
+      ]
+    },
+    {
+      "id": "home-tab-scrolls-top",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Navigation",
+      "title": "Pressing Home on Home did nothing / the logo reloaded the page",
+      "problem": "goHome returned early when already on Home (no scroll, filters stuck), and the logo link followed href=\"/\" and reloaded the whole page.",
+      "fix": "goHome prevents the default on plain taps, clears filters, rebuilds the feed and scrolls to the top (smooth unless reduced-motion).",
+      "rule": "The logo stays a real <a href=\"/\"> but a plain tap is always handled in-app. Pressing Home when on Home scrolls to top.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "js/ui-nav.js",
+          "text": "ev.preventDefault"
+        },
+        {
+          "type": "contains",
+          "file": "js/ui-nav.js",
+          "text": "window._aiFilters = null;"
+        },
+        {
+          "type": "contains",
+          "file": "js/ui-nav.js",
+          "text": "window.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' })"
+        },
+        {
+          "type": "contains",
+          "file": "index.html",
+          "text": "onclick=\"goHome(event)\""
+        },
+        {
+          "type": "exists",
+          "file": "tools/test-home-nav.js"
+        }
+      ]
+    },
+    {
+      "id": "bell-unread-badge",
+      "status": "active",
+      "since": "v4.0",
+      "area": "Notifications",
+      "title": "Bell showed nothing for unread notifications",
+      "problem": "The home bell had no unread indicator.",
+      "fix": "A red badge with the unread count (9+ above nine), refreshed on load, new chats, tab focus and opening Notifications.",
+      "rule": "The bell badge is driven by v3UnreadNotifs(); do not replace it with a boolean dot.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "js/v3-screens.js",
+          "text": "window.v3UnreadNotifs"
+        },
+        {
+          "type": "contains",
+          "file": "js/v3-home.js",
+          "text": "window.v3SyncBell"
+        },
+        {
+          "type": "contains",
+          "file": "hybrid.css",
+          "text": ".v3-bell-dot"
+        },
+        {
+          "type": "contains",
+          "file": "hybrid.css",
+          "text": "#FF453A"
+        }
+      ]
+    },
+    {
+      "id": "notification-popup-to-bell",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Notifications",
+      "title": "New notifications were easy to miss",
+      "problem": "A new message only produced a plain toast.",
+      "fix": "On phones a centred glass card rises, then curves into the bell, which rings and bumps its badge.",
+      "rule": "Phone notifications use v3Notify (centred card that returns to the bell); plain toasts are desktop-only.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "js/v3-home.js",
+          "text": "function bellCenter"
+        },
+        {
+          "type": "contains",
+          "file": "js/v3-home.js",
+          "text": "is-leaving"
+        },
+        {
+          "type": "contains",
+          "file": "js/ui-nav.js",
+          "text": "window.v3Notify('You have a new message'"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": ".v3-pop-scrim"
+        }
+      ]
+    },
+    {
+      "id": "chat-opens-when-markread-fails",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Messages",
+      "title": "A failed mark-as-read write blocked the chat from opening",
+      "problem": "sbMarkRead threw (no database / offline) before renderChat ran, so the thread never opened.",
+      "fix": "The write is fire-and-forget inside try/catch with a rejection handler.",
+      "rule": "Background writes must never be awaited or allowed to throw in the path that opens a screen.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "js/core.js",
+          "text": "console.warn('[msg] mark read', e)"
+        },
+        {
+          "type": "exists",
+          "file": "tools/test-msg-v2.js"
+        }
+      ]
+    },
+    {
+      "id": "chat-xss-escaped",
+      "status": "active",
+      "since": "v3",
+      "area": "Messages",
+      "title": "Member-supplied names/titles reached innerHTML",
+      "problem": "A hostile display name or ad title executed as HTML inside the chat.",
+      "fix": "Every member-supplied string is escaped with escHtml before it enters markup.",
+      "rule": "Never put a name, title or message into innerHTML without escHtml. test-msg-v2 drives a hostile payload.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "js/auth-account.js",
+          "text": "escHtml(otherName || 'Member')"
+        },
+        {
+          "type": "contains",
+          "file": "js/auth-account.js",
+          "text": "escHtml(conv.adTitle || 'your listing')"
+        },
+        {
+          "type": "contains",
+          "file": "js/auth-account.js",
+          "text": "escHtml(m.text || '')"
+        }
+      ]
+    },
+    {
+      "id": "ad-feedback-no-markup-strings",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Safety",
+      "title": "Buyer-feedback script must not build markup from strings",
+      "problem": "A change used innerHTML in js/ad-feedback.js; the security test rejects that and CI went red.",
+      "fix": "The Google button and its logo are built with createElement/createElementNS.",
+      "rule": "js/ad-feedback.js never uses innerHTML or localStorage (member text goes in through textContent only).",
+      "guards": [
+        {
+          "type": "absent",
+          "file": "js/ad-feedback.js",
+          "text": "innerHTML"
+        },
+        {
+          "type": "absent",
+          "file": "js/ad-feedback.js",
+          "text": "localStorage"
+        },
+        {
+          "type": "contains",
+          "file": "js/ad-feedback.js",
+          "text": "createElementNS"
+        }
+      ]
+    },
+    {
+      "id": "buyer-signup-google-first",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Account",
+      "title": "Buyer join card was crowded",
+      "problem": "The join card showed Google, a dropdown and three fields at once.",
+      "fix": "A full-width Continue with Google button with the Google logo; email is behind \"Use email instead\".",
+      "rule": "The primary action on the join card is Google. The email form stays collapsed by default.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "js/ad-feedback.js",
+          "text": "gbtn.className = 'fb-google'"
+        },
+        {
+          "type": "contains",
+          "file": "js/ad-feedback.js",
+          "text": "'Use email instead'"
+        },
+        {
+          "type": "contains",
+          "file": "ad-feedback.css",
+          "text": ".fb-google"
+        }
+      ]
+    },
+    {
+      "id": "one-footer-on-phone",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Layout",
+      "title": "Two footers on phones",
+      "problem": "The SEO \"About Yaad Adz\" block and the real footer both showed as separate heavy sections.",
+      "fix": "On phones the About text folds into the footer as small centred text; category links are hidden. It stays in the page for search engines.",
+      "rule": "Never delete .seo-about (it is crawlable SEO content); fold it visually instead.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "index.html",
+          "text": "seo-about"
+        },
+        {
+          "type": "contains",
+          "file": "hybrid.css",
+          "text": "html body .seo-about"
+        }
+      ]
+    },
+    {
+      "id": "no-floating-helpers-overlap",
+      "status": "active",
+      "since": "v4.0",
+      "area": "Navigation",
+      "title": "Gas pill and AI orb overlapped the nav bar",
+      "problem": "The old floating gas banner and AI orb sat on top of the bottom bar.",
+      "fix": "They are hidden on phones; gas price and Ask live in the dock strip (js/dock.js).",
+      "rule": "Do not re-show #gasBanner / .v3-ai-float on phones. The dock strip replaces them.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "hybrid.css",
+          "text": "html body #gasBanner, html body .v3-ai-float { display: none !important; }"
+        },
+        {
+          "type": "contains",
+          "file": "js/dock.js",
+          "text": "hyAsk"
+        },
+        {
+          "type": "in-precache",
+          "file": "js/dock.js"
+        }
+      ]
+    },
+    {
+      "id": "ask-bubble-not-orb",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Navigation",
+      "title": "AI icon was cut off at the bar corner",
+      "problem": "The equaliser orb touched the right edge of the dock and was clipped by its rounded corner.",
+      "fix": "A typing chat bubble with right padding on the strip; animation pauses while scrolling and for reduced motion.",
+      "rule": "Keep padding-right on .hy-strip so the Ask control clears the corner radius.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "html body .mob-nav .hy-strip { padding-right: 14px; }"
+        },
+        {
+          "type": "contains",
+          "file": "js/dock.js",
+          "text": "hy-chat"
+        },
+        {
+          "type": "contains",
+          "file": "smooth.css",
+          "text": ".hy-chat i"
+        }
+      ]
+    },
+    {
+      "id": "keyboard-hides-nav",
+      "status": "active",
+      "since": "v4.0",
+      "area": "Navigation",
+      "title": "Bottom bar floated above the iPhone keyboard",
+      "problem": "With the keyboard open the nav and back-to-top button rode above it.",
+      "fix": "html.kb-open hides the nav and the back-to-top button.",
+      "rule": "Keep the kb-open rules for the dock and back-to-top.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "hybrid.css",
+          "text": "kb-open"
+        }
+      ]
+    },
+    {
+      "id": "sw-precache-new-files",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Offline",
+      "title": "New CSS/JS not available offline",
+      "problem": "Files not added to sw.js precache were missing for offline/PWA users.",
+      "fix": "hybrid.css, motion.css, js/dock.js and js/build.js are precached.",
+      "rule": "Every new CSS/JS file must be added to the sw.js precache list and CACHE_VERSION bumped.",
+      "guards": [
+        {
+          "type": "in-precache",
+          "file": "hybrid.css"
+        },
+        {
+          "type": "in-precache",
+          "file": "motion.css"
+        },
+        {
+          "type": "in-precache",
+          "file": "js/dock.js"
+        },
+        {
+          "type": "in-precache",
+          "file": "js/build.js"
+        },
+        {
+          "type": "in-precache",
+          "file": "hybrid-admin.css"
+        }
+      ]
+    },
+    {
+      "id": "reduced-motion-respected",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Accessibility",
+      "title": "Motion ignored the reduced-motion setting",
+      "problem": "Decorative loops and slides kept running for people who asked for less motion.",
+      "fix": "A reduced-motion block removes transitions, entrance animations and decorative loops.",
+      "rule": "New animation must be covered by the prefers-reduced-motion block in motion.css.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": "@media (prefers-reduced-motion: reduce)"
+        },
+        {
+          "type": "contains",
+          "file": "motion.css",
+          "text": ".hy-chat i"
+        }
+      ]
+    },
+    {
+      "id": "no-transition-all-small-controls",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Motion",
+      "title": "Small controls animated every property",
+      "problem": "`transition: all` on small controls animated layout properties and wasted frames.",
+      "fix": "Replaced with explicit property lists.",
+      "rule": "Do not add `transition: all .15s/.2s` to small controls; list the properties.",
+      "guards": [
+        {
+          "type": "absent-regex",
+          "file": "style.css",
+          "pattern": "transition:\\s*all\\s+0?\\.(15|2)s\\s*;"
+        }
+      ]
+    },
+    {
+      "id": "upgrade-memory-in-page-guard",
+      "status": "active",
+      "since": "v4.1",
+      "area": "Releases",
+      "title": "Old builds could come back from a stale cache",
+      "problem": "A stale service-worker cache or CDN edge could serve an older build, silently resurrecting fixed problems.",
+      "fix": "js/build.js remembers the highest build this browser has run and refreshes once if an older one appears.",
+      "rule": "js/build.js must remain the first script in index.html and stay precached.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": "index.html",
+          "text": "<script src=\"js/build.js\"></script>"
+        },
+        {
+          "type": "in-precache",
+          "file": "js/build.js"
+        },
+        {
+          "type": "contains",
+          "file": "js/build.js",
+          "text": "ya_build_hw"
+        }
+      ]
+    },
+    {
+      "id": "smoke-test-installs-deps",
+      "status": "active",
+      "since": "v4.1",
+      "area": "CI",
+      "title": "Smoke Test was red for weeks",
+      "problem": "The photo-gesture test needs @supabase/supabase-js but the workflow never installed dependencies, so every later step was skipped.",
+      "fix": "The workflow runs npm ci --ignore-scripts, and the missing test:home script exists.",
+      "rule": "Every CI step must reference a script that exists; install dependencies before running tests.",
+      "guards": [
+        {
+          "type": "contains",
+          "file": ".github/workflows/smoke-test.yml",
+          "text": "npm ci --ignore-scripts"
+        },
+        {
+          "type": "contains",
+          "file": "package.json",
+          "text": "\"test:home\""
+        }
+      ]
+    }
+  ]
+}

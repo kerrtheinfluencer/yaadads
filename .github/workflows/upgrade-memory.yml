@@ -1,0 +1,76 @@
+name: Upgrade Memory
+
+# The site's memory of problems it has already solved (upgrade-memory/ledger.json).
+#
+# Every push to main: re-check every guard and the high-water mark. If anything regressed or
+# went backwards, this job fails and names the solved problem that came back. If everything is
+# fine, the bot ADVANCES the high-water mark (upgrade-memory/high-water.json), re-stamps
+# js/build.js (the in-page "never run an older build" guard) and regenerates UPGRADE-MEMORY.md.
+#
+# No loop: the bot's own commits are skipped (github.actor check), and a push that changes only
+# those generated files finds nothing left to stamp.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sw.js'
+      - 'index.html'
+      - 'style.css'
+      - '*.css'
+      - 'js/**'
+      - 'package.json'
+      - 'tools/upgrade-memory.js'
+      - 'upgrade-memory/ledger.json'
+      - '.github/workflows/upgrade-memory.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: upgrade-memory
+  cancel-in-progress: false
+
+jobs:
+  memory:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' && github.actor != 'Yaad Adz Bot' }}
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Dependency-free on purpose: no npm ci, so this can never fail for an unrelated reason.
+      - name: Check nothing already solved has come back
+        run: |
+          node tools/upgrade-memory.js check
+          node tools/test-upgrade-memory.js
+
+      - name: Advance the high-water mark, re-stamp build.js, regenerate the docs
+        run: node tools/upgrade-memory.js stamp
+
+      - name: Commit and push if anything moved
+        run: |
+          if git diff --quiet -- upgrade-memory/high-water.json js/build.js UPGRADE-MEMORY.md; then
+            echo "Upgrade Memory already up to date — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "Yaad Adz Bot"
+          git config user.email "bot@yaadadz.com"
+          git add upgrade-memory/high-water.json js/build.js UPGRADE-MEMORY.md
+          git diff --staged --stat
+          git commit -m "🤖 Upgrade Memory: advance high-water mark [$(date +'%Y-%m-%d %H:%M')]"
+          for i in 1 2 3; do
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "Upgrade Memory pushed to main"
+              exit 0
+            fi
+            sleep $((i * 5))
+          done
+          echo "::error::Could not push the Upgrade Memory update after 3 attempts."
+          exit 1

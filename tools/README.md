@@ -26,6 +26,7 @@ build if a `tools/test-*.js` file appears in none of: the `npm test` chain, a
 | `test-page-scripts.js` | every shipped page parses its inline script and every `script src` exists — a SyntaxError in a template is invisible to the source | — |
 | `test-hero-layout.js` | responsive layout: hero, 44px tap targets, counters, search collapse, no horizontal overflow at 390/320px | Chrome |
 | `test-pull-refresh.js` | pull to refresh only fires on a deliberate vertical pull, and swiping back up cancels it | Chrome |
+| `test-upgrade-memory.js` | the Upgrade Memory ledger (`upgrade-memory/ledger.json`): every solved problem's guards still hold, the site never goes backwards (build / release / package / deleted memories), and the in-page downgrade guard behaves. It also *mutates a copy of the site* to prove each kind of regression is caught | — |
 | `test-changelog-privacy.js` | release notes carry no secrets | — |
 
 Run them all: `npm test` (browser suites are separate, see below).
@@ -60,3 +61,17 @@ Run them all: `npm test` (browser suites are separate, see below).
 > Note: `patch-matchmedia.js` used to live here as a one-off migration for
 > `dash-kxrr1.html`. It was deleted — `generate-pages.js` now emits the guarded
 > `matchMedia` call itself, so there was nothing left for it to patch.
+
+## Upgrade Memory — fix it once, keep it fixed
+Every bug fix is recorded in `upgrade-memory/ledger.json` with guards (exact lines, banned patterns, files,
+precache entries, load order). `node tools/upgrade-memory.js check` runs in `npm test`, in the Smoke Test
+workflow and in the pre-commit hook. When you fix something, add it:
+
+    npm run memory:add -- --id my-fix --area Layout --title "What was wrong" \
+      --problem "What happened" --fix "What solved it" --rule "What must never happen again" \
+      --guard "contains|js/file.js|exact text that makes the fix real" \
+      --guard "absent|style.css|text that must never come back"
+
+The `Upgrade Memory` workflow advances `upgrade-memory/high-water.json`, re-stamps `js/build.js` and
+regenerates `UPGRADE-MEMORY.md` after each push. Memories are never deleted — `node tools/upgrade-memory.js
+retire <id> "reason"` retires one.

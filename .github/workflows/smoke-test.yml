@@ -46,6 +46,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      # §UPGRADE-MEMORY: every problem the site has already solved is guarded, and the site
+      # may never go backwards (build, release, package version, deleted memories). A failure
+      # names the exact solved problem that an update brought back.
+      - name: Upgrade Memory - nothing already solved has come back
+        run: |
+          node tools/upgrade-memory.js check
+          node tools/test-upgrade-memory.js
+
       - name: Check js/core.js has a Supabase key configured
         run: |
           if ! grep -q "key: 'eyJ" js/core.js; then
