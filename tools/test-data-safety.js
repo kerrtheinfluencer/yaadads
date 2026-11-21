@@ -85,7 +85,12 @@ const CORE_FORBIDDEN = [
   /_db\.from\([^)]*\)\.insert\(/, /_db\.from\([^)]*\)\.update\(/,
   /_db\.from\([^)]*\)\.upsert\(/, /_db\.from\([^)]*\)\.delete\(/,
 ];
-const coreBad = coreAdded.filter(l => CORE_FORBIDDEN.some(re => re.test(l)));
+// Reviewed exceptions, each a deliberate later feature (not a v2 side effect):
+//  · email one-time-code sign-in (signInWithOtp) — the passwordless login flow;
+//  · the existing fire-and-forget "mark messages read" write, re-wrapped in try/catch so a failed write
+//    can never stop a chat from opening (§UPGRADE-MEMORY: chat-opens-when-markread-fails).
+const CORE_ALLOWED = [/_db\.auth\.signInWithOtp\(/, /_db\.from\('messages'\)\.update\(\{ read: true \}\)\.in\('id', unreadIds\)/];
+const coreBad = coreAdded.filter(l => CORE_FORBIDDEN.some(re => re.test(l)) && !CORE_ALLOWED.some(re => re.test(l)));
 check('core.js: added code performs no auth calls and no DB writes (' + coreAdded.length + ' added lines)',
   coreBad.length === 0, coreBad.length ? coreBad.slice(0, 2).join(' | ') : '');
 

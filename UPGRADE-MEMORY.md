@@ -3,7 +3,7 @@
 Everything this site has already fixed, and the guards that stop an update from bringing it back.
 Generated from `upgrade-memory/ledger.json` by `node tools/upgrade-memory.js docs` — edit the ledger, not this file.
 
-**High-water mark:** build 151 · release v4.1 · package 4.1.0. The site never goes below these.
+**High-water mark:** build 152 · release v4.1 · package 4.1.0. The site never goes below these.
 
 20 active memories, 61 guards, 0 retired.
 
