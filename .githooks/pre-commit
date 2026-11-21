@@ -35,6 +35,7 @@ try {
 /* §UPGRADE-MEMORY — a commit may not undo something the site already solved or go backwards.
  * On success the high-water mark, js/build.js and UPGRADE-MEMORY.md are advanced and staged. */
 try {
+  if (!require('fs').existsSync('tools/upgrade-memory.js')) process.exit(0);   // not this repo (e.g. the privacy test's scratch repo)
   const memory = ['tools/upgrade-memory.js'];
   const run = a => execFileSync(process.execPath, memory.concat(a), { cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   run(['stamp']);
