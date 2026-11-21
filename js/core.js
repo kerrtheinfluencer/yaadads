@@ -767,7 +767,11 @@ async function sbMarkRead(convKey) {
     .filter(m => m.from !== CU.id && !m.read).map(m => m.id);
   if (!unreadIds.length) return;
   _msgs[convKey].messages.forEach(m => { if (m.from !== CU.id) m.read = true; });
-  _db.from('messages').update({ read: true }).in('id', unreadIds); // fire-and-forget
+  // fire-and-forget — a failed write must never stop the thread from opening
+  try {
+    const w = _db.from('messages').update({ read: true }).in('id', unreadIds);
+    if (w && typeof w.then === 'function') w.then(null, function (e) { console.warn('[msg] mark read', e); });
+  } catch (e) { console.warn('[msg] mark read', e); }
 }
 
 // ── UNREAD COUNT ───────────────────────────────────────
