@@ -32,7 +32,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # Full history: tools/test-data-safety.js diffs against earlier commits (git show <sha>~1);
+      # a shallow checkout died with "bad revision" and failed the whole suite.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
