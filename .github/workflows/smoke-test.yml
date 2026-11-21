@@ -40,6 +40,12 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # The photo-gesture test renders a generated ad page, which requires
+      # @supabase/supabase-js. Without this step it died on MODULE_NOT_FOUND and
+      # every later step was skipped (this is what kept Smoke Test red).
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
       - name: Check js/core.js has a Supabase key configured
         run: |
           if ! grep -q "key: 'eyJ" js/core.js; then

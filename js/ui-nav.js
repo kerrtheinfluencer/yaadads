@@ -504,16 +504,21 @@ function updateMobAccountIcon() {
 /* ═══════════════════════════════════════════════════════════
    PAGES §PAGES
 ═══════════════════════════════════════════════════════════ */
-function goHome() {
+function goHome(ev) {
+  // The logo is a real <a href="/"> (crawlable, middle-click works), but a plain tap must be handled in-app:
+  // letting it follow the link reloaded the whole page. Modified clicks keep their normal browser meaning.
+  if (ev && ev.preventDefault && ev.type === 'click' && !(ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button > 0)) ev.preventDefault();
   activeF = 'all'; searchQ = '';
+  window._aiFilters = null;
   _homeShowCount = _homePageSize;
   const inp = searchInput();
   if (inp) inp.value = '';
   hideAiResponse();
   document.querySelector('.hero')?.classList.remove('searched');
-  // Already on Home: the Home tab scrolls back to the top, like every app tab bar.
+  // Already on Home: rebuild the feed without the filters, then scroll back to the top like every app tab bar.
   const onHome = document.querySelector('.page.active')?.id === 'page-home';
   if (onHome) {
+    try { renderCats(); renderHome(); } catch (e) { console.warn('[home] rebuild', e); }
     const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
     return;

@@ -24,6 +24,7 @@
     "test:photo": "node tools/test-photo-gestures.js",
     "test:ptr": "node tools/test-pull-refresh.js",
     "test:hero": "node tools/test-hero-layout.js",
+    "test:home": "node tools/test-home-nav.js",
     "test:for-you": "node tools/test-for-you.js",
     "test:gen": "node tools/test-gen-perf.js",
     "fy:preview": "node tools/fy-preview.js"
